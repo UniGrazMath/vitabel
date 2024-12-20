@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report Type="EventLog" Version="1.3" Generated="2023-01-17T15:25:46.52909" IncidentID="2023011113562000-LUCAS3-0000X000" PatientID="2023011113562000-0000X000" SoftwareVersion="11.0.0.1036">
+  <Devices>
+    <Device Key="0" DeviceID="LUCAS3-0000X000" DeviceType="Lucas" />
+  </Devices>
+  <Events>
+    <Event Type="PowerOn" DeviceKey="0">
+      <ElapsedTime>PT0S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:56:20.00000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:56:23.00000</AdjustedTime>
+      <Description>LUCAS 3 Strom ein</Description>
+      <Values>
+        <Value DataType="String" Type="DeviceModel">LUCAS</Value>
+      </Values>
+    </Event>
+    <Event Type="LucasAdjustMode" DeviceKey="0">
+      <ElapsedTime>PT0S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:56:20.00000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:56:23.00000</AdjustedTime>
+      <Description>Modus "Anpassen"</Description>
+      <Values />
+    </Event>
+    <Event Type="PowerOff" DeviceKey="0">
+      <ElapsedTime>PT5M1.4S</ElapsedTime>
+      <DeviceTime>2023-01-11T14:01:21.40000</DeviceTime>
+      <AdjustedTime>2023-01-11T14:01:24.40000</AdjustedTime>
+      <Description>LUCAS 3 Strom aus</Description>
+      <Values>
+        <Value DataType="String" Type="DeviceModel">LUCAS</Value>
+      </Values>
+    </Event>
+  </Events>
+</Report>

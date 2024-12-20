@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<Report Type="Lucas" Version="1.3" Generated="2023-01-17T15:25:45.7148169+01:00" IncidentID="2023011113562000-LUCAS3-0000X000" PatientID="2023011113562000-0000X000" SoftwareVersion="11.0.0.1036">
+  <AdditionalFiles>
+    <Statistic>C:\Users\Simon\Desktop\Lifepak Export IBK\XML\2023011113562000-LUCAS3-0000X000_Lucas_Statistic.xml</Statistic>
+  </AdditionalFiles>
+  <Patient>
+    <PatientID>2023011113562000-0000X000</PatientID>
+    <Age Units="Unspecified">0</Age>
+    <Sex>Unspecified</Sex>
+    <Race>Unspecified</Race>
+  </Patient>
+  <Device>
+    <ACLineFrequency>0</ACLineFrequency>
+    <Capabilities>-1</Capabilities>
+    <DeviceDescription>LUCAS3-0000X000</DeviceDescription>
+    <DeviceID>-1</DeviceID>
+    <DeviceType>-1</DeviceType>
+    <InstitutionNumber>-1</InstitutionNumber>
+    <LanguageSupportCode>-1</LanguageSupportCode>
+    <ManufacturerCode>21</ManufacturerCode>
+    <PresName>LUCAS</PresName>
+    <Model ModelString="LUCAS">Lucas</Model>
+    <SCPCompatibility>-1</SCPCompatibility>
+    <SCPRevision>10</SCPRevision>
+    <SerialNumber>0000X000</SerialNumber>
+    <SiteID>-1</SiteID>
+    <SoftwareRevision>LUCAS3 v3.1.4.27</SoftwareRevision>
+    <Configuration>
+      <AlarmWidth>-1</AlarmWidth>
+      <AMI>false</AMI>
+      <AutoAnalyze>false</AutoAnalyze>
+      <AutoPrint12Lead>false</AutoPrint12Lead>
+      <HrAlarm>false</HrAlarm>
+      <Interpretation>false</Interpretation>
+      <Justification>false</Justification>
+      <Language>-1</Language>
+      <MotionDetection>false</MotionDetection>
+      <Ohm300>-1</Ohm300>
+      <OhmZero>-1</OhmZero>
+      <ShockTone>false</ShockTone>
+      <VfVtAlarm>false</VfVtAlarm>
+      <VoicePrompts>false</VoicePrompts>
+      <LucasConfiguration>
+        <VentilationPauseIn30C2VInStrokes>5</VentilationPauseIn30C2VInStrokes>
+        <VentilationSoundAlertInContinuous>false</VentilationSoundAlertInContinuous>
+        <VentilationAlertsInContinuousPerMinute>10</VentilationAlertsInContinuousPerMinute>
+        <StrokePeriod>59</StrokePeriod>
+        <QuickFit>1</QuickFit>
+        <MaximumCompressionDepth>53</MaximumCompressionDepth>
+        <WirelessMode>2</WirelessMode>
+        <VentilationPauseInContinuousInStrokes>0</VentilationPauseInContinuousInStrokes>
+        <MoveUpAtAdjust>false</MoveUpAtAdjust>
+        <AllowedCompressionRates>0</AllowedCompressionRates>
+        <AudibleTimer>8</AudibleTimer>
+        <StrokesIn30C2V>30</StrokesIn30C2V>
+        <LiftPistonDistanceAtVentilation>0</LiftPistonDistanceAtVentilation>
+        <LiftPistonDistanceAtPauseMode>0</LiftPistonDistanceAtPauseMode>
+        <LiftPistonDistanceAtActiveMode>0</LiftPistonDistanceAtActiveMode>
+      </LucasConfiguration>
+    </Configuration>
+    <DeviceFilters>
+      <DeviceFilter LeadType="CO2">Unknown</DeviceFilter>
+      <DeviceFilter LeadType="ECG">Unknown</DeviceFilter>
+      <DeviceFilter LeadType="IP">Unknown</DeviceFilter>
+      <DeviceFilter LeadType="NIBP">Unknown</DeviceFilter>
+      <DeviceFilter LeadType="Paddles">Unknown</DeviceFilter>
+      <DeviceFilter LeadType="SP02">Unknown</DeviceFilter>
+      <DeviceFilter LeadType="Unknown">Unknown</DeviceFilter>
+    </DeviceFilters>
+  </Device>
+  <Events>
+    <Event Type="PowerOn">
+      <ID>1</ID>
+      <DateTime>2023-01-11T13:56:20</DateTime>
+      <AdjustedTime>2023-01-11T13:56:23</AdjustedTime>
+      <Label>LUCAS 3 Strom ein</Label>
+      <TemplateIndex>-1</TemplateIndex>
+      <LeadID>221</LeadID>
+      <LeadName>Compression Depth</LeadName>
+      <SampleNumber>0</SampleNumber>
+      <SampleRate>100</SampleRate>
+      <Values>
+        <Value DataType="String" Type="DeviceModel">LUCAS</Value>
+      </Values>
+    </Event>
+    <Event Type="LucasProtectiveModeChanged">
+      <ID>2</ID>
+      <DateTime>2023-01-11T13:56:20</DateTime>
+      <AdjustedTime>2023-01-11T13:56:23</AdjustedTime>
+      <Label>LUCAS-Steuerungsmodus geändert</Label>
+      <TemplateIndex>-1</TemplateIndex>
+      <LeadID>221</LeadID>
+      <LeadName>Compression Depth</LeadName>
+      <SampleNumber>0</SampleNumber>
+      <SampleRate>100</SampleRate>
+      <Values>
+        <Value DataType="Integer" Type="LucasMode">2</Value>
+      </Values>
+    </Event>
+    <Event Type="LucasControlModeChanged">
+      <ID>3</ID>
+      <DateTime>2023-01-11T13:56:20</DateTime>
+      <AdjustedTime>2023-01-11T13:56:23</AdjustedTime>
+      <Label>LUCAS-Steuerungsfehler</Label>
+      <TemplateIndex>-1</TemplateIndex>
+      <LeadID>221</LeadID>
+      <LeadName>Compression Depth</LeadName>
+      <SampleNumber>0</SampleNumber>
+      <SampleRate>100</SampleRate>
+      <Values>
+        <Value DataType="Integer" Type="LucasMode">2</Value>
+      </Values>
+    </Event>
+    <Event Type="LucasAdjustMode">
+      <ID>4</ID>
+      <DateTime>2023-01-11T13:56:20</DateTime>
+      <AdjustedTime>2023-01-11T13:56:23</AdjustedTime>
+      <Label>Modus "Anpassen"</Label>
+      <TemplateIndex>-1</TemplateIndex>
+      <LeadID>221</LeadID>
+      <LeadName>Compression Depth</LeadName>
+      <SampleNumber>0</SampleNumber>
+      <SampleRate>100</SampleRate>
+    </Event>
+    <Event Type="PowerOff">
+      <ID>5</ID>
+      <DateTime>2023-01-11T14:01:21.4</DateTime>
+      <AdjustedTime>2023-01-11T14:01:24.4</AdjustedTime>
+      <Label>LUCAS 3 Strom aus</Label>
+      <TemplateIndex>-1</TemplateIndex>
+      <LeadID>221</LeadID>
+      <LeadName>Compression Depth</LeadName>
+      <SampleNumber>30140</SampleNumber>
+      <SampleRate>100</SampleRate>
+      <Values>
+        <Value DataType="String" Type="DeviceModel">LUCAS</Value>
+      </Values>
+    </Event>
+  </Events>
+  <PowerOnDateTime>2023-01-11T13:56:20</PowerOnDateTime>
+  <IncidentID>2023011113562000-LUCAS3-0000X000</IncidentID>
+  <PatientRecordID>20230111135620000000X000</PatientRecordID>
+  <DisplayedPatientRecordID>2023011113562000</DisplayedPatientRecordID>
+  <ReportEventID>-1</ReportEventID>
+  <ElapsedTime>PT5M1.4S</ElapsedTime>
+  <DeviceTimeCorrection>PT3S</DeviceTimeCorrection>
+  <Total12Leads>0</Total12Leads>
+  <TotalPaced>PT0S</TotalPaced>
+  <TotalShocks>0</TotalShocks>
+  <ReportGain>1000</ReportGain>
+  <ReportSweepSpeed>2500</ReportSweepSpeed>
+  <ReportLowPass>-1</ReportLowPass>
+  <ReportHighPass>-0.01</ReportHighPass>
+  <ReportGUID>1bcc8430-0a93-4040-bdd3-7f3a50ec21b8</ReportGUID>
+  <FilterBitMap>-1</FilterBitMap>
+  <AudioStatus>None</AudioStatus>
+  <CheckSum>-1</CheckSum>
+  <ForwardingInstructions>
+    <Type>None</Type>
+    <Status>Unknown</Status>
+    <Format>Unknown</Format>
+    <Priority>Unknown</Priority>
+    <DateTime>1900-01-01T00:00:00</DateTime>
+  </ForwardingInstructions>
+  <Converter>
+    <ID>Physio-Control LifeNetLucasToDevObj</ID>
+    <Version>21.0.0.1</Version>
+    <Converted>2023-01-12T12:02:52.632</Converted>
+  </Converter>
+</Report>

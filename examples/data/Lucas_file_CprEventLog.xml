@@ -1,0 +1,2340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report Type="CprEventLog" Version="1.3" Generated="2023-01-17T15:26:01.21817" IncidentID="2023011112515400-LUCAS3-0000X000" PatientID="2023011112515400-0000X000" SoftwareVersion="11.0.0.1036">
+  <DeviceID>LUCAS3-0000X000</DeviceID>
+  <DeviceType>LUCAS</DeviceType>
+  <CDACVersion>-1</CDACVersion>
+  <CPRAnnotationEdited>false</CPRAnnotationEdited>
+  <PowerOn>2023-01-11T12:51:54.00000</PowerOn>
+  <ProcessingStatus>0</ProcessingStatus>
+  <Events>
+    <Event Type="PowerOn">
+      <ElapsedTime>PT0S</ElapsedTime>
+      <DeviceTime>2023-01-11T12:51:54.00000</DeviceTime>
+      <AdjustedTime>2023-01-11T12:51:49.00000</AdjustedTime>
+      <Description>LUCAS 3 Strom ein</Description>
+      <Values>
+        <Value DataType="String" Type="DeviceModel">LUCAS</Value>
+      </Values>
+    </Event>
+    <Event Type="LucasAdjustMode">
+      <ElapsedTime>PT0S</ElapsedTime>
+      <DeviceTime>2023-01-11T12:51:54.00000</DeviceTime>
+      <AdjustedTime>2023-01-11T12:51:49.00000</AdjustedTime>
+      <Description>Modus "Anpassen"</Description>
+      <Values />
+    </Event>
+    <Event Type="ExternalPowerConnected">
+      <ElapsedTime>PT1S</ElapsedTime>
+      <DeviceTime>2023-01-11T12:51:55.00000</DeviceTime>
+      <AdjustedTime>2023-01-11T12:51:50.00000</AdjustedTime>
+      <Description>Externe Stromversorgung verbunden</Description>
+      <Values />
+    </Event>
+    <Event Type="FirstCompression">
+      <ElapsedTime>PT3M26S</ElapsedTime>
+      <DeviceTime>22023-01-11T13:03:10.17000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:03:05.76000</AdjustedTime>
+      <Description>Erste LUCAS-Kompression</Description>
+      <Values />
+    </Event>
+    <Event Type="ValidDataStateStart">
+      <ElapsedTime>PT3M26.01S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:03:10.17000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:03:05.76000</AdjustedTime>
+      <Description>Start of Valid Data State</Description>
+      <Values />
+    </Event>
+    <Event Type="LucasContinuousMode">
+      <ElapsedTime>PT18M48S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:42.00000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:37.00000</AdjustedTime>
+      <Description>Kontinuierlicher Modus</Description>
+      <Values />
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M48.14S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:42.14000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:37.14000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">103.44827586206897</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M48.72S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:42.72000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:37.72000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">103.44827586206897</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M49.3S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:43.30000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:38.30000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">103.44827586206897</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M49.88S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:43.88000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:38.88000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">103.44827586206897</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M50.46S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:44.46000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:39.46000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">103.44827586206897</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M51.07S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:45.07000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:40.07000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">98.360655737704917</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M51.63S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:45.63000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:40.63000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">107.14285714285714</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M52.23S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:46.23000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:41.23000</AdjustedTime>
+      <Values>
+        <Value DataType="Decimal" Type="Rate">100</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M52.82S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:46.82000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:41.82000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M53.41S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:47.41000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:42.41000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M54S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:48.00000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:43.00000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M54.59S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:48.59000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:43.59000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M55.19S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:49.19000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:44.19000</AdjustedTime>
+      <Values>
+        <Value DataType="Decimal" Type="Rate">100</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M55.78S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:49.78000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:44.78000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M56.37S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:50.37000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:45.37000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M56.96S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:50.96000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:45.96000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M57.55S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:51.55000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:46.55000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M58.15S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:52.15000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:47.15000</AdjustedTime>
+      <Values>
+        <Value DataType="Decimal" Type="Rate">100</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M58.73S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:52.73000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:47.73000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">103.44827586206897</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M59.32S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:53.32000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:48.32000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT18M59.91S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:53.91000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:48.91000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M0.5S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:54.50000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:49.50000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M1.09S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:55.09000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:50.09000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M1.68S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:55.68000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:50.68000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M2.27S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:56.27000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:51.27000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M2.86S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:56.86000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:51.86000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M3.45S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:57.45000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:52.45000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M4.04S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:58.04000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:53.04000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M4.63S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:58.63000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:53.63000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M5.22S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:59.22000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:54.22000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M5.81S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:10:59.81000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:54.81000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M6.4S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:00.40000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:55.40000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M6.99S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:00.99000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:55.99000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M7.58S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:01.58000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:56.58000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M8.17S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:02.17000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:57.17000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M8.76S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:02.76000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:57.76000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M9.35S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:03.35000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:58.35000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M9.94S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:03.94000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:58.94000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M10.53S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:04.53000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:10:59.53000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M11.12S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:05.12000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:00.12000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M11.71S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:05.71000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:00.71000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M12.3S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:06.30000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:01.30000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M12.89S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:06.89000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:01.89000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M13.48S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:07.48000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:02.48000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M14.07S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:08.07000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:03.07000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M14.66S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:08.66000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:03.66000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M15.25S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:09.25000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:04.25000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M15.84S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:09.84000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:04.84000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M16.43S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:10.43000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:05.43000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M17.02S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:11.02000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:06.02000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M17.61S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:11.61000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:06.61000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M18.2S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:12.20000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:07.20000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M18.79S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:12.79000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:07.79000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M19.38S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:13.38000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:08.38000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M19.97S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:13.97000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:08.97000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M20.56S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:14.56000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:09.56000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M21.15S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:15.15000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:10.15000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M21.74S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:15.74000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:10.74000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M22.33S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:16.33000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:11.33000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M22.92S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:16.92000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:11.92000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M23.51S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:17.51000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:12.51000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M24.1S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:18.10000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:13.10000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M24.69S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:18.69000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:13.69000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M25.28S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:19.28000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:14.28000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M25.87S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:19.87000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:14.87000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M26.46S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:20.46000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:15.46000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M27.05S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:21.05000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:16.05000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M27.64S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:21.64000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:16.64000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M28.23S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:22.23000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:17.23000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M28.82S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:22.82000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:17.82000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M29.41S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:23.41000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:18.41000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M30S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:24.00000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:19.00000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M30.59S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:24.59000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:19.59000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M31.18S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:25.18000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:20.18000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M31.77S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:25.77000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:20.77000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M32.36S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:26.36000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:21.36000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M32.95S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:26.95000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:21.95000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M33.54S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:27.54000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:22.54000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M34.13S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:28.13000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:23.13000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M34.72S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:28.72000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:23.72000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M35.31S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:29.31000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:24.31000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M35.9S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:29.90000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:24.90000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M36.49S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:30.49000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:25.49000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M37.08S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:31.08000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:26.08000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M37.67S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:31.67000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:26.67000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M38.26S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:32.26000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:27.26000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M38.85S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:32.85000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:27.85000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M39.44S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:33.44000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:28.44000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M40.03S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:34.03000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:29.03000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M40.62S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:34.62000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:29.62000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M41.21S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:35.21000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:30.21000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M41.8S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:35.80000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:30.80000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M42.39S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:36.39000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:31.39000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M42.98S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:36.98000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:31.98000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M43.57S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:37.57000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:32.57000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M44.16S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:38.16000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:33.16000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M44.75S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:38.75000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:33.75000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M45.34S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:39.34000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:34.34000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M45.93S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:39.93000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:34.93000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M46.52S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:40.52000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:35.52000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M47.11S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:41.11000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:36.11000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M47.7S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:41.70000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:36.70000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M48.29S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:42.29000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:37.29000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M48.88S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:42.88000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:37.88000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M49.47S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:43.47000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:38.47000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M50.06S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:44.06000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:39.06000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M50.65S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:44.65000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:39.65000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M51.24S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:45.24000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:40.24000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M51.83S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:45.83000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:40.83000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M52.42S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:46.42000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:41.42000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M53.01S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:47.01000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:42.01000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M53.6S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:47.60000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:42.60000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M54.19S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:48.19000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:43.19000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M54.78S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:48.78000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:43.78000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M55.37S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:49.37000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:44.37000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M55.96S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:49.96000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:44.96000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M56.55S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:50.55000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:45.55000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M57.14S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:51.14000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:46.14000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M57.73S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:51.73000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:46.73000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M58.32S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:52.32000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:47.32000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M58.91S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:52.91000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:47.91000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT19M59.5S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:53.50000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:48.50000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M0.09S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:54.09000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:49.09000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M0.68S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:54.68000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:49.68000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M1.27S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:55.27000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:50.27000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M1.86S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:55.86000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:50.86000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M2.45S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:56.45000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:51.45000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M3.04S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:57.04000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:52.04000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M3.63S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:57.63000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:52.63000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M4.22S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:58.22000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:53.22000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M4.81S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:58.81000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:53.81000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M5.4S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:59.40000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:54.40000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M5.99S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:11:59.99000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:54.99000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M6.58S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:00.58000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:55.58000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M7.17S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:01.17000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:56.17000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M7.76S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:01.76000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:56.76000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M8.35S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:02.35000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:57.35000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M8.94S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:02.94000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:57.94000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M9.53S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:03.53000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:58.53000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M10.12S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:04.12000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:59.12000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M10.71S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:04.71000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:11:59.71000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M11.3S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:05.30000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:00.30000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M11.89S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:05.89000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:00.89000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M12.48S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:06.48000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:01.48000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M13.07S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:07.07000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:02.07000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M13.66S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:07.66000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:02.66000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M14.25S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:08.25000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:03.25000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M14.84S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:08.84000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:03.84000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M15.43S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:09.43000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:04.43000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="LucasPauseMode">
+      <ElapsedTime>PT20M16S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:10.00000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:05.00000</AdjustedTime>
+      <Description>Pausenmodus</Description>
+      <Values />
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M16.02S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:10.02000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:05.02000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="LucasContinuousMode">
+      <ElapsedTime>PT20M57S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:51.00000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:46.00000</AdjustedTime>
+      <Description>Kontinuierlicher Modus</Description>
+      <Values />
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M57.94S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:51.94000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:46.94000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">107.14285714285714</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M58.5S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:52.50000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:47.50000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">107.14285714285714</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M59.08S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:53.08000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:48.08000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">103.44827586206897</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT20M59.68S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:53.68000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:48.68000</AdjustedTime>
+      <Values>
+        <Value DataType="Decimal" Type="Rate">100</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M0.26S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:54.26000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:49.26000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">103.44827586206897</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M0.85S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:54.85000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:49.85000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M1.44S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:55.44000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:50.44000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M2.03S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:56.03000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:51.03000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M2.62S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:56.62000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:51.62000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M3.21S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:57.21000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:52.21000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M3.81S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:57.81000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:52.81000</AdjustedTime>
+      <Values>
+        <Value DataType="Decimal" Type="Rate">100</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M4.4S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:58.40000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:53.40000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M4.99S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:58.99000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:53.99000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M5.59S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:12:59.59000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:54.59000</AdjustedTime>
+      <Values>
+        <Value DataType="Decimal" Type="Rate">100</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M6.18S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:00.18000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:55.18000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M6.77S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:00.77000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:55.77000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M7.36S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:01.36000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:56.36000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M7.94S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:01.94000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:56.94000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">103.44827586206897</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M8.53S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:02.53000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:57.53000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M9.12S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:03.12000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:58.12000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M9.71S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:03.71000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:58.71000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M10.3S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:04.30000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:59.30000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M10.89S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:04.89000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:12:59.89000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M11.48S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:05.48000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:00.48000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M12.07S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:06.07000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:01.07000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M12.66S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:06.66000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:01.66000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M13.25S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:07.25000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:02.25000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M13.84S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:07.84000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:02.84000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M14.43S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:08.43000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:03.43000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M15.02S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:09.02000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:04.02000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M15.61S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:09.61000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:04.61000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M16.2S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:10.20000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:05.20000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M16.79S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:10.79000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:05.79000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M17.38S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:11.38000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:06.38000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M17.97S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:11.97000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:06.97000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M18.56S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:12.56000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:07.56000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M19.15S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:13.15000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:08.15000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M19.74S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:13.74000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:08.74000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M20.33S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:14.33000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:09.33000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M20.92S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:14.92000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:09.92000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M21.51S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:15.51000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:10.51000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M22.1S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:16.10000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:11.10000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M22.69S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:16.69000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:11.69000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M23.28S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:17.28000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:12.28000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M23.87S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:17.87000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:12.87000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M24.46S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:18.46000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:13.46000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M25.05S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:19.05000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:14.05000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M25.64S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:19.64000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:14.64000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M26.23S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:20.23000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:15.23000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M26.82S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:20.82000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:15.82000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M27.41S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:21.41000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:16.41000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M28S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:22.00000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:17.00000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M28.59S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:22.59000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:17.59000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M29.18S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:23.18000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:18.18000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M29.77S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:23.77000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:18.77000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M30.36S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:24.36000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:19.36000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M30.95S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:24.95000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:19.95000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M31.54S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:25.54000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:20.54000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M32.13S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:26.13000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:21.13000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M32.72S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:26.72000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:21.72000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M33.31S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:27.31000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:22.31000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M33.9S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:27.90000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:22.90000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M34.49S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:28.49000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:23.49000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M35.08S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:29.08000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:24.08000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M35.67S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:29.67000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:24.67000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M36.26S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:30.26000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:25.26000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M36.85S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:30.85000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:25.85000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M37.44S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:31.44000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:26.44000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M38.03S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:32.03000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:27.03000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M38.62S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:32.62000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:27.62000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M39.21S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:33.21000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:28.21000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M39.8S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:33.80000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:28.80000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M40.39S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:34.39000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:29.39000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M40.98S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:34.98000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:29.98000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M41.57S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:35.57000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:30.57000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M42.16S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:36.16000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:31.16000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M42.75S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:36.75000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:31.75000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M43.34S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:37.34000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:32.34000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M43.93S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:37.93000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:32.93000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M44.52S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:38.52000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:33.52000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M45.11S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:39.11000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:34.11000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M45.7S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:39.70000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:34.70000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M46.29S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:40.29000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:35.29000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M46.88S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:40.88000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:35.88000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M47.47S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:41.47000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:36.47000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M48.06S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:42.06000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:37.06000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M48.65S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:42.65000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:37.65000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M49.24S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:43.24000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:38.24000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M49.83S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:43.83000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:38.83000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M50.42S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:44.42000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:39.42000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M51.01S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:45.01000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:40.01000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M51.6S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:45.60000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:40.60000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M52.19S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:46.19000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:41.19000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M52.78S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:46.78000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:41.78000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M53.37S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:47.37000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:42.37000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M53.96S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:47.96000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:42.96000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M54.55S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:48.55000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:43.55000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M55.14S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:49.14000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:44.14000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <ElapsedTime>PT21M55.73S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:49.73000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:44.73000</AdjustedTime>
+      <Values>
+        <Value DataType="String" Type="Rate">101.69491525423729</Value>
+        <Value DataType="String" Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="LucasPauseMode">
+      <ElapsedTime>PT21M56S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:50.00000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:45.00000</AdjustedTime>
+      <Description>Pausenmodus</Description>
+      <Values />
+    </Event>
+    <Event Type="LastCompression">
+      <ElapsedTime>PT21M56S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:50.00000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:45.00000</AdjustedTime>
+      <Description>Letzte LUCAS-Kompression</Description>
+      <Values />
+    </Event>
+    <Event Type="ValidDataStateStop">
+      <ElapsedTime>PT21M59.79S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:53.79000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:48.79000</AdjustedTime>
+      <Description>Stop of Valid Data State</Description>
+      <Values />
+    </Event>
+    <Event Type="PowerOff">
+      <ElapsedTime>PT21M59.8S</ElapsedTime>
+      <DeviceTime>2023-01-11T13:13:53.80000</DeviceTime>
+      <AdjustedTime>2023-01-11T13:13:48.80000</AdjustedTime>
+      <Description>LUCAS 3 Strom aus</Description>
+      <Values>
+        <Value DataType="String" Type="DeviceModel">LUCAS</Value>
+      </Values>
+    </Event>
+  </Events>
+</Report>

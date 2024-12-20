@@ -1,0 +1,47 @@
+[project]
+name = "vitabel"
+version = "0.1.0"
+description = "A toolbox for plotting and interactively labeling vital data."
+authors = [
+    {name = "Wolfgang J. Kern", email = "wolfgangjohannkern@gmail.com"},
+    {name = "Benjamin Hackl", email = "benjamin.hackl@uni-graz.at"},
+    {name = "Simon Orlob", email = "simon.orlob@medunigraz.at"},
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.2.3",
+    "numpy<2.0.0",
+    "matplotlib<3.10",
+    "scipy>=1.14.1",
+    "ipython>=8.30.0",
+    "antropy>=0.1.6",
+    "pyedflib>=0.1.38",
+    "vitaldb>=1.4.11",
+    "ipywidgets>=8.1.5",
+    "ipympl>=0.9.5",
+    "ipykernel>=6.29.5",
+]
+
+[project.urls]
+repository = "https://github.com/UniGrazMath/vitabel"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.3.4",
+    "ruff>=0.8.3",
+    "pytest-cov>=6.0.0",
+    "pytest-mpl>=0.17.0",
+]
+
+[tool.pytest.ini_options]
+addopts = ["--cov=vitabel", "--cov-report=term-missing", "--mpl", "--mpl-baseline-path=tests/data"]
+testpaths = ["tests"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F403"]
