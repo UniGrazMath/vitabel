@@ -322,6 +322,7 @@ def test_channel_to_and_from_dict():
         "time_unit": "s",
         "time_start": "2020-02-02 12:00:00",
         "offset": 0,
+        "is_interval": False,
         "data": [None, "test"],
         "plotstyle": {
             "marker": "o",
@@ -346,7 +347,6 @@ def test_channel_to_and_from_dict():
             "time_start": "2020-02-02 12:00:00",
             "offset": 0,
             "labels": [label_dict_expected],
-            "interval_labels": [],
             "plotstyle": {},
             "metadata": {
                 "creator": "Tester",
