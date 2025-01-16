@@ -5,7 +5,7 @@ description = "A toolbox for plotting and interactively labeling vital data."
 authors = [
     {name = "Wolfgang J. Kern", email = "wolfgangjohannkern@gmail.com"},
     {name = "Benjamin Hackl", email = "benjamin.hackl@uni-graz.at"},
-    {name = "Simon Orlob", email = "simon.orlob@medunigraz.at"},
+    {name = "Simon Orlob", email = "science@orlob.md"},
 ]
 license = { file = "LICENSE" }
 readme = "README.md"
