@@ -1,0 +1,28 @@
+name: "Release"
+
+on:
+  release:
+    types: ["published"]
+
+jobs:
+  run:
+    name: "Publish release"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v5
+      
+      - name: Install dependencies and package
+        run: uv sync
+      
+      - name: Build package for distribution
+        run: uv build
+      
+      - name: Publish package
+        run: uv publish
