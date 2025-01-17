@@ -2,7 +2,9 @@
 __pycache__
 
 dist
+.cache
 
+.jupyterlite.doit.db
 .ipynb_checkpoints
 .venv
 
