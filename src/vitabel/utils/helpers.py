@@ -1,6 +1,5 @@
 """Collection of various auxiliary and helper functions."""
 
-import antropy
 import base64
 import datetime
 import io
@@ -610,7 +609,7 @@ def ek_feature(ekg):  # Compute a variety of ecg-features (mostly Elola 2020)
     cond = (freq > 17.5) & (freq < 30)
     ecg_fib_pow = np.sum(np.square(s_ecg[cond]))  # *250/2000
 
-    hjmob, hjcomp = antropy.hjorth_params(ek_filt)
+    hjmob, hjcomp = _hjorth_params(ek_filt)
     ecg_skew = stats.skew(ek_filt)
     ek_class2 = [
         rr_mean,
@@ -822,7 +821,7 @@ def ekg_acc_corr1(acctime, acc, ekg, nperse=1000, window=""):  # Compute Feature
                 acc_ensemble = np.vstack([acc_ensemble, ac1])
     else:
         acc_ensemble = np.random.randn(5, 120)
-    spec_ent_acc = antropy.spectral_entropy(acc, sf=250, normalize=True, method="welch")
+    spec_ent_acc = _spectral_entropy_welch(acc, sf=250, normalize=True)
 
     ac_f = acc_feature(acc, acc_ensemble)
     ek_f = ek_feature(ekg)
@@ -1091,3 +1090,64 @@ def linear_interpolate_gaps_in_recording(
         time = np.insert(time, start_index, time_in_gap)
         data = np.insert(data, start_index, data_in_gap)
     return time, data
+
+
+def _hjorth_params(x, axis=-1):
+    """Calculate Hjorth mobility and complexity on given axis.
+    
+    Ported from `antropy <https://github.com/raphaelvallat/antropy/blob/98970eb012771951d52b42696fa5f69aa39e6f6b/src/antropy/entropy.py#L937>`__.
+    
+    References
+    ----------
+    - https://en.wikipedia.org/wiki/Hjorth_parameters
+    - https://doi.org/10.1016%2F0013-4694%2870%2990143-4
+
+    """
+    x = np.asarray(x)
+    x_var = np.var(x, axis=axis)
+
+    dx = np.diff(x, axis=axis)
+    dx_var = np.var(dx, axis=axis)
+
+    ddx = np.diff(dx, axis=axis)
+    ddx_var = np.var(ddx, axis=axis)
+
+    mobility = np.sqrt(dx_var / x_var)
+    complexity = np.sqrt(ddx_var / dx_var) / mobility
+    return mobility, complexity
+
+
+# spec_ent_acc = antropy.spectral_entropy(acc, sf=250, normalize=True, method="welch")
+def _xlogx(x, base=2):
+    r"""Return :math:`x \log_b x` if :math:`x` is positive,
+    0 for :math:`x = 0`, and ``numpy.nan`` otherwise.
+
+    Ported from `antropy <https://github.com/raphaelvallat/antropy/blob/98970eb012771951d52b42696fa5f69aa39e6f6b/src/antropy/utils.py#L131>`__.
+    """
+    x = np.asarray(x)
+    xlogx = np.zeros(x.shape)
+    xlogx[x < 0] = np.nan
+    positive = x > 0
+    xlogx[positive] = x[positive] * np.log(x[positive]) / np.log(base)
+    return xlogx
+
+
+def _spectral_entropy_welch(x, sf, normalize=False, nperseg=None, axis=-1):
+    """Spectral Entropy via welch periodogram.
+    
+    Ported from `antropy <https://github.com/raphaelvallat/antropy/blob/98970eb012771951d52b42696fa5f69aa39e6f6b/src/antropy/entropy.py#L147>`__.
+
+
+    References
+    ----------
+    - https://en.wikipedia.org/wiki/Spectral_density
+    - https://en.wikipedia.org/wiki/Welch%27s_method
+
+    """
+    x = np.asarray(x)
+    _, psd = sgn.welch(x, sf, nperseg=nperseg, axis=axis)
+    psd_norm = psd / psd.sum(axis=axis, keepdims=True)
+    se = (-1)*_xlogx(psd_norm).sum(axis=axis)
+    if normalize:
+        se /= np.log2(psd_norm.shape[axis])
+    return se
