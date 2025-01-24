@@ -426,7 +426,7 @@ wheels = [
 
 [package.optional-dependencies]
 toml = [
-    { name = "tomli", marker = "python_full_version <= '3.11'" },
+    { name = "tomli", marker = "python_full_version == '3.11'" },
 ]
 
 [[package]]
@@ -1594,6 +1594,8 @@ version = "6.1.1"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/1f/5a/07871137bb752428aa4b659f910b399ba6f291156bdea939be3e96cae7cb/psutil-6.1.1.tar.gz", hash = "sha256:cf8496728c18f2d0b45198f06895be52f36611711746b7f30c464b422b50e2f5", size = 508502 }
 wheels = [
+    { url = "https://files.pythonhosted.org/packages/d2/d4/8095b53c4950f44dc99b8d983b796f405ae1f58d80978fcc0421491b4201/psutil-6.1.1-cp27-none-win32.whl", hash = "sha256:6d4281f5bbca041e2292be3380ec56a9413b790579b8e593b1784499d0005dac", size = 246855 },
+    { url = "https://files.pythonhosted.org/packages/b1/63/0b6425ea4f2375988209a9934c90d6079cc7537847ed58a28fbe30f4277e/psutil-6.1.1-cp27-none-win_amd64.whl", hash = "sha256:c777eb75bb33c47377c9af68f30e9f11bc78e0f07fbf907be4a5d70b2fe5f030", size = 250110 },
     { url = "https://files.pythonhosted.org/packages/61/99/ca79d302be46f7bdd8321089762dd4476ee725fce16fc2b2e1dbba8cac17/psutil-6.1.1-cp36-abi3-macosx_10_9_x86_64.whl", hash = "sha256:fc0ed7fe2231a444fc219b9c42d0376e0a9a1a72f16c5cfa0f68d19f1a0663e8", size = 247511 },
     { url = "https://files.pythonhosted.org/packages/0b/6b/73dbde0dd38f3782905d4587049b9be64d76671042fdcaf60e2430c6796d/psutil-6.1.1-cp36-abi3-macosx_11_0_arm64.whl", hash = "sha256:0bdd4eab935276290ad3cb718e9809412895ca6b5b334f5a9111ee6d9aff9377", size = 248985 },
     { url = "https://files.pythonhosted.org/packages/17/38/c319d31a1d3f88c5b79c68b3116c129e5133f1822157dd6da34043e32ed6/psutil-6.1.1-cp36-abi3-manylinux_2_12_i686.manylinux2010_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:b6e06c20c05fe95a3d7302d74e7097756d4ba1247975ad6905441ae1b5b66003", size = 284488 },
@@ -1628,6 +1630,42 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/1d/b2/31537cf4b1ca988837256c910a668b553fceb8f069bedc4b1c826024b52c/pycparser-2.22.tar.gz", hash = "sha256:491c8be9c040f5390f5bf44a5b07752bd07f56edf992381b05c701439eec10f6", size = 172736 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/13/a3/a812df4e2dd5696d1f351d58b8fe16a405b234ad2886a0dab9183fb78109/pycparser-2.22-py3-none-any.whl", hash = "sha256:c3702b6d3dd8c7abc1afa565d7e63d53a1d0bd86cdc24edd75470f4de499cfcc", size = 117552 },
+]
+
+[[package]]
+name = "pyedflib"
+version = "0.1.38"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/25/5f/8b63b5cc4f27526ffe99a21fee2531aa877d85d3ca84ec65101623d4c588/pyedflib-0.1.38.tar.gz", hash = "sha256:6a0fe727ea4cf18de63c6ede43a6c2d151f474aba6ebde0c6f9a5cf09711bbdd", size = 2148716 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f8/fb/39eedbdd0466a087e0fdce82ac51b67491d596886f375c05ada79c3c0396/pyEDFlib-0.1.38-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:9b8e8b92d697f31c30d30b505e56b518d9f53a8d3372fdc74feeb0388ac8c319", size = 2207927 },
+    { url = "https://files.pythonhosted.org/packages/18/71/e0b2f900a26474446e9fc8f90bbe06d6fac620b6ef677cff9c0d3a6dc2ef/pyEDFlib-0.1.38-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:2e851a344946752abaf9811a9cb3bc13f0d9cd08725c9871daee4e500babbee7", size = 2198551 },
+    { url = "https://files.pythonhosted.org/packages/d3/da/a8b0d09b86772923ed43f4301a4a757d63addb684abeead1b92abe0d71c0/pyEDFlib-0.1.38-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3dec3668f247d186b67a43764411f2f5f989968d1e4cce5b5bb50dcb068c7166", size = 2665147 },
+    { url = "https://files.pythonhosted.org/packages/74/2c/db215a1f69f4de0d9a0d87e6f06f4bc80642ab7fe85f11578228c786e185/pyEDFlib-0.1.38-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b9ec363d2549351e67046df6319468c1c4ef48120ed1d62c214de40a04a62b2b", size = 2680752 },
+    { url = "https://files.pythonhosted.org/packages/17/77/1819c8f6e98d6cd23bd27f2f837debe2e47372e11710f79d795f673a512a/pyEDFlib-0.1.38-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:a4091585e38ce3a5ff8f5ec9b917fc3deb0787bc122cfd52bf40cf7e61ff10ec", size = 2647141 },
+    { url = "https://files.pythonhosted.org/packages/0e/96/e21c0917282d2ad580043a965abe4fa860f6fa3c4695d60b16e9aca4f9a2/pyEDFlib-0.1.38-cp310-cp310-musllinux_1_2_i686.whl", hash = "sha256:49cd5a8d8a9c0f2e21fe74ca6eca420617383d163f79142d34ff4c790a1faf49", size = 2642719 },
+    { url = "https://files.pythonhosted.org/packages/de/10/11b7c5073c4b2aff1bb83fa4a3ae7e289b82a5170789f401f0c7bcc4f0d5/pyEDFlib-0.1.38-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:47e037bc273f76bd6e7ab6284917a958797db6880933b21f11a23d7f076b250f", size = 2663548 },
+    { url = "https://files.pythonhosted.org/packages/19/60/779ee428a285f8efb75b3b5fbeba2eb10c8576fa2a3aa7e7bbf89bc72853/pyEDFlib-0.1.38-cp310-cp310-win32.whl", hash = "sha256:87cfaab20b67689965af98750b4427b8d5f5832967ad511e28c33a25122000e0", size = 2181257 },
+    { url = "https://files.pythonhosted.org/packages/64/59/3dacf10d7ee76c3439e49021c3ec9815cde4eed3d8f850e99af45eeaaff1/pyEDFlib-0.1.38-cp310-cp310-win_amd64.whl", hash = "sha256:99c2f5382def5d3b0a7990c72ae219ccbd404b30a59f6ee08adabc1677e5605a", size = 2192942 },
+    { url = "https://files.pythonhosted.org/packages/9d/21/47cc7f282474c361536edf04a974e15149eae959f7e1ae98a02c26c10156/pyEDFlib-0.1.38-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:3055460e7b8f4bfb5e950ba5032017006654cfbc44ee2c9bd0a1cf966d2f9dde", size = 2209563 },
+    { url = "https://files.pythonhosted.org/packages/2b/53/22c30f2049fa2624b86dee9e2625faaeac0233c1417886bcb294467d00be/pyEDFlib-0.1.38-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:865fcbb658925b2f971672d8aef6c0482abee340988e75f4d16815aa8ee0a0bf", size = 2199442 },
+    { url = "https://files.pythonhosted.org/packages/77/39/4b6294dccbc85aeee9b0a553a046605e6b441c8ed0322aa106d134773ed0/pyEDFlib-0.1.38-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:549cb7188235a41ccd9b1f2acbe614739d5ad01d05bb1d28c750205c2a44c4dd", size = 2698828 },
+    { url = "https://files.pythonhosted.org/packages/8b/ec/e7f651d44bacd8390e23dcd8f2e2e3a49541f2698c1d0ee357eaf882c12d/pyEDFlib-0.1.38-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7a44ac4ddf9c75116b3d60955a6ef70c2d31f7028c5b60aad11cb4bc6ea0a82c", size = 2712161 },
+    { url = "https://files.pythonhosted.org/packages/83/76/135c407661a409ee1db676738aec60e92c8c77d8179e76990e4cbc234c49/pyEDFlib-0.1.38-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:e4d96733cdf24bf738c9bee2398bff3c566ababe60441a24fb15d4af39939140", size = 2685520 },
+    { url = "https://files.pythonhosted.org/packages/cf/ce/86a2b0e04773a17e7c662b270199c52b84f92f4ab835a07d059e3ac53e24/pyEDFlib-0.1.38-cp311-cp311-musllinux_1_2_i686.whl", hash = "sha256:89b8100c6e9bf5a94a86ea09d8a69181b30d6f9b3726541630913a562de73672", size = 2678912 },
+    { url = "https://files.pythonhosted.org/packages/90/f1/14ae1f1ee56a381c509fbe98a0e16fc537ca43362a3a1e8a008451b7e34d/pyEDFlib-0.1.38-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:af3b12b31d0d8647466f41b9887304c38b45e617b0b25ced7f0a91b739ff0196", size = 2689136 },
+    { url = "https://files.pythonhosted.org/packages/e4/12/9d6559fb9e5c9deeab4e326c07a60f2a8910862e70845b51599404f91bf7/pyEDFlib-0.1.38-cp311-cp311-win32.whl", hash = "sha256:1581a132d94c0bd5d7bb9cf08446faf41e89b8cb6ee1bd9946cc3c08d870db89", size = 2181248 },
+    { url = "https://files.pythonhosted.org/packages/c9/21/db3a777e23cf160f9dc20f20a4a09b6414698b3df94977b75e4078da942f/pyEDFlib-0.1.38-cp311-cp311-win_amd64.whl", hash = "sha256:4c045c2161c6c683a13826949032c0eeb4116b2285d92436685222d3e861bfd1", size = 2193195 },
+    { url = "https://files.pythonhosted.org/packages/81/97/77ed8c043d5a4159f925c538b8732959e630c4f30b1ae3d9836a5f85064d/pyEDFlib-0.1.38-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:3f24bd990f79ce0f1896132b74041cf20986975e9cc5aae8238d3dc45351c0e3", size = 2211536 },
+    { url = "https://files.pythonhosted.org/packages/5f/37/921524fca6f2e873984f2a612fb73bf680c173e0012380e2cd83b87b73cb/pyEDFlib-0.1.38-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:9b3f55b8bc712d615a9bbac5d47cbc7a737ee64db19436baaf4769b79a9dcab3", size = 2200748 },
+    { url = "https://files.pythonhosted.org/packages/69/49/445691095fe7c01906c40a9a66dbe6cd1b926af24ba3cc3852943d8aa454/pyEDFlib-0.1.38-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b489405e332b875ee253d1a267055d2da2e29a2f38ce7beff891f0bb6edfa615", size = 2701660 },
+    { url = "https://files.pythonhosted.org/packages/3b/27/b5052b3fd6746f41965da9fdcee598808f92e9bff2893f40da283023efbd/pyEDFlib-0.1.38-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c8464d6b42c240a19c67fbf02e05011bc055c5b702e9021376987822ece31c05", size = 2716604 },
+    { url = "https://files.pythonhosted.org/packages/49/e1/765b866c9b07c2563a967af16e775955a081885a91c7fa98f6df4b3ae394/pyEDFlib-0.1.38-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:1bd06e28e67e4ecd623c1db32cdd6cb333c81ab0d247ab51a9be4d62784ad056", size = 2696137 },
+    { url = "https://files.pythonhosted.org/packages/6d/0c/2700631b5e9551b75d34837fc1b07bce1b49d292cc60a59c0e6e9430442d/pyEDFlib-0.1.38-cp312-cp312-win32.whl", hash = "sha256:107825562d03e24b4fdfff9eb6d3eccbe6e4229898b1b683e6cac693b5bcb133", size = 2181752 },
+    { url = "https://files.pythonhosted.org/packages/89/59/96b153d2bb0e06566a46fba124aeba367a755635938e6c61ff4d9f3a8ac7/pyEDFlib-0.1.38-cp312-cp312-win_amd64.whl", hash = "sha256:6a49c6bd5e5ca265fec0f00b60e10516d6b6b6ff3e3d4824fd9390e8a922fe6d", size = 2194520 },
 ]
 
 [[package]]
@@ -2346,7 +2384,7 @@ wheels = [
 
 [[package]]
 name = "vitabel"
-version = "0.0.2b1"
+version = "0.0.1"
 source = { editable = "." }
 dependencies = [
     { name = "ipykernel" },
@@ -2357,6 +2395,7 @@ dependencies = [
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "pandas" },
+    { name = "pyedflib" },
     { name = "scikit-learn" },
     { name = "scipy" },
     { name = "vitaldb" },
@@ -2384,6 +2423,7 @@ requires-dist = [
     { name = "matplotlib", specifier = "<3.10" },
     { name = "numpy", specifier = ">=2.0.0" },
     { name = "pandas", specifier = ">=2.2.3" },
+    { name = "pyedflib", specifier = ">=0.1.38" },
     { name = "scikit-learn", specifier = ">=1.5.2" },
     { name = "scipy", specifier = ">=1.14.1" },
     { name = "vitaldb", specifier = ">=1.4.11" },
