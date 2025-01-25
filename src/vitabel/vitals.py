@@ -10,7 +10,7 @@ import scipy.signal as sgn
 import logging
 import vitaldb
 
-from typing import Any, TypeAlias, Union
+from typing import Any
 
 from IPython.display import display
 from pathlib import Path
@@ -222,7 +222,7 @@ class Vitals:
                 )
                 dats = rename_channels(dats, constants.zoll2channelnames_dict)
 
-                logger.info(f"File: {filename }.xml" "successfully read!")
+                logger.info(f"File: {filename}.xmlsuccessfully read!")
         elif ".txt" in fileend_c:
             pure_filename = filename[: filename.index("_ecg")]
 
@@ -232,17 +232,17 @@ class Vitals:
             )
             dats = rename_channels(dats, constants.zoll2channelnames_dict)
 
-            logger.info(f"File: {filename } successfully read!")
+            logger.info(f"File: {filename} successfully read!")
         elif ".bdf" in fileend_c:
             pat_dat, dats = loading.read_corpuls(
                 dirpath.joinpath(Path(filename + ".bdf"))
             )
             dats = rename_channels(dats, constants.corpuls2channelnames_dict)
 
-            logger.info(f"File: {filename } successfully read!")
+            logger.info(f"File: {filename} successfully read!")
 
         elif fileend_c != []:
-            logger.error(f"Error: No method to read { fileend_c } files!")
+            logger.error(f"Error: No method to read {fileend_c} files!")
             return None
 
         if pat_dat:

@@ -1094,9 +1094,9 @@ def linear_interpolate_gaps_in_recording(
 
 def _hjorth_params(x, axis=-1):
     """Calculate Hjorth mobility and complexity on given axis.
-    
+
     Ported from `antropy <https://github.com/raphaelvallat/antropy/blob/98970eb012771951d52b42696fa5f69aa39e6f6b/src/antropy/entropy.py#L937>`__.
-    
+
     References
     ----------
     - https://en.wikipedia.org/wiki/Hjorth_parameters
@@ -1134,7 +1134,7 @@ def _xlogx(x, base=2):
 
 def _spectral_entropy_welch(x, sf, normalize=False, nperseg=None, axis=-1):
     """Spectral Entropy via welch periodogram.
-    
+
     Ported from `antropy <https://github.com/raphaelvallat/antropy/blob/98970eb012771951d52b42696fa5f69aa39e6f6b/src/antropy/entropy.py#L147>`__.
 
 
@@ -1147,7 +1147,7 @@ def _spectral_entropy_welch(x, sf, normalize=False, nperseg=None, axis=-1):
     x = np.asarray(x)
     _, psd = sgn.welch(x, sf, nperseg=nperseg, axis=axis)
     psd_norm = psd / psd.sum(axis=axis, keepdims=True)
-    se = (-1)*_xlogx(psd_norm).sum(axis=axis)
+    se = (-1) * _xlogx(psd_norm).sum(axis=axis)
     if normalize:
         se /= np.log2(psd_norm.shape[axis])
     return se
