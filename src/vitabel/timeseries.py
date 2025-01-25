@@ -1,3 +1,5 @@
+"""Module holding data structures for (annotated) time series data."""
+
 from __future__ import annotations
 
 from copy import copy

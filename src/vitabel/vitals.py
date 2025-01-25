@@ -1,3 +1,5 @@
+"""Core module, contains the central data container class :class:`Vitals`."""
+
 import json
 import os
 
@@ -1307,7 +1309,7 @@ class Vitals:
 
             The method is described in DOI: 10.1016/j.resuscitation.2021.12.028 or in the
             Thesis 'Towards a data-driven cardiac arrest treatment' by Wolfgang Kern in more detail.
-            See `https://unipub.uni-graz.at/obvugrhs/content/titleinfo/10138095`__ for more information.
+            See https://unipub.uni-graz.at/obvugrhs/content/titleinfo/10138095 for more information.
         """
         if (
             "cc" not in self.data.channel_names
