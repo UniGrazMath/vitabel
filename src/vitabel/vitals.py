@@ -15,7 +15,7 @@ from typing import Any
 from IPython.display import display
 from pathlib import Path
 
-from vitabel.timeseries import Channel, Label, IntervalLabel, TimeDataCollection
+from vitabel.timeseries import Channel, Label, IntervalLabel, TimeDataCollection, _timeseries_list_info
 from vitabel.utils import (
     loading,
     constants,
@@ -37,11 +37,13 @@ from vitabel.typing import (
 )
 
 
-logger = logging.getLogger("vitabel")
+logger: logging.Logger = logging.getLogger("vitabel")
+"""Global package logger."""
 
 
 class Vitals:
-    """Container for vital data and labels.
+    """Container for vital data and labels, central interface of this
+    package.
 
     The Vitals class supports adding data using various methods, such
     as loading data from files directly via :meth:`add_defibrillator_recording`,
@@ -73,6 +75,8 @@ class Vitals:
 
     def __init__(self):
         self.data: TimeDataCollection = TimeDataCollection()
+        """The internal data collection containing all channels and labels."""
+
         self.metadata: dict = {
             "Time_of_construction": str(
                 pd.Timestamp.now()
@@ -80,62 +84,71 @@ class Vitals:
             "Recording_files_added": [],
             "Saving_to_json_time": "",
         }
+        """Metadata dictionary containing information about the data collection."""
+
         self.start_time = 0  # Start Time for the entire case
-        self.channel_path = ""  # path where the channels are stored
-        self.label_path = ""  # path where the labels are stored
+        """The start time of the recording."""
 
     @property
     def channels(self) -> list[Channel]:
+        """List of all channels in the data collection."""
         return self.data.channels
 
     @property
     def labels(self) -> list[Label]:
+        """List of all labels in the data collection."""
         return self.data.labels
 
-    def print_data_summary(self):
+    def print_data_summary(self) -> None:
         """Print a summary of the data contained in the internal data collection."""
         self.data.print_summary()
 
-    # -------------------------------------------------------------------------------------------
-    # ---------------------- ADD RECORDINGS AND DATA --------------------------------------------
-    # -------------------------------------------------------------------------------------------
+    ###
+    ### Data import
+    ###
 
-    # Add a recording stored in filepath.
-    def add_defibrillator_recording(self, filepath: Path | str, metadata={}):
+    def add_defibrillator_recording(
+        self,
+        filepath: Path | str,
+        metadata={}
+    ) -> None:
         """Add the (defibrillator) recording to the cardio object.
 
-        Vitabel allows to import the following defibrillator files:
+        Imports from the following defibrillator device families are supported:
 
-            * ZOLL X-Series: Data needs to be exported as JSON or XML.
-            * ZOLL E-Series and ZOLL AED-Pro: Data needs to be exported in two
-              files as ``*_ecg.txt`` and ``*.xml``, where ``*`` is a wildcard string
-              for the filename. filepath should be the path to the ``*_ecg.txt``
-              file, and the xml-file should be placed in the same directory.
-            * Stryker LIFEPAK 15: Data needs to be exported to XML in Stryker's
-              CodeStat Software. At least the files ``*_Continuous.xml``,
-              ``*_Continuous_Waveform.xml``, and ``*_CprEventLog.xml`` need to
-              be present, such that a file can be loaded.
-              The filepath should be the path to the ``*_Continuous.xml`` file.
-              The other files should be in the same directory.
-            * Stryker LUCAS: Data needs to be exported to XML in Stryker's CodeStat
-              Software. At least the files ``*_Lucas.xml`` and
-              ``*_CprEventLog.xml`` should be present.
-              The filepath should be the path to the ``*_Lucas.xml`` file.
-            * Corpuls: The Data needs to be exported as BDF file in Corpuls analysis
-              software. During export the waveform data is stored in a ``*.bdf`` file,
-              while the remaining events are exported in a directory with various files.
-              The filepath should point to the ``*.bdf`` file. The Event-directory
-              should be in the same directory as the ``*.bdf`` file.
+        * **ZOLL X-Series:** data needs to be exported from device as JSON or XML.
+        * **ZOLL E-Series and ZOLL AED-Pro:** Data needs to be exported 
+          from the device in two files, ``filename_ecg.txt`` and ``filename.xml``,
+          where ``filename`` can be arbitrary. Both files are assumed to be in the
+          same directory. Pass the path to ``filename_ecg.txt`` to import the data.
+        * **Stryker LIFEPAK 15:** Data needs to be exported to XML in *Stryker's
+          CodeStat Software*. To load the data, we require at least the files
+          ``filename_Continuous.xml``, ``filename_Continuous_Waveform.xml``, and
+          ``filename_CprEventLog.xml``, where ``filename`` is an arbitrary prefix.
+          All files are assumed to be in the same directory. Pass the path
+          to ``filename_Continuous.xml`` to import the data.
+        * **Stryker LUCAS:** Data needs to be exported to XML in *Stryker's CodeStat
+          Software*. We require at leas the files ``filename_Lucas.xml`` and
+          ``filename_CprEventLog.xml``, where ``filename`` is an arbitrary prefix.
+          Both files are assumed to be in the same directory. Pass the path to
+          ``filename_Lucas.xml`` to import the data.
+        * **Corpuls:** The data needs to be exported as a *BDF file* in Corpuls
+          analysis software. The export will create a ``filename.bdf`` file,
+          containing the waveform data, as well as a directory with various other
+          files containing event logs. We assume this directory
+          is placed in the same directory as the ``.bdf`` file. Pass the path to
+          ``filename.bdf`` to import the data.
+
+        The actual loading routines are implemented in the :mod:`.utils.loading` module.
 
         Parameters
         ----------
-        filepath : pathlib.Path or str
-            The path to the defibrillator recording. The string is parsed to pathlib.Path to be used as a Pathlib object
-            The methods for loading the specific files are in the loading.py -Module
-        Returns
-        -------
-        None.
-
+        filepath
+            The path to a file exported from the defibrillator. Check the 
+            description above to see, depending on the device type, which
+            file path should be passed.
+        metadata
+            Metadata to be added to the imported data.
         """
         filepath = Path(filepath)
         if not filepath.exists():
@@ -297,12 +310,12 @@ class Vitals:
         self,
         vital_filepath: Path | str,
         metadata={"source": "VitalDB-Recording"},
-    ):
+    ) -> None:
         """Loading channels from a vitalDB recording.
 
         Parameters
         ----------
-        vital_filepath : Path | str
+        vital_filepath
             The path to the recording. Must be a ``*.vit`` file.
 
         Returns
@@ -314,7 +327,7 @@ class Vitals:
         df.set_index("Time", inplace=True, drop=True)
         self.add_data_from_DataFrame(df, metadata=metadata)
 
-    def add_old_cardio_label(self, file_path: Path | str):
+    def add_old_cardio_label(self, file_path: Path | str) -> None:
         """Add labels from old "cardio"-version of this code.
 
         Can read both consensual as well as singular annotations.
@@ -423,20 +436,20 @@ class Vitals:
 
     def _add_single_dict(
         self,
-        source: dict[str, any],
+        source: dict[str, Any],
         name: str,
         metadata: dict = {},
         time_start=None,
         datatype: str = "channel",
         anchored_channel: Channel | None = None,
-    ):
+    ) -> None:
         """Adds a channel or label from a dict containing a single timeseries.
 
         The dict needs to have two keys: 'timestamp' and 'data'.
 
         Parameters
         ----------
-        source : dict[str, array]
+        source
             Contains the data in the from {'timestamp': [], 'data' : []}
         name : str
             The name of the channel.
@@ -849,8 +862,8 @@ class Vitals:
     def keys(self):
         return self.get_channel_or_label_names()
 
-    def rec_start(self):  # part of register application
-        """Returns the start_time value of a recording as timestamp.
+    def rec_start(self) -> pd.Timestamp:  # part of register application
+        """Returns the first timestamp among all channels in this case.
 
         Returns
         -------
@@ -866,8 +879,8 @@ class Vitals:
 
         return start_time
 
-    def rec_stop(self):  # part of register application
-        """Returns the start_time value of a recording as timestamp.
+    def rec_stop(self) -> pd.Timestamp:  # part of register application
+        """Returns the last timestamp among all channels in this case.
 
         Returns
         -------
@@ -886,100 +899,30 @@ class Vitals:
 
         return stop_time
 
-    def get_channel_infos(self):
-        """Returns information about all channels.
-
-        Parameters
-        ----------
-        dataframe : bool, optional
-            Whether result is formated as dict or DataFrame. The default is True.
-
-        Returns
-        -------
-        info_dict : pd.DataFrame or dict
-            Information DataFrame about all channels.
-
+    def get_channel_infos(self) -> pd.DataFrame:
+        """Returns information about all channels in a nicely formatted
+        ``pandas.DataFrame``.
         """
-        info_dict = {}
-        for i, chan in enumerate(self.data.channels):
-            name = chan.name
-            chan_time, chan_data = chan.get_data()
-
-            info_dict[i] = {}
-            info_dict[i]["Name"] = name
-            for key in chan.metadata:
-                info_dict[i][key] = chan.metadata[key]
-            if len(chan_time) > 0:
-                for key, value in zip(
-                    ["first_entry", "last_entry", "length", "offset"],
-                    [np.min(chan_time), np.max(chan_time), len(chan_time), chan.offset],
-                ):
-                    info_dict[i][key] = value
-            else:
-                for key, value in zip(
-                    ["first_entry", "last_entry", "length", "offset"],
-                    [None, None, 0, chan.offset],
-                ):
-                    info_dict[i][key] = value
-
-        info_dict = pd.DataFrame(info_dict).transpose()
-        return info_dict
-
-    def get_label_infos(self):
-        """Returns information about all labels.
-
-        Parameters
-        ----------.
-        dataframe : bool, optional
-            Whether result is formated as dict or DataFrame. The default is True.
-
-        Returns
-        -------
-        info_dict : pd.DataFrame or dict
-            Information DataFrame about all channels.
-
+        return _timeseries_list_info(self.channels)
+    
+    def get_label_infos(self) -> pd.DataFrame:
+        """Returns information about all labels in a nicely formatted
+        ``pandas.DataFrame``.
         """
-        info_dict = {}
-        for i, chan in enumerate(self.data.labels):
-            name = chan.name
-            chan_time, chan_data = chan.get_data()
+        return _timeseries_list_info(self.labels)
 
-            info_dict[i] = {}
-            info_dict[i]["Name"] = name
-            for key in chan.metadata:
-                info_dict[i][key] = chan.metadata[key]
-            if len(chan_time) > 0:
-                for key, value in zip(
-                    ["first_entry", "last_entry", "length", "offset"],
-                    [np.min(chan_time), np.max(chan_time), len(chan_time), chan.offset],
-                ):
-                    info_dict[i][key] = value
-            else:
-                for key, value in zip(
-                    ["first_entry", "last_entry", "length", "offset"],
-                    [None, None, 0, chan.offset],
-                ):
-                    info_dict[i][key] = value
-        info_dict = pd.DataFrame(info_dict).transpose()
-        return info_dict
-
-    def info(self):
+    def info(self) -> None:
         """Displays relevant information about the channels and labels
         currently present in the recording.
-
-        Returns
-        -------
-        None.
-
         """
         channel_info = self.get_channel_infos()
         label_info = self.get_label_infos()
         display(channel_info)
         display(label_info)
 
-    # ------------------------------------------------------------------------------------------------------------------------------------
-    # -------------------------------------------- Plotting tools ------------------------------------------------
-    # ------------------------------------------------------------------------------------------------------------------------------------
+    ###
+    ### Plotting
+    ###
 
     def plot(
         self,
@@ -992,6 +935,39 @@ class Vitals:
         include_attached_labels: bool = False,
         subplots_kwargs: dict[str, Any] | None = None,
     ):
+        """Plot the data in the collection.
+
+        .. SEEALSO::
+
+            :meth:`.TimeDataCollection.plot`
+        
+        Parameters
+        ----------
+        channels
+            The channels to plot. If not specified, all channels are plotted.
+            Specified as a list of lists with individual lists containing
+            channels to be collected in one subplot.
+        labels
+            The labels to plot. If not specified, all labels are plotted.
+            Specified as a list of lists, same as for the channels.
+        start
+            The start time for the plot. If not specified, the plot starts
+            from the first time point.
+        stop
+            The stop time for the plot. If not specified, the plot stops
+            at the last time point.
+        resolution
+            The resolution of the plot in the time unit of the channels.
+            If not specified, the channel and label data is not downsampled.
+        time_unit
+            The time unit in which channel and label data are represented
+            in. If not specified, the time unit of the channels is used.
+        include_attached_labels
+            Whether to automatically include labels attached to the
+            specified channels.
+        subplots_kwargs
+            Keyword arguments passed to ``matplotlib.pyplot.subplots``.
+        """
         return self.data.plot(
             channels=channels,
             labels=labels,
@@ -1014,6 +990,47 @@ class Vitals:
         channel_overviews: list[list[ChannelSpecification | int]] | bool = False,
         subplots_kwargs: dict[str, Any] | None = None,
     ):
+        """Plot the data in the collection using ipywidgets.
+
+        This allows to annotate the data with labels, and to modify
+        channel offsets interactively.
+
+        .. SEEALSO::
+
+            :meth:`.TimeDataCollection.plot_interactive`
+        
+        Parameters
+        ----------
+        channels
+            The channels to plot. If not specified, all channels are plotted.
+            Specified as a list of lists with individual lists containing
+            channels to be collected in one subplot.
+        labels
+            The labels to plot. If not specified, all labels are plotted.
+            Specified as a list of lists, same as for the channels.
+        start
+            The start time for the plot. If not specified, the plot starts
+            from the first time point.
+        stop
+            The stop time for the plot. If not specified, the plot stops
+            at the last time point.
+        resolution
+            The resolution of the plot in the time unit of the channels.
+            If not specified, the channel and label data is not downsampled.
+        time_unit
+            The time unit in which channel and label data are represented
+            in. If not specified, the time unit of the channels is used.
+        include_attached_labels
+            Whether to automatically include labels attached to the
+            specified channels.
+        channel_overviews
+            Similar to ``channel``, but plots the specified channels
+            in a separate subplot in a condensed way including a
+            location map of the main plot. If set to ``True``, all
+            chosen channels are plotted in a single overview.
+        subplots_kwargs
+            Keyword arguments passed to ``matplotlib.pyplot.subplots``.
+        """
         return self.data.plot_interactive(
             channels=channels,
             labels=labels,

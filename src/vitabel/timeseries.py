@@ -28,6 +28,36 @@ logger: logging.Logger = logging.getLogger("vitabel")
 """Global package logger."""
 
 
+def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
+    """Summarizes basic information about a list of time series data.
+
+    If the time series objects have a ``metadata`` attribute, the
+    metadata will also be included in the summary.
+    
+    Parameters
+    ----------
+    series_list
+        A list of time series data.
+    """
+    info_dict = {}
+    for idx, series in enumerate(series_list):
+        info_dict[idx] = {}
+        if hasattr(series, "metadata") and isinstance(series.metadata, dict):
+            info_dict[idx].update(series.metadata)
+        min_time = max_time = None
+        if len(series) > 0:
+            min_time = min(series.time_index)
+            max_time = max(series.time_index)
+        info_dict[idx].update({
+            "Name": series.name,
+            "First Entry": min_time,
+            "Last Entry": max_time,
+            "Length": len(series),
+            "Offset": series.offset,
+        })
+    return pd.DataFrame(info_dict).transpose()
+
+
 class TimeSeriesBase:
     """Base class for time series data.
 
