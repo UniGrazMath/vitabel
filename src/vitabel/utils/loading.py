@@ -7,15 +7,9 @@ import xml.etree.ElementTree as ET
 import pyedflib
 import sqlite3
 import logging
+import vitabel.utils as utils
 
 from pathlib import Path
-
-from vitabel.utils import (
-    LP_Unit_dict,
-    zoll_wavetype_dict,
-    LP15_all_trend_data,
-    LP15_collected_trend_data,
-)
 
 
 logger = logging.getLogger("vitabel")
@@ -1794,8 +1788,8 @@ def read_zollxml_compr(cpr_compr, starttime):
 def find_wavetypevar(entry):
     if not isinstance(entry, str):
         entry = str(entry)
-    if entry in zoll_wavetype_dict:
-        return zoll_wavetype_dict[entry]
+    if entry in utils.zoll_wavetype_dict:
+        return utils.zoll_wavetype_dict[entry]
     else:
         return entry + ": Unknown Type"
 
@@ -2297,10 +2291,10 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
                 if event.find(pcstr + "Values").findall(pcstr + "Value"):
                     for value in event.find(pcstr + "Values").findall(pcstr + "Value"):
                         channel = value.attrib["Type"]
-                        if channel not in LP15_all_trend_data:
+                        if channel not in utils.LP15_all_trend_data:
                             logger.warning(f"New trend data type found: {channel}")
-                            LP15_all_trend_data.append(channel)
-                        elif channel in LP15_collected_trend_data:
+                            utils.LP15_all_trend_data.append(channel)
+                        elif channel in utils.LP15_collected_trend_data:
                             if channel not in trend_data:
                                 trend_data[channel] = {"timestamp": [], channel: []}
                             if value.text:
@@ -2396,8 +2390,8 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
         channel_info[key]["Start"] = trend_data[key].first_valid_index()
         channel_info[key]["Stop"] = trend_data[key].last_valid_index()
         channel_info[key]["Length"] = trend_data[key].size
-        if key in LP_Unit_dict:
-            channel_info[key]["Unit"] = LP_Unit_dict[key]
+        if key in utils.LP_Unit_dict:
+            channel_info[key]["Unit"] = utils.LP_Unit_dict[key]
         else:
             channel_info[key]["Unit"] = "Unknown"
 
