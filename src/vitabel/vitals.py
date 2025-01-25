@@ -29,13 +29,13 @@ from vitabel.utils import (
     linear_interpolate_gaps_in_recording,
 )
 from vitabel.utils import DEFAULT_PLOT_STYLE
+from vitabel.typing import (
+    Timedelta,
+    Timestamp,
+    ChannelSpecification,
+    LabelSpecification,
+)
 
-
-Timedelta: TypeAlias = pd.Timedelta | np.timedelta64
-Timestamp: TypeAlias = pd.Timestamp | np.datetime64
-
-ChannelSpecification: TypeAlias = Union[str, dict[str, Any], "Channel"]
-LabelSpecification: TypeAlias = Union[str, dict[str, Any], "Label"]
 
 logger = logging.getLogger("vitabel")
 

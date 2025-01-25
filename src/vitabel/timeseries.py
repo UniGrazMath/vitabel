@@ -16,12 +16,13 @@ import numpy.typing as npt
 import hashlib
 
 from vitabel.utils.helpers import match_object, NumpyEncoder, decompress_array
+from vitabel.typing import (
+    Timedelta,
+    Timestamp,
+    ChannelSpecification,
+    LabelSpecification,
+)
 
-
-Timedelta: TypeAlias = pd.Timedelta | np.timedelta64
-Timestamp: TypeAlias = pd.Timestamp | np.datetime64
-ChannelSpecification: TypeAlias = Union[str, dict[str, Any], "Channel"]
-LabelSpecification: TypeAlias = Union[str, dict[str, Any], "Label"]
 
 logger = logging.getLogger("vitabel")
 
@@ -1270,8 +1271,7 @@ class TimeDataCollection:
             )
         if label in self.global_labels:
             raise ValueError(
-                f"Identical label {label.name} has already "
-                "been added to the collection"
+                f"Identical label {label.name} has already been added to the collection"
             )
         if (
             not self.is_empty()
