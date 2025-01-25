@@ -1,3 +1,5 @@
+"""Core module, contains the central data container class :class:`Vitals`."""
+
 import json
 import os
 
