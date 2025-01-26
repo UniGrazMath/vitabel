@@ -44,12 +44,13 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
         info_dict[idx] = {}
         if hasattr(series, "metadata") and isinstance(series.metadata, dict):
             info_dict[idx].update(series.metadata)
+        if hasattr(series, "name"):
+            info_dict[idx]["Name"] = series.name
         min_time = max_time = None
         if len(series) > 0:
             min_time = min(series.time_index)
             max_time = max(series.time_index)
         info_dict[idx].update({
-            "Name": series.name,
             "First Entry": min_time,
             "Last Entry": max_time,
             "Length": len(series),
