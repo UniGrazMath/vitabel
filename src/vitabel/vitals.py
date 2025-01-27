@@ -307,46 +307,38 @@ class Vitals:
 
     def add_vital_db_recording(
         self,
-        vital_filepath: Path | str,
+        filepath: Path | str,
         metadata={"source": "VitalDB-Recording"},
     ) -> None:
         """Loading channels from a vitalDB recording.
 
         Parameters
         ----------
-        vital_filepath
+        filepath
             The path to the recording. Must be a ``*.vit`` file.
-
-        Returns
-        -------
-        None.
         """
-        vit = vitaldb.VitalFile(str(vital_filepath))
+        vit = vitaldb.VitalFile(str(filepath))
         df = vit.to_pandas(vit.get_track_names(), interval=None, return_datetime=True)
         df.set_index("Time", inplace=True, drop=True)
         self.add_data_from_DataFrame(df, metadata=metadata)
 
-    def add_old_cardio_label(self, file_path: Path | str) -> None:
-        """Add labels from old "cardio"-version of this code.
+    def add_old_cardio_label(self, filepath: Path | str) -> None:
+        """Add labels from legacy version of this package.
 
         Can read both consensual as well as singular annotations.
 
         Parameters
         ----------
-        file_path : Path | str
-            Path to old cardio_label.
-
-        Returns
-        -------
-        None.
+        filepath
+            Path to legacy-style label file.
         """
-        file_path = Path(file_path)
-        if not file_path.exists():
-            raise FileNotFoundError(f"Annotation {file_path} not found.")
+        filepath = Path(filepath)
+        if not filepath.exists():
+            raise FileNotFoundError(f"Annotation {filepath} not found.")
 
-        if file_path.suffix == ".json":
+        if filepath.suffix == ".json":
             label_dict = {}
-            with open(file_path, "r") as fp:  # Load Annotations
+            with open(filepath, "r") as fp:  # Load Annotations
                 ann_dict = json.load(fp)
             for label in ann_dict["Merged"]:
                 if label != "Time":
@@ -403,8 +395,8 @@ class Vitals:
                     metadata={"Creator": annotator},
                     datatype="label",
                 )
-        elif file_path.suffix == ".csv":
-            anno = pd.read_csv(file_path)
+        elif filepath.suffix == ".csv":
+            anno = pd.read_csv(filepath)
             label_dict = {}
             interval_label_dict = {}
             metadata = {}
@@ -530,37 +522,30 @@ class Vitals:
     ):
         """Add multiple channels from a dict.
 
-                Each value must be a dict accepted by  '_add_single_dict(value, key)'
+        Each value must be a dict accepted by  '_add_single_dict(value, key)'
 
-                Parameters
-                ----------
-                source : dict[str, dict] | Path
-                    The data which is added in the from
-                    ``{'key1': {'timestamp' : [], 'data' : []}, 'key2': {...} ,... }}}``.
-                    If source is a Path, then it is loaded via ``json.load(source)``.
-                metadata : dict, optional
-                    Metadata applicable to all timeseries. The default is ``{}``.
-                time_start : TYPE, optional
-                    time_start value for the timeseries, in case of a relative timeseries.
-                    The default is None.
-                datatype : str, optional
-                    Either ``'channel'`` or ``'label'`` or ``'interval_label'`` depending on
-                    which kind of labels to attach.. The default is 'channel'.
-                anchored_channel :  Channel | None
-                    In case of datatype = ``'label'``, where to attach the label. None means
-                    global label. The default is ``None``.
+        Parameters
+        ----------
+        source : dict[str, dict] | Path
+            The data which is added in the from
+            ``{'key1': {'timestamp' : [], 'data' : []}, 'key2': {...} ,... }}}``.
+            If source is a Path, then it is loaded via ``json.load(source)``.
+        metadata : dict, optional
+            Metadata applicable to all timeseries. The default is ``{}``.
+        time_start : TYPE, optional
+            time_start value for the timeseries, in case of a relative timeseries.
+            The default is None.
+        datatype : str, optional
+            Either ``'channel'`` or ``'label'`` or ``'interval_label'`` depending on
+            which kind of labels to attach.. The default is 'channel'.
+        anchored_channel :  Channel | None
+            In case of datatype = ``'label'``, where to attach the label. None means
+            global label. The default is ``None``.
 
-
-                Raises
-                ------
-                ValueError
-                    In case the dictionary does not has the expected form.
-        .
-
-                Returns
-                -------
-                None.
-
+        Raises
+        ------
+        ValueError
+            In case the dictionary does not has the expected form.
         """
         if isinstance(source, Path):
             with open(source, "r") as file:
@@ -590,26 +575,26 @@ class Vitals:
         datatyp="channel",
         anchored_channel: Channel | None = None,
     ):
-        """Adds Data from a pandas.DataFrame.
+        """Adds Data from a ``pandas.DataFrame``.
 
         Parameters
         ----------
-        source : pandas.DataFrame
+        source
             The DataFrame containing the data. The index of the DataFrame contains the
             time (either as DatetimeIndex or numeric Index),
             and the columns contain the channels. NaN-Values in the columns are
             not taken into account an ignored.
-        metadata : dict, optional
+        metadata
             A dictionary containing all the metadata for the channels/labels.
             Is parsed to channel/Label and saved there as general argument.
-        time_start : pd.Timestamp() or str or None, optional
+        time_start
             A starting time for the data. Must be accepted by pd.Timestamp(time_start)
             In case the index is numeric. The times will be interpreted as relative
             to this value. The default is 0 and means no information is given.
-        datatype : str, optional
+        datatype
             Either 'channel' or 'label' or 'interval_label' depending on which kind
             of labels to attach. The default is "channel".
-        anchored_channel :  Channel | None
+        anchored_channel
             In case of datatype = 'label', where to attach the label. None means
             global label. The default is None
 
@@ -617,11 +602,6 @@ class Vitals:
         ------
         ValueError
             The DataFrame does not contain a DateTime or Numeric Index.
-
-        Returns
-        -------
-        None.
-
         """
 
         if not (
@@ -738,12 +718,9 @@ class Vitals:
 
         Parameters
         ----------
-        path : str, optional
-            The path of the JSON File. This is parsed to pathlib.Path. If not provided, then the self.channel_path attribute is used. If this is not set, a Value Error is raised.
-        Returns
-        -------
-        None.
-
+        path
+            The path of the JSON File. This is parsed to pathlib.Path. If not provided, then the
+            self.channel_path attribute is used. If this is not set, a Value Error is raised.
         """
 
         if isinstance(path, str):
@@ -764,13 +741,8 @@ class Vitals:
 
         Parameters
         ----------
-        path : str
+        path
             The Path of the channel data. It is parsed to pathlib.Path.
-
-        Returns
-        -------
-        None.
-
         """
 
         path = Path(path)
@@ -823,53 +795,24 @@ class Vitals:
             )
         return channels_or_labels[0]
 
-    def get_channel_names(self):  # part of register application
-        """Returns a list with the names of all channels.
-
-        Returns
-        -------
-        channel_names : list
-            List of all channel names.
-
-        """
+    def get_channel_names(self) -> list[str]:  # part of register application
+        """Return a list with the names of all channels in the recording."""
         return self.data.channel_names
 
-    def get_label_names(self):  # part of register application
-        """Returns a list with the names of all labels.
-
-        Returns
-        -------
-        label_names : list
-            List of all label names.
-
-        """
+    def get_label_names(self) -> list[str]:  # part of register application
+        """Returns a list with the names of all labels."""
         return self.data.label_names
 
-    def get_channel_or_label_names(self):
-        """
-        # Returns a list with the names of all channels and labels.
-
-        Returns
-        -------
-        data_names : list
-            List of all channel and label names.
-
-        """
-
+    def get_channel_or_label_names(self) -> list[str]:
+        """Returns a list with all names from either channels or labels."""
         return self.get_channel_names() + self.get_label_names()
 
-    def keys(self):
+    def keys(self) -> list[str]:
+        """Alias for :meth:`get_channel_or_label_names`."""
         return self.get_channel_or_label_names()
 
     def rec_start(self) -> pd.Timestamp:  # part of register application
-        """Returns the first timestamp among all channels in this case.
-
-        Returns
-        -------
-        pd.Timestamp
-            The reference time_value of a recording.
-
-        """
+        """Returns the first timestamp among all channels in this case."""
         if self.data.is_time_absolute():
             start_time = self.data.channels[0].time_start
             for chan in self.channels:
@@ -879,14 +822,7 @@ class Vitals:
         return start_time
 
     def rec_stop(self) -> pd.Timestamp:  # part of register application
-        """Returns the last timestamp among all channels in this case.
-
-        Returns
-        -------
-        pd.Timestamp
-            The reference time_value of a recording.
-
-        """
+        """Returns the last timestamp among all channels in this case."""
         if self.data.is_time_absolute():
             stop_time = (
                 self.data.channels[0].time_start + self.data.channels[0].time_index[-1]
