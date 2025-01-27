@@ -42,8 +42,7 @@ logger: logging.Logger = logging.getLogger("vitabel")
 
 
 class Vitals:
-    """Container for vital data and labels, central interface of this
-    package.
+    """Container for vital data and labels, central interface of this package.
 
     The Vitals class supports adding data using various methods, such
     as loading data from files directly via :meth:`add_defibrillator_recording`,
