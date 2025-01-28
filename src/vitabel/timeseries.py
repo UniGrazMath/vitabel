@@ -462,6 +462,40 @@ class Channel(TimeSeriesBase):
         for label in self.labels:
             label.shift_time_index(delta_t=delta_t, time_unit=time_unit)
         return super().shift_time_index(delta_t, time_unit)
+    
+    def truncate(
+        self,
+        start_time: Timestamp | Timedelta | None = None,
+        stop_time: Timestamp | Timedelta | None = None,
+    ) -> Channel:
+        """Return a new channel that is a truncated version of this channel.
+        
+        Parameters
+        ----------
+        start_time
+            The start time for the truncated channel.
+        stop_time
+            The stop time for the truncated channel.
+        """
+
+        truncated_time_index, truncated_data = self.get_data(
+            start=start_time, stop=stop_time
+        )  
+        # if channel is absolute time, the truncated time index is absolute,
+        # no need to set start_time. also, offset is applied to the truncated
+        # time index.
+        truncated_channel = Channel(
+            name=self.name,
+            time_index=truncated_time_index,
+            data=truncated_data,
+            time_unit=self.time_unit,
+            plotstyle=copy(self.plotstyle),
+            metadata=copy(self.metadata),
+        )
+        for label in self.labels:
+            truncated_label = label.truncate(start_time=start_time, stop_time=stop_time)
+            truncated_channel.attach_label(truncated_label)
+        return truncated_channel
 
     def to_dict(self) -> dict[str, Any]:
         """Construct a serializable dictionary that represents
@@ -858,6 +892,34 @@ class Label(TimeSeriesBase):
                 offset = self.time_index[0]
                 self.time_start += offset
                 self.time_index -= offset
+
+    def truncate(
+        self,
+        start_time: Timestamp | Timedelta | None = None,
+        stop_time: Timestamp | Timedelta | None = None,
+    ) -> Label:
+        """Return a new label that is a truncated version of this label.
+        
+        Parameters
+        ----------
+        start_time
+            The start time for the truncated label.
+        stop_time
+            The stop time for the truncated label.
+        """
+
+        truncated_time_index, truncated_data = self.get_data(
+            start=start_time, stop=stop_time
+        )
+        truncated_label = Label(
+            name=self.name,
+            time_index=truncated_time_index,
+            data=truncated_data,
+            time_unit=self.time_unit,
+            plotstyle=copy(self.plotstyle),
+            metadata=copy(self.metadata),
+        )
+        return truncated_label
 
     @classmethod
     def from_dict(cls, datadict: dict[str, Any]) -> Label:

@@ -1,5 +1,7 @@
 """Core module, contains the central data container class :class:`Vitals`."""
 
+from __future__ import annotations
+
 import json
 import os
 
@@ -854,6 +856,32 @@ class Vitals:
         label_info = self.get_label_infos()
         display(channel_info)
         display(label_info)
+
+    def truncate(
+        self,
+        start_time: Timestamp | Timedelta | None = None,
+        stop_time: Timestamp | Timedelta | None = None,
+    ) -> Vitals:
+        """Return a new object where time data has been truncated to a specified interval.
+
+        Parameters
+        ----------
+        start_time
+            The start time of the truncated recording.
+        stop_time
+            The stop time of the truncated recording.
+
+        Returns
+        -------
+        Vitals
+            A new Vitals object containing the truncated recording.
+        """
+        truncated_vitals = Vitals()
+        for channel in self.channels:
+            truncated_vitals.add_channel(channel.truncate(start_time, stop_time))
+        for label in self.labels:
+            truncated_vitals.add_global_label(label.truncate(start_time, stop_time))
+        return truncated_vitals
 
     ###
     ### Plotting
