@@ -27,6 +27,7 @@ dependencies = [
 
 [project.urls]
 repository = "https://github.com/UniGrazMath/vitabel"
+documentation = "https://vitabel.readthedocs.io"
 
 [build-system]
 requires = ["hatchling"]

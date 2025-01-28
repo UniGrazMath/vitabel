@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import copy
-from typing import Any, TypeAlias, Union
+from typing import Any
 
 import itertools as it
 import json
@@ -16,14 +16,47 @@ import numpy.typing as npt
 import hashlib
 
 from vitabel.utils.helpers import match_object, NumpyEncoder, decompress_array
+from vitabel.typing import (
+    Timedelta,
+    Timestamp,
+    ChannelSpecification,
+    LabelSpecification,
+)
 
 
-Timedelta: TypeAlias = pd.Timedelta | np.timedelta64
-Timestamp: TypeAlias = pd.Timestamp | np.datetime64
-ChannelSpecification: TypeAlias = Union[str, dict[str, Any], "Channel"]
-LabelSpecification: TypeAlias = Union[str, dict[str, Any], "Label"]
+logger: logging.Logger = logging.getLogger("vitabel")
+"""Global package logger."""
 
-logger = logging.getLogger("vitabel")
+
+def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
+    """Summarizes basic information about a list of time series data.
+
+    If the time series objects have a ``metadata`` attribute, the
+    metadata will also be included in the summary.
+    
+    Parameters
+    ----------
+    series_list
+        A list of time series data.
+    """
+    info_dict = {}
+    for idx, series in enumerate(series_list):
+        info_dict[idx] = {}
+        if hasattr(series, "metadata") and isinstance(series.metadata, dict):
+            info_dict[idx].update(series.metadata)
+        if hasattr(series, "name"):
+            info_dict[idx]["Name"] = series.name
+        min_time = max_time = None
+        if len(series) > 0:
+            min_time = min(series.time_index)
+            max_time = max(series.time_index)
+        info_dict[idx].update({
+            "First Entry": min_time,
+            "Last Entry": max_time,
+            "Length": len(series),
+            "Offset": series.offset,
+        })
+    return pd.DataFrame(info_dict).transpose()
 
 
 class TimeSeriesBase:
@@ -41,8 +74,9 @@ class TimeSeriesBase:
         to be specified), or datetime strings (which will
         be parsed by ``pandas``).
     time_start
-        For relative time data (timedeltas or numeric values),
-        this parameter specifies the reference time.
+        If the specified ``time_index`` holds relative time data
+        (timedeltas or numeric values), this parameter can be used
+        to set an absolute reference time (a timestamp).
     time_unit
         The unit of the time data as a string. Used for the
         conversion from numeric values. Defaults to
@@ -56,9 +90,18 @@ class TimeSeriesBase:
     """
 
     time_index: pd.TimedeltaIndex
+    """The time data (with the specified offset applied),
+    always stored in relative time."""
+
     time_start: Timestamp | None
+    """If the data of the time series is absolute, this
+    holds the reference time. This is ``None`` for relative time series."""
+
     time_unit: str
+    """The unit of the time data."""
+
     offset: Timedelta
+    """The offset applied to the time data."""
 
     def __init__(
         self,
@@ -125,7 +168,8 @@ class TimeSeriesBase:
             time_start = time_start.tz_localize(None)
         self.time_start = time_start
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """Return the number of time points."""
         return len(self.time_index)
 
     def is_empty(self) -> bool:
@@ -278,6 +322,41 @@ class TimeSeriesBase:
 
 
 class Channel(TimeSeriesBase):
+    """A time data channel, holding a time series and optional data points.
+
+    Parameters
+    ----------
+
+    name
+        The name of the channel.
+    time_index
+        The time data of the channel. Can be a list of timestamps,
+        timedeltas, numeric values (interpreted with respect to the specified time unit),
+        or datetime strings (which will be parsed by ``pandas``).
+    data
+        The data points of the channel. If not specified, the channel
+        only holds time data. If specified, the length of the data must
+        match the length of the time index.
+    time_start
+        If the specified ``time_index`` holds relative time data
+        (timedeltas or numeric values), this parameter can be used
+        to set an absolute reference time (a timestamp).
+    time_unit
+        The unit of the time data as a string.
+    offset
+        An additional time offset specified as a timedelta
+        or a numeric value (which is taken with respect to
+        the given time unit). The offset is applied to
+        :attr:`time_index`, but when the data is exported,
+        the offset is removed (and exported separately).
+    plotstyle
+        A dictionary of key/value pairs that are passed to
+        ``matplotlib.pyplot.plot`` when plotting channel data.
+    metadata
+        A dictionary that can be used to store additional
+        information about the channel.
+    """
+
     def __init__(
         self,
         name: str,
@@ -292,7 +371,10 @@ class Channel(TimeSeriesBase):
         metadata: dict[str, Any] | None = None,
     ):
         self.name = name
+        """The name of the channel."""
+
         self.labels = []
+        """The :class:`Labels <.Label>` attached to the channel."""
 
         if data is not None:
             if not isinstance(data, np.ndarray):
@@ -303,10 +385,15 @@ class Channel(TimeSeriesBase):
                     f"For channels with data the time index length ({len(time_index)}) "
                     f"and data length ({len(data)}) must be the same"
                 )
-        self.data = data
+
+        self.data: npt.ArrayLike[float | np.number] | None = data
+        """The data points of the channel, if any."""
 
         self.plotstyle = copy(plotstyle) or {}
+        """Keyword arguments passed to the plotting routine."""
+
         self.metadata = copy(metadata) or {}
+        """Additional channel metadata."""
 
         # TODO: figure out how "corrections" to values
         # are handled. Some sort of "override_value" argument
@@ -343,7 +430,6 @@ class Channel(TimeSeriesBase):
         ----------
         label
             The label to attach.
-
         """
         # check whether time type is the same
         if not label.is_empty() and self.is_time_absolute() != label.is_time_absolute():
@@ -558,18 +644,12 @@ class Channel(TimeSeriesBase):
         return figure
 
     def rename(self, new_name: str):
-        """
-        Rename channel
+        """Change the name of the channel.
 
         Parameters
         ----------
-        new_name : str
+        new_name
             The new name of the channel.
-
-        Returns
-        -------
-        None.
-
         """
         self.name = new_name
 
@@ -577,6 +657,52 @@ class Channel(TimeSeriesBase):
 # TODO: handling of name, data, plotstyle, metadata is
 # the same as for channel and could be factored out
 class Label(TimeSeriesBase):
+    """A time data label, holding a time series and optional data points.
+
+    Where :class:`.Channel` is intended for data extracted from some external,
+    immutable source (e.g., a sensor), :class:`.Label` is intended for data
+    that is annotated or otherwise modified by the user.
+
+    In particular, :class:`.Label` supports adding and removing data points
+    via :meth:`.add_data` and :meth:`.remove_data`, respectively.
+
+    Parameters
+    ----------
+
+    name
+        The name of the label.
+    time_index
+        The time data of the label. Can be a list of timestamps,
+        timedeltas, numeric values (interpreted with respect to the specified time unit),
+        or datetime strings (which will be parsed by ``pandas``).
+    data
+        The data points of the label. If not specified, the label
+        only holds time data. If specified, the length of the data must
+        match the length of the time index. Can be numeric data or strings.
+    time_start
+        If the specified ``time_index`` holds relative time data
+        (timedeltas or numeric values), this parameter can be used
+        to set an absolute reference time (a timestamp).
+    time_unit
+        The unit of the time data as a string.
+    offset
+        An additional time offset specified as a timedelta
+        or a numeric value (which is taken with respect to
+        the given time unit). The offset is applied to
+        :attr:`time_index`, but when the data is exported,
+        the offset is removed (and exported separately).
+    anchored_channel
+        The channel the label is attached to. If the offset of
+        the anchored channel is changed, the offset of the label
+        is changed accordingly.
+    plotstyle
+        A dictionary of key/value pairs that are passed to
+        ``matplotlib.pyplot.plot`` when plotting label data.
+    metadata
+        A dictionary that can be used to store additional
+        information about the label.
+    """
+
     def __init__(
         self,
         name: str,
@@ -590,7 +716,10 @@ class Label(TimeSeriesBase):
         metadata: dict[str, Any] | None = None,
     ):
         self.name = name
-        self.anchored_channel = None
+        """The name of the label."""
+
+        self.anchored_channel: Channel | None = None
+        """The channel the label is attached to, or ``None``."""
 
         if time_index is None:
             time_index = np.array([])
@@ -601,14 +730,19 @@ class Label(TimeSeriesBase):
             else:
                 data = np.asarray(data)
         self._check_data_shape(time_index, data)
+
         self.data = data
+        """The data points of the label, if any."""
 
         self.plotstyle = copy(plotstyle) or {
             "marker": "o",
             "ms": 5,
             "linestyle": "none",
         }
+        """Keyword arguments passed to the plotting routine."""
+
         self.metadata = copy(metadata) or {}
+        """Additional label metadata."""
 
         super().__init__(
             time_index=time_index,
@@ -621,6 +755,11 @@ class Label(TimeSeriesBase):
             self.attach_to(anchored_channel)
 
     def __eq__(self, other: Label) -> bool:
+        """Check whether two labels are equal.
+        
+        Returns ``True`` if the name, time index, and data of the labels
+        are equal, and ``False`` otherwise.
+        """
         return (
             self.name == other.name
             and np.array_equal(self.time_index, other.time_index)
@@ -628,20 +767,24 @@ class Label(TimeSeriesBase):
         )
 
     def __repr__(self) -> str:
+        """A string representation of the label."""
         return f"{self.__class__.__name__}({self.name})"
 
     def _check_data_shape(self, time_index: npt.ArrayLike, data: npt.ArrayLike):
+        """Check that the data has the same length as the time index."""
         if data is not None and len(data) != len(time_index):
             raise ValueError(
                 "The length of the data must be equal to the length of the time index"
             )
 
     def _data_can_hold_number(self) -> bool:
+        """Check whether this label can hold numeric values."""
         return self.data is not None and (
             self.is_empty() or np.issubdtype(self.data.dtype, np.number)
         )
 
     def _data_can_hold_text(self) -> bool:
+        """Check whether this label can hold string values."""
         return self.data is not None and (
             self.is_empty() or self.data.dtype == "object"
         )
@@ -687,7 +830,16 @@ class Label(TimeSeriesBase):
         self,
         time_data: Timestamp | Timedelta,
     ):
-        """Remove a data point from the label given its time."""
+        """Remove a data point from the label given its time.
+
+        If the data point with the earliest time is removed,
+        the :attr:`time_start` attribute of the label is updated.
+        
+        Parameters
+        ----------
+        time_data
+            The time of the data point to remove.
+        """
         if self.is_time_absolute():
             time_data = time_data - self.time_start
 
@@ -709,6 +861,13 @@ class Label(TimeSeriesBase):
 
     @classmethod
     def from_dict(cls, datadict: dict[str, Any]) -> Label:
+        """Create a label from a serialized dictionary representation.
+
+        Parameters
+        ----------
+        datadict
+            The dictionary representation of the label.
+        """
         time_index = datadict.get("time_index")
         try:
             time_index = decompress_array(time_index)
@@ -733,6 +892,7 @@ class Label(TimeSeriesBase):
         )
 
     def to_dict(self) -> dict[str, Any]:
+        """A serialization of the label as a dictionary."""
         return {
             "name": self.name,
             "time_index": self.numeric_time(),
@@ -907,7 +1067,51 @@ class Label(TimeSeriesBase):
 
 
 class IntervalLabel(Label):
+    """A special type of label that holds time interval data.
+
+
+    Parameters
+    ----------
+
+    name
+        The name of the label.
+    time_index
+        The time data of the label, interpreted as a alternating
+        sequence of interval start and end points. Must have even length.
+        Can be a list of timestamps,
+        timedeltas, numeric values (interpreted with respect to the specified time unit),
+        or datetime strings (which will be parsed by ``pandas``).
+    data
+        The data points of the label. If not specified, the label
+        only holds time data. If specified, the length of the data must
+        be half of the length of the passed time index. Can be numeric data or strings.
+    time_start
+        If the specified ``time_index`` holds relative time data
+        (timedeltas or numeric values), this parameter can be used
+        to set an absolute reference time (a timestamp).
+    time_unit
+        The unit of the time data as a string.
+    offset
+        An additional time offset specified as a timedelta
+        or a numeric value (which is taken with respect to
+        the given time unit). The offset is applied to
+        :attr:`time_index`, but when the data is exported,
+        the offset is removed (and exported separately).
+    anchored_channel
+        The channel the label is attached to. If the offset of
+        the anchored channel is changed, the offset of the label
+        is changed accordingly.
+    plotstyle
+        A dictionary of key/value pairs that are passed to
+        ``matplotlib.pyplot.errorbar`` when plotting label data.
+    metadata
+        A dictionary that can be used to store additional
+        information about the label.
+    """
     def _check_data_shape(self, time_index: npt.ArrayLike, data: npt.ArrayLike):
+        """Check that the time data is well-formed, and that there is either no data, 
+        or as many data points as intervals.
+        """
         if len(time_index) % 2 != 0:
             raise ValueError("The time index must contain an even number of elements")
         if data is not None and len(time_index) != 2 * len(data):
@@ -915,17 +1119,23 @@ class IntervalLabel(Label):
                 "The length of the data must be half the length of the time index"
             )
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """The number of intervals in the label."""
         return super().__len__() // 2
 
     @property
     def intervals(self) -> npt.NDArray:
+        """A 2D array of interval start and end points representing
+        the time intervals of the label. If the label is absolute in time,
+        the intervals are timestamps. Otherwise, they are timedeltas.
+        """
         time_intervals = np.array(self.time_index).reshape(-1, 2)
         if self.is_time_absolute():
             time_intervals += self.time_start
         return time_intervals
 
     def to_dict(self) -> dict[str, Any]:
+        """A serialization of the label as a dictionary."""
         label_dict = super().to_dict()
         label_dict["is_interval"] = True
         return label_dict
@@ -1015,6 +1225,15 @@ class IntervalLabel(Label):
         time_data: tuple[Timestamp, Timestamp] | tuple[Timedelta, Timedelta],
         value: float | None = None,
     ):
+        """Add data to the label.
+
+        Parameters
+        ----------
+        time_data
+            A time data tuple specifying an interval.
+        value
+            The value of the data point.
+        """
         interval_start, interval_end = time_data
         if self.is_empty() and isinstance(interval_start, Timestamp):
             self.time_start = interval_start
@@ -1040,6 +1259,13 @@ class IntervalLabel(Label):
         self,
         time_data: tuple[Timestamp, Timestamp] | tuple[Timedelta, Timedelta],
     ):
+        """Remove data from the label.
+
+        Parameters
+        ----------
+        time_data
+            A time data tuple specifying an interval.
+        """
         interval_start, interval_end = time_data
         matching_intervals = (
             np.argwhere(
@@ -1072,6 +1298,28 @@ class IntervalLabel(Label):
         time_unit: str | None = None,
         reference_time: Timestamp | Timedelta | float | None = None,
     ):
+        """Plot the label data using ``matplotlib.pyplot.errorbar``.
+
+        Parameters
+        ----------
+        plot_axes
+            The (matplotlib) axes used to plot the data on. If not specified,
+            a new figure will be created.
+        plotstyle
+            Overrides for the :attr:`plotstyle` of the label.
+        start
+            The start time for the data. If not specified, the data
+            starts from the first time point.
+        stop
+            The start time for the data. If not specified, the data
+            stops at the last time point.
+        time_unit
+            The time unit values used along the x-axis. If ``None``
+            (the default), the time unit of the channel is used.
+        reference_time
+            For labels with absolute time, a reference time to subtract from
+            the time data. If not specified, the :attr:`time_start` attribute is used.
+        """
         time_index, data = self.get_data(start=start, stop=stop)
 
         if self.is_time_absolute():
@@ -1149,12 +1397,18 @@ class TimeDataCollection:
                     )
 
     def __eq__(self, other: TimeDataCollection) -> bool:
+        """Check whether two collections are equal.
+
+        Returns ``True`` if the channel data hashes and labels of the
+        collections are equal, and ``False`` otherwise.
+        """
         return (
             self.channel_data_hash() == other.channel_data_hash()
             and self.labels == other.labels
         )
 
     def __repr__(self) -> str:
+        """A string representation of the collection."""
         num_channels = len(self.channels)
         channel_str = "channel" if num_channels == 1 else "channels"
         num_labels = len(self.labels)
@@ -1169,22 +1423,22 @@ class TimeDataCollection:
 
     @property
     def local_labels(self) -> list[Label]:
-        """Return all labels anchored to a channel in the collection."""
+        """All labels anchored to some channel in the collection."""
         return [label for channel in self.channels for label in channel.labels]
 
     @property
     def labels(self) -> list[Label]:
-        """Return all labels in the collection."""
+        """All labels in the collection, both global and local ones."""
         return self.global_labels + self.local_labels
 
     @property
     def channel_names(self) -> list[str]:
-        """Return the list of channel names."""
+        """List of channel names."""
         return [channel.name for channel in self.channels]
 
     @property
     def label_names(self) -> list[str]:
-        """Return the list of label names."""
+        """List of label names for all labels in the collection."""
         return [label.name for label in self.labels]
 
     def is_empty(self) -> bool:
@@ -1205,7 +1459,7 @@ class TimeDataCollection:
             for series in self.channels + self.global_labels
         )
 
-    def print_summary(self):
+    def print_summary(self) -> None:
         """Print a summary of channels and labels in the collection."""
         if self.is_empty():
             print("The collection is empty.")
@@ -1270,8 +1524,7 @@ class TimeDataCollection:
             )
         if label in self.global_labels:
             raise ValueError(
-                f"Identical label {label.name} has already "
-                "been added to the collection"
+                f"Identical label {label.name} has already been added to the collection"
             )
         if (
             not self.is_empty()
@@ -1495,7 +1748,13 @@ class TimeDataCollection:
 
     @classmethod
     def from_dict(cls, datadict: dict[str, Any]) -> TimeDataCollection:
-        """Create a collection from a dictionary representation."""
+        """Create a collection from a dictionary representation.
+        
+        Parameters
+        ----------
+        datadict
+            A dictionary representation of the collection.
+        """
         channels = [
             Channel.from_dict(channel_dict) for channel_dict in datadict["channels"]
         ]
@@ -1508,7 +1767,17 @@ class TimeDataCollection:
             labels.append(label)
         return cls(channels=channels, labels=labels)
 
-    def _parse_time(self, time_spec: Timestamp | Timedelta | float | str | None):
+    def _parse_time(
+        self,
+        time_spec: Timestamp | Timedelta | float | str | None,
+    ) -> Timedelta | Timestamp | float | None:
+        """Parse a time specification into a timestamp or timedelta.
+        
+        Parameters
+        ----------
+        time_spec
+            The time specification to parse.
+        """
         if isinstance(time_spec, str):
             if self.is_time_absolute():
                 return pd.to_datetime(time_spec)
@@ -1548,6 +1817,17 @@ class TimeDataCollection:
         channel_lists: list[list[Channel]],
         include_attached_labels: bool = False,
     ) -> list[list[Label]]:
+        """Parse (nested) label specifications into nested lists of labels.
+
+        Parameters
+        ----------
+        labels
+            The label specifications to parse.
+        channel_lists
+            The channel lists that the labels are attached to.
+        include_attached_labels
+            Whether to include attached labels in the output.
+        """
         num_subplots = len(channel_lists)
         label_lists: list[list[Label]] = []
 
@@ -1583,6 +1863,20 @@ class TimeDataCollection:
         channel_lists: list[list[Channel]],
         minimum: bool = True,
     ):
+        """Get the minimum or maximum time value from the specified channels,
+        or return the specified time value if it is not ``None``.
+        
+        Parameters
+        ----------
+        time
+            The time value to compare to the channel time values. The extremum
+            is only calculated if this value is ``None``.
+        channel_lists
+            The channel lists to get the extremum time value from.
+        minimum
+            If ``True`` (the default), the minimum time value is returned,
+            otherwise the maximum time value is returned.
+        """
         op = min
         if not minimum:
             op = max
@@ -1599,6 +1893,17 @@ class TimeDataCollection:
         return time
 
     def _get_timeunit_from_channels(self, channel_lists: list[list[Channel]]) -> str:
+        """Get the time unit from the specified channels.
+
+        Ensures that all channels have the same time unit, and raises an error
+        if they do not. In that case, the time unit must be passed explicitly
+        to the calling method.
+
+        Parameters
+        ----------
+        channel_lists
+            The channel lists to get the time unit from.
+        """
         channel_iter = it.chain.from_iterable(channel_lists)
         time_unit = next(channel_iter).time_unit
         if not all(channel.time_unit == time_unit for channel in channel_iter):
@@ -1619,7 +1924,35 @@ class TimeDataCollection:
         include_attached_labels: bool = False,
         subplots_kwargs: dict[str, Any] | None = None,
     ):
-        """Plot the data in the collection."""
+        """Plot the data in the collection.
+        
+        Parameters
+        ----------
+        channels
+            The channels to plot. If not specified, all channels are plotted.
+            Specified as a list of lists with individual lists containing
+            channels to be collected in one subplot.
+        labels
+            The labels to plot. If not specified, all labels are plotted.
+            Specified as a list of lists, same as for the channels.
+        start
+            The start time for the plot. If not specified, the plot starts
+            from the first time point.
+        stop
+            The stop time for the plot. If not specified, the plot stops
+            at the last time point.
+        resolution
+            The resolution of the plot in the time unit of the channels.
+            If not specified, the channel and label data is not downsampled.
+        time_unit
+            The time unit in which channel and label data are represented
+            in. If not specified, the time unit of the channels is used.
+        include_attached_labels
+            Whether to automatically include labels attached to the
+            specified channels.
+        subplots_kwargs
+            Keyword arguments passed to ``matplotlib.pyplot.subplots``.
+        """
         # 1) turn channels into proper list of (list of) Channels
         # 2) same for labels, respect include_attached_labels
         # 3) determine global start and end time (of selected channels)
@@ -1689,6 +2022,38 @@ class TimeDataCollection:
 
         This allows to annotate the data with labels, and to modify
         channel offsets interactively.
+
+        Parameters
+        ----------
+        channels
+            The channels to plot. If not specified, all channels are plotted.
+            Specified as a list of lists with individual lists containing
+            channels to be collected in one subplot.
+        labels
+            The labels to plot. If not specified, all labels are plotted.
+            Specified as a list of lists, same as for the channels.
+        start
+            The start time for the plot. If not specified, the plot starts
+            from the first time point.
+        stop
+            The stop time for the plot. If not specified, the plot stops
+            at the last time point.
+        resolution
+            The resolution of the plot in the time unit of the channels.
+            If not specified, the channel and label data is not downsampled.
+        time_unit
+            The time unit in which channel and label data are represented
+            in. If not specified, the time unit of the channels is used.
+        include_attached_labels
+            Whether to automatically include labels attached to the
+            specified channels.
+        channel_overviews
+            Similar to ``channel``, but plots the specified channels
+            in a separate subplot in a condensed way including a
+            location map of the main plot. If set to ``True``, all
+            chosen channels are plotted in a single overview.
+        subplots_kwargs
+            Keyword arguments passed to ``matplotlib.pyplot.subplots``.
         """
         import ipywidgets as widgets
         from enum import Enum

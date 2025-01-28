@@ -24,10 +24,8 @@ autoapi_template_dir = "_autoapi_templates"
 autoapi_options = [
     "members",
     "undoc-members",
-    "private-members",
     "show-inheritance",
     "show-module-summary",
-    "special-members",
 ]
 
 templates_path = ["_templates", "_autoapi_templates"]
