@@ -1,5 +1,7 @@
 """Core module, contains the central data container class :class:`Vitals`."""
 
+from __future__ import annotations
+
 import json
 import os
 
@@ -15,7 +17,13 @@ from typing import Any
 from IPython.display import display
 from pathlib import Path
 
-from vitabel.timeseries import Channel, Label, IntervalLabel, TimeDataCollection, _timeseries_list_info
+from vitabel.timeseries import (
+    Channel,
+    Label,
+    IntervalLabel,
+    TimeDataCollection,
+    _timeseries_list_info,
+)
 from vitabel.utils import (
     loading,
     constants,
@@ -106,17 +114,13 @@ class Vitals:
     ### Data import
     ###
 
-    def add_defibrillator_recording(
-        self,
-        filepath: Path | str,
-        metadata={}
-    ) -> None:
+    def add_defibrillator_recording(self, filepath: Path | str, metadata={}) -> None:
         """Add the (defibrillator) recording to the cardio object.
 
         Imports from the following defibrillator device families are supported:
 
         * **ZOLL X-Series:** data needs to be exported from device as JSON or XML.
-        * **ZOLL E-Series and ZOLL AED-Pro:** Data needs to be exported 
+        * **ZOLL E-Series and ZOLL AED-Pro:** Data needs to be exported
           from the device in two files, ``filename_ecg.txt`` and ``filename.xml``,
           where ``filename`` can be arbitrary. Both files are assumed to be in the
           same directory. Pass the path to ``filename_ecg.txt`` to import the data.
@@ -143,7 +147,7 @@ class Vitals:
         Parameters
         ----------
         filepath
-            The path to a file exported from the defibrillator. Check the 
+            The path to a file exported from the defibrillator. Check the
             description above to see, depending on the device type, which
             file path should be passed.
         metadata
@@ -839,7 +843,7 @@ class Vitals:
         ``pandas.DataFrame``.
         """
         return _timeseries_list_info(self.channels)
-    
+
     def get_label_infos(self) -> pd.DataFrame:
         """Returns information about all labels in a nicely formatted
         ``pandas.DataFrame``.
@@ -854,6 +858,32 @@ class Vitals:
         label_info = self.get_label_infos()
         display(channel_info)
         display(label_info)
+
+    def truncate(
+        self,
+        start_time: Timestamp | Timedelta | None = None,
+        stop_time: Timestamp | Timedelta | None = None,
+    ) -> Vitals:
+        """Return a new object where time data has been truncated to a specified interval.
+
+        Parameters
+        ----------
+        start_time
+            The start time of the truncated recording.
+        stop_time
+            The stop time of the truncated recording.
+
+        Returns
+        -------
+        Vitals
+            A new Vitals object containing the truncated recording.
+        """
+        truncated_vitals = Vitals()
+        for channel in self.channels:
+            truncated_vitals.add_channel(channel.truncate(start_time, stop_time))
+        for label in self.data.global_labels:
+            truncated_vitals.add_global_label(label.truncate(start_time, stop_time))
+        return truncated_vitals
 
     ###
     ### Plotting
@@ -875,7 +905,7 @@ class Vitals:
         .. SEEALSO::
 
             :meth:`.TimeDataCollection.plot`
-        
+
         Parameters
         ----------
         channels
@@ -933,7 +963,7 @@ class Vitals:
         .. SEEALSO::
 
             :meth:`.TimeDataCollection.plot_interactive`
-        
+
         Parameters
         ----------
         channels

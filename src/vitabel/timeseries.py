@@ -33,7 +33,7 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
 
     If the time series objects have a ``metadata`` attribute, the
     metadata will also be included in the summary.
-    
+
     Parameters
     ----------
     series_list
@@ -50,12 +50,14 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
         if len(series) > 0:
             min_time = min(series.time_index)
             max_time = max(series.time_index)
-        info_dict[idx].update({
-            "First Entry": min_time,
-            "Last Entry": max_time,
-            "Length": len(series),
-            "Offset": series.offset,
-        })
+        info_dict[idx].update(
+            {
+                "First Entry": min_time,
+                "Last Entry": max_time,
+                "Length": len(series),
+                "Offset": series.offset,
+            }
+        )
     return pd.DataFrame(info_dict).transpose()
 
 
@@ -217,7 +219,7 @@ class TimeSeriesBase:
         self.time_index += delta_t
         self.offset += delta_t
 
-    def convert_time_input(self, time_input: Timestamp | Timedelta | float):
+    def convert_time_input(self, time_input: Timestamp | Timedelta | float | str):
         """Convert a given time input to either a timedelta or a timestamp,
         whatever is compatible with the time format of this channel.
 
@@ -236,6 +238,8 @@ class TimeSeriesBase:
                 return self.time_start + time_input
             elif isinstance(time_input, Timestamp):
                 return time_input
+            elif isinstance(time_input, str):
+                return pd.Timestamp(time_input)
 
         if isinstance(time_input, Timestamp):
             raise ValueError(
@@ -245,6 +249,8 @@ class TimeSeriesBase:
             return time_input
         elif isinstance(time_input, numbers.Number):
             return pd.to_timedelta(time_input, unit=self.time_unit)
+        elif isinstance(time_input, str):
+            return pd.to_timedelta(time_input)
 
         raise ValueError(
             f"Could not convert {time_input} to a valid time format for this channel"
@@ -462,6 +468,40 @@ class Channel(TimeSeriesBase):
         for label in self.labels:
             label.shift_time_index(delta_t=delta_t, time_unit=time_unit)
         return super().shift_time_index(delta_t, time_unit)
+
+    def truncate(
+        self,
+        start_time: Timestamp | Timedelta | None = None,
+        stop_time: Timestamp | Timedelta | None = None,
+    ) -> Channel:
+        """Return a new channel that is a truncated version of this channel.
+
+        Parameters
+        ----------
+        start_time
+            The start time for the truncated channel.
+        stop_time
+            The stop time for the truncated channel.
+        """
+
+        truncated_time_index, truncated_data = self.get_data(
+            start=start_time, stop=stop_time
+        )
+        # if channel is absolute time, the truncated time index is absolute,
+        # no need to set start_time. also, offset is applied to the truncated
+        # time index.
+        truncated_channel = Channel(
+            name=self.name,
+            time_index=truncated_time_index,
+            data=truncated_data,
+            time_unit=self.time_unit,
+            plotstyle=copy(self.plotstyle),
+            metadata=copy(self.metadata),
+        )
+        for label in self.labels:
+            truncated_label = label.truncate(start_time=start_time, stop_time=stop_time)
+            truncated_channel.attach_label(truncated_label)
+        return truncated_channel
 
     def to_dict(self) -> dict[str, Any]:
         """Construct a serializable dictionary that represents
@@ -756,7 +796,7 @@ class Label(TimeSeriesBase):
 
     def __eq__(self, other: Label) -> bool:
         """Check whether two labels are equal.
-        
+
         Returns ``True`` if the name, time index, and data of the labels
         are equal, and ``False`` otherwise.
         """
@@ -834,7 +874,7 @@ class Label(TimeSeriesBase):
 
         If the data point with the earliest time is removed,
         the :attr:`time_start` attribute of the label is updated.
-        
+
         Parameters
         ----------
         time_data
@@ -858,6 +898,34 @@ class Label(TimeSeriesBase):
                 offset = self.time_index[0]
                 self.time_start += offset
                 self.time_index -= offset
+
+    def truncate(
+        self,
+        start_time: Timestamp | Timedelta | None = None,
+        stop_time: Timestamp | Timedelta | None = None,
+    ) -> Label:
+        """Return a new label that is a truncated version of this label.
+
+        Parameters
+        ----------
+        start_time
+            The start time for the truncated label.
+        stop_time
+            The stop time for the truncated label.
+        """
+
+        truncated_time_index, truncated_data = self.get_data(
+            start=start_time, stop=stop_time
+        )
+        truncated_label = Label(
+            name=self.name,
+            time_index=truncated_time_index,
+            data=truncated_data,
+            time_unit=self.time_unit,
+            plotstyle=copy(self.plotstyle),
+            metadata=copy(self.metadata),
+        )
+        return truncated_label
 
     @classmethod
     def from_dict(cls, datadict: dict[str, Any]) -> Label:
@@ -1108,8 +1176,9 @@ class IntervalLabel(Label):
         A dictionary that can be used to store additional
         information about the label.
     """
+
     def _check_data_shape(self, time_index: npt.ArrayLike, data: npt.ArrayLike):
-        """Check that the time data is well-formed, and that there is either no data, 
+        """Check that the time data is well-formed, and that there is either no data,
         or as many data points as intervals.
         """
         if len(time_index) % 2 != 0:
@@ -1133,6 +1202,34 @@ class IntervalLabel(Label):
         if self.is_time_absolute():
             time_intervals += self.time_start
         return time_intervals
+
+    def truncate(
+        self,
+        start_time: Timestamp | Timedelta | None = None,
+        stop_time: Timestamp | Timedelta | None = None,
+    ) -> IntervalLabel:
+        """Return a new label that is a truncated version of this label.
+
+        Parameters
+        ----------
+        start_time
+            The start time for the truncated label.
+        stop_time
+            The stop time for the truncated label.
+        """
+
+        truncated_time_index, truncated_data = self.get_data(
+            start=start_time, stop=stop_time
+        )
+        truncated_label = IntervalLabel(
+            name=self.name,
+            time_index=truncated_time_index.flatten(),
+            data=truncated_data,
+            time_unit=self.time_unit,
+            plotstyle=copy(self.plotstyle),
+            metadata=copy(self.metadata),
+        )
+        return truncated_label
 
     def to_dict(self) -> dict[str, Any]:
         """A serialization of the label as a dictionary."""
@@ -1749,7 +1846,7 @@ class TimeDataCollection:
     @classmethod
     def from_dict(cls, datadict: dict[str, Any]) -> TimeDataCollection:
         """Create a collection from a dictionary representation.
-        
+
         Parameters
         ----------
         datadict
@@ -1772,7 +1869,7 @@ class TimeDataCollection:
         time_spec: Timestamp | Timedelta | float | str | None,
     ) -> Timedelta | Timestamp | float | None:
         """Parse a time specification into a timestamp or timedelta.
-        
+
         Parameters
         ----------
         time_spec
@@ -1865,7 +1962,7 @@ class TimeDataCollection:
     ):
         """Get the minimum or maximum time value from the specified channels,
         or return the specified time value if it is not ``None``.
-        
+
         Parameters
         ----------
         time
@@ -1925,7 +2022,7 @@ class TimeDataCollection:
         subplots_kwargs: dict[str, Any] | None = None,
     ):
         """Plot the data in the collection.
-        
+
         Parameters
         ----------
         channels

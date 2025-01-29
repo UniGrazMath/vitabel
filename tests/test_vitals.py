@@ -9,7 +9,7 @@ import pytest
 from pathlib import Path
 
 from vitabel import Vitals
-from vitabel import Channel, Label
+from vitabel import Channel, Label, IntervalLabel
 
 
 def compare_two_dictionaries(dict1, dict2):
@@ -577,6 +577,55 @@ def test_get_label_info():
     assert "Label2" in np.asarray(info_dict["Name"])
     assert "test" in info_dict.columns
     assert 1 in info_dict["test"]
+
+
+def test_truncate():
+    cha = Channel(
+        "Channel1",
+        [
+            "2020-04-13 02:48:00",
+            "2020-04-13 02:50:00",
+            "2020-04-13 02:56:00",
+            "2020-04-13 02:58:00",
+        ],
+        np.array([1, 2, 3, 4]),
+    )
+    _ = Label(
+        "local label",
+        ["2020-04-13 02:40:00", "2020-04-13 02:50:35"],
+        [0, 1],
+        anchored_channel=cha,
+    )
+    lab = IntervalLabel(
+        name="global label",
+        time_index=[
+            "2020-04-13 01:00:00",
+            "2020-04-13 2:00:00",
+            "2020-04-13 02:50:00",
+            "2020-04-13 02:55:00",
+            "2020-04-13 02:56:00",
+            "2020-04-13 03:00:00",
+        ],
+        data=["one", "two", "three"],
+    )
+    case = Vitals()
+    case.add_channel(cha)
+    case.add_global_label(lab)
+    truncated_case = case.truncate("2020-04-13 02:49:30", "2020-04-13 02:57:00")
+    assert len(truncated_case.channels[0]) == 2
+    ch_time, _ = truncated_case.channels[0].get_data()
+    assert np.all(pd.Timestamp("2020-04-13 02:49:30") <= ch_time)
+    assert np.all(pd.Timestamp("2020-04-13 02:57:00") >= ch_time)
+    assert len(truncated_case.labels) == 2
+    local_label = truncated_case.get_label("local label")
+    assert len(local_label) == 1
+    global_label = truncated_case.get_label("global label")
+    assert len(global_label) == 2
+    np.testing.assert_equal(global_label.data, ["two", "three"])
+    np.testing.assert_equal(
+        global_label.intervals[-1],
+        pd.DatetimeIndex(["2020-04-13 02:56:00", "2020-04-13 03:00:00"]),
+    )
 
 
 def test_saving_and_loading(tmpdir):
