@@ -193,7 +193,9 @@ def test_timeseriesbase_convert_time():
         relative_time_series.convert_time_input(absolute_time)
 
     absolute_time = "2020-02-02 12:00:00"
-    assert absolute_time_series.convert_time_input(absolute_time) == pd.Timestamp(absolute_time)
+    assert absolute_time_series.convert_time_input(absolute_time) == pd.Timestamp(
+        absolute_time
+    )
     with pytest.raises(ValueError, match="only leading negative signs are allowed"):
         relative_time_series.convert_time_input(absolute_time)
 
