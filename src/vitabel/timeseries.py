@@ -217,7 +217,7 @@ class TimeSeriesBase:
         self.time_index += delta_t
         self.offset += delta_t
 
-    def convert_time_input(self, time_input: Timestamp | Timedelta | float):
+    def convert_time_input(self, time_input: Timestamp | Timedelta | float | str):
         """Convert a given time input to either a timedelta or a timestamp,
         whatever is compatible with the time format of this channel.
 
@@ -236,6 +236,8 @@ class TimeSeriesBase:
                 return self.time_start + time_input
             elif isinstance(time_input, Timestamp):
                 return time_input
+            elif isinstance(time_input, str):
+                return pd.Timestamp(time_input)
 
         if isinstance(time_input, Timestamp):
             raise ValueError(
@@ -245,6 +247,8 @@ class TimeSeriesBase:
             return time_input
         elif isinstance(time_input, numbers.Number):
             return pd.to_timedelta(time_input, unit=self.time_unit)
+        elif isinstance(time_input, str):
+            return pd.to_timedelta(time_input)
 
         raise ValueError(
             f"Could not convert {time_input} to a valid time format for this channel"
@@ -1195,6 +1199,34 @@ class IntervalLabel(Label):
         if self.is_time_absolute():
             time_intervals += self.time_start
         return time_intervals
+    
+    def truncate(
+        self,
+        start_time: Timestamp | Timedelta | None = None,
+        stop_time: Timestamp | Timedelta | None = None,
+    ) -> IntervalLabel:
+        """Return a new label that is a truncated version of this label.
+        
+        Parameters
+        ----------
+        start_time
+            The start time for the truncated label.
+        stop_time
+            The stop time for the truncated label.
+        """
+
+        truncated_time_index, truncated_data = self.get_data(
+            start=start_time, stop=stop_time
+        )
+        truncated_label = IntervalLabel(
+            name=self.name,
+            time_index=truncated_time_index.flatten(),
+            data=truncated_data,
+            time_unit=self.time_unit,
+            plotstyle=copy(self.plotstyle),
+            metadata=copy(self.metadata),
+        )
+        return truncated_label
 
     def to_dict(self) -> dict[str, Any]:
         """A serialization of the label as a dictionary."""

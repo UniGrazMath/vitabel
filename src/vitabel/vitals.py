@@ -879,7 +879,7 @@ class Vitals:
         truncated_vitals = Vitals()
         for channel in self.channels:
             truncated_vitals.add_channel(channel.truncate(start_time, stop_time))
-        for label in self.labels:
+        for label in self.data.global_labels:
             truncated_vitals.add_global_label(label.truncate(start_time, stop_time))
         return truncated_vitals
 
