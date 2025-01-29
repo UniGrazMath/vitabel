@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import copy
 from typing import Any
+from matplotlib.text import Text
 
 import itertools as it
 import json
@@ -1045,7 +1046,7 @@ class Label(TimeSeriesBase):
                     "facecolor": "white",
                     "edgecolor": "black",
                 }
-                plot_axes.text(
+                txt = plot_axes.text(
                     t,
                     0.9 * ymin + 0.1 * ymax,
                     text,
@@ -1054,6 +1055,7 @@ class Label(TimeSeriesBase):
                     color=line_color,
                     bbox=box_props,
                 )
+                txt._from_vitals_label = True
                 artists = [artist]
         else:
             artists = plot_axes.plot(time_index, data, **base_plotstyle)
@@ -2321,6 +2323,12 @@ class TimeDataCollection:
                 ymin, ymax = ax.get_ylim()
                 min_input.value = ymin
                 max_input.value = ymax
+                text_labels = ax.findobj(
+                    lambda artist: isinstance(artist, Text) and hasattr(artist, "_from_vitals_label")
+                )
+                for artist in text_labels:
+                    artist.set_y(ymin + 0.1 * (ymax - ymin))
+
 
         def format_coords(x, y):
             format_string = f"(x, y) = ({x:.2f}, {y:.2f})"
