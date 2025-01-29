@@ -599,9 +599,12 @@ def test_truncate():
     lab = IntervalLabel(
         name="global label",
         time_index=[
-            "2020-04-13 01:00:00", "2020-04-13 2:00:00",
-            "2020-04-13 02:50:00", "2020-04-13 02:55:00",
-            "2020-04-13 02:56:00", "2020-04-13 03:00:00"
+            "2020-04-13 01:00:00",
+            "2020-04-13 2:00:00",
+            "2020-04-13 02:50:00",
+            "2020-04-13 02:55:00",
+            "2020-04-13 02:56:00",
+            "2020-04-13 03:00:00",
         ],
         data=["one", "two", "three"],
     )
@@ -621,7 +624,7 @@ def test_truncate():
     np.testing.assert_equal(global_label.data, ["two", "three"])
     np.testing.assert_equal(
         global_label.intervals[-1],
-        pd.DatetimeIndex(["2020-04-13 02:56:00", "2020-04-13 03:00:00"])
+        pd.DatetimeIndex(["2020-04-13 02:56:00", "2020-04-13 03:00:00"]),
     )
 
 

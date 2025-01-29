@@ -33,7 +33,7 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
 
     If the time series objects have a ``metadata`` attribute, the
     metadata will also be included in the summary.
-    
+
     Parameters
     ----------
     series_list
@@ -50,12 +50,14 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
         if len(series) > 0:
             min_time = min(series.time_index)
             max_time = max(series.time_index)
-        info_dict[idx].update({
-            "First Entry": min_time,
-            "Last Entry": max_time,
-            "Length": len(series),
-            "Offset": series.offset,
-        })
+        info_dict[idx].update(
+            {
+                "First Entry": min_time,
+                "Last Entry": max_time,
+                "Length": len(series),
+                "Offset": series.offset,
+            }
+        )
     return pd.DataFrame(info_dict).transpose()
 
 
@@ -466,14 +468,14 @@ class Channel(TimeSeriesBase):
         for label in self.labels:
             label.shift_time_index(delta_t=delta_t, time_unit=time_unit)
         return super().shift_time_index(delta_t, time_unit)
-    
+
     def truncate(
         self,
         start_time: Timestamp | Timedelta | None = None,
         stop_time: Timestamp | Timedelta | None = None,
     ) -> Channel:
         """Return a new channel that is a truncated version of this channel.
-        
+
         Parameters
         ----------
         start_time
@@ -484,7 +486,7 @@ class Channel(TimeSeriesBase):
 
         truncated_time_index, truncated_data = self.get_data(
             start=start_time, stop=stop_time
-        )  
+        )
         # if channel is absolute time, the truncated time index is absolute,
         # no need to set start_time. also, offset is applied to the truncated
         # time index.
@@ -794,7 +796,7 @@ class Label(TimeSeriesBase):
 
     def __eq__(self, other: Label) -> bool:
         """Check whether two labels are equal.
-        
+
         Returns ``True`` if the name, time index, and data of the labels
         are equal, and ``False`` otherwise.
         """
@@ -872,7 +874,7 @@ class Label(TimeSeriesBase):
 
         If the data point with the earliest time is removed,
         the :attr:`time_start` attribute of the label is updated.
-        
+
         Parameters
         ----------
         time_data
@@ -903,7 +905,7 @@ class Label(TimeSeriesBase):
         stop_time: Timestamp | Timedelta | None = None,
     ) -> Label:
         """Return a new label that is a truncated version of this label.
-        
+
         Parameters
         ----------
         start_time
@@ -1174,8 +1176,9 @@ class IntervalLabel(Label):
         A dictionary that can be used to store additional
         information about the label.
     """
+
     def _check_data_shape(self, time_index: npt.ArrayLike, data: npt.ArrayLike):
-        """Check that the time data is well-formed, and that there is either no data, 
+        """Check that the time data is well-formed, and that there is either no data,
         or as many data points as intervals.
         """
         if len(time_index) % 2 != 0:
@@ -1199,14 +1202,14 @@ class IntervalLabel(Label):
         if self.is_time_absolute():
             time_intervals += self.time_start
         return time_intervals
-    
+
     def truncate(
         self,
         start_time: Timestamp | Timedelta | None = None,
         stop_time: Timestamp | Timedelta | None = None,
     ) -> IntervalLabel:
         """Return a new label that is a truncated version of this label.
-        
+
         Parameters
         ----------
         start_time
@@ -1843,7 +1846,7 @@ class TimeDataCollection:
     @classmethod
     def from_dict(cls, datadict: dict[str, Any]) -> TimeDataCollection:
         """Create a collection from a dictionary representation.
-        
+
         Parameters
         ----------
         datadict
@@ -1866,7 +1869,7 @@ class TimeDataCollection:
         time_spec: Timestamp | Timedelta | float | str | None,
     ) -> Timedelta | Timestamp | float | None:
         """Parse a time specification into a timestamp or timedelta.
-        
+
         Parameters
         ----------
         time_spec
@@ -1959,7 +1962,7 @@ class TimeDataCollection:
     ):
         """Get the minimum or maximum time value from the specified channels,
         or return the specified time value if it is not ``None``.
-        
+
         Parameters
         ----------
         time
@@ -2019,7 +2022,7 @@ class TimeDataCollection:
         subplots_kwargs: dict[str, Any] | None = None,
     ):
         """Plot the data in the collection.
-        
+
         Parameters
         ----------
         channels
