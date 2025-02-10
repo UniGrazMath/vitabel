@@ -2451,7 +2451,7 @@ class TimeDataCollection:
                     channel_lists, label_lists, x_indicators, channel_axes
                 ):
                     old_ylims = subax.get_ylim()
-                    old_ylabel = subax.yaxis.get_label()
+                    old_ylabel = subax.yaxis.get_label_text()
                     subax.clear()
                     subax.add_artist(indicator)
                     subax.format_coord = format_coords
@@ -2465,7 +2465,7 @@ class TimeDataCollection:
                     )
                     subax.grid(True)
                     subax.set_xlabel(f"time [{time_unit}]", labelpad=-12, fontsize=7)
-                    subax.yaxis.set_label(old_ylabel)
+                    subax.yaxis.set_label_text(old_ylabel)
                     if old_ylims != (0, 1):
                         subax.set_ylim(old_ylims)
                     for channel in channel_list:
