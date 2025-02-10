@@ -1397,7 +1397,14 @@ class IntervalLabel(Label):
         time_unit: str | None = None,
         reference_time: Timestamp | Timedelta | float | None = None,
     ):
-        """Plot the label data using ``matplotlib.pyplot.errorbar``.
+        """Plot the label data using an error bar or a
+        filled background region.
+
+        If the label has (numeric) data, the intervals are plotted
+        as error bars on the height of the data points. If there
+        is no data, the intervals are plotted as a filled background region.
+
+        Uses ``matplotlib.pyplot.errorbar`` or ``matplotlib.pyplot.axvspan``.
 
         Parameters
         ----------
@@ -1431,24 +1438,32 @@ class IntervalLabel(Label):
 
         time_midpoints = np.mean(time_index, axis=1)
         time_radius = np.diff(time_index, axis=1).reshape(-1) / 2.0
-        if data is None:
-            data = np.zeros_like(time_midpoints, dtype=float)
 
         if plot_axes is None:
             figure, plot_axes = plt.subplots()
         else:
             figure = plot_axes.get_figure()
 
-        base_plotstyle = {"fmt": "none", "capsize": 3}
-        base_plotstyle.update(self.plotstyle.copy())
+        base_plotstyle = self.plotstyle.copy()
         if plotstyle is not None:
             base_plotstyle.update(plotstyle)
 
-        # TODO: deal with data string entries (or disallow them)
-        artist = plot_axes.errorbar(
-            time_midpoints, data, xerr=time_radius, **base_plotstyle
-        )
-        artist.set_label(self.name)
+        if data is not None:
+            # TODO: deal with data string entries (or disallow them)
+            if "fmt" not in base_plotstyle:
+                base_plotstyle["fmt"] = "none"
+            if "capsize" not in base_plotstyle:
+                base_plotstyle["capsize"] = 3
+            artist = plot_axes.errorbar(
+                time_midpoints, data, xerr=time_radius, **base_plotstyle
+            )
+            artist.set_label(self.name)
+        else:
+            if "alpha" not in base_plotstyle:
+                base_plotstyle["alpha"] = 0.5
+            for (xmin, xmax) in time_index:
+                artist = plot_axes.axvspan(xmin, xmax, **base_plotstyle)
+            artist.set_label(self.name)  # only set legend once
 
         return figure
 
