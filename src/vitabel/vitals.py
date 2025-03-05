@@ -799,16 +799,16 @@ class Vitals:
         return self.data.get_label(name, **kwargs)
 
     def get_channels_or_labels(
-        self, name: str | None = None, **kwargs
+        self, name: str | None = None, label_type: type[Label] | None = None,  **kwargs
     ) -> list[Channel | Label]:
         return self.data.get_channels(name, **kwargs) + self.data.get_labels(
-            name, **kwargs
+            name, label_type, **kwargs
         )
 
     def get_channel_or_label(
-        self, name: str | None = None, **kwargs
+        self, name: str | None = None, label_type: type[Label] | None = None, **kwargs
     ) -> Channel | Label:
-        channels_or_labels = self.get_channels_or_labels(name, **kwargs)
+        channels_or_labels = self.get_channels_or_labels(name, label_type, **kwargs)
         if len(channels_or_labels) != 1:
             raise ValueError(
                 "Channel or Label specification was ambiguous, no unique channel or Label "
