@@ -128,7 +128,9 @@ def read_zolljson(filepath: Path | str):
     ) = read_zolljson_contin(wave_recording_elements, starttime)
     contin_info = contin_info.loc["UnitsVal"].to_dict()
 
-    contin_info["SpO2 %, Waveform"] = "1"
+    if "SpO2 %, Waveform" in contin_info:
+        # unit from .json is Percent (%), override as dimensionless.
+        contin_info["SpO2 %, Waveform"] = "1"
 
     trend_data, trend_info = read_zolljson_trend(trend_rpt, starttime)
     compr_data, compr_info = read_zolljson_compr(cpr_compr, starttime)
@@ -999,10 +1001,12 @@ def read_zollxml(filepath: Path | str):
         inv_ch,
     ) = read_zollxml_contin(wave_recording_elements, starttime)
     contin_info = contin_info.loc["UnitsVal"].to_dict()
-    contin_info["SpO2 %, Waveform"] = "1"
+
+    if "SpO2 %, Waveform" in contin_info:
+        # unit from .json is Percent (%), override as dimensionless.
+        contin_info["SpO2 %, Waveform"] = "1"
 
     trend_data, trend_info = read_zollxml_trend(trend_rpt, starttime)
-
     compr_data, compr_info = read_zollxml_compr(cpr_compr, starttime)
 
     defib = {
