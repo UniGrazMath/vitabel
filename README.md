@@ -1,3 +1,6 @@
+[![Documentation Status](https://readthedocs.org/projects/vitabel/badge/?version=latest)](https://vitabel.readthedocs.io/en/latest/autoapi/vitabel/vitals/index.html)
+
+
 # vitabel: a toolbox for interactively annotating and labeling vital data
 
 In a nutshell, the `vitabel` package allows loading, processing, and annotating vital
@@ -56,7 +59,11 @@ case.plot_interactive(
 More detailed explicit examples (including the required test data) are
 contained in the [examples directory](/examples/).
 
-### Development
+### 📚 Documentation
+
+You can find the full API documentation here: [vitabel.readthedocs.io – vitals module](https://vitabel.readthedocs.io/en/latest/autoapi/vitabel/vitals/index.html)
+
+### 🛠️ Development
 
 Setup a development environment by using the Python project and environment [management
 tool `uv`](https://docs.astral.sh/uv/). To setup the environment, simply run
