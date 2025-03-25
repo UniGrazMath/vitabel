@@ -1461,7 +1461,7 @@ class IntervalLabel(Label):
         else:
             if "alpha" not in base_plotstyle:
                 base_plotstyle["alpha"] = 0.5
-            for (xmin, xmax) in time_index:
+            for xmin, xmax in time_index:
                 artist = plot_axes.axvspan(xmin, xmax, **base_plotstyle)
             artist.set_label(self.name)  # only set legend once
 
@@ -2436,11 +2436,11 @@ class TimeDataCollection:
                 min_input.value = ymin
                 max_input.value = ymax
                 text_labels = ax.findobj(
-                    lambda artist: isinstance(artist, Text) and hasattr(artist, "_from_vitals_label")
+                    lambda artist: isinstance(artist, Text)
+                    and hasattr(artist, "_from_vitals_label")
                 )
                 for artist in text_labels:
                     artist.set_y(ymin + 0.1 * (ymax - ymin))
-
 
         def format_coords(x, y):
             format_string = f"(x, y) = ({x:.2f}, {y:.2f})"
