@@ -414,9 +414,15 @@ def read_zolljson_contin(wave_recording_elements, starttime):
         item_start = starttime + pd.Timedelta(milliseconds=item["StdHdr"]["MsecTime"])
         item_framesize = item["WaveRec"]["FrameSize"]
         item_properties = df_DataChannels[item_type]
-        item_stop = item_start + pd.Timedelta(
-            microseconds=item_properties["RecordingIntervals"]
-        )
+        try:
+            item_time_duration = pd.Timedelta(
+                microseconds=item_properties["RecordingIntervals"]
+            )
+        except ValueError:  # Observed error: RecordingIntervals is NaN
+            invalid_ch["Invalid Msecs"] += 1
+            continue
+
+        item_stop = item_start + item_time_duration
 
         try:
             item_samples = item["WaveRec"]["UnpackedSamples"]
@@ -501,6 +507,7 @@ def read_zolljson_contin(wave_recording_elements, starttime):
         - invalid_ch["No Samples"]
         - invalid_ch["Empty Samples"]
         - invalid_ch["Wrong Framesize"]
+        - invalid_ch["Invalid Msecs"]
     )
     logger.info(f"{num_successfully_loaded} recordings were successfully loaded.")
 
