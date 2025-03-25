@@ -718,7 +718,7 @@ class Vitals:
 
     def save_data(self, path: Path | str):
         """
-        Saves the channels to a JSON-File. Saves also channel_path and a hash in the metadata dict.
+        Saves the Channels and Labels to a JSON-File. Saves also channel_path and a hash in the metadata dict.
 
         Parameters
         ----------
@@ -741,7 +741,8 @@ class Vitals:
             json.dump(json_dict, fd, cls=NumpyEncoder)
 
     def load_data(self, path: Path | str, check_channel_hash=True):
-        """Load the channel_information from path.
+        """
+        Loads a Channels and Labels from a previously saved JSON file.
 
         Parameters
         ----------
