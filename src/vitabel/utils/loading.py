@@ -568,10 +568,15 @@ def read_zolljson_contin(wave_recording_elements, starttime):
             refkey = ekey
         i += 1
     if refkey != "":
+        reference_median = 0
+        if msec_time_dev[refkey]:
+            reference_median = np.median(msec_time_dev[refkey])
+
         for key in msec_time_dev:
-            shift_keys[key] = np.median(msec_time_dev[key]) - np.median(
-                msec_time_dev[refkey]
-            )
+            time_median = 0
+            if msec_time_dev[key]:
+                time_median = np.median(msec_time_dev[key])
+            shift_keys[key] = time_median - reference_median
 
         for key in timeseries_data:
             timeseries_data[key].index = timeseries_data[key].index - pd.Timedelta(
