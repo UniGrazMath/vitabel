@@ -2,7 +2,7 @@
   <tr>
     <td width="170"><img src="https://raw.githubusercontent.com/UniGrazMath/vitabel/main/assets/logo/Vitabel_Logo.png" width="150"></td>
     <td width="850">
-      <b><h1 style="margin: 0;">vitable</h1></b>
+      <b><h1 style="margin: 0;">vitabel</h1></b>
       <p style="margin-top: 0;">a toolbox for interactively annotating and labeling vital data</p>
     </td>
   </tr>
