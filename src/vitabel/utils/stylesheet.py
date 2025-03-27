@@ -203,4 +203,9 @@ DEFAULT_PLOT_STYLE = {
         "markeredgecolor": "goldenrod",
         "markerfacecolor": "gold",
     },
+      "EKG": {
+        "label": "ECG",
+        "color": "green",
+        "alpha": 0.6,
+    },
 }
