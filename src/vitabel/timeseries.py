@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import copy
 from typing import Any
 from matplotlib.text import Text
+from matplotlib.patches import Rectangle
 
 import itertools as it
 import json
@@ -1460,9 +1461,17 @@ class IntervalLabel(Label):
             artist.set_label(self.name)
         else:
             if "alpha" not in base_plotstyle:
-                base_plotstyle["alpha"] = 0.5
+                base_plotstyle["alpha"] = 0.2
+            if "color" not in base_plotstyle:
+                base_plotstyle["color"] = "blue"
+            if not any(k in base_plotstyle for k in ('facecolor', 'fc')):
+                base_plotstyle["facecolor"] = base_plotstyle["color"]
+                
             for xmin, xmax in time_index:
-                artist = plot_axes.axvspan(xmin, xmax, **base_plotstyle)
+                # Filter for props in kwargs which can be handled by axvspan / pathces.Rectangle
+                rectangle_props = Rectangle((0, 0), 1, 1).properties().keys()
+                filtered_base_plotstyle = {k: v for k, v in base_plotstyle.items() if k in rectangle_props}
+                artist = plot_axes.axvspan(xmin, xmax, **filtered_base_plotstyle)
             artist.set_label(self.name)  # only set legend once
 
         return figure
