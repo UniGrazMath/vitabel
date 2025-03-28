@@ -2130,6 +2130,7 @@ class TimeDataCollection:
         time_unit: str | None = None,
         include_attached_labels: bool = False,
         channel_overviews: list[list[ChannelSpecification | int]] | bool = False,
+        limited_overview: bool = False,
         subplots_kwargs: dict[str, Any] | None = None,
     ):
         """Plot the data in the collection using ipywidgets.
@@ -2166,6 +2167,8 @@ class TimeDataCollection:
             in a separate subplot in a condensed way including a
             location map of the main plot. If set to ``True``, all
             chosen channels are plotted in a single overview.
+        limited_overview
+            Whether the time interva of the overview subplot should be limited to the recording interval of the channels depicted in the overview.
         subplots_kwargs
             Keyword arguments passed to ``matplotlib.pyplot.subplots``.
         """
@@ -2517,16 +2520,26 @@ class TimeDataCollection:
                 ]
             return
 
-        def repaint_overview_plot():
+        def repaint_overview_plot(limited_overview : bool = False):
             for channel_list, subax in zip(channel_overviews, overview_axes):
                 if not channel_list:
                     continue
-                ov_start = self._get_time_extremum(
-                    None, channel_lists=[channel_list], minimum=True
-                )
-                ov_stop = self._get_time_extremum(
-                    None, channel_lists=[channel_list], minimum=False
-                )
+
+                if limited_overview: 
+                    ov_start = self._get_time_extremum(
+                        None, channel_lists=[channel_list], minimum=True
+                    )
+                    ov_stop = self._get_time_extremum(
+                        None, channel_lists=[channel_list], minimum=False
+                    )
+                else: # To adapt the xlim of overview based on the entire recording
+                    ov_start = self._get_time_extremum(
+                        time=None, channel_lists=channel_lists, minimum=True
+                    )
+                    ov_stop = self._get_time_extremum(
+                        time=None, channel_lists=channel_lists, minimum=False
+                    )    
+                
                 data_width = (ov_stop - ov_start).total_seconds()
                 resolution = data_width / screen_pixel_width
                 subax.clear()
@@ -2548,7 +2561,7 @@ class TimeDataCollection:
                 )
                 subax.grid(False)
 
-        repaint_overview_plot()
+        repaint_overview_plot(limited_overview=limited_overview)
         repaint_plot(start, stop)
 
         interactive_plot = widgets.AppLayout(
@@ -2721,7 +2734,7 @@ class TimeDataCollection:
                                 channel: Channel
                                 channel.shift_time_index(delta_t=offset)
                             shifting_reference_time = None
-                            repaint_overview_plot()
+                            repaint_overview_plot(limited_overview=limited_overview)
                             repaint_plot(start, stop)
 
             elif (
