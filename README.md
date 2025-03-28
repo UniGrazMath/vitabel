@@ -1,7 +1,14 @@
+<table width="100%">
+  <tr>
+    <td width="170"><img src="https://raw.githubusercontent.com/UniGrazMath/vitabel/main/assets/logo/Vitabel_Logo.png" width="150"></td>
+    <td width="850">
+      <b><h1 style="margin: 0;">vitabel</h1></b>
+      <p style="margin-top: 0;">a toolbox for interactively annotating and labeling vital data</p>
+    </td>
+  </tr>
+</table>
+
 [![Documentation Status](https://readthedocs.org/projects/vitabel/badge/?version=latest)](https://vitabel.readthedocs.io/en/latest/autoapi/vitabel/vitals/index.html)
-
-
-# vitabel: a toolbox for interactively annotating and labeling vital data
 
 In a nutshell, the `vitabel` package allows loading, processing, and annotating vital
 data (e.g., medical time-series data e.g. from defibrillators, anesthesia charts or critical care) interactively in a Jupyter notebook.

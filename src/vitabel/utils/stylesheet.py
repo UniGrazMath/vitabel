@@ -203,9 +203,15 @@ DEFAULT_PLOT_STYLE = {
         "markeredgecolor": "goldenrod",
         "markerfacecolor": "gold",
     },
-      "EKG": {
+    "EKG": {
         "label": "ECG",
         "color": "green",
         "alpha": 0.6,
+    },
+    "PAP" : {
+        "label" : "Pulmonary Artery",
+        'linestyle' : '-' ,
+        'marker' : '',
+        'color' : '#FFFF00',
     },
 }
