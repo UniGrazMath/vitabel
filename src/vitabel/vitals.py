@@ -742,7 +742,7 @@ class Vitals:
 
     def load_data(self, path: Path | str, check_channel_hash=True):
         """
-        Loads a Channels and Labels from a previously saved JSON file.
+        Loads all Channels and Labels from a previously saved JSON file.
 
         Parameters
         ----------
