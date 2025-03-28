@@ -204,6 +204,9 @@ DEFAULT_PLOT_STYLE = {
         "markerfacecolor": "gold",
     },
     "PAP" : {
-        "label" : "Pulmonary artery"
-        'color' : '#FFFF00', 'ls' : '-' , "lw" : 0.5, 'marker' : ''},
+        "label" : "Pulmonary Artery",
+        'linestyle' : '-' ,
+        'marker' : '',
+        'color' : '#FFFF00',
+    },
 }
