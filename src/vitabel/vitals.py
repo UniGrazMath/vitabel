@@ -790,10 +790,9 @@ class Vitals:
             See :meth:`.get_label` for valid specifications
         """
 
-        if filter_by_label_type != None:
-            return [l for l in case.get_labels(name) if type(l) == label_type]
-        else:
-            return self.data.get_labels(name, **kwargs)
+        if label_type is not None:
+            return [label for label in case.get_labels(name) if type(l) is label_type]
+        return self.data.get_labels(name, **kwargs)
 
     def get_label(self, name: str | None = None, **kwargs) -> Label:
         return self.data.get_label(name, **kwargs)
