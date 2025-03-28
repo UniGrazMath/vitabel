@@ -801,7 +801,7 @@ class Vitals:
         self, name: str | None = None, label_type: type[Label] | None = None,  **kwargs
     ) -> list[Channel | Label]:
         return self.data.get_channels(name, **kwargs) + self.data.get_labels(
-            name, label_type, **kwargs
+            name, label_type=label_type, **kwargs
         )
 
     def get_channel_or_label(
