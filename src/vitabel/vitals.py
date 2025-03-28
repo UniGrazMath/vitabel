@@ -776,23 +776,39 @@ class Vitals:
     def get_channel(self, name: str | None = None, **kwargs) -> Channel:
         return self.data.get_channel(name, **kwargs)
 
-    def get_labels(self, name: str | None = None, **kwargs) -> list[Label]:
+    def get_labels(self, name: str | None = None, label_type: type[Label] | None = None, **kwargs) -> list[Label]:
+        """Returns a list of labels based on their name.
+        
+        Parameters
+        ----------
+        name : str
+            The name of the labels to retrieve.
+            See :meth:`.get_label` for valid specifications.
+        label_type : TYPE, optional
+            A specification of the label type (IntervalLabel or Label) to retrieve
+        **kwargs
+            Keyword arguments to filter the labels by. 
+            See :meth:`.get_label` for valid specifications
+        """
+
+        if label_type is not None:
+            return [label for label in case.get_labels(name) if type(l) is label_type]
         return self.data.get_labels(name, **kwargs)
 
     def get_label(self, name: str | None = None, **kwargs) -> Label:
         return self.data.get_label(name, **kwargs)
 
     def get_channels_or_labels(
-        self, name: str | None = None, **kwargs
+        self, name: str | None = None, label_type: type[Label] | None = None,  **kwargs
     ) -> list[Channel | Label]:
         return self.data.get_channels(name, **kwargs) + self.data.get_labels(
-            name, **kwargs
+            name, label_type=label_type, **kwargs
         )
 
     def get_channel_or_label(
-        self, name: str | None = None, **kwargs
+        self, name: str | None = None, label_type: type[Label] | None = None, **kwargs
     ) -> Channel | Label:
-        channels_or_labels = self.get_channels_or_labels(name, **kwargs)
+        channels_or_labels = self.get_channels_or_labels(name, label_type=label_type, **kwargs)
         if len(channels_or_labels) != 1:
             raise ValueError(
                 "Channel or Label specification was ambiguous, no unique channel or Label "
