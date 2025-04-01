@@ -1428,6 +1428,7 @@ class IntervalLabel(Label):
             the time data. If not specified, the :attr:`time_start` attribute is used.
         """
         time_index, data = self.get_data(start=start, stop=stop)
+        artist = None
 
         if self.is_time_absolute():
             reference_time = reference_time or self.time_start
@@ -1458,7 +1459,6 @@ class IntervalLabel(Label):
             artist = plot_axes.errorbar(
                 time_midpoints, data, xerr=time_radius, **base_plotstyle
             )
-            artist.set_label(self.name)
         else:
             if "alpha" not in base_plotstyle:
                 base_plotstyle["alpha"] = 0.2
@@ -1472,6 +1472,9 @@ class IntervalLabel(Label):
                 rectangle_props = Rectangle((0, 0), 1, 1).properties().keys()
                 filtered_base_plotstyle = {k: v for k, v in base_plotstyle.items() if k in rectangle_props}
                 artist = plot_axes.axvspan(xmin, xmax, **filtered_base_plotstyle)
+        
+        # check if any artist was generated
+        if artist is not None:
             artist.set_label(self.name)  # only set legend once
 
         return figure
