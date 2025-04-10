@@ -1090,7 +1090,7 @@ class Vitals:
         ----------
         mode : str, optional,
             Which method to use to detect ventilations from CO2 signal. Either 'filter' which is a unpublished method by Wolfgang Kern or 'threshold',
-            which is the method presented by  Aramendi et al. "Feasibility of the capnogram to monitor ventilation rate during cardiopulmonary resuscitation" DOI: 10.1016/j.resuscitation.2016.08.033
+            which is the method presented by  Aramendi et al. "Feasibility of the capnogram to monitor ventilation rate during cardiopulmonary resuscitation" `10.1016/j.resuscitation.2016.08.033 <https://doi.org/10.1016/j.resuscitation.2016.08.033>`_
         breaththresh : float, optional
             Threshold value below which a minimum is identified as ventilation/respiration . The default is 2 (mmHg).
         etco2_thresh : float, optional
@@ -1306,7 +1306,7 @@ class Vitals:
 
         .. SEEALSO::
 
-            The method is described in DOI: 10.1016/j.resuscitation.2021.12.028 or in the
+            The method is described in 10.1016/j.resuscitation.2021.12.028 <https://doi.org/10.1016/j.resuscitation.2021.12.028>`_ or in the
             Thesis 'Towards a data-driven cardiac arrest treatment' by Wolfgang Kern in more detail.
             See https://unipub.uni-graz.at/obvugrhs/content/titleinfo/10138095 for more information.
         """
@@ -1402,8 +1402,7 @@ class Vitals:
     def find_CC_periods_acc(self):  # part of register application
         """Determines start and stop of periods with continuous chest compressions.
 
-        The procedure is implemented as described in
-        DOI: 10.1016/j.resuscitation.2021.12.028 and DOI: 10.1016/j.dib.2022.107973
+        The procedure is implemented as described in `10.1016/j.resuscitation.2021.12.028 <https://doi.org/10.1016/j.resuscitation.2021.12.028>`_ and `10.1016/j.dib.2022.107973 <https://doi.org/10.1016/j.dib.2022.107973>`_.
 
         Requires a channel 'cpr_acceleration' in the recording, which is the signal of an accelerometry-based feedback sensor for cardiopulmonary resuscitation.
 
@@ -1614,8 +1613,7 @@ class Vitals:
         """Predicts the circulation of a case by using the channels
         'cpr_acceleration' channel and the 'ecg_pads' channel.
 
-        The procedure that is used has been published by Kern et al. in
-        DOI: 10.1109/TBME.2023.3242717.
+        The procedure that is used has been published by Kern et al. in `10.1109/TBME.2023.3242717 <https://doi.org/10.1109/TBME.2023.3242717>`_.
 
         Adds three labels 'rosc_prediction', 'rosc_probability', and
         'rosc_decision_function'. Here 'rosc_decision_function' is the output
