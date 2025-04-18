@@ -351,15 +351,16 @@ class Vitals:
                         "data": None,
                     }
             for label in ann_dict["One-Annotator"]:
-                if label in label_dict:
-                    label_dict[label]["timestamp"] = np.append(
-                        label_dict[label]["timestamp"], ann_dict["One-Annotator"][label]
-                    )
-                else:
-                    label_dict[label] = {
-                        "timestamp": ann_dict["One-Annotator"][label],
-                        "data": None,
-                    }
+                if label != "ZOLL CCF": 
+                    if label in label_dict:
+                        label_dict[label]["timestamp"] = np.append(
+                            label_dict[label]["timestamp"], ann_dict["One-Annotator"][label]
+                        )
+                    else:
+                        label_dict[label] = {
+                            "timestamp": ann_dict["One-Annotator"][label],
+                            "data": None,
+                        }
             self.add_data_from_dict(
                 label_dict, metadata={"Creator": "Consensus"}, datatype="label"
             )
