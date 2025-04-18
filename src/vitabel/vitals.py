@@ -378,8 +378,10 @@ class Vitals:
             for annotator in compression_dict:
                 if "cc" in self.data.channel_names:
                     compression_channel = self.data.get_channel("cc")
-                else:
+                elif "cc_depth" in self.data.channel_names:
                     compression_channel = self.data.get_channel("cc_depth")
+                else: 
+                    compression_channel = None
                 self.add_data_from_dict(
                     compression_dict[annotator],
                     metadata={"Creator": annotator},
