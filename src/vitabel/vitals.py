@@ -1306,7 +1306,7 @@ class Vitals:
 
         .. SEEALSO::
 
-            The method is described in 10.1016/j.resuscitation.2021.12.028 <https://doi.org/10.1016/j.resuscitation.2021.12.028>`_ or in the
+            The method is described in `10.1016/j.resuscitation.2021.12.028 <https://doi.org/10.1016/j.resuscitation.2021.12.028>`_ or in the
             Thesis 'Towards a data-driven cardiac arrest treatment' by Wolfgang Kern in more detail.
             See https://unipub.uni-graz.at/obvugrhs/content/titleinfo/10138095 for more information.
         """
