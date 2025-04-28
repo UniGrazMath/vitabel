@@ -212,6 +212,6 @@ DEFAULT_PLOT_STYLE = {
         "label" : "Pulmonary Artery",
         'linestyle' : '-' ,
         'marker' : '',
-        'color' : '#FFFF00',
+        'color' : '#FFD700',
     },
 }
