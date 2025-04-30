@@ -1336,7 +1336,7 @@ class IntervalLabel(Label):
         """
         interval_start, interval_end = time_data
         if self.is_empty() and isinstance(interval_start, Timestamp):
-            self.time_start = interval_start
+            self.time_start = pd.to_datetime(interval_start)
 
         if self.is_time_absolute():
             interval_start -= self.time_start
