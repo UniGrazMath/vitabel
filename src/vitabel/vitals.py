@@ -1101,7 +1101,7 @@ class Vitals:
         ----------
         mode : str, optional,
             Which method to use to detect ventilations from CO2 signal. Either 'filter' which is a unpublished method by Wolfgang Kern or 'threshold',
-            which is the method presented by  Aramendi et al. "Feasibility of the capnogram to monitor ventilation rate during cardiopulmonary resuscitation" `10.1016/j.resuscitation.2016.08.033 <https://doi.org/10.1016/j.resuscitation.2016.08.033>`_
+            which is the method presented by Aramendi et al. "Feasibility of the capnogram to monitor ventilation rate during cardiopulmonary resuscitation" `10.1016/j.resuscitation.2016.08.033 <https://doi.org/10.1016/j.resuscitation.2016.08.033>`_
         breaththresh : float, optional
             Threshold value below which a minimum is identified as ventilation/respiration . The default is 2 (mmHg).
         etco2_thresh : float, optional
@@ -1756,7 +1756,9 @@ class Vitals:
         threshold: int = 0
         ) -> ThresholdMetrics:
         """
-        Calculates the area and duration where the signal falls below a threshold.
+        Calculates the area and duration where the signal falls below a specified threshold.
+        
+        The calculations might be used with a mean arterial pressure to asses for hypotension. The calculations follow the proposed metrics by Maheswari et al. `10.1213/ANE.0000000000003482 <https://doi.org/10.1213/ANE.0000000000003482>`_
 
         Parameters
         ----------
@@ -1777,10 +1779,16 @@ class Vitals:
             A dataclass containing:
             - area_under_threshold: Metric
                 The area under the curve below the threshold.
-                Unit stored in `Metric.unit` (e.g., "minutes × unit").
+                Unit stored in `Metric.unit` (e.g., "minutes × unit of singal").
             - minutes_under_threshold: Metric
                 The total duration the signal remained below the threshold.
-                Unit stored in `Metric.unit` (e.g., "minutes").
+                Unit stored in `Metric.unit` (i.e., "minutes").
+            - time_weighted_average_under_threshold : Metric
+                AUC devided by the `observational_interval` 
+                Unit stored in `Metric.unit` (unit of signal)
+            - minutes_observational_interval: Metric
+                Interval from first recording to last recording (eventually specified by `start_time` and `stop_time`)
+                Unit stored in `Metric.unit` (i.e., "minutes").
         """
         return _area_under_threshold(
             self,

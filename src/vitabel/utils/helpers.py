@@ -1083,10 +1083,16 @@ def area_under_threshold(
         A dataclass containing:
         - area_under_threshold: Metric
             The area under the curve below the threshold.
-            Unit stored in `Metric.unit` (e.g., "minutes × unit").
+            Unit stored in `Metric.unit` (e.g., "minutes × unit of singal").
         - minutes_under_threshold: Metric
             The total duration the signal remained below the threshold.
-            Unit stored in `Metric.unit` (e.g., "minutes").
+            Unit stored in `Metric.unit` (i.e., "minutes").
+        - time_weighted_average_under_threshold : Metric
+            AUC devided by the `observational_interval` 
+            Unit stored in `Metric.unit` (unit of signal)
+        - minutes_observational_interval: Metric
+            Interval from first recording to last recording (eventually specified by `start_time` and `stop_time`)
+            Unit stored in `Metric.unit` (i.e., "minutes").
     """
         
     timeseries = case.get_channel_or_label(name).truncate(start_time= start_time, 
@@ -1116,11 +1122,15 @@ def area_under_threshold(
     mask=trapez_lengths!=0
 
     area_value = 0.5*np.sum(delta_t*(trapez_lengths/60)) #in minutes * value units
-    duration_value = np.sum(delta_t[trapez_lengths>0])/60 #in minutes   
+    duration_under_threshold_value = np.sum(delta_t[trapez_lengths>0])/60 #in minutes  
+    observational_interval_duration_value = (time_index.max() - time_index.min()) / 60 #in minutes
+    twa_value = area_value / observational_interval_duration_value # in value units
 
     return ThresholdMetrics(
-        area_under_threshold=Metric(value=area_value, unit='minutes × unit'),
-        minutes_under_threshold=Metric(value=duration_value, unit='minutes')
+        area_under_threshold=Metric(value=area_value, unit='minutes × value units'),
+        minutes_under_threshold=Metric(value=duration_under_threshold_value, unit='minutes'),
+        time_weighted_average_under_threshold=Metric(value=twa_value, unit="value units"),
+        minutes_observational_interval=Metrics(value=observational_interval_duration_value, unit='minutes')
     )
 
 
