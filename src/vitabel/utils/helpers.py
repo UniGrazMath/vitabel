@@ -1130,7 +1130,7 @@ def area_under_threshold(
         area_under_threshold=Metric(value=area_value, unit='minutes × value units'),
         minutes_under_threshold=Metric(value=duration_under_threshold_value, unit='minutes'),
         time_weighted_average_under_threshold=Metric(value=twa_value, unit="value units"),
-        minutes_observational_interval=Metrics(value=observational_interval_duration_value, unit='minutes')
+        minutes_observational_interval=Metric(value=observational_interval_duration_value, unit='minutes')
     )
 
 
