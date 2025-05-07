@@ -36,6 +36,7 @@ from vitabel.utils import (
     determine_gaps_in_recording,
     linear_interpolate_gaps_in_recording,
 )
+from vitabel.utils.helpers import area_under_threshold as _area_under_threshold
 from vitabel.utils import DEFAULT_PLOT_STYLE
 from vitabel.typing import (
     Timedelta,
@@ -43,7 +44,7 @@ from vitabel.typing import (
     ChannelSpecification,
     LabelSpecification,
 )
-
+from vitabel.utils.type_defs import ThresholdMetrics
 
 logger: logging.Logger = logging.getLogger("vitabel")
 """Global package logger."""
@@ -1745,3 +1746,46 @@ class Vitals:
             )
             for lab in [pred_lab, prob_lab, dec_lab]:
                 self.data.add_global_label(lab)
+
+
+    def area_under_threshold(
+        self,
+        name: str,
+        start_time: Timestamp | Timedelta | None = None,
+        stop_time: Timestamp | Timedelta | None = None,
+        threshold: int = 0
+        ) -> ThresholdMetrics:
+        """
+        Calculates the area and duration where the signal falls below a threshold.
+
+        Parameters
+        ----------
+        name : str
+            The name of the label or channel - retrieved by meth:`get_channel_or_label`. Allowed to be passed
+            either as a positional or a keyword argument.
+        start_time : pandas.Timestamp or pandas.Timedelta or None, optional
+            Start time for truncating the timeseries (meth:`truncate). If None, starts from the beginning.
+        stop_time : pandas.Timestamp or pandas.Timedelta or None, optional
+            End time for truncating the timeseries (meth:`truncate`). If None, goes until the end.
+        threshold : int
+            The threshold value relative to which the area under the curve (AUC) is calculated.
+            Specifically, it computes the area where the signal lies *below* this threshold.
+
+        Returns
+        -------
+        ThresholdMetrics
+            A dataclass containing:
+            - area_under_threshold: Metric
+                The area under the curve below the threshold.
+                Unit stored in `Metric.unit` (e.g., "minutes × unit").
+            - minutes_under_threshold: Metric
+                The total duration the signal remained below the threshold.
+                Unit stored in `Metric.unit` (e.g., "minutes").
+        """
+        return _area_under_threshold(
+            self,
+            name=name,
+            start_time=start_time,
+            stop_time=stop_time,
+            threshold=threshold
+        )

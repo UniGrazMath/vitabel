@@ -15,12 +15,19 @@ import scipy.stats as stats
 
 from pathlib import Path
 
+from vitabel.typing import (
+    Timedelta,
+    Timestamp)
+
+from vitabel.utils.type_defs import ThresholdMetrics, Metric
+
 __all__ = [
     "deriv",
     "integrate",
     "construct_snippets",
     "av_mean",
     "predict_circulation",
+    "area_under_threshold",
     "rename_channels",
     "NumpyEncoder",
     "determine_gaps_in_recording",
@@ -1042,6 +1049,81 @@ def predict_circulation(erg):
                 case_pred[key] = np.append(case_pred[key], X_background[i, j])
 
     return case_pred
+
+
+def area_under_threshold(
+    case,
+    name: str | None = None,
+    start_time: Timestamp | Timedelta | None = None,
+    stop_time: Timestamp | Timedelta | None = None,
+    threshold: int = 0 ) ->  ThresholdMetrics:
+
+    """
+    Calculates the area and duration where the signal falls below a threshold.
+
+    This function retrieves a timeseries by name, subtracts a threshold,
+    detects zero-crossings (sign changes), interpolates crossing points,
+    and integrates the area under the threshold using the trapezoidal rule.
+
+    Parameters
+    ----------
+    name : str
+        The name of the label or channel - retrieved by meth:`get_channel_or_label`. Allowed to be passed
+        either as a positional or a keyword argument.
+    start_time : pandas.Timestamp or pandas.Timedelta or None, optional
+        Start time for truncating the timeseries (meth:`truncate). If None, starts from the beginning.
+    stop_time : pandas.Timestamp or pandas.Timedelta or None, optional
+        End time for truncating the timeseries (meth:`truncate`). If None, goes until the end.
+    threshold : int
+        The threshold of the signal under which the area is calcuated.
+
+    Returns
+    -------
+    ThresholdMetrics
+        A dataclass containing:
+        - area_under_threshold: Metric
+            The area under the curve below the threshold.
+            Unit stored in `Metric.unit` (e.g., "minutes × unit").
+        - minutes_under_threshold: Metric
+            The total duration the signal remained below the threshold.
+            Unit stored in `Metric.unit` (e.g., "minutes").
+    """
+        
+    timeseries = case.get_channel_or_label(name).truncate(start_time= start_time, 
+                                            stop_time=stop_time)
+    time_index= timeseries.time_index.total_seconds() # timestamps float (seconds since first value) 
+    data = timeseries.data - threshold #deviation from threhsold
+
+    mask=data[1:]*data[:-1]<0 # condition whether sign change in array,
+    margins=np.vstack((time_index[:-1][mask],time_index[1:][mask])) # timestamps before and after sign change in a 2-dim array
+    t_intersect2=time_index[:-1][mask]-(time_index[1:][mask]-time_index[:-1][mask])/(data[1:][mask]-data[:-1][mask])*data[:-1][mask] # compute intersection points with x-Axis 
+
+    column_of_zeros = np.zeros(len(t_intersect2))  # Create a column of zeros
+    new_array = np.vstack( ((t_intersect2, column_of_zeros))) # Stack new intersect timepoints with zero (data values)
+
+    all_data=np.vstack((time_index,data)) # create array for measured data
+    all_data=np.hstack((all_data,new_array)) # add intersect data to all_data array
+
+    all_data[1][all_data[1]>0]=0 # Set all points above 0 to zero
+    all_data[1]*=(-1) # convert negative values to positive ones 
+
+    time_sort=np.argsort(all_data[0]) # Create time Ordering of time stamps
+    all_data[1]=all_data[1][time_sort] # Apply time ordering to data
+    all_data[0]=all_data[0][time_sort] # Apply time ordering to time
+
+    delta_t=all_data[0][1:]-all_data[0][:-1] # compute distance in x
+    trapez_lengths=all_data[1][1:]+all_data[1][:-1] # compute sum of y-values 
+    mask=trapez_lengths!=0
+
+    area_value = 0.5*np.sum(delta_t*(trapez_lengths/60)) #in minutes * value units
+    duration_value = np.sum(delta_t[trapez_lengths>0])/60 #in minutes   
+
+    return ThresholdMetrics(
+        area_under_threshold=Metric(value=area_value, unit='minutes × unit'),
+        minutes_under_threshold=Metric(value=duration_value, unit='minutes')
+    )
+
+
 
 
 def rename_channels(dats, new_name_dict):
