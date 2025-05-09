@@ -5,6 +5,7 @@ import datetime
 import io
 import joblib
 import json
+import warnings
 
 import numpy as np
 import numpy.typing as npt
@@ -1094,45 +1095,67 @@ def area_under_threshold(
             Interval from first recording to last recording (eventually specified by `start_time` and `stop_time`)
             Unit stored in `Metric.unit` (i.e., "minutes").
     """
+    if start_time and stop_time and start_time < stop_time :
         
-    timeseries = case.get_channel_or_label(name).truncate(start_time= start_time, 
-                                            stop_time=stop_time)
-    time_index= timeseries.time_index.total_seconds() # timestamps float (seconds since first value) 
-    data = timeseries.data - threshold #deviation from threhsold
+        timeseries=case.get_channel_or_label(name)
+        # Create a pandas Series
+        index, values = timeseries.get_data()
+        ts = pd.Series(values, index=index)
+        
+        # Define the time points you want to interpolate at
+        target_times = sorted(set([start_time, stop_time]))
+        # Interpolation: union the index with new times, sort, interpolate, and extract
+        interpolated = ts.reindex(ts.index.union(target_times)).sort_index().interpolate(method='time')
+        result = interpolated.loc[target_times]
+    
+        timeseries_trunc = timeseries.truncate(start_time= start_time, stop_time=stop_time)
+        
+        for timestamp, value in result.items():
+            timeseries_trunc.add_data(time_data=timestamp, value=value)
+    
+        time_index = timeseries_trunc.time_index.total_seconds() # timestamps float (seconds since first value) 
+        data = timeseries_trunc.data - threshold #deviation from threhsold
+    
+        mask=data[1:]*data[:-1]<0 # condition whether sign change in array,
+        margins=np.vstack((time_index[:-1][mask],time_index[1:][mask])) # timestamps before and after sign change in a 2-dim array
+        t_intersect2=time_index[:-1][mask]-(time_index[1:][mask]-time_index[:-1][mask])/(data[1:][mask]-data[:-1][mask])*data[:-1][mask] # compute intersection points with x-Axis 
+    
+        column_of_zeros = np.zeros(len(t_intersect2))  # Create a column of zeros
+        new_array = np.vstack( ((t_intersect2, column_of_zeros))) # Stack new intersect timepoints with zero (data values)
+    
+        all_data=np.vstack((time_index,data)) # create array for measured data
+        all_data=np.hstack((all_data,new_array)) # add intersect data to all_data array
+    
+        all_data[1][all_data[1]>0]=0 # Set all points above 0 to zero
+        all_data[1]*=(-1) # convert negative values to positive ones 
+    
+        time_sort=np.argsort(all_data[0]) # Create time Ordering of time stamps
+        all_data[1]=all_data[1][time_sort] # Apply time ordering to data
+        all_data[0]=all_data[0][time_sort] # Apply time ordering to time
+    
+        delta_t=all_data[0][1:]-all_data[0][:-1] # compute distance in x
+        trapez_lengths=all_data[1][1:]+all_data[1][:-1] # compute sum of y-values 
+        mask=trapez_lengths!=0
+    
+        area_value = 0.5*np.sum(delta_t*(trapez_lengths/60)) #in minutes * value units
+        duration_under_threshold_value = np.sum(delta_t[trapez_lengths>0])/60 #in minutes  
+        observational_interval_duration_value = (time_index.max() - time_index.min()) / 60 #in minutes
+        twa_value = area_value / observational_interval_duration_value # in value units
 
-    mask=data[1:]*data[:-1]<0 # condition whether sign change in array,
-    margins=np.vstack((time_index[:-1][mask],time_index[1:][mask])) # timestamps before and after sign change in a 2-dim array
-    t_intersect2=time_index[:-1][mask]-(time_index[1:][mask]-time_index[:-1][mask])/(data[1:][mask]-data[:-1][mask])*data[:-1][mask] # compute intersection points with x-Axis 
-
-    column_of_zeros = np.zeros(len(t_intersect2))  # Create a column of zeros
-    new_array = np.vstack( ((t_intersect2, column_of_zeros))) # Stack new intersect timepoints with zero (data values)
-
-    all_data=np.vstack((time_index,data)) # create array for measured data
-    all_data=np.hstack((all_data,new_array)) # add intersect data to all_data array
-
-    all_data[1][all_data[1]>0]=0 # Set all points above 0 to zero
-    all_data[1]*=(-1) # convert negative values to positive ones 
-
-    time_sort=np.argsort(all_data[0]) # Create time Ordering of time stamps
-    all_data[1]=all_data[1][time_sort] # Apply time ordering to data
-    all_data[0]=all_data[0][time_sort] # Apply time ordering to time
-
-    delta_t=all_data[0][1:]-all_data[0][:-1] # compute distance in x
-    trapez_lengths=all_data[1][1:]+all_data[1][:-1] # compute sum of y-values 
-    mask=trapez_lengths!=0
-
-    area_value = 0.5*np.sum(delta_t*(trapez_lengths/60)) #in minutes * value units
-    duration_under_threshold_value = np.sum(delta_t[trapez_lengths>0])/60 #in minutes  
-    observational_interval_duration_value = (time_index.max() - time_index.min()) / 60 #in minutes
-    twa_value = area_value / observational_interval_duration_value # in value units
-
+    else:
+        warnings.warn(f"Please give valid 'start_time'({start_time}) and 'stop_time'({stop_time}) values. The function retunred 'np.nan'.", category=UserWarning)
+        
+        area_value = np.nan
+        duration_under_threshold_value = np.nan
+        observational_interval_duration_value = np.nan
+        twa_value = np.nan
+    
     return ThresholdMetrics(
         area_under_threshold=Metric(value=area_value, unit='minutes × value units'),
         minutes_under_threshold=Metric(value=duration_under_threshold_value, unit='minutes'),
         time_weighted_average_under_threshold=Metric(value=twa_value, unit="value units"),
         minutes_observational_interval=Metric(value=observational_interval_duration_value, unit='minutes')
     )
-
 
 
 
