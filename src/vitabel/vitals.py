@@ -838,18 +838,21 @@ class Vitals:
         """Alias for :meth:`get_channel_or_label_names`."""
         return self.get_channel_or_label_names()
 
-    def rec_start(self) -> pd.Timestamp:  # part of register application
-        """Returns the first timestamp among all channels in this case."""
+    def rec_start(self) -> pd.Timestamp | None:  # part of register application
+        """Returns the first timestamp among all channels in this case or None if no channel exists."""
+        if not self.channels:
+            return None
         if self.data.is_time_absolute():
             start_time = self.data.channels[0].time_start
             for chan in self.channels:
                 if chan.time_start < start_time:
                     start_time = chan.time_start
-
         return start_time
 
-    def rec_stop(self) -> pd.Timestamp:  # part of register application
-        """Returns the last timestamp among all channels in this case."""
+    def rec_stop(self) -> pd.Timestamp | None:  # part of register application
+        """Returns the last timestamp among all channels in this case or None if no channel exists."""
+        if not self.channels:
+            return None
         if self.data.is_time_absolute():
             stop_time = (
                 self.data.channels[0].time_start + self.data.channels[0].time_index[-1]
@@ -858,7 +861,6 @@ class Vitals:
                 cha_stop_time = chan.time_start + chan.time_index[-1]
                 if cha_stop_time > stop_time:
                     stop_time = cha_stop_time
-
         return stop_time
 
     def get_channel_infos(self) -> pd.DataFrame:
