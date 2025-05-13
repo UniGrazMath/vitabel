@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import copy
 from typing import Any
 from matplotlib.text import Text
+from matplotlib.patches import Rectangle
 
 import itertools as it
 import json
@@ -1335,7 +1336,7 @@ class IntervalLabel(Label):
         """
         interval_start, interval_end = time_data
         if self.is_empty() and isinstance(interval_start, Timestamp):
-            self.time_start = interval_start
+            self.time_start = pd.to_datetime(interval_start)
 
         if self.is_time_absolute():
             interval_start -= self.time_start
@@ -1427,6 +1428,7 @@ class IntervalLabel(Label):
             the time data. If not specified, the :attr:`time_start` attribute is used.
         """
         time_index, data = self.get_data(start=start, stop=stop)
+        artist = None
 
         if self.is_time_absolute():
             reference_time = reference_time or self.time_start
@@ -1457,12 +1459,22 @@ class IntervalLabel(Label):
             artist = plot_axes.errorbar(
                 time_midpoints, data, xerr=time_radius, **base_plotstyle
             )
-            artist.set_label(self.name)
         else:
             if "alpha" not in base_plotstyle:
-                base_plotstyle["alpha"] = 0.5
+                base_plotstyle["alpha"] = 0.2
+            if "color" not in base_plotstyle:
+                base_plotstyle["color"] = "blue"
+            if not any(k in base_plotstyle for k in ('facecolor', 'fc')):
+                base_plotstyle["facecolor"] = base_plotstyle["color"]
+                
             for xmin, xmax in time_index:
-                artist = plot_axes.axvspan(xmin, xmax, **base_plotstyle)
+                # Filter for props in kwargs which can be handled by axvspan / pathces.Rectangle
+                rectangle_props = Rectangle((0, 0), 1, 1).properties().keys()
+                filtered_base_plotstyle = {k: v for k, v in base_plotstyle.items() if k in rectangle_props}
+                artist = plot_axes.axvspan(xmin, xmax, **filtered_base_plotstyle)
+        
+        # check if any artist was generated
+        if artist is not None:
             artist.set_label(self.name)  # only set legend once
 
         return figure
