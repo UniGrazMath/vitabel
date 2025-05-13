@@ -802,6 +802,18 @@ class Vitals:
         return self.data.get_labels(name, **kwargs)
 
     def get_label(self, name: str | None = None, **kwargs) -> Label:
+        """Return a list of labels.
+
+        Parameters
+        ----------
+        name
+            The name of the label to retrieve. Allowed to be passed
+            either as a positional or a keyword argument.
+        kwargs
+            Keyword arguments to filter the labels by. The
+            specified arguments are compared to the attributes
+            of the labels.
+        """
         return self.data.get_label(name, **kwargs)
 
     def get_channels_or_labels(
