@@ -1099,19 +1099,26 @@ def area_under_threshold(
         
         timeseries=case.get_channel_or_label(name)
         timeseries_trunc = timeseries.truncate(start_time= start_time, stop_time=stop_time)
-        index, values = timeseries.get_data()
- 
+        
+
+
         # Create a pandas Series
-        if index.min() <= start_time and index.max() >= stop_time:
-            ts = pd.Series(values, index=index)
-            
-            # Define the time points you want to interpolate at
-            target_times = sorted(set([start_time, stop_time]))
-            # Interpolation: union the index with new times, sort, interpolate, and extract
-            interpolated = ts.reindex(ts.index.union(target_times)).sort_index().interpolate(method='time')
-            result = interpolated.loc[target_times]
-            for timestamp, value in result.items():
-                timeseries_trunc.add_data(time_data=timestamp, value=value)
+        index, values = timeseries.get_data()
+        ts = pd.Series(values, index=index)
+
+        # Define the time points to interpolate at
+        target_times=[]
+        if index.min() <= start_time:
+            target_times.append(start_time)    
+        if index.max() >= stop_time:
+            target_times.append(stop_time)
+        target_times = sorted(set(target_times)
+                              
+        # Interpolation: union the index with new times, sort, interpolate, and extract
+        interpolated = ts.reindex(ts.index.union(target_times)).sort_index().interpolate(method='time')
+        result = interpolated.loc[target_times]
+        for timestamp, value in result.items():
+            timeseries_trunc.add_data(time_data=timestamp, value=value)
         
         time_index = timeseries_trunc.time_index.total_seconds() # timestamps float (seconds since first value) 
         data = timeseries_trunc.data - threshold #deviation from threhsold
