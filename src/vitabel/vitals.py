@@ -36,6 +36,7 @@ from vitabel.utils import (
     determine_gaps_in_recording,
     linear_interpolate_gaps_in_recording,
 )
+from vitabel.utils.helpers import area_under_threshold as _area_under_threshold
 from vitabel.utils import DEFAULT_PLOT_STYLE
 from vitabel.typing import (
     Timedelta,
@@ -43,7 +44,7 @@ from vitabel.typing import (
     ChannelSpecification,
     LabelSpecification,
 )
-
+from vitabel.utils.type_defs import ThresholdMetrics
 
 logger: logging.Logger = logging.getLogger("vitabel")
 """Global package logger."""
@@ -1098,7 +1099,7 @@ class Vitals:
         ----------
         mode : str, optional,
             Which method to use to detect ventilations from CO2 signal. Either 'filter' which is a unpublished method by Wolfgang Kern or 'threshold',
-            which is the method presented by  Aramendi et al. "Feasibility of the capnogram to monitor ventilation rate during cardiopulmonary resuscitation" `10.1016/j.resuscitation.2016.08.033 <https://doi.org/10.1016/j.resuscitation.2016.08.033>`_
+            which is the method presented by Aramendi et al. "Feasibility of the capnogram to monitor ventilation rate during cardiopulmonary resuscitation" `10.1016/j.resuscitation.2016.08.033 <https://doi.org/10.1016/j.resuscitation.2016.08.033>`_
         breaththresh : float, optional
             Threshold value below which a minimum is identified as ventilation/respiration . The default is 2 (mmHg).
         etco2_thresh : float, optional
@@ -1743,3 +1744,54 @@ class Vitals:
             )
             for lab in [pred_lab, prob_lab, dec_lab]:
                 self.data.add_global_label(lab)
+
+
+    def area_under_threshold(
+        self,
+        name: str,
+        start_time: Timestamp | Timedelta | None = None,
+        stop_time: Timestamp | Timedelta | None = None,
+        threshold: int = 0
+        ) -> ThresholdMetrics:
+        """
+        Calculates the area and duration where the signal falls below a specified threshold.
+        
+        The calculations might be used with a mean arterial pressure to asses for hypotension. The calculations follow the proposed metrics by Maheswari et al. `10.1213/ANE.0000000000003482 <https://doi.org/10.1213/ANE.0000000000003482>`_
+
+        Parameters
+        ----------
+        name : str
+            The name of the label or channel - retrieved by meth:`get_channel_or_label`. Allowed to be passed
+            either as a positional or a keyword argument.
+        start_time : pandas.Timestamp or pandas.Timedelta or None, optional
+            Start time for truncating the timeseries (meth:`truncate). If None, starts from the beginning.
+        stop_time : pandas.Timestamp or pandas.Timedelta or None, optional
+            End time for truncating the timeseries (meth:`truncate`). If None, goes until the end.
+        threshold : int
+            The threshold value relative to which the area under the curve (AUC) is calculated.
+            Specifically, it computes the area where the signal lies *below* this threshold.
+
+        Returns
+        -------
+        ThresholdMetrics
+            A dataclass containing:
+            - area_under_threshold: Metric
+                The area under the curve below the threshold.
+                Unit stored in `Metric.unit` (e.g., "minutes × unit of singal").
+            - minutes_under_threshold: Metric
+                The total duration the signal remained below the threshold.
+                Unit stored in `Metric.unit` (i.e., "minutes").
+            - time_weighted_average_under_threshold : Metric
+                AUC devided by the `observational_interval` 
+                Unit stored in `Metric.unit` (unit of signal)
+            - minutes_observational_interval: Metric
+                Interval from first recording to last recording (eventually specified by `start_time` and `stop_time`)
+                Unit stored in `Metric.unit` (i.e., "minutes").
+        """
+        return _area_under_threshold(
+            self,
+            name=name,
+            start_time=start_time,
+            stop_time=stop_time,
+            threshold=threshold
+        )
