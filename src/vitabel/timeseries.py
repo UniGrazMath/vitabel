@@ -128,8 +128,17 @@ class TimeSeriesBase:
 
         if len(time_index) > 0:
             time_type = type(time_index[0])
+        
+        elif hasattr(time_index, "dtype"):
+            dtype = time_index.dtype
+            if np.issubdtype(dtype, np.datetime64):
+                time_type = pd.Timestamp
+            elif np.issubdtype(dtype, np.timedelta64):
+                time_type = pd.Timedelta
+            else:
+                time_type = pd.Timedelta
         else:
-            time_type = pd.Timedelta
+            time_type = pd.Timedelta #fallback
 
         if not all(isinstance(t, time_type) for t in time_index) and not all(
             isinstance(t, numbers.Number) for t in time_index
@@ -153,7 +162,8 @@ class TimeSeriesBase:
             # check that time_start does not conflict
             if time_start is not None:
                 raise ValueError("time_start cannot be passed if time data is absolute")
-            time_start = pd.Timestamp(time_index[0])
+            if len(time_index) > 0:
+                time_start = pd.Timestamp(time_index[0])
             time_index = pd.to_timedelta([time - time_start for time in time_index])
 
         elif time_type in (pd.Timedelta, np.timedelta64):
