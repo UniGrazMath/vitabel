@@ -25,6 +25,10 @@ __all__ = [
     "NumpyEncoder",
     "determine_gaps_in_recording",
     "linear_interpolate_gaps_in_recording",
+    "gaussian_kernel_regression_point",
+    "CCF_minute",
+    "find_ROSC_2",
+    "convert_two_alternating_list"
 ]
 
 
@@ -1151,3 +1155,107 @@ def _spectral_entropy_welch(x, sf, normalize=False, nperseg=None, axis=-1):
     if normalize:
         se /= np.log2(psd_norm.shape[axis])
     return se
+
+
+
+def convert_two_alternating_list(df):
+    lis = []
+    for index, value in df.iterrows():
+        lis.extend([index, float(value.iloc[0])])
+    return lis
+
+
+def find_ROSC_2(rosctime, roscdata, CC_starts, CC_stops):
+    pred_time = rosctime
+    pred = roscdata
+
+    arrests = [CC_starts[0]]
+    roscs = []
+
+    i = 0
+    analysis_interval_length = 20000
+    pause_thresh = 60000
+    CC_min_length = 10000
+    final_flag = False
+    while i < len(CC_stops)-1 and not final_flag:
+        while CC_starts[i+1]-CC_stops[i] < pause_thresh and not final_flag:
+            i += 1
+            if i == len(CC_stops)-1:
+                final_flag = True
+                break
+        if final_flag:
+            analysis_interval = [CC_stops[-1], CC_stops[-1]+analysis_interval_length]
+        else:
+            analysis_interval = [CC_stops[i], CC_stops[i]+analysis_interval_length]
+        prob =  np.mean(pred[(pred_time>=analysis_interval[0])&(pred_time<analysis_interval[1])])
+        while np.isnan(prob) and  analysis_interval[1]- analysis_interval[0]<120000:
+            analysis_interval[1]+=5000
+            prob =  np.mean(pred[(pred_time>=analysis_interval[0])&(pred_time<analysis_interval[1])])
+            
+        #print(D1.rec_start() + pd.Timedelta(analysis_interval[0], unit = 'ms'),D1.rec_start() + pd.Timedelta(analysis_interval[1], unit = 'ms'))
+        #print(i, final_flag,D1.rec_start() + pd.Timedelta(CC_stops[i], unit = 'ms'),prob)
+        if prob >0.4:
+            roscs.append(CC_stops[i])
+            i+=1
+            if not final_flag:
+                while (CC_stops[i]-CC_starts[i])<CC_min_length and not final_flag:
+                    if i ==len(CC_stops)-1:
+                        final_flag=True
+                        break
+                    i+=1
+                if not final_flag:
+                    arrests.append(CC_starts[i])
+        else:
+            if i ==len(CC_stops)-1:
+                final_flag=True
+            i+=1    
+    return roscs, arrests
+
+                        
+def CCF_minute(t_start,t_stop,CC_starts,CC_stops):
+    CC_starts_min = CC_starts[(CC_starts >= t_start) & (CC_starts < t_stop)]
+    CC_stops_min = CC_stops[(CC_stops >= t_start) & (CC_stops < t_stop)]
+    if len(CC_starts_min)>0 and len(CC_stops_min)>0:
+        if len(CC_starts_min)==len(CC_stops_min):
+            if CC_stops_min[0]<CC_starts_min[0]:
+                CC_starts_min=np.insert(CC_starts_min,0,t_start)
+                CC_stops_min=np.append(CC_stops_min,t_stop)
+        elif len(CC_starts_min) > len(CC_stops_min):
+            CC_stops_min=np.append(CC_stops_min,t_stop)
+        else:
+            CC_starts_min=np.insert(CC_starts_min,0,t_start)
+
+    elif len(CC_starts_min)==0 and len(CC_stops_min)==0:
+        last_CC_start=CC_starts[CC_starts<t_start]
+        last_CC_stop=CC_stops[CC_stops<t_start]
+        if len(last_CC_start)==0 and len(last_CC_stop)==0:
+            CC_starts_min=np.array([t_start])
+            CC_stops_min=np.array([t_start])   
+        elif len(last_CC_start)!=0 and len(last_CC_stop)==0:
+            CC_starts_min=np.array([t_start])
+            CC_stops_min=np.array([t_stop])
+        elif last_CC_start[-1]<last_CC_stop[-1]:
+            CC_starts_min=np.array([t_start])
+            CC_stops_min=np.array([t_start])
+        else:
+            CC_starts_min=np.array([t_start])
+            CC_stops_min=np.array([t_stop])
+
+    elif len(CC_starts_min)>0:
+        CC_stops_min=np.array([t_stop])
+    elif len(CC_stops_min)>0:
+        CC_starts_min=np.array([t_start])
+    
+    return np.sum(CC_stops_min-CC_starts_min)/60000
+
+
+def gaussian_kernel_regression_point(x0, x, y, sigma=1, max_width_factor=2):
+    sigma2 = np.square(sigma)
+    dx = x-x0
+    if np.min(np.abs(dx)) > max_width_factor*sigma:
+        return np.nan
+    else:
+        w = np.exp(-np.square(dx)/sigma2)
+        res = np.sum(w*y)/np.sum(w)
+    return res
+
