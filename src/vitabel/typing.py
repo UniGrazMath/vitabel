@@ -5,6 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import numpy as np
 
+from dataclasses import dataclass
 from typing import Any, Union, TypeAlias, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -21,3 +22,43 @@ ChannelSpecification: TypeAlias = Union[str, dict[str, Any], "Channel"]
 
 LabelSpecification: TypeAlias = Union[str, dict[str, Any], "Label"]
 """Type alias for different ways to specify a Label."""
+
+
+@dataclass
+class Metric:
+    """Auxiliary dataclass used to store (numeric) values and their unit.
+    
+    Parameters
+    ----------
+    value
+        A numeric value.
+    unit
+        String representation of the unit of the stored value.
+    """
+    value: float
+    unit: str
+
+
+@dataclass
+class ThresholdMetrics:
+    """Auxiliary dataclass used to represent threshold regions.
+
+    Parameters
+    ----------
+    area_under_threshold
+        The area under the curve below the threshold.
+        Unit stored in :attr:`.Metric.unit` (e.g., "minutes × unit of singal").
+    minutes_under_threshold
+        The total duration the signal remained below the threshold.
+        Unit stored in `Metric.unit` (i.e., "minutes").
+    time_weighted_average_under_threshold
+        AUC devided by the `observational_interval` 
+        Unit stored in `Metric.unit` (unit of signal)
+    minutes_observational_interval
+        Interval from first recording to last recording (eventually specified by `start_time` and `stop_time`)
+        Unit stored in `Metric.unit` (i.e., "minutes").
+    """
+    area_under_threshold: Metric
+    minutes_under_threshold: Metric
+    time_weighted_average_under_threshold: Metric
+    minutes_observational_interval: Metric
