@@ -798,7 +798,7 @@ class Vitals:
         """
 
         if label_type is not None:
-            return [label for label in case.get_labels(name) if type(l) is label_type]
+            return [label for label in self.get_labels(name) if type(l) is label_type]
         return self.data.get_labels(name, **kwargs)
 
     def get_label(self, name: str | None = None, **kwargs) -> Label:
