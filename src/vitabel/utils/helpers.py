@@ -1093,9 +1093,9 @@ def area_under_threshold(
         )
         return ThresholdMetrics(
             area_under_threshold=Metric(value=np.nan, unit='minutes × value units'),
-            minutes_under_threshold=Metric(value=np.nan, unit='minutes'),
+            duration_under_threshold=Metric(value=np.nan, unit='minutes'),
             time_weighted_average_under_threshold=Metric(value=np.nan, unit="value units"),
-            minutes_observational_interval=Metric(value=np.nan, unit='minutes')
+            observational_interval_duration=Metric(value=np.nan, unit='minutes')
         )
 
     timeseries = case.get_channel_or_label(name)
@@ -1153,9 +1153,9 @@ def area_under_threshold(
     
     return ThresholdMetrics(
         area_under_threshold=Metric(value=area_value, unit='minutes × value units'),
-        minutes_under_threshold=Metric(value=duration_under_threshold_value, unit='minutes'),
+        duration_under_threshold=Metric(value=duration_under_threshold_value, unit='minutes'),
         time_weighted_average_under_threshold=Metric(value=twa_value, unit="value units"),
-        minutes_observational_interval=Metric(value=observational_interval_duration_value, unit='minutes')
+        observational_interval_duration=Metric(value=observational_interval_duration_value, unit='minutes')
     )
 
 

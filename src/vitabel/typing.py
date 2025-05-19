@@ -48,17 +48,17 @@ class ThresholdMetrics:
     area_under_threshold
         The area under the curve below the threshold.
         Unit stored in :attr:`.Metric.unit` (e.g., "minutes × unit of singal").
-    minutes_under_threshold
+    duration_under_threshold
         The total duration the signal remained below the threshold.
         Unit stored in `Metric.unit` (i.e., "minutes").
     time_weighted_average_under_threshold
         AUC devided by the `observational_interval` 
         Unit stored in `Metric.unit` (unit of signal)
-    minutes_observational_interval
+    observational_interval_duration
         Interval from first recording to last recording (eventually specified by `start_time` and `stop_time`)
         Unit stored in `Metric.unit` (i.e., "minutes").
     """
     area_under_threshold: Metric
-    minutes_under_threshold: Metric
+    duration_under_threshold: Metric
     time_weighted_average_under_threshold: Metric
-    minutes_observational_interval: Metric
+    observational_interval_duration: Metric
