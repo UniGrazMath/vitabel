@@ -15,6 +15,7 @@ import scipy.signal as sgn
 import scipy.stats as stats
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from vitabel.typing import (
     Timedelta,
@@ -22,6 +23,10 @@ from vitabel.typing import (
     ThresholdMetrics,
     Metric,
 )
+
+if TYPE_CHECKING:
+    from vitabel import Vitals
+    from vitabel.typing import TimeUnitChoices
 
 __all__ = [
     "deriv",
@@ -1054,11 +1059,12 @@ def predict_circulation(erg):
 
 
 def area_under_threshold(
-    case,
+    case: Vitals,
     name: str | None = None,
     start_time: Timestamp | Timedelta | None = None,
     stop_time: Timestamp | Timedelta | None = None,
-    threshold: int = 0
+    threshold: int = 0,
+    time_unit: TimeUnitChoices = "minutes"
 ) -> ThresholdMetrics:
     """Calculates the area and duration where the signal falls
     below a threshold.
@@ -1073,13 +1079,14 @@ def area_under_threshold(
         The name of the label or channel, retrieved by meth:`.get_channel_or_label`.
         Allowed to be passed either as a positional or a keyword argument.
     start_time
-        Start time for truncating the timeseries (meth:`.truncate`).
-        If ``None``, starts from the beginning.
+        Start time for truncating the timeseries (passed to meth:`.Vitals.truncate`).
     stop_time
-        End time for truncating the timeseries (meth:`.truncate`). If ``None``,
-        goes until the end.
+        End time for truncating the timeseries (passed to meth:`.Vitals.truncate`).
     threshold
         The threshold of the signal under which the area is calcuated.
+    time_unit
+        The time unit according to which the result is scaled. Defaults to ``"minutes"``,
+        accepts the same arguments as ``pandas.to_timedelta``.
 
     Returns
     -------
@@ -1092,10 +1099,10 @@ def area_under_threshold(
             category=UserWarning
         )
         return ThresholdMetrics(
-            area_under_threshold=Metric(value=np.nan, unit='minutes × value units'),
-            duration_under_threshold=Metric(value=np.nan, unit='minutes'),
+            area_under_threshold=Metric(value=np.nan, unit=f'{time_unit} × value units'),
+            duration_under_threshold=pd.NaT,
             time_weighted_average_under_threshold=Metric(value=np.nan, unit="value units"),
-            observational_interval_duration=Metric(value=np.nan, unit='minutes')
+            observational_interval_duration=pd.NaT,
         )
 
     timeseries = case.get_channel_or_label(name)
@@ -1142,20 +1149,22 @@ def area_under_threshold(
     all_data[1] = all_data[1][time_sort]
     all_data[0] = all_data[0][time_sort]
 
-    delta_t = all_data[0][1:] - all_data[0][:-1]
+    delta_t = pd.to_timedelta(all_data[0][1:] - all_data[0][:-1], unit="s")
     trapez_lengths = all_data[1][1:] + all_data[1][:-1]
     mask = trapez_lengths != 0
 
-    area_value = 0.5 * np.sum(delta_t*(trapez_lengths/60))  # in minutes * value units
-    duration_under_threshold_value = np.sum(delta_t[trapez_lengths > 0]) / 60  # in minutes  
-    observational_interval_duration_value = (time_index.max() - time_index.min()) / 60  # in minutes
+    time_scale = pd.to_timedelta(1, unit=time_unit)
+
+    area_value = 0.5 * np.sum(delta_t*trapez_lengths)  # timedelta * value units
+    duration_under_threshold_value = np.sum(delta_t[trapez_lengths > 0])  # timedelta  
+    observational_interval_duration_value = (time_index.max() - time_index.min())  # timedelta
     twa_value = area_value / observational_interval_duration_value  # in value units
     
     return ThresholdMetrics(
-        area_under_threshold=Metric(value=area_value, unit='minutes × value units'),
-        duration_under_threshold=Metric(value=duration_under_threshold_value, unit='minutes'),
+        area_under_threshold=Metric(value=area_value / time_scale, unit=f'{time_unit} × value units'),
+        duration_under_threshold=duration_under_threshold_value,
         time_weighted_average_under_threshold=Metric(value=twa_value, unit="value units"),
-        observational_interval_duration=Metric(value=observational_interval_duration_value, unit='minutes')
+        observational_interval_duration=observational_interval_duration_value,
     )
 
 

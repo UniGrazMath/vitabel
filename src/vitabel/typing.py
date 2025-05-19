@@ -10,6 +10,7 @@ from typing import Any, Union, TypeAlias, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from vitabel import Channel, Label
+    from pandas._libs.tslibs.timedeltas import UnitChoices as TimeUnitChoices
 
 Timedelta: TypeAlias = pd.Timedelta | np.timedelta64
 """Type alias of a time difference / duration."""
@@ -59,6 +60,6 @@ class ThresholdMetrics:
         Unit stored in `Metric.unit` (i.e., "minutes").
     """
     area_under_threshold: Metric
-    duration_under_threshold: Metric
+    duration_under_threshold: pd.Timedelta
     time_weighted_average_under_threshold: Metric
-    observational_interval_duration: Metric
+    observational_interval_duration: pd.Timedelta
