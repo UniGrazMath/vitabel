@@ -18,9 +18,10 @@ from pathlib import Path
 
 from vitabel.typing import (
     Timedelta,
-    Timestamp)
-
-from vitabel.utils.type_defs import ThresholdMetrics, Metric
+    Timestamp,
+    ThresholdMetrics,
+    Metric,
+)
 
 __all__ = [
     "deriv",

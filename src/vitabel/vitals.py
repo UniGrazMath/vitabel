@@ -43,8 +43,8 @@ from vitabel.typing import (
     Timestamp,
     ChannelSpecification,
     LabelSpecification,
+    ThresholdMetrics
 )
-from vitabel.utils.type_defs import ThresholdMetrics
 
 logger: logging.Logger = logging.getLogger("vitabel")
 """Global package logger."""
@@ -1754,44 +1754,39 @@ class Vitals:
         start_time: Timestamp | Timedelta | None = None,
         stop_time: Timestamp | Timedelta | None = None,
         threshold: int = 0
-        ) -> ThresholdMetrics:
-        """
-        Calculates the area and duration where the signal falls below a specified threshold.
+    ) -> ThresholdMetrics:
+        """Calculates the area and duration where the signal falls
+        below a specified threshold.
         
-        The calculations might be used with a mean arterial pressure to asses for hypotension. The calculations follow the proposed metrics by Maheswari et al. `10.1213/ANE.0000000000003482 <https://doi.org/10.1213/ANE.0000000000003482>`_
+        The calculations might be used with a mean arterial pressure to asses for hypotension.
+        They are implemented following the proposed metrics by Maheswari et al.
+        `10.1213/ANE.0000000000003482 <https://doi.org/10.1213/ANE.0000000000003482>`_.
+
+        See also
+        --------
+        - :func:`.helpers.area_under_threshold`
 
         Parameters
         ----------
-        name : str
-            The name of the label or channel - retrieved by meth:`get_channel_or_label`. Allowed to be passed
-            either as a positional or a keyword argument.
-        start_time : pandas.Timestamp or pandas.Timedelta or None, optional
-            Start time for truncating the timeseries (meth:`truncate). If None, starts from the beginning.
-        stop_time : pandas.Timestamp or pandas.Timedelta or None, optional
-            End time for truncating the timeseries (meth:`truncate`). If None, goes until the end.
-        threshold : int
+        name
+            The name of the label or channel - retrieved by meth:`get_channel_or_label`.
+            Allowed to be passed either as a positional or a keyword argument.
+        start_time
+            Start time for truncating the timeseries (meth:`truncate).
+            If ``None``, starts from the beginning.
+        stop_time
+            End time for truncating the timeseries (meth:`truncate`).
+            If ``None``, goes until the end.
+        threshold
             The threshold value relative to which the area under the curve (AUC) is calculated.
             Specifically, it computes the area where the signal lies *below* this threshold.
 
         Returns
         -------
-        ThresholdMetrics
-            A dataclass containing:
-            - area_under_threshold: Metric
-                The area under the curve below the threshold.
-                Unit stored in `Metric.unit` (e.g., "minutes × unit of singal").
-            - minutes_under_threshold: Metric
-                The total duration the signal remained below the threshold.
-                Unit stored in `Metric.unit` (i.e., "minutes").
-            - time_weighted_average_under_threshold : Metric
-                AUC devided by the `observational_interval` 
-                Unit stored in `Metric.unit` (unit of signal)
-            - minutes_observational_interval: Metric
-                Interval from first recording to last recording (eventually specified by `start_time` and `stop_time`)
-                Unit stored in `Metric.unit` (i.e., "minutes").
+        :class:`.ThresholdMetrics`
         """
         return _area_under_threshold(
-            self,
+            case=self,
             name=name,
             start_time=start_time,
             stop_time=stop_time,
