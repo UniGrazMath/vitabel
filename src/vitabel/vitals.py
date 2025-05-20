@@ -1796,7 +1796,6 @@ class Vitals:
 
         return helpers.area_under_threshold(
             timeseries=timeseries,
-            name=name,
             start_time=start_time,
             stop_time=stop_time,
             threshold=threshold
