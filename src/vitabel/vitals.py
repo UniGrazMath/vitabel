@@ -958,6 +958,12 @@ class Vitals:
         subplots_kwargs
             Keyword arguments passed to ``matplotlib.pyplot.subplots``.
         """
+        if start and stop:
+            if start > stop:
+                raise ValueError(
+                    "Start time must be before stop time. Please check your input."
+                )
+
         return self.data.plot(
             channels=channels,
             labels=labels,
@@ -1021,6 +1027,12 @@ class Vitals:
         subplots_kwargs
             Keyword arguments passed to ``matplotlib.pyplot.subplots``.
         """
+        if start and stop:
+            if start > stop:
+                raise ValueError(
+                    "Start time must be before stop time. Please check your input."
+                )
+
         return self.data.plot_interactive(
             channels=channels,
             labels=labels,
