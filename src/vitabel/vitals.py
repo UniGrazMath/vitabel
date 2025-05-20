@@ -799,7 +799,7 @@ class Vitals:
         """
 
         if label_type is not None:
-            return [label for label in case.get_labels(name) if type(l) is label_type]
+            return [label for label in self.get_labels(name) if type(label) is label_type]
         return self.data.get_labels(name, **kwargs)
 
     def get_label(self, name: str | None = None, **kwargs) -> Label:
@@ -841,29 +841,27 @@ class Vitals:
 
     def rec_start(self) -> pd.Timestamp | None:  # part of register application
         """Returns the first timestamp among all channels in this case or None if no channel exists."""
-        if len(self.channels)>0:
-            if self.data.is_time_absolute():
-                start_time = self.data.channels[0].time_start
-                for chan in self.channels:
-                    if chan.time_start < start_time:
-                        start_time = chan.time_start
-        else:
-            start_time = None
+        if not self.channels:
+            return None
+        if self.data.is_time_absolute():
+            start_time = self.data.channels[0].time_start
+            for chan in self.channels:
+                if chan.time_start < start_time:
+                    start_time = chan.time_start
         return start_time
 
     def rec_stop(self) -> pd.Timestamp | None:  # part of register application
         """Returns the last timestamp among all channels in this case or None if no channel exists."""
-        if len(self.channels)>0:
-            if self.data.is_time_absolute():
-                stop_time = (
-                    self.data.channels[0].time_start + self.data.channels[0].time_index[-1]
-                )
-                for chan in self.channels:
-                    cha_stop_time = chan.time_start + chan.time_index[-1]
-                    if cha_stop_time > stop_time:
-                        stop_time = cha_stop_time
-        else:
-            stop_time = None
+        if not self.channels:
+            return None
+        if self.data.is_time_absolute():
+            stop_time = (
+                self.data.channels[0].time_start + self.data.channels[0].time_index[-1]
+            )
+            for chan in self.channels:
+                cha_stop_time = chan.time_start + chan.time_index[-1]
+                if cha_stop_time > stop_time:
+                    stop_time = cha_stop_time
         return stop_time
 
     def get_channel_infos(self) -> pd.DataFrame:

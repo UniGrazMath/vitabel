@@ -60,7 +60,11 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
                 "Offset": series.offset,
             }
         )
-    return pd.DataFrame(info_dict).transpose()
+    df = pd.DataFrame(info_dict).transpose()
+    desired_order = ['Name', 'Length', 'First Entry', 'Last Entry', 'Offset']
+    # Get the rest of the columns that are not in desired_order
+    remaining = [col for col in df.columns if col not in desired_order]
+    return df[desired_order + remaining]
 
 
 class TimeSeriesBase:
@@ -1346,7 +1350,7 @@ class IntervalLabel(Label):
         """
         interval_start, interval_end = time_data
         if self.is_empty() and isinstance(interval_start, Timestamp):
-            self.time_start = interval_start
+            self.time_start = pd.to_datetime(interval_start)
 
         if self.is_time_absolute():
             interval_start -= self.time_start
