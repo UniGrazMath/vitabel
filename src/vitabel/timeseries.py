@@ -329,11 +329,12 @@ class TimeSeriesBase:
             resolution = pd.to_timedelta(resolution, unit=self.time_unit)
 
         bounded_time = time_index[bound_cond]
-        if len(bounded_time) == 1:
+        if len(list(set(bounded_time))) == 1: #unique values, otherwise mean:dt_bounded_time would be 0
             return bound_cond
 
         mean_dt_bounded_time = (bounded_time[1:] - bounded_time[:-1]).mean()
         n_downsample = resolution / mean_dt_bounded_time
+
         if n_downsample <= 2:
             return bound_cond
 
