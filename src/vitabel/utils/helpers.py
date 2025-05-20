@@ -1062,7 +1062,6 @@ def predict_circulation(erg):
 
 def area_under_threshold(
     timeseries: pd.Series,
-    name: str | None = None,
     start_time: Timestamp | Timedelta | None = None,
     stop_time: Timestamp | Timedelta | None = None,
     threshold: int = 0,
@@ -1077,9 +1076,8 @@ def area_under_threshold(
 
     Parameters
     ----------
-    name
-        The name of the label or channel, retrieved by meth:`.get_channel_or_label`.
-        Allowed to be passed either as a positional or a keyword argument.
+    timeseries
+        A :class:``pandas.Series` holding  
     start_time
         Start time for truncating the timeseries (passed to meth:`.Vitals.truncate`).
     stop_time
