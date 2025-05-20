@@ -27,6 +27,7 @@ from vitabel.timeseries import (
 from vitabel.utils import (
     loading,
     constants,
+    helpers,
     rename_channels,
     predict_circulation,
     construct_snippets,
@@ -36,7 +37,6 @@ from vitabel.utils import (
     determine_gaps_in_recording,
     linear_interpolate_gaps_in_recording,
 )
-from vitabel.utils.helpers import area_under_threshold as _area_under_threshold
 from vitabel.utils import DEFAULT_PLOT_STYLE
 from vitabel.typing import (
     Timedelta,
@@ -1765,7 +1765,7 @@ class Vitals:
         See also
         --------
         
-        * :func:`.utils.helpers.area_under_threshold`
+        :func:`.utils.helpers.area_under_threshold`
 
         Parameters
         ----------
@@ -1791,7 +1791,7 @@ class Vitals:
         if stop_time is None:
             stop_time = self.rec_stop()
 
-        return _area_under_threshold(
+        return helpers.area_under_threshold(
             case=self,
             name=name,
             start_time=start_time,
