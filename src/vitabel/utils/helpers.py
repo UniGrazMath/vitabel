@@ -28,7 +28,6 @@ from vitabel.typing import (
 )
 
 if TYPE_CHECKING:
-    from vitabel import Vitals
     from vitabel.typing import TimeUnitChoices
 
 __all__ = [
@@ -1062,7 +1061,7 @@ def predict_circulation(erg):
 
 
 def area_under_threshold(
-    case: Vitals,
+    timeseries: pd.Series,
     name: str | None = None,
     start_time: Timestamp | Timedelta | None = None,
     stop_time: Timestamp | Timedelta | None = None,
@@ -1108,25 +1107,19 @@ def area_under_threshold(
             observational_interval_duration=pd.NaT,
         )
 
-    timeseries = case.get_channel_or_label(name)
-    
-    # Create a pandas Series
-    index, values = timeseries.get_data()
-    ts_full = pd.Series(values, index=index)
-
     # Define the time points to interpolate at
     target_times = []
-    if index.min() <= start_time:
+    if timeseries.index.min() <= start_time:
         target_times.append(start_time)    
-    if index.max() >= stop_time:
+    if timeseries.index.max() >= stop_time:
         target_times.append(stop_time)
     target_times = sorted(set(target_times))
 
     if target_times:
         # Interpolation: union the index with new times, sort, interpolate, and extract
-        ts_full = ts_full.reindex(ts_full.index.union(target_times)).sort_index().interpolate(method='time')
+        timeseries = timeseries.reindex(timeseries.index.union(target_times)).sort_index().interpolate(method='time')
     
-    ts = ts_full.truncate(before=start_time, after=stop_time)
+    ts = timeseries.truncate(before=start_time, after=stop_time)
     ts -= threshold
 
     mask = ts[1:] * ts[:-1] < 0  # check whether a sign change has occurred

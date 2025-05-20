@@ -1791,8 +1791,11 @@ class Vitals:
         if stop_time is None:
             stop_time = self.rec_stop()
 
+        index, data = self.get_channel_or_label(name).get_data()
+        timeseries = pd.Series(data, index=index)
+
         return helpers.area_under_threshold(
-            case=self,
+            timeseries=timeseries,
             name=name,
             start_time=start_time,
             stop_time=stop_time,
