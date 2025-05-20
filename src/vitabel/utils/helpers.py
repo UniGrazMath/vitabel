@@ -1,5 +1,8 @@
 """Collection of various auxiliary and helper functions."""
 
+from __future__ import annotations
+
+
 import base64
 import datetime
 import io
@@ -1106,11 +1109,10 @@ def area_under_threshold(
         )
 
     timeseries = case.get_channel_or_label(name)
-    timeseries_trunc = timeseries.truncate(start_time=start_time, stop_time=stop_time)
     
     # Create a pandas Series
     index, values = timeseries.get_data()
-    ts = pd.Series(values, index=index)
+    ts_full = pd.Series(values, index=index)
 
     # Define the time points to interpolate at
     target_times = []
@@ -1119,45 +1121,38 @@ def area_under_threshold(
     if index.max() >= stop_time:
         target_times.append(stop_time)
     target_times = sorted(set(target_times))
-                            
-    # Interpolation: union the index with new times, sort, interpolate, and extract
-    interpolated = ts.reindex(ts.index.union(target_times)).sort_index().interpolate(method='time')
-    result = interpolated.loc[target_times]
-    for timestamp, value in result.items():
-        timeseries_trunc.add_data(time_data=timestamp, value=value)
+
+    if target_times:
+        # Interpolation: union the index with new times, sort, interpolate, and extract
+        ts_full = ts_full.reindex(ts_full.index.union(target_times)).sort_index().interpolate(method='time')
     
-    time_index = timeseries_trunc.time_index.total_seconds()
-    data = timeseries_trunc.data - threshold
+    ts = ts_full.truncate(before=start_time, after=stop_time)
+    ts -= threshold
 
-    mask = data[1:] * data[:-1] < 0  # check whether a sign change has occurred
-    # interpolate intersection points with axis
-    t_intersect2 = time_index[:-1][mask] - data[:-1][mask] * (
-        (time_index[1:][mask] - time_index[:-1][mask]) / (data[1:][mask] - data[:-1][mask])
-    )
+    mask = ts[1:] * ts[:-1] < 0  # check whether a sign change has occurred
+    if np.any(mask):
+        # interpolate intersection points with axis
+        interpolated_axis_intersections = ts.index[:-1][mask] - ts[:-1][mask] * (
+            (ts.index[1:][mask] - ts.index[:-1][mask]) / (ts[1:][mask] - ts[:-1][mask])
+        )
+        intersection_series = pd.Series(
+            data=np.zeros(len(interpolated_axis_intersections)),
+            index=interpolated_axis_intersections,
+        )
+        ts = pd.concat([ts, intersection_series]).sort_index()
 
-    column_of_zeros = np.zeros(len(t_intersect2))
-    new_array = np.vstack(((t_intersect2, column_of_zeros)))
+    ts[ts > 0] = 0
+    ts *= (-1)
 
-    all_data = np.vstack((time_index, data))
-    all_data = np.hstack((all_data, new_array))
-
-    # now set all positive data points to 0, then flip negative ones
-    all_data[1][all_data[1] > 0] = 0
-    all_data[1] *= (-1)
-
-    time_sort = np.argsort(all_data[0])
-    all_data[1] = all_data[1][time_sort]
-    all_data[0] = all_data[0][time_sort]
-
-    delta_t = pd.to_timedelta(all_data[0][1:] - all_data[0][:-1], unit="s")
-    trapez_lengths = all_data[1][1:] + all_data[1][:-1]
+    delta_t = pd.to_timedelta(ts.index[1:] - ts.index[:-1])
+    trapez_lengths = ts.array[1:] + ts.array[:-1]
     mask = trapez_lengths != 0
 
     time_scale = pd.to_timedelta(1, unit=time_unit)
 
     area_value = 0.5 * np.sum(delta_t*trapez_lengths)  # timedelta * value units
     duration_under_threshold_value = np.sum(delta_t[trapez_lengths > 0])  # timedelta  
-    observational_interval_duration_value = (time_index.max() - time_index.min())  # timedelta
+    observational_interval_duration_value = (ts.index.max() - ts.index.min())  # timedelta
     twa_value = area_value / observational_interval_duration_value  # in value units
     
     return ThresholdMetrics(
