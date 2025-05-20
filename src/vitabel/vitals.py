@@ -1764,7 +1764,8 @@ class Vitals:
 
         See also
         --------
-        - :func:`.helpers.area_under_threshold`
+        
+        * :func:`.utils.helpers.area_under_threshold`
 
         Parameters
         ----------
