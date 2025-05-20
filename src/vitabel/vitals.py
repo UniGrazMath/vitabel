@@ -1785,6 +1785,11 @@ class Vitals:
         -------
         :class:`.ThresholdMetrics`
         """
+        if start_time is None:
+            start_time = self.rec_start()
+        if stop_time is None:
+            stop_time = self.rec_stop()
+
         return _area_under_threshold(
             case=self,
             name=name,
