@@ -48,16 +48,15 @@ class ThresholdMetrics:
     ----------
     area_under_threshold
         The area under the curve below the threshold.
-        Unit stored in :attr:`.Metric.unit` (e.g., "minutes × unit of singal").
+        Unit stored in :attr:`.Metric.unit` (e.g., ``"minutes × unit of singal"``).
     duration_under_threshold
         The total duration the signal remained below the threshold.
-        Unit stored in `Metric.unit` (i.e., "minutes").
     time_weighted_average_under_threshold
-        AUC devided by the `observational_interval` 
-        Unit stored in `Metric.unit` (unit of signal)
+        Area under the threshold divided by the ``observational_interval_duration``,
+        Unit stored in :attr:`Metric.unit` (unit of signal).
     observational_interval_duration
-        Interval from first recording to last recording (eventually specified by `start_time` and `stop_time`)
-        Unit stored in `Metric.unit` (i.e., "minutes").
+        Time interval length from first last recording (eventually specified
+        by `start_time` and `stop_time`).
     """
     area_under_threshold: Metric
     duration_under_threshold: pd.Timedelta
