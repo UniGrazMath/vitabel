@@ -1070,14 +1070,14 @@ def area_under_threshold(
     """Calculates the area and duration where the signal falls
     below a threshold.
 
-    This function retrieves a timeseries by name, subtracts a threshold,
+    This function operates on a given timeseries, subtracts a threshold,
     detects zero-crossings (sign changes), interpolates crossing points,
     and integrates the area under the threshold using the trapezoidal rule.
 
     Parameters
     ----------
     timeseries
-        A :class:``pandas.Series` holding  
+        A :class:`pandas.Series` holding numerical data indexed by a timeseries.
     start_time
         Start time for truncating the timeseries (passed to meth:`.Vitals.truncate`).
     stop_time

@@ -1770,7 +1770,7 @@ class Vitals:
         Parameters
         ----------
         name
-            The name of the label or channel - retrieved by meth:`get_channel_or_label`.
+            The name of the label or channel - retrieved by meth:`.get_channel_or_label`.
             Allowed to be passed either as a positional or a keyword argument.
         start_time
             Start time for truncating the timeseries (meth:`truncate).

@@ -55,8 +55,7 @@ class ThresholdMetrics:
         Area under the threshold divided by the ``observational_interval_duration``,
         Unit stored in :attr:`Metric.unit` (unit of signal).
     observational_interval_duration
-        Time interval length from first last recording (eventually specified
-        by `start_time` and `stop_time`).
+        Time interval length from first last recording.
     """
     area_under_threshold: Metric
     duration_under_threshold: pd.Timedelta
