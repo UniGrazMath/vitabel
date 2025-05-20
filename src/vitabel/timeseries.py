@@ -674,9 +674,7 @@ class Channel(TimeSeriesBase):
 
         if time_unit is None:
             time_unit = self.time_unit
-        try:    
-            time_index /= pd.to_timedelta(1, unit=time_unit)
-        except TypeError:(f"unit: {time_unit} index: {time_index}")
+        time_index /= pd.to_timedelta(1, unit=time_unit)
 
         if plot_axes is None:
             figure, plot_axes = plt.subplots()
