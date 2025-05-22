@@ -37,3 +37,7 @@ exclude_patterns = []
 
 html_theme = "furo"
 html_static_path = ["_static"]
+html_logo = "../../assets/logo/Vitabel_Logo.svg"
+html_css_files = [
+    "css/extra.css",
+]

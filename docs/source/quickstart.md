@@ -1,23 +1,17 @@
-# vitabel
+# Quickstart
 
-This package provides a toolbox for interactively annotating
-and labeling vital data.
-
-```{toctree}
-:maxdepth: 3
-quickstart
-development
+The latest stable release of `vitabel` is distributed via PyPI and can be installed via
+```sh
+$ pip install vitabel
 ```
 
-The main feature of `vitabel`, interactive plots that can be used to annotate data,
-is designed to work in Jupyter notebooks. Start a new server by running `jupyter notebook`
-(or create a new notebook in an existing server), then import the central `Vitals` class
-that acts as a container for the vital data. A set of data can be added using, for example,
-the `Vitals.add_defibrillator_recording` method, or `Vitals.add_vital_db_recording`;
-various output formats of defibrillators
-and VitalDB are supported.  
+The latest development version can be installed [from the `main` branch on
+GitHub](https://github.com/UniGrazMath/vitabel) by running
+```sh
+$ pip install git+https://github.com/UniGrazMath/vitabel.git
+```
 
-![vitabel annotation demo](_static/img/vitabel-demo.png)
+See 
 
 A typical use of this package reads as follows:
 
@@ -47,6 +41,15 @@ case.plot_interactive(
 )
 ```
 
+More detailed explicit examples (including the required test data) are
+contained in the [examples directory](https://github.com/UniGrazMath/vitabel/tree/main/examples).
 
 
+## Usecase: German Resuscitation Registry
+
+...
+
+<div class="iframe-container">
+<iframe src="https://www.reanimationsregister.de/dbshowcase/mgd/public/?PATID=2476802110000BA" frameborder="0" allowfullscreen scrolling />
+</div>
 
