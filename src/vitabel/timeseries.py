@@ -52,6 +52,9 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
         if len(series) > 0:
             min_time = min(series.time_index)
             max_time = max(series.time_index)
+            if series.is_time_absolute():
+                min_time += series.time_start
+                max_time += series.time_start
         info_dict[idx].update(
             {
                 "First Entry": min_time,
@@ -61,10 +64,9 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
             }
         )
     df = pd.DataFrame(info_dict).transpose()
-    desired_order = ['Name', 'Length', 'First Entry', 'Last Entry', 'Offset']
-    # Get the rest of the columns that are not in desired_order
-    remaining = [col for col in df.columns if col not in desired_order]
-    return df[desired_order + remaining]
+    df_columns = ['Name', 'Length', 'First Entry', 'Last Entry', 'Offset']
+    metadata_columns = [col for col in df.columns.values if col not in df_columns]
+    return df.reindex(columns=df_columns + metadata_columns)
 
 
 class TimeSeriesBase:

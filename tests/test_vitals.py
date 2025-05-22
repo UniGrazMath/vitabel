@@ -493,6 +493,25 @@ def test_get_data_names():
     assert cardio_object.keys() == ["Channel1", "Label1"]
 
 
+def test_get_label_infos():
+    vital_case = Vitals()
+    info_df = vital_case.get_label_infos()
+    assert len(info_df) == 0
+    assert list(info_df.columns) == ["Name", "Length", "First Entry", "Last Entry", "Offset"]
+
+    lab = Label(
+        "exam",
+        ["2020-04-04 10:10:00", "2020-04-04 10:30:00", "2020-04-04 10:50:00"],
+        metadata={"lecture": "Discrete Mathematics"},
+    )
+    vital_case.add_global_label(lab)
+    info_df = vital_case.get_label_infos()
+    assert len(info_df) == 1
+    assert "lecture" in info_df.columns
+    assert info_df["Length"][0] == 3
+    assert repr(info_df["Last Entry"][0]) == "Timestamp('2020-04-04 10:50:00')"
+
+
 def test_rec_start():
     cha = Channel(
         "Channel1",
