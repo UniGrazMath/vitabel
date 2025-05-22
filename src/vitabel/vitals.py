@@ -996,7 +996,8 @@ class Vitals:
             location map of the main plot. If set to ``True``, all
             chosen channels are plotted in a single overview.
         limited_overview
-            Whether the time interva of the overview subplot should be limited to the recording interval of the channels depicted in the overview.
+            Whether the time interval of the overview subplots should be limited
+            to the recording interval of the channels being plotted.
         subplots_kwargs
             Keyword arguments passed to ``matplotlib.pyplot.subplots``.
         """
