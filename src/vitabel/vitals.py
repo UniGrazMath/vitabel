@@ -804,6 +804,10 @@ class Vitals:
     def get_label(self, name: str | None = None, **kwargs) -> Label:
         """Return a list of labels.
 
+        See also
+        --------
+        :meth:`.TimeDataCollection.get_label`
+
         Parameters
         ----------
         name
