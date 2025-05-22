@@ -2148,6 +2148,7 @@ class TimeDataCollection:
         time_unit: str | None = None,
         include_attached_labels: bool = False,
         channel_overviews: list[list[ChannelSpecification | int]] | bool = False,
+        limited_overview: bool = False,
         subplots_kwargs: dict[str, Any] | None = None,
     ):
         """Plot the data in the collection using ipywidgets.
@@ -2184,6 +2185,9 @@ class TimeDataCollection:
             in a separate subplot in a condensed way including a
             location map of the main plot. If set to ``True``, all
             chosen channels are plotted in a single overview.
+        limited_overview
+            Whether the time interval of the overview subplot should be limited
+            to the recording interval of the channels being plotted.
         subplots_kwargs
             Keyword arguments passed to ``matplotlib.pyplot.subplots``.
         """
@@ -2536,15 +2540,21 @@ class TimeDataCollection:
             return
 
         def repaint_overview_plot():
+            channels_for_xlims = channel_lists
             for channel_list, subax in zip(channel_overviews, overview_axes):
                 if not channel_list:
                     continue
+
+                if limited_overview:  # xlim of overview based on selected channels
+                    channels_for_xlims = [channel_list]
+
                 ov_start = self._get_time_extremum(
-                    None, channel_lists=[channel_list], minimum=True
+                    time=None, channel_lists=channels_for_xlims, minimum=True
                 )
                 ov_stop = self._get_time_extremum(
-                    None, channel_lists=[channel_list], minimum=False
+                    time=None, channel_lists=channels_for_xlims, minimum=False
                 )
+                
                 data_width = (ov_stop - ov_start).total_seconds()
                 resolution = data_width / screen_pixel_width
                 subax.clear()

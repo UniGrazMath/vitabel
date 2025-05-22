@@ -994,6 +994,7 @@ class Vitals:
         time_unit: str | None = None,
         include_attached_labels: bool = False,
         channel_overviews: list[list[ChannelSpecification | int]] | bool = False,
+        limited_overview: bool = False,
         subplots_kwargs: dict[str, Any] | None = None,
     ):
         """Plot the data in the collection using ipywidgets.
@@ -1034,6 +1035,9 @@ class Vitals:
             in a separate subplot in a condensed way including a
             location map of the main plot. If set to ``True``, all
             chosen channels are plotted in a single overview.
+        limited_overview
+            Whether the time interval of the overview subplots should be limited
+            to the recording interval of the channels being plotted.
         subplots_kwargs
             Keyword arguments passed to ``matplotlib.pyplot.subplots``.
         """
@@ -1045,6 +1049,7 @@ class Vitals:
             time_unit=time_unit,
             include_attached_labels=include_attached_labels,
             channel_overviews=channel_overviews,
+            limited_overview=limited_overview,
             subplots_kwargs=subplots_kwargs,
         )
 
