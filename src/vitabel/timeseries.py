@@ -133,9 +133,11 @@ class TimeSeriesBase:
         ):
             time_index = np.array(time_index)
 
-        if len(time_index) > 0:
-            time_type = type(time_index[0])
-        
+        # Filter out NaT values
+        cleaned_time_index = [t for t in time_index if not pd.isna(t)]
+
+        if len(cleaned_time_index) > 0:
+            time_type = type(cleaned_time_index[0]) 
         elif hasattr(time_index, "dtype"):
             dtype = time_index.dtype
             if np.issubdtype(dtype, np.datetime64):
