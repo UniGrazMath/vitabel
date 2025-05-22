@@ -2731,7 +2731,7 @@ class TimeDataCollection:
                                 channel: Channel
                                 channel.shift_time_index(delta_t=offset)
                             shifting_reference_time = None
-                            repaint_overview_plot(limited_overview=limited_overview)
+                            repaint_overview_plot()
                             repaint_plot(start, stop)
 
             elif (
