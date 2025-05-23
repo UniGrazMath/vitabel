@@ -42,6 +42,7 @@ from vitabel.typing import (
     Timestamp,
     ChannelSpecification,
     LabelSpecification,
+    EOLifeExport
 )
 
 
@@ -308,6 +309,16 @@ class Vitals:
                     self.data.add_channel(chan)
 
         self.metadata["Recording_files_added"].append(str(filepath))
+    
+    def add_ventilatory_feedback(self, filepath: Path | str, metadata={}) -> None:
+        eolife_export=loading.read_eolife_export(filepath)
+        self.add_data_from_DataFrame(
+            source = eolife_export.data, 
+            time_start = eolife_export.recording_start, 
+            datatype = "channel",
+            metadata = metadata | eolife_export.metadata,
+            column_metadata = eolife_export.column_metadata
+        )
 
     def add_vital_db_recording(
         self,
