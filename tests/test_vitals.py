@@ -955,3 +955,36 @@ def test_analysis_exception_for_missing_data(caplog):
             "No Feedback-Sensor-Acceleration or ECG found.",
         ]
     )
+
+
+def test_area_under_threshold_computation():
+    vital_case = Vitals()
+
+    vital_case.add_data_from_DataFrame(
+        pd.DataFrame(
+            index=pd.date_range(start="2024-04-04 10:00:00", end="2024-04-04 12:00:00", periods=100),
+            data=np.array([
+                42 * np.ones(100),
+                [(-1)**(k//2) for k in range(100)],  # +1, +1, -1, -1, +1, +1, -1, -1, ...
+            ]).transpose(),
+        )
+    )
+    threshold_metric = vital_case.area_under_threshold(name=0, threshold=10)
+    assert threshold_metric.duration_under_threshold == pd.Timedelta(0)
+    assert threshold_metric.time_weighted_average_under_threshold.value == 0
+
+    threshold_metric = vital_case.area_under_threshold(name=0, threshold=100)
+    assert threshold_metric.duration_under_threshold == pd.Timedelta(2, unit="h")
+    assert threshold_metric.time_weighted_average_under_threshold.value == 100 - 42
+    assert threshold_metric.observational_interval_duration == pd.Timedelta(2, unit="h")
+    assert threshold_metric.area_under_threshold.unit == "minutes × value units"
+    assert threshold_metric.area_under_threshold.value == (100 - 42) * 60 * 2
+
+    threshold_metric = vital_case.area_under_threshold(name=1, threshold=0)
+    assert threshold_metric.observational_interval_duration == pd.Timedelta(2, unit="h")
+    assert threshold_metric.duration_under_threshold == pd.Timedelta("01:00:00.000000001")
+
+
+    
+
+

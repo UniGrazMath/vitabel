@@ -27,6 +27,7 @@ from vitabel.timeseries import (
 from vitabel.utils import (
     loading,
     constants,
+    helpers,
     rename_channels,
     predict_circulation,
     construct_snippets,
@@ -42,8 +43,8 @@ from vitabel.typing import (
     Timestamp,
     ChannelSpecification,
     LabelSpecification,
+    ThresholdMetrics
 )
-
 
 logger: logging.Logger = logging.getLogger("vitabel")
 """Global package logger."""
@@ -442,7 +443,7 @@ class Vitals:
         time_start=None,
         datatype: Literal["channel", "label", "interval_label"] = "channel",
         anchored_channel: Channel | None = None,
-        metadata: dict = {},
+        metadata: dict | None = None,
     ) -> None:
         """Adds a channel or label from a dict containing a single timeseries.
 
@@ -451,17 +452,19 @@ class Vitals:
         Parameters
         ----------
         source
-            Contains the data in the from {'timestamp': [], 'data' : []}
-        name : str
+            Contains the data in the from ``{'timestamp': [], 'data' : []}``
+        name
             The name of the channel.
-        time_start : TYPE, optional
+        time_start
             time_start value for the timeseries, in case of a relative timeseries. The default is None.
-        datatype : str, optional
-            Either 'channel' or 'label' or 'interval_label' depending on which kind of data to attach. The default is "channel".
-        anchored_channel :  Channel | None
-            In case of datatype = 'label', where to attach the label. None means global label. The default is None
-        metadata : dict, optional
-            Metadata for the timeseries. The default is {}.
+        datatype
+            Either ``'channel'`` or ``'label'`` or ``'interval_label'``, depending
+            on which kind of container to construct. The default is ``'channel'``.
+        anchored_channel
+            If a label is constructed, then this is the channel to which the label
+            is anchored. Irrelevant if ``datatype`` is ``'channel'``.
+        metadata
+            Metadata for the timeseries.
 
         Raises
         ------
@@ -478,49 +481,47 @@ class Vitals:
                 "The dictionary must contain a 'timestamp' and a 'data' key which contain timestamps and data for this channel. \n \
                              In case of time_only or 'time_interval' channel_types choose 'data' to be an empty list."
             )
-        else:
-            if time_start:
-                time_start = pd.Timestamp(time_start)
+    
+        if time_start:
+            time_start = pd.Timestamp(time_start)
 
-            time = source["timestamp"]
-            data = source["data"]
-            if len(time) > 0:
-                if datatype == "channel":
-                    cha = Channel(
-                        name,
-                        time,
-                        data,
-                        metadata=metadata,
-                        time_start=time_start,
-                    )
-                    self.data.add_channel(cha)
-                elif datatype == "label" and anchored_channel is None:
-                    cha = Label(
-                        name,
-                        time,
-                        data,
-                        metadata=metadata,
-                        time_start=time_start,
-                    )
-                    self.data.add_global_label(cha)
-                elif datatype == "label" and anchored_channel is not None:
-                    cha = Label(
-                        name,
-                        time,
-                        data,
-                        metadata=metadata,
-                        time_start=time_start,
-                        anchored_channel=anchored_channel,
-                    )
-                elif datatype == "interval_label" and anchored_channel is None:
-                    cha = IntervalLabel(
-                        name,
-                        time,
-                        data,
-                        metadata=metadata,
-                        time_start=time_start,
-                    )
-                    self.data.add_global_label(cha)
+        time = source["timestamp"]
+        data = source["data"]
+        if len(time) == 0:
+            logger.warning("The data is empty. No channel or label will be added.")
+            return
+
+        if datatype == "channel":
+            channel = Channel(
+                name,
+                time,
+                data,
+                metadata=metadata,
+                time_start=time_start,
+            )
+            self.data.add_channel(channel)
+        elif datatype == "label":
+            label = Label(
+                name,
+                time,
+                data,
+                metadata=metadata,
+                time_start=time_start,
+                anchored_channel=anchored_channel,
+            )
+            if anchored_channel is None:
+                self.data.add_global_label(label)
+        elif datatype == "interval_label":
+            label = IntervalLabel(
+                name,
+                time,
+                data,
+                metadata=metadata,
+                time_start=time_start,
+                anchored_channel=anchored_channel,
+            )
+            if anchored_channel is None:
+                self.data.add_global_label(label)
 
     def add_data_from_dict(
         self,
@@ -528,34 +529,36 @@ class Vitals:
         time_start=None,
         datatype: Literal["channel", "label", "interval_label"] = "channel",
         anchored_channel: Channel | None = None,
-        metadata: dict = {},
+        metadata: dict | None = None,
     ):
-        """Add multiple channels from a dict.
+        """Add multiple channels from a dictionary.
 
-        Each value must be a dict accepted by  '_add_single_dict(value, key)'
+        Each value must be a dictionary accepted by  
+        :meth:`._add_single_dict`.
 
         Parameters
         ----------
-        source : dict[str, dict] | Path
+        source
             The data which is added in the from
-            ``{'key1': {'timestamp' : [], 'data' : []}, 'key2': {...} ,... }}}``.
-            If source is a Path, then it is loaded via ``json.load(source)``.
-        time_start : TYPE, optional
+            ``{'key1': {'timestamp': [], 'data': []}, 'key2': { ... }, ... }``.
+            If source is a ``Path``, then it is assumed to be a JSON file and loaded
+            via ``json.load``.
+        time_start
             time_start value for the timeseries, in case of a relative timeseries.
-            The default is None.
-        datatype : str, optional
-            Either ``'channel'`` or ``'label'`` or ``'interval_label'`` depending on
-            which kind of labels to attach.. The default is 'channel'.
-        anchored_channel :  Channel | None
-            In case of datatype = ``'label'``, where to attach the label. None means
-            global label. The default is ``None``.
-        metadata : dict, optional
-            Metadata applicable to all timeseries. The default is ``{}``.
+            The default is ``None``.
+        datatype
+            Either ``'channel'`` or ``'label'`` or ``'interval_label'``, depending
+            on which kind of container to construct. The default is ``'channel'``.
+        anchored_channel
+            If a label is constructed, then this is the channel to which the label
+            is anchored. Irrelevant if ``datatype`` is ``'channel'``.
+        metadata
+            Metadata that will be attached to all individual timeseries.
 
         Raises
         ------
         ValueError
-            In case the dictionary does not has the expected form.
+            In case the dictionary does not have the expected form.
         """
         if isinstance(source, Path):
             with open(source, "r") as file:
@@ -564,7 +567,10 @@ class Vitals:
         for key in source:
             if not isinstance(source[key], dict):
                 raise ValueError(
-                    f" Source must be a dictionary of the form {{'channel1': {{'timestamp':[...]', 'data':[] }}, 'channel2':{{...}} }}.  For key {key} the value is not a dict."
+                    "Source must be a dictionary of the form "
+                    "{'channel1': {'timestamp': [...], 'data': [...]},"
+                    " 'channel2': { ... }, ... }. "
+                    f"For key {key} the value is not a dict."
                 )
             else:
                 self._add_single_dict(
@@ -583,7 +589,7 @@ class Vitals:
         time_unit=None,
         datatype: Literal["channel", "label", "interval_label"] = "channel",
         anchored_channel: Channel | None = None,
-        metadata={},
+        metadata: dict[str, Any] | None = None,
     ):
         """Adds Data from a ``pandas.DataFrame``.
 
@@ -601,14 +607,13 @@ class Vitals:
         time_unit   
             The time unit of the data. Must be accepted by pd.Timestamp(time_unit). 
         datatype
-            Either 'channel' or 'label' or 'interval_label' depending on which kind
-            of labels to attach. The default is "channel".
+            Either ``'channel'`` or ``'label'`` or ``'interval_label'``, depending
+            on which kind of container to construct. The default is ``'channel'``.
         anchored_channel
-            In case of datatype = 'label', where to attach the label. None means
-            global label. The default is None
+            If a label is constructed, then this is the channel to which the label
+            is anchored. Irrelevant if ``datatype`` is ``'channel'``.
         metadata
-            A dictionary containing all the metadata for the channels/labels.
-            Is parsed to channel/Label and saved there as general argument.
+            A dictionary containing all the metadata for the channels / labels.
 
         Raises
         ------
@@ -624,43 +629,39 @@ class Vitals:
                 "The DataFrame needs to have a datetime or a numeric index, "
                 "which describes the time of the timeseries."
             )
-        else:
-            for col in source.columns:
-                series = source[col]
-                series = series[series.notna()]
-                time = np.array(series.index)
-                data = series.values
-                if len(time) > 0:
-                    if datatype == "channel":
-                        cha = Channel(
-                            name=col,
-                            time_index=time,
-                            data=data,
-                            time_start=time_start,
-                            time_unit=time_unit,
-                            metadata=metadata,
-                        )
-                        self.data.add_channel(cha)
-                    elif datatype == "label" and anchored_channel is None:
-                        cha = Label(
-                            col,
-                            time,
-                            data,
-                            time_start=time_start,
-                            time_unit=time_unit,
-                            metadata=metadata,
-                        )
-                        self.data.add_global_label(cha)
-                    elif datatype == "label" and anchored_channel is not None:
-                        cha = Label(
-                            col,
-                            time,
-                            data,
-                            time_start=time_start,
-                            time_unit=time_unit,
-                            metadata=metadata,
-                            anchored_channel=anchored_channel,
-                        )
+        
+        for col in source.columns:
+            series = source[col]
+            series = series[series.notna()]
+            time = np.array(series.index)
+            data = series.values
+            if len(time) == 0:
+                continue
+
+            if datatype == "channel":
+                channel = Channel(
+                    name=col,
+                    time_index=time,
+                    data=data,
+                    time_start=time_start,
+                    time_unit=time_unit,
+                    metadata=metadata,
+                )
+                self.data.add_channel(channel)
+            elif datatype == "label":
+                label = Label(
+                    col,
+                    time,
+                    data,
+                    time_start=time_start,
+                    time_unit=time_unit,
+                    metadata=metadata,
+                    anchored_channel=anchored_channel,
+                )
+                if anchored_channel is None:
+                    self.data.add_global_label(label)
+            elif datatype == "interval_label":
+                raise NotImplementedError("Interval labels can currently not be added from DataFrames.")
 
     def add_data_from_csv(
         self,
@@ -669,7 +670,7 @@ class Vitals:
         time_unit=None,
         datatype: Literal["channel", "label", "interval_label"] = "channel",
         anchored_channel: Channel | None = None,    
-        metadata={},
+        metadata: dict[str, Any] | None = None,
         **kwargs,
     ):
         """Adds data from a CSV file.
@@ -689,19 +690,18 @@ class Vitals:
             to this value. The default is 0 and means no information is given.
         time_unit   
             The time unit of the data. Must be accepted by pd.Timestamp(time_unit).
-        datatype        
-            Either 'channel' or 'label' or 'interval_label' depending on which kind
-            of labels to attach. The default is "channel".  
-        anchored_channel    
-            In case of datatype = 'label', where to attach the label. None means
-            global label. The default is None       
+        datatype
+            Either ``'channel'`` or ``'label'`` or ``'interval_label'``, depending
+            on which kind of container to construct. The default is ``'channel'``.
+        anchored_channel
+            If a label is constructed, then this is the channel to which the label
+            is anchored. Irrelevant if ``datatype`` is ``'channel'``.
         metadata
             A dictionary containing all the metadata for the channels/labels.
             Is parsed to channel/Label and saved there as general argument.
-        **kwargs
-            Additional keyword arguments to be passed to the pandas read_csv function.
-            See pandas documentation for more information.          
-
+        kwargs
+            Additional keyword arguments are passed to the ``pandas.read_csv``
+            function.
         """
         file_path = Path(file_path)
         if not file_path.exists():
@@ -740,7 +740,7 @@ class Vitals:
         channel_specification
             A specification of all channels to set the plot style for.
             See :meth:`.get_channels` for valid specifications.
-        **kwargs
+        kwargs
             The plot style properties to set. Passing ``None``
             unsets the key from the plotstyle dictionary.
         """
@@ -756,21 +756,20 @@ class Vitals:
         label_specification
             A specification of all labels to set the plot style for.
             See :meth:`.get_labels` for valid specifications.
-        **kwargs
+        kwargs
             The plot style properties to set. Passing ``None``
             unsets the key from the plotstyle dictionary.
         """
         self.data.set_label_plotstyle(label_specification, **kwargs)
 
     def save_data(self, path: Path | str):
-        """
-        Saves the Channels and Labels to a JSON-File. Saves also channel_path and a hash in the metadata dict.
+        """Exports channels, labels, and metadata and saves it in a JSON file.
+        In particular, adds a data hash to the metadata.
 
         Parameters
         ----------
         path
-            The path of the JSON File. This is parsed to pathlib.Path. If not provided, then the
-            self.channel_path attribute is used. If this is not set, a Value Error is raised.
+            The path of the output JSON file.
         """
 
         if isinstance(path, str):
@@ -778,11 +777,10 @@ class Vitals:
 
         self.metadata["Saving_to_json_time"] = str(pd.Timestamp.now())
         self.metadata["filepath"] = str(path)
-        has = self.data.channel_data_hash()
+        data_hash = self.data.channel_data_hash()
         data_dict = self.data.to_dict()
-        json_dict = {"metadata": self.metadata, "data": data_dict, "hash": has}
+        json_dict = {"metadata": self.metadata, "data": data_dict, "hash": data_hash}
 
-        # Write down saving
         with open(path, "w") as fd:
             json.dump(json_dict, fd, cls=NumpyEncoder)
 
@@ -793,7 +791,7 @@ class Vitals:
         Parameters
         ----------
         path
-            The Path of the channel data. It is parsed to pathlib.Path.
+            The Path of the channel data.
         """
 
         path = Path(path)
@@ -808,7 +806,9 @@ class Vitals:
             saved_hash = channel_hash
             if channel_hash != saved_hash:
                 raise ValueError(
-                    "Saved hash value  is not equal to hash of  reloaded channels. Use keyword-argument 'check_channel_hash = False' to ignore conflicting hash values."
+                    "The hash value has changed, which indicates that the data "
+                    "has been modified outside of the Vitals class. Aborting loading. "
+                    "Pass check_channel_hash=False to ignore this check."
                 )
 
             # Add Offsets from metadata labels the channel json contains the raw data, without offset correction
@@ -832,7 +832,7 @@ class Vitals:
             See :meth:`.get_label` for valid specifications.
         label_type : TYPE, optional
             A specification of the label type (IntervalLabel or Label) to retrieve
-        **kwargs
+        kwargs
             Keyword arguments to filter the labels by. 
             See :meth:`.get_label` for valid specifications
         """
@@ -1159,7 +1159,7 @@ class Vitals:
         ----------
         mode : str, optional,
             Which method to use to detect ventilations from CO2 signal. Either 'filter' which is a unpublished method by Wolfgang Kern or 'threshold',
-            which is the method presented by  Aramendi et al. "Feasibility of the capnogram to monitor ventilation rate during cardiopulmonary resuscitation" `10.1016/j.resuscitation.2016.08.033 <https://doi.org/10.1016/j.resuscitation.2016.08.033>`_
+            which is the method presented by Aramendi et al. "Feasibility of the capnogram to monitor ventilation rate during cardiopulmonary resuscitation" `10.1016/j.resuscitation.2016.08.033 <https://doi.org/10.1016/j.resuscitation.2016.08.033>`_
         breaththresh : float, optional
             Threshold value below which a minimum is identified as ventilation/respiration . The default is 2 (mmHg).
         etco2_thresh : float, optional
@@ -1804,3 +1804,57 @@ class Vitals:
             )
             for lab in [pred_lab, prob_lab, dec_lab]:
                 self.data.add_global_label(lab)
+
+
+    def area_under_threshold(
+        self,
+        name: str,
+        start_time: Timestamp | Timedelta | None = None,
+        stop_time: Timestamp | Timedelta | None = None,
+        threshold: int = 0
+    ) -> ThresholdMetrics:
+        """Calculates the area and duration where the signal falls
+        below a specified threshold.
+        
+        The calculations might be used with a mean arterial pressure to asses for hypotension.
+        They are implemented following the proposed metrics by Maheswari et al.
+        `10.1213/ANE.0000000000003482 <https://doi.org/10.1213/ANE.0000000000003482>`_.
+
+        See also
+        --------
+        
+        :func:`.utils.helpers.area_under_threshold`
+
+        Parameters
+        ----------
+        name
+            The name of the label or channel - retrieved by meth:`.get_channel_or_label`.
+            Allowed to be passed either as a positional or a keyword argument.
+        start_time
+            Start time for truncating the timeseries (meth:`truncate).
+            If ``None``, starts from the beginning.
+        stop_time
+            End time for truncating the timeseries (meth:`truncate`).
+            If ``None``, goes until the end.
+        threshold
+            The threshold value relative to which the area under the curve (AUC) is calculated.
+            Specifically, it computes the area where the signal lies *below* this threshold.
+
+        Returns
+        -------
+        :class:`.ThresholdMetrics`
+        """
+        if start_time is None:
+            start_time = self.rec_start()
+        if stop_time is None:
+            stop_time = self.rec_stop()
+
+        index, data = self.get_channel_or_label(name).get_data()
+        timeseries = pd.Series(data, index=index)
+
+        return helpers.area_under_threshold(
+            timeseries=timeseries,
+            start_time=start_time,
+            stop_time=stop_time,
+            threshold=threshold
+        )
