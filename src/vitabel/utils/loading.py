@@ -2943,7 +2943,7 @@ def read_eolife_export(f_eolife: Path) -> EOLifeExport:
         skiprows=3, 
         header=0,
         encoding="latin1",
-        na_values="NA",
+        na_values="Na",
         usecols=[
             "Cycle number",
             "Time (hh:mm:ss:SS)",
