@@ -42,6 +42,7 @@ from vitabel.typing import (
     Timestamp,
     ChannelSpecification,
     LabelSpecification,
+    Literal
 )
 
 
@@ -441,7 +442,7 @@ class Vitals:
         name: str,
         metadata: dict = {},
         time_start=None,
-        datatype: str = "channel",
+        datatype: Literal["channel", "label", "interval_label"] = "channel",
         anchored_channel: Channel | None = None,
     ) -> None:
         """Adds a channel or label from a dict containing a single timeseries.
@@ -527,7 +528,7 @@ class Vitals:
         source: dict[str, dict] | Path,
         metadata: dict = {},
         time_start=None,
-        datatype: str = "channel",
+        datatype: Literal["channel", "label", "interval_label"] = "channel",
         anchored_channel: Channel | None = None,
     ):
         """Add multiple channels from a dict.
@@ -582,7 +583,7 @@ class Vitals:
         metadata={},
         time_start: str | None = None,
         time_unit=None,
-        datatyp="channel",
+        datatype: Literal["channel", "label", "interval_label"] = "channel",
         anchored_channel: Channel | None = None,
     ):
         """Adds Data from a ``pandas.DataFrame``.
@@ -629,7 +630,7 @@ class Vitals:
                 time = np.array(series.index)
                 data = series.values
                 if len(time) > 0:
-                    if datatyp == "channel":
+                    if datatype == "channel":
                         cha = Channel(
                             name=col,
                             time_index=time,
@@ -639,7 +640,7 @@ class Vitals:
                             metadata=metadata,
                         )
                         self.data.add_channel(cha)
-                    elif datatyp == "label" and anchored_channel is None:
+                    elif datatype == "label" and anchored_channel is None:
                         cha = Label(
                             col,
                             time,
@@ -649,7 +650,7 @@ class Vitals:
                             metadata=metadata,
                         )
                         self.data.add_global_label(cha)
-                    elif datatyp == "label" and anchored_channel is not None:
+                    elif datatype == "label" and anchored_channel is not None:
                         cha = Label(
                             col,
                             time,
