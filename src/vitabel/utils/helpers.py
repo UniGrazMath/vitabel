@@ -1120,11 +1120,13 @@ def area_under_threshold(
     ts = timeseries.truncate(before=start_time, after=stop_time)
     ts -= threshold
 
-    mask = ts[1:] * ts[:-1] < 0  # check whether a sign change has occurred
+    mask = ts.values[1:] * ts.values[:-1] < 0  # check whether a sign change has occurred
     if np.any(mask):
         # interpolate intersection points with axis
-        interpolated_axis_intersections = ts.index[:-1][mask] - ts[:-1][mask] * (
-            (ts.index[1:][mask] - ts.index[:-1][mask]) / (ts[1:][mask] - ts[:-1][mask])
+        interpolated_axis_intersections = ts.index[:-1][mask] - ts.values[:-1][mask] * (
+            (ts.index[1:][mask] - ts.index[:-1][mask])
+            / 
+            (ts.values[1:][mask] - ts.values[:-1][mask])
         )
         intersection_series = pd.Series(
             data=np.zeros(len(interpolated_axis_intersections)),
