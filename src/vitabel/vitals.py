@@ -440,10 +440,10 @@ class Vitals:
         self,
         source: dict[str, Any],
         name: str,
-        metadata: dict = {},
         time_start=None,
         datatype: Literal["channel", "label", "interval_label"] = "channel",
         anchored_channel: Channel | None = None,
+        metadata: dict = {},
     ) -> None:
         """Adds a channel or label from a dict containing a single timeseries.
 
@@ -455,14 +455,14 @@ class Vitals:
             Contains the data in the from {'timestamp': [], 'data' : []}
         name : str
             The name of the channel.
-        metadata : dict, optional
-            Metadata for the timeseries. The default is {}.
         time_start : TYPE, optional
             time_start value for the timeseries, in case of a relative timeseries. The default is None.
         datatype : str, optional
             Either 'channel' or 'label' or 'interval_label' depending on which kind of data to attach. The default is "channel".
         anchored_channel :  Channel | None
             In case of datatype = 'label', where to attach the label. None means global label. The default is None
+        metadata : dict, optional
+            Metadata for the timeseries. The default is {}.
 
         Raises
         ------
@@ -526,10 +526,10 @@ class Vitals:
     def add_data_from_dict(
         self,
         source: dict[str, dict] | Path,
-        metadata: dict = {},
         time_start=None,
         datatype: Literal["channel", "label", "interval_label"] = "channel",
         anchored_channel: Channel | None = None,
+        metadata: dict = {},
     ):
         """Add multiple channels from a dict.
 
@@ -541,8 +541,6 @@ class Vitals:
             The data which is added in the from
             ``{'key1': {'timestamp' : [], 'data' : []}, 'key2': {...} ,... }}}``.
             If source is a Path, then it is loaded via ``json.load(source)``.
-        metadata : dict, optional
-            Metadata applicable to all timeseries. The default is ``{}``.
         time_start : TYPE, optional
             time_start value for the timeseries, in case of a relative timeseries.
             The default is None.
@@ -552,6 +550,8 @@ class Vitals:
         anchored_channel :  Channel | None
             In case of datatype = ``'label'``, where to attach the label. None means
             global label. The default is ``None``.
+        metadata : dict, optional
+            Metadata applicable to all timeseries. The default is ``{}``.
 
         Raises
         ------
@@ -580,11 +580,11 @@ class Vitals:
     def add_data_from_DataFrame(
         self,
         source: pd.DataFrame,
-        metadata={},
         time_start: str | None = None,
         time_unit=None,
         datatype: Literal["channel", "label", "interval_label"] = "channel",
         anchored_channel: Channel | None = None,
+        metadata={},
     ):
         """Adds Data from a ``pandas.DataFrame``.
 
@@ -595,19 +595,21 @@ class Vitals:
             time (either as DatetimeIndex or numeric Index),
             and the columns contain the channels. NaN-Values in the columns are
             not taken into account an ignored.
-        metadata
-            A dictionary containing all the metadata for the channels/labels.
-            Is parsed to channel/Label and saved there as general argument.
         time_start
             A starting time for the data. Must be accepted by pd.Timestamp(time_start)
             In case the index is numeric. The times will be interpreted as relative
             to this value. The default is 0 and means no information is given.
+        time_unit   
+            The time unit of the data. Must be accepted by pd.Timestamp(time_unit). 
         datatype
             Either 'channel' or 'label' or 'interval_label' depending on which kind
             of labels to attach. The default is "channel".
         anchored_channel
             In case of datatype = 'label', where to attach the label. None means
             global label. The default is None
+        metadata
+            A dictionary containing all the metadata for the channels/labels.
+            Is parsed to channel/Label and saved there as general argument.
 
         Raises
         ------
@@ -666,15 +668,48 @@ class Vitals:
         file_path: Path | str,
         time_start=None,
         time_unit=None,
+        datatype: Literal["channel", "label", "interval_label"] = "channel",
+        anchored_channel: Channel | None = None,    
         metadata={},
         **kwargs,
     ):
+        """Adds data from a CSV file.
+        
+        The CSV file must contain a header with the channel names and a 
+        timestamp column. The data is loaded into a pandas DataFrame and
+        passed to the :meth:`add_data_from_DataFrame` method.
+
+        Parameters
+        ----------      
+        file_path
+            The path to the CSV file. The file must contain a header with the channel names
+            and a timestamp column.
+        time_start
+            A starting time for the data. Must be accepted by pd.Timestamp(time_start)
+            In case the index is numeric. The times will be interpreted as relative
+            to this value. The default is 0 and means no information is given.
+        time_unit   
+            The time unit of the data. Must be accepted by pd.Timestamp(time_unit).
+        datatype        
+            Either 'channel' or 'label' or 'interval_label' depending on which kind
+            of labels to attach. The default is "channel".  
+        anchored_channel    
+            In case of datatype = 'label', where to attach the label. None means
+            global label. The default is None       
+        metadata
+            A dictionary containing all the metadata for the channels/labels.
+            Is parsed to channel/Label and saved there as general argument.
+        **kwargs
+            Additional keyword arguments to be passed to the pandas read_csv function.
+            See pandas documentation for more information.          
+
+        """
         file_path = Path(file_path)
         if not file_path.exists():
             raise FileNotFoundError(f"File {file_path} not found.")
         df = pd.read_csv(file_path, **kwargs)
         self.add_data_from_DataFrame(
-            df, time_start=time_start, time_unit=time_unit, metadata=metadata
+            df, time_start=time_start, time_unit=time_unit,datatype= datatype,anchored_channel=anchored_channel, metadata=metadata
         )
 
     def add_channel(self, Channel):
