@@ -12,7 +12,7 @@ import scipy.signal as sgn
 import logging
 import vitaldb
 
-from typing import Any
+from typing import Any, Dict
 
 from IPython.display import display
 from pathlib import Path
@@ -439,7 +439,7 @@ class Vitals:
         self,
         source: dict[str, Any],
         name: str,
-        metadata: dict = {},
+        metadata: Dict[str, Any] = {},
         time_start=None,
         datatype: str = "channel",
         anchored_channel: Channel | None = None,
@@ -525,7 +525,7 @@ class Vitals:
     def add_data_from_dict(
         self,
         source: dict[str, dict] | Path,
-        metadata: dict = {},
+        metadata: Dict[str, Any] = {},
         time_start=None,
         datatype: str = "channel",
         anchored_channel: Channel | None = None,
@@ -579,10 +579,11 @@ class Vitals:
     def add_data_from_DataFrame(
         self,
         source: pd.DataFrame,
-        metadata={},
+        metadata: Dict[str, Any] = {},
         time_start: str | None = None,
         time_unit=None,
         datatyp="channel",
+        column_metadata: Dict[str, Dict[str, Any]] = {},
         anchored_channel: Channel | None = None,
     ):
         """Adds Data from a ``pandas.DataFrame``.
@@ -597,6 +598,8 @@ class Vitals:
         metadata
             A dictionary containing all the metadata for the channels/labels.
             Is parsed to channel/Label and saved there as general argument.
+            Imformation are applied to channels and labels equally, for additional channel/label specific metadata use 'column_metadata'.
+            'metadata' and channel/labe specific metadata from 'column_metadata will be merged, channel/labe specific metadata overriding global metadata. 
         time_start
             A starting time for the data. Must be accepted by pd.Timestamp(time_start)
             In case the index is timedelta or numeric. The times will be interpreted as relative
@@ -604,6 +607,10 @@ class Vitals:
         datatype
             Either 'channel' or 'label' or 'interval_label' depending on which kind
             of labels to attach. The default is "channel".
+        column_metadata
+            Ditctionary in a dictionary with metadata specific to a channel/label. 
+            Keys of the outer dictionary have to match wilh column name of the DataFrame to be applied. 
+            Information from 'metadata' will be updated with the inner dict for each channel/label.
         anchored_channel
             In case of datatype = 'label', where to attach the label. None means
             global label. The default is None
@@ -635,6 +642,7 @@ class Vitals:
             series = series[series.notna()]
             time = np.array(series.index)
             data = series.values
+            specific_metadata = metadata | column_metadata.get(col,{})
             if len(time) > 0:
                 if datatyp == "channel":
                     cha = Channel(
@@ -643,7 +651,7 @@ class Vitals:
                         data=data,
                         time_start=time_start,
                         time_unit=time_unit,
-                        metadata=metadata,
+                        metadata=specific_metadata,
                     )
                     self.data.add_channel(cha)
                 elif datatyp == "label" and anchored_channel is None:
@@ -653,7 +661,7 @@ class Vitals:
                         data,
                         time_start=time_start,
                         time_unit=time_unit,
-                        metadata=metadata,
+                        metadata=specific_metadata,
                     )
                     self.data.add_global_label(cha)
                 elif datatyp == "label" and anchored_channel is not None:
@@ -663,7 +671,7 @@ class Vitals:
                         data,
                         time_start=time_start,
                         time_unit=time_unit,
-                        metadata=metadata,
+                        metadata=specific_metadata,
                         anchored_channel=anchored_channel,
                     )
 
