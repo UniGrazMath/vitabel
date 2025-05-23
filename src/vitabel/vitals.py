@@ -616,49 +616,56 @@ class Vitals:
 
         if not (
             isinstance(source.index, pd.DatetimeIndex)
-            or (pd.api.types.is_numeric_dtype(source.index))
+            or (pd.api.types.is_numeric_dtype(source.index)
+            or isinstance(source.index, pd.TimedeltaIndex))
         ):
             raise ValueError(
                 "The DataFrame needs to have a datetime or a numeric index, "
                 "which describes the time of the timeseries."
             )
-        else:
-            for col in source.columns:
-                series = source[col]
-                series = series[series.notna()]
-                time = np.array(series.index)
-                data = series.values
-                if len(time) > 0:
-                    if datatyp == "channel":
-                        cha = Channel(
-                            name=col,
-                            time_index=time,
-                            data=data,
-                            time_start=time_start,
-                            time_unit=time_unit,
-                            metadata=metadata,
-                        )
-                        self.data.add_channel(cha)
-                    elif datatyp == "label" and anchored_channel is None:
-                        cha = Label(
-                            col,
-                            time,
-                            data,
-                            time_start=time_start,
-                            time_unit=time_unit,
-                            metadata=metadata,
-                        )
-                        self.data.add_global_label(cha)
-                    elif datatyp == "label" and anchored_channel is not None:
-                        cha = Label(
-                            col,
-                            time,
-                            data,
-                            time_start=time_start,
-                            time_unit=time_unit,
-                            metadata=metadata,
-                            anchored_channel=anchored_channel,
-                        )
+
+        if (isinstance(source.index, pd.TimedeltaIndex) or pd.api.types.is_numeric_dtype(source.index))\
+              and time_start is None:
+            raise ValueError(
+                "When a relative index is passed 'time_start' must be asigned."
+            )
+
+        for col in source.columns:
+            series = source[col]
+            series = series[series.notna()]
+            time = np.array(series.index)
+            data = series.values
+            if len(time) > 0:
+                if datatyp == "channel":
+                    cha = Channel(
+                        name=col,
+                        time_index=time,
+                        data=data,
+                        time_start=time_start,
+                        time_unit=time_unit,
+                        metadata=metadata,
+                    )
+                    self.data.add_channel(cha)
+                elif datatyp == "label" and anchored_channel is None:
+                    cha = Label(
+                        col,
+                        time,
+                        data,
+                        time_start=time_start,
+                        time_unit=time_unit,
+                        metadata=metadata,
+                    )
+                    self.data.add_global_label(cha)
+                elif datatyp == "label" and anchored_channel is not None:
+                    cha = Label(
+                        col,
+                        time,
+                        data,
+                        time_start=time_start,
+                        time_unit=time_unit,
+                        metadata=metadata,
+                        anchored_channel=anchored_channel,
+                    )
 
     def add_data_from_csv(
         self,
