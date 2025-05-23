@@ -7,6 +7,8 @@ import numpy as np
 
 from typing import Any, Union, TypeAlias, TYPE_CHECKING
 
+from dataclasses import dataclass
+
 if TYPE_CHECKING:
     from vitabel import Channel, Label
 
@@ -21,3 +23,10 @@ ChannelSpecification: TypeAlias = Union[str, dict[str, Any], "Channel"]
 
 LabelSpecification: TypeAlias = Union[str, dict[str, Any], "Label"]
 """Type alias for different ways to specify a Label."""
+
+@dataclass
+class EOLifeExport:
+    data: pd.DataFrame
+    recording_start: pd.Timestamp
+    metadata: Dict[str, Any]
+    column_metadata: Dict[str, Dict[str, str]]

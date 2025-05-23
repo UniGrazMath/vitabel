@@ -12,7 +12,7 @@ import scipy.signal as sgn
 import logging
 import vitaldb
 
-from typing import Any, Literal
+from typing import Any, Literal, Dict
 
 from IPython.display import display
 from pathlib import Path
@@ -42,6 +42,7 @@ from vitabel.typing import (
     Timestamp,
     ChannelSpecification,
     LabelSpecification,
+    EOLifeExport
 )
 
 
@@ -308,6 +309,16 @@ class Vitals:
                     self.data.add_channel(chan)
 
         self.metadata["Recording_files_added"].append(str(filepath))
+    
+    def add_ventilatory_feedback(self, filepath: Path | str, metadata={}) -> None:
+        eolife_export=loading.read_eolife_export(filepath)
+        self.add_data_from_DataFrame(
+            source = eolife_export.data, 
+            time_start = eolife_export.recording_start, 
+            datatype = "channel",
+            metadata = metadata | eolife_export.metadata,
+            column_metadata = eolife_export.column_metadata
+        )
 
     def add_vital_db_recording(
         self,
@@ -439,10 +450,11 @@ class Vitals:
         self,
         source: dict[str, Any],
         name: str,
+    
         time_start=None,
         datatype: Literal["channel", "label", "interval_label"] = "channel",
         anchored_channel: Channel | None = None,
-        metadata: dict = {},
+        metadata: Dict[str, Any] = {},
     ) -> None:
         """Adds a channel or label from a dict containing a single timeseries.
 
@@ -525,10 +537,11 @@ class Vitals:
     def add_data_from_dict(
         self,
         source: dict[str, dict] | Path,
+        
         time_start=None,
         datatype: Literal["channel", "label", "interval_label"] = "channel",
         anchored_channel: Channel | None = None,
-        metadata: dict = {},
+        metadata: Dict[str, Any] = {},
     ):
         """Add multiple channels from a dict.
 
@@ -582,8 +595,9 @@ class Vitals:
         time_start: str | None = None,
         time_unit=None,
         datatype: Literal["channel", "label", "interval_label"] = "channel",
+        column_metadata: Dict[str, Dict[str, Any]] = {},
         anchored_channel: Channel | None = None,
-        metadata={},
+        metadata: Dict[str, Any] = {},
     ):
         """Adds Data from a ``pandas.DataFrame``.
 
@@ -591,18 +605,24 @@ class Vitals:
         ----------
         source
             The DataFrame containing the data. The index of the DataFrame contains the
-            time (either as DatetimeIndex or numeric Index),
+            time (either as DatetimeIndex, TimedeltaIndex or numeric Index),
             and the columns contain the channels. NaN-Values in the columns are
             not taken into account an ignored.
+            Imformation are applied to channels and labels equally, for additional channel/label specific metadata use 'column_metadata'.
+            'metadata' and channel/labe specific metadata from 'column_metadata will be merged, channel/labe specific metadata overriding global metadata. 
         time_start
             A starting time for the data. Must be accepted by pd.Timestamp(time_start)
-            In case the index is numeric. The times will be interpreted as relative
+            In case the index is timedelta or numeric. The times will be interpreted as relative
             to this value. The default is 0 and means no information is given.
         time_unit   
             The time unit of the data. Must be accepted by pd.Timestamp(time_unit). 
         datatype
             Either 'channel' or 'label' or 'interval_label' depending on which kind
             of labels to attach. The default is "channel".
+        column_metadata
+            Ditctionary in a dictionary with metadata specific to a channel/label. 
+            Keys of the outer dictionary have to match wilh column name of the DataFrame to be applied. 
+            Information from 'metadata' will be updated with the inner dict for each channel/label.
         anchored_channel
             In case of datatype = 'label', where to attach the label. None means
             global label. The default is None
@@ -618,49 +638,57 @@ class Vitals:
 
         if not (
             isinstance(source.index, pd.DatetimeIndex)
-            or (pd.api.types.is_numeric_dtype(source.index))
+            or (pd.api.types.is_numeric_dtype(source.index)
+            or isinstance(source.index, pd.TimedeltaIndex))
         ):
             raise ValueError(
                 "The DataFrame needs to have a datetime or a numeric index, "
                 "which describes the time of the timeseries."
             )
-        else:
-            for col in source.columns:
-                series = source[col]
-                series = series[series.notna()]
-                time = np.array(series.index)
-                data = series.values
-                if len(time) > 0:
-                    if datatype == "channel":
-                        cha = Channel(
-                            name=col,
-                            time_index=time,
-                            data=data,
-                            time_start=time_start,
-                            time_unit=time_unit,
-                            metadata=metadata,
-                        )
-                        self.data.add_channel(cha)
-                    elif datatype == "label" and anchored_channel is None:
-                        cha = Label(
-                            col,
-                            time,
-                            data,
-                            time_start=time_start,
-                            time_unit=time_unit,
-                            metadata=metadata,
-                        )
-                        self.data.add_global_label(cha)
-                    elif datatype == "label" and anchored_channel is not None:
-                        cha = Label(
-                            col,
-                            time,
-                            data,
-                            time_start=time_start,
-                            time_unit=time_unit,
-                            metadata=metadata,
-                            anchored_channel=anchored_channel,
-                        )
+
+        if (isinstance(source.index, pd.TimedeltaIndex) or pd.api.types.is_numeric_dtype(source.index))\
+              and time_start is None:
+            raise ValueError(
+                "When a relative index is passed 'time_start' must be asigned."
+            )
+
+        for col in source.columns:
+            series = source[col]
+            series = series[series.notna()]
+            time = np.array(series.index)
+            data = series.values
+            specific_metadata = metadata | column_metadata.get(col,{})
+            if len(time) > 0:
+                if datatype == "channel":
+                    cha = Channel(
+                        name=col,
+                        time_index=time,
+                        data=data,
+                        time_start=time_start,
+                        time_unit=time_unit,
+                        metadata=specific_metadata,
+                    )
+                    self.data.add_channel(cha)
+                elif datatype == "label" and anchored_channel is None:
+                    cha = Label(
+                        col,
+                        time,
+                        data,
+                        time_start=time_start,
+                        time_unit=time_unit,
+                        metadata=specific_metadata,
+                    )
+                    self.data.add_global_label(cha)
+                elif datatype == "label" and anchored_channel is not None:
+                    cha = Label(
+                        col,
+                        time,
+                        data,
+                        time_start=time_start,
+                        time_unit=time_unit,
+                        metadata=specific_metadata,
+                        anchored_channel=anchored_channel,
+                    )
 
     def add_data_from_csv(
         self,
