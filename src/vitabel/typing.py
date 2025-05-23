@@ -7,6 +7,8 @@ import numpy as np
 
 from typing import Any, Union, TypeAlias, TYPE_CHECKING
 
+from dataclasses import dataclass
+
 if TYPE_CHECKING:
     from vitabel import Channel, Label
 

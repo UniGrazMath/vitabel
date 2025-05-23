@@ -592,13 +592,12 @@ class Vitals:
     def add_data_from_DataFrame(
         self,
         source: pd.DataFrame,
-        metadata: Dict[str, Any] = {},
         time_start: str | None = None,
         time_unit=None,
         datatype: Literal["channel", "label", "interval_label"] = "channel",
         column_metadata: Dict[str, Dict[str, Any]] = {},
         anchored_channel: Channel | None = None,
-        metadata={},
+        metadata: Dict[str, Any] = {},
     ):
         """Adds Data from a ``pandas.DataFrame``.
 
