@@ -475,9 +475,6 @@ class Vitals:
         None.
 
         """
-        if metadata is None:
-            metadata = {}
-
         if not ("timestamp" in source.keys() and "data" in source.keys()):
             raise ValueError(
                 "The dictionary must contain a 'timestamp' and a 'data' key which contain timestamps and data for this channel. \n \
