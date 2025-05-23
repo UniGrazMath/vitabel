@@ -20,7 +20,14 @@ contained in the [examples directory](https://github.com/UniGrazMath/vitabel/tre
 
 ## Usecase: German Resuscitation Registry
 
-...
+Vitabel is used within the German Resuscitation Registry
+to automatically extract data from defibrillator recordings.
+For debriefing and quality improvement users get an interactive timeline
+of all resuscitation measures displayed.
+
+Find an example for the interactive timeline in the
+embedded page below, or visit the example
+[in the registry directly](https://www.reanimationsregister.de/dbshowcase/mgd/public/?PATID=2476802110000BA).
 
 <div class="iframe-container">
 <iframe src="https://www.reanimationsregister.de/dbshowcase/mgd/public/?PATID=2476802110000BA" frameborder="0" allowfullscreen scrolling />
