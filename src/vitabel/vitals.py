@@ -764,19 +764,21 @@ class Vitals:
 
     def save_data(self, path: Path | str):
         """Exports channels, labels, and metadata and saves it in a JSON file.
-        In particular, adds a data hash to the metadata.
+        In particular, adds a data hash and the vitabel version to the metadata.
 
         Parameters
         ----------
         path
             The path of the output JSON file.
         """
+        from vitabel import __version__
 
         if isinstance(path, str):
             path = Path(path)
 
         self.metadata["Saving_to_json_time"] = str(pd.Timestamp.now())
         self.metadata["filepath"] = str(path)
+        self.metadata["vitabel version"] = __version__
         data_hash = self.data.channel_data_hash()
         data_dict = self.data.to_dict()
         json_dict = {"metadata": self.metadata, "data": data_dict, "hash": data_hash}
@@ -793,6 +795,7 @@ class Vitals:
         path
             The Path of the channel data.
         """
+        from vitabel import __version__
 
         path = Path(path)
         with open(path, "r") as fd:
@@ -801,6 +804,13 @@ class Vitals:
         self.data = TimeDataCollection.from_dict(json_dict["data"])
         saved_hash = json_dict["hash"]
         channel_hash = self.data.channel_data_hash()
+        vitabel_version = json_dict["metadata"].get("vitabel version", "unknown")
+        if vitabel_version != "unknown" and __version__ != vitabel_version:
+            logger.warning(
+                f"The vitabel version used to save the data is {vitabel_version}, "
+                f"while the currently installed version is {__version__}. "
+                "This may lead to compatibility issues."
+            )
 
         if check_channel_hash:
             saved_hash = channel_hash
