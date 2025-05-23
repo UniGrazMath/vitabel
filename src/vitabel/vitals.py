@@ -12,7 +12,7 @@ import scipy.signal as sgn
 import logging
 import vitaldb
 
-from typing import Any
+from typing import Any, Literal
 
 from IPython.display import display
 from pathlib import Path
@@ -42,7 +42,6 @@ from vitabel.typing import (
     Timestamp,
     ChannelSpecification,
     LabelSpecification,
-    Literal
 )
 
 
@@ -674,7 +673,7 @@ class Vitals:
         **kwargs,
     ):
         """Adds data from a CSV file.
-        
+
         The CSV file must contain a header with the channel names and a 
         timestamp column. The data is loaded into a pandas DataFrame and
         passed to the :meth:`add_data_from_DataFrame` method.
