@@ -9,6 +9,10 @@ import sqlite3
 import logging
 import vitabel.utils as utils
 
+from vitabel.typing import (
+    EOLifeExport
+)
+
 from pathlib import Path
 
 
@@ -2884,7 +2888,7 @@ def read_corpuls(f_corpuls):  # Read Corpuls Data
     return pat_dat, data
 
 
-def read_eolife_export(f_eolife: Path):
+def read_eolife_export(f_eolife: Path) -> EOLifeExport:
     # EOlife export data are written in csv format
     # the first three line contain header information on the recording
     # line 4 contains the heder for the recording data
@@ -2979,8 +2983,6 @@ def read_eolife_export(f_eolife: Path):
     df_data.drop(columns=["Time (hh:mm:ss:SS)"], inplace=True)
 
     # Step 1: Extract units and create a rename + units mapping
-    unit_pattern = re.compile(r"^(.*?)\s*\((.*?)\)$")
-
     rename_dict = {}
     units_dict = {}
 
@@ -2994,7 +2996,9 @@ def read_eolife_export(f_eolife: Path):
     # Step 2: Rename columns
     df_data.rename(columns=rename_dict, inplace=True)
 
+    column_metadata={k: {"units": v} for k, v in units_dict.items()}
+    metadata= metadata | {"category":"raw", "source":"EOlife"}
 
-
+    return EOLifeExport(df_data, recording_start, metadata, column_metadata)
 
 
