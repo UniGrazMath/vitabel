@@ -708,7 +708,12 @@ class Vitals:
             raise FileNotFoundError(f"File {file_path} not found.")
         df = pd.read_csv(file_path, **kwargs)
         self.add_data_from_DataFrame(
-            df, time_start=time_start, time_unit=time_unit,datatype= datatype,anchored_channel=anchored_channel, metadata=metadata
+            df,
+            time_start=time_start,
+            time_unit=time_unit,
+            datatype=datatype,
+            anchored_channel=anchored_channel,
+            metadata=metadata,
         )
 
     def add_channel(self, Channel):
