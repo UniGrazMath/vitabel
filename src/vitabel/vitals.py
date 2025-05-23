@@ -591,7 +591,7 @@ class Vitals:
         ----------
         source
             The DataFrame containing the data. The index of the DataFrame contains the
-            time (either as DatetimeIndex or numeric Index),
+            time (either as DatetimeIndex, TimedeltaIndex or numeric Index),
             and the columns contain the channels. NaN-Values in the columns are
             not taken into account an ignored.
         metadata
@@ -599,7 +599,7 @@ class Vitals:
             Is parsed to channel/Label and saved there as general argument.
         time_start
             A starting time for the data. Must be accepted by pd.Timestamp(time_start)
-            In case the index is numeric. The times will be interpreted as relative
+            In case the index is timedelta or numeric. The times will be interpreted as relative
             to this value. The default is 0 and means no information is given.
         datatype
             Either 'channel' or 'label' or 'interval_label' depending on which kind
