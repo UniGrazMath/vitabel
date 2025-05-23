@@ -309,7 +309,7 @@ def test_add_data_from_incorrect_DataFrame():
         ValueError,
         match="The DataFrame needs to have a datetime or a numeric index, which describes the time of the timeseries.",
     ):
-        cardio_object.add_data_from_DataFrame(df, datatyp="label")
+        cardio_object.add_data_from_DataFrame(df, datatype="label")
 
 
 def test_add_label_data_from_DataFrame():
@@ -324,7 +324,7 @@ def test_add_label_data_from_DataFrame():
     )
     df.set_index("timestamp", inplace=True)
     cardio_object = Vitals()
-    cardio_object.add_data_from_DataFrame(df, datatyp="label")
+    cardio_object.add_data_from_DataFrame(df, datatype="label")
     assert cardio_object.labels
 
 
