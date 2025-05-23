@@ -1209,7 +1209,7 @@ class IntervalLabel(Label):
         """
         time_intervals = np.array(self.time_index).reshape(-1, 2)
         if self.is_time_absolute():
-            time_intervals += self.time_start
+            time_intervals = time_intervals + self.time_start
         return time_intervals
 
     def truncate(

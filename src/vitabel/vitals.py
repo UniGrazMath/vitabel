@@ -27,6 +27,7 @@ from vitabel.timeseries import (
 from vitabel.utils import (
     loading,
     constants,
+    helpers,
     rename_channels,
     predict_circulation,
     construct_snippets,
@@ -42,8 +43,8 @@ from vitabel.typing import (
     Timestamp,
     ChannelSpecification,
     LabelSpecification,
+    ThresholdMetrics
 )
-
 
 logger: logging.Logger = logging.getLogger("vitabel")
 """Global package logger."""
@@ -1158,7 +1159,7 @@ class Vitals:
         ----------
         mode : str, optional,
             Which method to use to detect ventilations from CO2 signal. Either 'filter' which is a unpublished method by Wolfgang Kern or 'threshold',
-            which is the method presented by  Aramendi et al. "Feasibility of the capnogram to monitor ventilation rate during cardiopulmonary resuscitation" `10.1016/j.resuscitation.2016.08.033 <https://doi.org/10.1016/j.resuscitation.2016.08.033>`_
+            which is the method presented by Aramendi et al. "Feasibility of the capnogram to monitor ventilation rate during cardiopulmonary resuscitation" `10.1016/j.resuscitation.2016.08.033 <https://doi.org/10.1016/j.resuscitation.2016.08.033>`_
         breaththresh : float, optional
             Threshold value below which a minimum is identified as ventilation/respiration . The default is 2 (mmHg).
         etco2_thresh : float, optional
@@ -1803,3 +1804,57 @@ class Vitals:
             )
             for lab in [pred_lab, prob_lab, dec_lab]:
                 self.data.add_global_label(lab)
+
+
+    def area_under_threshold(
+        self,
+        name: str,
+        start_time: Timestamp | Timedelta | None = None,
+        stop_time: Timestamp | Timedelta | None = None,
+        threshold: int = 0
+    ) -> ThresholdMetrics:
+        """Calculates the area and duration where the signal falls
+        below a specified threshold.
+        
+        The calculations might be used with a mean arterial pressure to asses for hypotension.
+        They are implemented following the proposed metrics by Maheswari et al.
+        `10.1213/ANE.0000000000003482 <https://doi.org/10.1213/ANE.0000000000003482>`_.
+
+        See also
+        --------
+        
+        :func:`.utils.helpers.area_under_threshold`
+
+        Parameters
+        ----------
+        name
+            The name of the label or channel - retrieved by meth:`.get_channel_or_label`.
+            Allowed to be passed either as a positional or a keyword argument.
+        start_time
+            Start time for truncating the timeseries (meth:`truncate).
+            If ``None``, starts from the beginning.
+        stop_time
+            End time for truncating the timeseries (meth:`truncate`).
+            If ``None``, goes until the end.
+        threshold
+            The threshold value relative to which the area under the curve (AUC) is calculated.
+            Specifically, it computes the area where the signal lies *below* this threshold.
+
+        Returns
+        -------
+        :class:`.ThresholdMetrics`
+        """
+        if start_time is None:
+            start_time = self.rec_start()
+        if stop_time is None:
+            stop_time = self.rec_stop()
+
+        index, data = self.get_channel_or_label(name).get_data()
+        timeseries = pd.Series(data, index=index)
+
+        return helpers.area_under_threshold(
+            timeseries=timeseries,
+            start_time=start_time,
+            stop_time=stop_time,
+            threshold=threshold
+        )
