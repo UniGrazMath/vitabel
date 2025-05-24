@@ -999,7 +999,7 @@ class Vitals:
             The labels to plot. If not specified, all labels are plotted.
             Specified as a list of lists, same as for the channels.
         start
-            The start time for the plot. If start time is great than stop time, both timepoints will be interchanged. If not specified, the plot starts
+            The start time for the plot. If start time is great than stop time a warning will be raised. If not specified, the plot starts
             from the first time point.
         stop
             The stop time for the plot. If not specified, the plot stops
@@ -1020,9 +1020,8 @@ class Vitals:
             try:
                 if start > stop:
                     warnings.warn(
-                    f"Start time ({start}) must be before stop time ({stop}). The start and stop times have been interchanged."
+                    f"Start time ({start}) must be before stop time ({stop})."
                     )
-                    start, stop = stop, start
             except TypeError:
                 warnings.warn(
                     f"Start ({start}) and stop ({stop}) times are not comparable. Ensure both are of the same type (e.g., both Timestamps or both Timedeltas)."
@@ -1070,7 +1069,7 @@ class Vitals:
             The labels to plot. If not specified, all labels are plotted.
             Specified as a list of lists, same as for the channels.
         start
-            The start time for the plot. If start time is great than stop time, both timepoints will be interchanged. If not specified, the plot starts
+            The start time for the plot. If start time is great than stop time a warning will be raised. If not specified, the plot starts
             from the first time point.
         stop
             The stop time for the plot. If not specified, the plot stops
@@ -1099,9 +1098,8 @@ class Vitals:
             try:
                 if start > stop:
                     warnings.warn(
-                    f"Start time ({start}) must be before stop time ({stop}). The start and stop times have been interchanged."
+                    f"Start time ({start}) must be before stop time ({stop})."
                     )
-                    start, stop = stop, start
             except TypeError:
                 warnings.warn(
                     f"Start ({start}) and stop ({stop}) times are not comparable. Ensure both are of the same type (e.g., both Timestamps or both Timedeltas)."
