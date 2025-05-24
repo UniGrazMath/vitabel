@@ -1095,7 +1095,7 @@ def area_under_threshold(
     if start_time is None or stop_time is None or start_time >= stop_time:
         warnings.warn(
             f"Please pass valid 'start_time' ({start_time}) and 'stop_time' ({stop_time}) values. "
-            "The function returned 'np.nan'.",
+            "The function retunred 'np.nan'.",
             category=UserWarning
         )
         return ThresholdMetrics(
@@ -1114,19 +1114,19 @@ def area_under_threshold(
     target_times = sorted(set(target_times))
 
     if target_times:
-        # Remove duplicate indices before reindexing to avoid ValueError
-        timeseries = timeseries[~timeseries.index.duplicated(keep='first')]
         # Interpolation: union the index with new times, sort, interpolate, and extract
         timeseries = timeseries.reindex(timeseries.index.union(target_times)).sort_index().interpolate(method='time')
     
     ts = timeseries.truncate(before=start_time, after=stop_time)
     ts -= threshold
 
-    mask = ts[1:] * ts[:-1] < 0  # check whether a sign change has occurred
+    mask = ts.values[1:] * ts.values[:-1] < 0  # check whether a sign change has occurred
     if np.any(mask):
         # interpolate intersection points with axis
-        interpolated_axis_intersections = ts.index[:-1][mask] - ts[:-1][mask] * (
-            (ts.index[1:][mask] - ts.index[:-1][mask]) / (ts[1:][mask] - ts[:-1][mask])
+        interpolated_axis_intersections = ts.index[:-1][mask] - ts.values[:-1][mask] * (
+            (ts.index[1:][mask] - ts.index[:-1][mask])
+            / 
+            (ts.values[1:][mask] - ts.values[:-1][mask])
         )
         intersection_series = pd.Series(
             data=np.zeros(len(interpolated_axis_intersections)),
@@ -1146,11 +1146,8 @@ def area_under_threshold(
     area_value = 0.5 * np.sum(delta_t*trapez_lengths)  # timedelta * value units
     duration_under_threshold_value = np.sum(delta_t[trapez_lengths > 0])  # timedelta  
     observational_interval_duration_value = (ts.index.max() - ts.index.min())  # timedelta
-    if observational_interval_duration_value != pd.Timedelta(0):
-        twa_value = area_value / observational_interval_duration_value  # in value units
-    else:
-        twa_value = np.nan
-
+    twa_value = area_value / observational_interval_duration_value  # in value units
+    
     return ThresholdMetrics(
         area_under_threshold=Metric(value=area_value / time_scale, unit=f'{time_unit} × value units'),
         duration_under_threshold=duration_under_threshold_value,

@@ -52,9 +52,10 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
         if len(series) > 0:
             min_time = min(series.time_index)
             max_time = max(series.time_index)
-        if series.is_time_absolute():
-            min_time = min_time + series.time_start
-            max_time = max_time + series.time_start
+            if series.is_time_absolute():
+                min_time += series.time_start
+                max_time += series.time_start
+
         info_dict[idx].update(
             {
                 "First Entry": min_time,
@@ -64,10 +65,10 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
             }
         )
     df = pd.DataFrame(info_dict).transpose()
-    desired_order = ['Name', 'Length', 'First Entry', 'Last Entry', 'Offset']
-    # Get the rest of the columns that are not in desired_order
-    remaining = [col for col in df.columns if col not in desired_order]
-    return df[desired_order + remaining]
+    df_columns = ['Name', 'Length', 'First Entry', 'Last Entry', 'Offset']
+    metadata_columns = [col for col in df.columns.values if col not in df_columns]
+    return df.reindex(columns=df_columns + metadata_columns)
+
 
 
 class TimeSeriesBase:
@@ -133,19 +134,8 @@ class TimeSeriesBase:
         ):
             time_index = np.array(time_index)
 
-        # Filter out NaT values
-        cleaned_time_index = [t for t in time_index if not pd.isna(t)]
-
-        if len(cleaned_time_index) > 0:
-            time_type = type(cleaned_time_index[0]) 
-        elif hasattr(time_index, "dtype"):
-            dtype = time_index.dtype
-            if np.issubdtype(dtype, np.datetime64):
-                time_type = pd.Timestamp
-            elif np.issubdtype(dtype, np.timedelta64):
-                time_type = pd.Timedelta
-            else:
-                time_type = pd.Timedelta
+        if len(time_index) > 0:
+            time_type = type(time_index[0])
         else:
             time_type = pd.Timedelta #fallback
 
@@ -323,6 +313,11 @@ class TimeSeriesBase:
             bound_cond &= time_index <= stop
 
         if resolution is None or resolution == 0 or not bound_cond.any():
+            if not self.is_empty():
+                logger.warning(
+                    f"The queried time interval is empty: check the"
+                    f"specified start ({start}) and stop ({stop}) times."
+                )
             return bound_cond
 
         if isinstance(resolution, str):
@@ -1355,7 +1350,7 @@ class IntervalLabel(Label):
         """
         interval_start, interval_end = time_data
         if self.is_empty() and isinstance(interval_start, Timestamp):
-            self.time_start = interval_start
+            self.time_start = pd.to_datetime(interval_start)
 
         if self.is_time_absolute():
             interval_start -= self.time_start
@@ -2161,6 +2156,7 @@ class TimeDataCollection:
         time_unit: str | None = None,
         include_attached_labels: bool = False,
         channel_overviews: list[list[ChannelSpecification | int]] | bool = False,
+        limited_overview: bool = False,
         subplots_kwargs: dict[str, Any] | None = None,
     ):
         """Plot the data in the collection using ipywidgets.
@@ -2197,6 +2193,9 @@ class TimeDataCollection:
             in a separate subplot in a condensed way including a
             location map of the main plot. If set to ``True``, all
             chosen channels are plotted in a single overview.
+        limited_overview
+            Whether the time interval of the overview subplot should be limited
+            to the recording interval of the channels being plotted.
         subplots_kwargs
             Keyword arguments passed to ``matplotlib.pyplot.subplots``.
         """
@@ -2549,15 +2548,21 @@ class TimeDataCollection:
             return
 
         def repaint_overview_plot():
+            channels_for_xlims = channel_lists
             for channel_list, subax in zip(channel_overviews, overview_axes):
                 if not channel_list:
                     continue
+
+                if limited_overview:  # xlim of overview based on selected channels
+                    channels_for_xlims = [channel_list]
+
                 ov_start = self._get_time_extremum(
-                    None, channel_lists=[channel_list], minimum=True
+                    time=None, channel_lists=channels_for_xlims, minimum=True
                 )
                 ov_stop = self._get_time_extremum(
-                    None, channel_lists=[channel_list], minimum=False
+                    time=None, channel_lists=channels_for_xlims, minimum=False
                 )
+                
                 data_width = (ov_stop - ov_start).total_seconds()
                 resolution = data_width / screen_pixel_width
                 subax.clear()

@@ -309,7 +309,7 @@ def test_add_data_from_incorrect_DataFrame():
         ValueError,
         match="The DataFrame needs to have a datetime or a numeric index, which describes the time of the timeseries.",
     ):
-        cardio_object.add_data_from_DataFrame(df, datatyp="label")
+        cardio_object.add_data_from_DataFrame(df, datatype="label")
 
 
 def test_add_label_data_from_DataFrame():
@@ -324,7 +324,7 @@ def test_add_label_data_from_DataFrame():
     )
     df.set_index("timestamp", inplace=True)
     cardio_object = Vitals()
-    cardio_object.add_data_from_DataFrame(df, datatyp="label")
+    cardio_object.add_data_from_DataFrame(df, datatype="label")
     assert cardio_object.labels
 
 
@@ -491,6 +491,25 @@ def test_get_data_names():
     cardio_object.add_global_label(lab)
     assert cardio_object.get_channel_or_label_names() == ["Channel1", "Label1"]
     assert cardio_object.keys() == ["Channel1", "Label1"]
+
+
+def test_get_label_infos():
+    vital_case = Vitals()
+    info_df = vital_case.get_label_infos()
+    assert len(info_df) == 0
+    assert list(info_df.columns) == ["Name", "Length", "First Entry", "Last Entry", "Offset"]
+
+    lab = Label(
+        "exam",
+        ["2020-04-04 10:10:00", "2020-04-04 10:30:00", "2020-04-04 10:50:00"],
+        metadata={"lecture": "Discrete Mathematics"},
+    )
+    vital_case.add_global_label(lab)
+    info_df = vital_case.get_label_infos()
+    assert len(info_df) == 1
+    assert "lecture" in info_df.columns
+    assert info_df["Length"][0] == 3
+    assert repr(info_df["Last Entry"][0]) == "Timestamp('2020-04-04 10:50:00')"
 
 
 def test_rec_start():
@@ -963,7 +982,7 @@ def test_area_under_threshold_computation():
 
     threshold_metric = vital_case.area_under_threshold(name=1, threshold=0)
     assert threshold_metric.observational_interval_duration == pd.Timedelta(2, unit="h")
-    assert threshold_metric.duration_under_threshold == pd.Timedelta("01:29:41.818181818")
+    assert threshold_metric.duration_under_threshold == pd.Timedelta("01:00:00.000000001")
 
 
     
