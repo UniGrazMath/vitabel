@@ -135,15 +135,6 @@ class TimeSeriesBase:
 
         if len(time_index) > 0:
             time_type = type(time_index[0])
-        
-        elif hasattr(time_index, "dtype"):
-            dtype = time_index.dtype
-            if np.issubdtype(dtype, np.datetime64):
-                time_type = pd.Timestamp
-            elif np.issubdtype(dtype, np.timedelta64):
-                time_type = pd.Timedelta
-            else:
-                time_type = pd.Timedelta
         else:
             time_type = pd.Timedelta #fallback
 
