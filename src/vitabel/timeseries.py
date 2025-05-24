@@ -33,7 +33,7 @@ logger: logging.Logger = logging.getLogger("vitabel")
 def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
     """Summarizes basic information about a list of time series data.
 
-    If the time series objects have a ``metadata`` attribute, the
+    If the time series objects has a ``metadata`` attribute, the
     metadata will also be included in the summary.
 
     Parameters
@@ -55,6 +55,7 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
             if series.is_time_absolute():
                 min_time += series.time_start
                 max_time += series.time_start
+
         info_dict[idx].update(
             {
                 "First Entry": min_time,
@@ -134,8 +135,17 @@ class TimeSeriesBase:
 
         if len(time_index) > 0:
             time_type = type(time_index[0])
+        
+        elif hasattr(time_index, "dtype"):
+            dtype = time_index.dtype
+            if np.issubdtype(dtype, np.datetime64):
+                time_type = pd.Timestamp
+            elif np.issubdtype(dtype, np.timedelta64):
+                time_type = pd.Timedelta
+            else:
+                time_type = pd.Timedelta
         else:
-            time_type = pd.Timedelta
+            time_type = pd.Timedelta #fallback
 
         if not all(isinstance(t, time_type) for t in time_index) and not all(
             isinstance(t, numbers.Number) for t in time_index
@@ -159,7 +169,8 @@ class TimeSeriesBase:
             # check that time_start does not conflict
             if time_start is not None:
                 raise ValueError("time_start cannot be passed if time data is absolute")
-            time_start = pd.Timestamp(time_index[0])
+            if len(time_index) > 0:
+                time_start = pd.Timestamp(time_index[0])
             time_index = pd.to_timedelta([time - time_start for time in time_index])
 
         elif time_type in (pd.Timedelta, np.timedelta64):
@@ -323,11 +334,12 @@ class TimeSeriesBase:
             resolution = pd.to_timedelta(resolution, unit=self.time_unit)
 
         bounded_time = time_index[bound_cond]
-        if len(bounded_time) == 1:
+        if len(list(set(bounded_time))) == 1: #unique values, otherwise mean:dt_bounded_time would be 0
             return bound_cond
 
         mean_dt_bounded_time = (bounded_time[1:] - bounded_time[:-1]).mean()
         n_downsample = resolution / mean_dt_bounded_time
+
         if n_downsample <= 2:
             return bound_cond
 
