@@ -320,7 +320,7 @@ class TimeSeriesBase:
             stop = self.convert_time_input(stop)
             bound_cond &= time_index <= stop
         
-        if start > stop:
+        if all(x is not None for x in (start, stop)) and start > stop:
             logger.warning(
                 f"The specified start time {start} is greater than "
                 f"the stop time {stop}, queried time range is empty."
