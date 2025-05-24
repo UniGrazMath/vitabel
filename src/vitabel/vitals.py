@@ -12,9 +12,7 @@ import scipy.signal as sgn
 import logging
 import vitaldb
 
-import warnings
 from typing import Any, Literal
-
 
 from IPython.display import display
 from pathlib import Path
@@ -999,7 +997,7 @@ class Vitals:
             The labels to plot. If not specified, all labels are plotted.
             Specified as a list of lists, same as for the channels.
         start
-            The start time for the plot. If start time is great than stop time a warning will be raised. If not specified, the plot starts
+            The start time for the plot. If not specified, the plot starts
             from the first time point.
         stop
             The stop time for the plot. If not specified, the plot stops
@@ -1016,16 +1014,6 @@ class Vitals:
         subplots_kwargs
             Keyword arguments passed to ``matplotlib.pyplot.subplots``.
         """
-        if start is not None and stop is not None:
-            try:
-                if start > stop:
-                    warnings.warn(
-                    f"Start time ({start}) must be before stop time ({stop})."
-                    )
-            except TypeError:
-                warnings.warn(
-                    f"Start ({start}) and stop ({stop}) times are not comparable. Ensure both are of the same type (e.g., both Timestamps or both Timedeltas)."
-                )
 
         return self.data.plot(
             channels=channels,
@@ -1069,7 +1057,7 @@ class Vitals:
             The labels to plot. If not specified, all labels are plotted.
             Specified as a list of lists, same as for the channels.
         start
-            The start time for the plot. If start time is great than stop time a warning will be raised. If not specified, the plot starts
+            The start time for the plot. If not specified, the plot starts
             from the first time point.
         stop
             The stop time for the plot. If not specified, the plot stops
@@ -1094,16 +1082,6 @@ class Vitals:
         subplots_kwargs
             Keyword arguments passed to ``matplotlib.pyplot.subplots``.
         """
-        if start is not None and stop is not None:
-            try:
-                if start > stop:
-                    warnings.warn(
-                    f"Start time ({start}) must be before stop time ({stop})."
-                    )
-            except TypeError:
-                warnings.warn(
-                    f"Start ({start}) and stop ({stop}) times are not comparable. Ensure both are of the same type (e.g., both Timestamps or both Timedeltas)."
-                )
 
         return self.data.plot_interactive(
             channels=channels,
