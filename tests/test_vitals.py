@@ -8,7 +8,7 @@ import pytest
 
 from pathlib import Path
 
-from vitabel import Vitals
+from vitabel import Vitals, __version__
 from vitabel import Channel, Label, IntervalLabel
 
 
@@ -676,6 +676,9 @@ def test_saving_and_loading(tmpdir):
     cardio_object2 = Vitals()
     cardio_object2.load_data(filepath)
     assert cardio_object.data == cardio_object2.data
+    assert "vitabel version" in cardio_object2.metadata
+    assert cardio_object2.metadata["vitabel version"] == __version__
+
 
 
 def test_create_shock_information_DataFrame():
