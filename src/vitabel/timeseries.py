@@ -33,7 +33,7 @@ logger: logging.Logger = logging.getLogger("vitabel")
 def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
     """Summarizes basic information about a list of time series data.
 
-    If the time series objects have a ``metadata`` attribute, the
+    If the time series objects have ``metadata`` attributes, the
     metadata will also be included in the summary.
 
     Parameters
@@ -52,6 +52,10 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
         if len(series) > 0:
             min_time = min(series.time_index)
             max_time = max(series.time_index)
+            if series.is_time_absolute():
+                min_time += series.time_start
+                max_time += series.time_start
+
         info_dict[idx].update(
             {
                 "First Entry": min_time,
@@ -60,7 +64,10 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
                 "Offset": series.offset,
             }
         )
-    return pd.DataFrame(info_dict).transpose()
+    df = pd.DataFrame(info_dict).transpose()
+    df_columns = ['Name', 'Length', 'First Entry', 'Last Entry', 'Offset']
+    metadata_columns = [col for col in df.columns.values if col not in df_columns]
+    return df.reindex(columns=df_columns + metadata_columns)
 
 
 class TimeSeriesBase:
@@ -128,7 +135,18 @@ class TimeSeriesBase:
 
         if len(time_index) > 0:
             time_type = type(time_index[0])
-        else:
+        
+        elif hasattr(time_index, "dtype"):
+            # try to infer time type for empty time_index
+            # based on the dtype
+            dtype = time_index.dtype
+            if np.issubdtype(dtype, np.datetime64):
+                time_type = pd.Timestamp
+            elif np.issubdtype(dtype, np.timedelta64):
+                time_type = pd.Timedelta
+            else:
+                time_type = pd.Timedelta
+        else:  # general fallback: assume relative time
             time_type = pd.Timedelta
 
         if not all(isinstance(t, time_type) for t in time_index) and not all(
@@ -153,7 +171,8 @@ class TimeSeriesBase:
             # check that time_start does not conflict
             if time_start is not None:
                 raise ValueError("time_start cannot be passed if time data is absolute")
-            time_start = pd.Timestamp(time_index[0])
+            if len(time_index) > 0:
+                time_start = pd.Timestamp(time_index[0])
             time_index = pd.to_timedelta([time - time_start for time in time_index])
 
         elif time_type in (pd.Timedelta, np.timedelta64):
@@ -304,6 +323,11 @@ class TimeSeriesBase:
             bound_cond &= time_index <= stop
 
         if resolution is None or resolution == 0 or not bound_cond.any():
+            if not self.is_empty():
+                logger.warning(
+                    f"The queried time interval is empty: check the"
+                    f"specified start ({start}) and stop ({stop}) times."
+                )
             return bound_cond
 
         if isinstance(resolution, str):
@@ -316,6 +340,12 @@ class TimeSeriesBase:
             return bound_cond
 
         mean_dt_bounded_time = (bounded_time[1:] - bounded_time[:-1]).mean()
+        if mean_dt_bounded_time == pd.Timedelta(0):
+            logger.warning(
+                "The time index has no variation, so the resolution "
+                "cannot be applied. Returning the full time index."
+            )
+            return bound_cond
         n_downsample = resolution / mean_dt_bounded_time
         if n_downsample <= 2:
             return bound_cond
@@ -1203,7 +1233,7 @@ class IntervalLabel(Label):
         """
         time_intervals = np.array(self.time_index).reshape(-1, 2)
         if self.is_time_absolute():
-            time_intervals += self.time_start
+            time_intervals = time_intervals + self.time_start
         return time_intervals
 
     def truncate(
@@ -2142,6 +2172,7 @@ class TimeDataCollection:
         time_unit: str | None = None,
         include_attached_labels: bool = False,
         channel_overviews: list[list[ChannelSpecification | int]] | bool = False,
+        limited_overview: bool = False,
         subplots_kwargs: dict[str, Any] | None = None,
     ):
         """Plot the data in the collection using ipywidgets.
@@ -2178,6 +2209,9 @@ class TimeDataCollection:
             in a separate subplot in a condensed way including a
             location map of the main plot. If set to ``True``, all
             chosen channels are plotted in a single overview.
+        limited_overview
+            Whether the time interval of the overview subplot should be limited
+            to the recording interval of the channels being plotted.
         subplots_kwargs
             Keyword arguments passed to ``matplotlib.pyplot.subplots``.
         """
@@ -2530,15 +2564,21 @@ class TimeDataCollection:
             return
 
         def repaint_overview_plot():
+            channels_for_xlims = channel_lists
             for channel_list, subax in zip(channel_overviews, overview_axes):
                 if not channel_list:
                     continue
+
+                if limited_overview:  # xlim of overview based on selected channels
+                    channels_for_xlims = [channel_list]
+
                 ov_start = self._get_time_extremum(
-                    None, channel_lists=[channel_list], minimum=True
+                    time=None, channel_lists=channels_for_xlims, minimum=True
                 )
                 ov_stop = self._get_time_extremum(
-                    None, channel_lists=[channel_list], minimum=False
+                    time=None, channel_lists=channels_for_xlims, minimum=False
                 )
+                
                 data_width = (ov_stop - ov_start).total_seconds()
                 resolution = data_width / screen_pixel_width
                 subax.clear()

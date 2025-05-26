@@ -8,7 +8,7 @@ import pytest
 
 from pathlib import Path
 
-from vitabel import Vitals
+from vitabel import Vitals, __version__
 from vitabel import Channel, Label, IntervalLabel
 
 
@@ -309,7 +309,7 @@ def test_add_data_from_incorrect_DataFrame():
         ValueError,
         match="The DataFrame needs to have a datetime or a numeric index, which describes the time of the timeseries.",
     ):
-        cardio_object.add_data_from_DataFrame(df, datatyp="label")
+        cardio_object.add_data_from_DataFrame(df, datatype="label")
 
 
 def test_add_label_data_from_DataFrame():
@@ -324,7 +324,7 @@ def test_add_label_data_from_DataFrame():
     )
     df.set_index("timestamp", inplace=True)
     cardio_object = Vitals()
-    cardio_object.add_data_from_DataFrame(df, datatyp="label")
+    cardio_object.add_data_from_DataFrame(df, datatype="label")
     assert cardio_object.labels
 
 
@@ -493,6 +493,25 @@ def test_get_data_names():
     assert cardio_object.keys() == ["Channel1", "Label1"]
 
 
+def test_get_label_infos():
+    vital_case = Vitals()
+    info_df = vital_case.get_label_infos()
+    assert len(info_df) == 0
+    assert list(info_df.columns) == ["Name", "Length", "First Entry", "Last Entry", "Offset"]
+
+    lab = Label(
+        "exam",
+        ["2020-04-04 10:10:00", "2020-04-04 10:30:00", "2020-04-04 10:50:00"],
+        metadata={"lecture": "Discrete Mathematics"},
+    )
+    vital_case.add_global_label(lab)
+    info_df = vital_case.get_label_infos()
+    assert len(info_df) == 1
+    assert "lecture" in info_df.columns
+    assert info_df["Length"][0] == 3
+    assert repr(info_df["Last Entry"][0]) == "Timestamp('2020-04-04 10:50:00')"
+
+
 def test_rec_start():
     cha = Channel(
         "Channel1",
@@ -657,6 +676,9 @@ def test_saving_and_loading(tmpdir):
     cardio_object2 = Vitals()
     cardio_object2.load_data(filepath)
     assert cardio_object.data == cardio_object2.data
+    assert "vitabel version" in cardio_object2.metadata
+    assert cardio_object2.metadata["vitabel version"] == __version__
+
 
 
 def test_create_shock_information_DataFrame():
@@ -936,3 +958,36 @@ def test_analysis_exception_for_missing_data(caplog):
             "No Feedback-Sensor-Acceleration or ECG found.",
         ]
     )
+
+
+def test_area_under_threshold_computation():
+    vital_case = Vitals()
+
+    vital_case.add_data_from_DataFrame(
+        pd.DataFrame(
+            index=pd.date_range(start="2024-04-04 10:00:00", end="2024-04-04 12:00:00", periods=100),
+            data=np.array([
+                42 * np.ones(100),
+                [(-1)**(k//2) for k in range(100)],  # +1, +1, -1, -1, +1, +1, -1, -1, ...
+            ]).transpose(),
+        )
+    )
+    threshold_metric = vital_case.area_under_threshold(name=0, threshold=10)
+    assert threshold_metric.duration_under_threshold == pd.Timedelta(0)
+    assert threshold_metric.time_weighted_average_under_threshold.value == 0
+
+    threshold_metric = vital_case.area_under_threshold(name=0, threshold=100)
+    assert threshold_metric.duration_under_threshold == pd.Timedelta(2, unit="h")
+    assert threshold_metric.time_weighted_average_under_threshold.value == 100 - 42
+    assert threshold_metric.observational_interval_duration == pd.Timedelta(2, unit="h")
+    assert threshold_metric.area_under_threshold.unit == "minutes × value units"
+    assert threshold_metric.area_under_threshold.value == (100 - 42) * 60 * 2
+
+    threshold_metric = vital_case.area_under_threshold(name=1, threshold=0)
+    assert threshold_metric.observational_interval_duration == pd.Timedelta(2, unit="h")
+    assert threshold_metric.duration_under_threshold == pd.Timedelta("01:00:00.000000001")
+
+
+    
+
+
