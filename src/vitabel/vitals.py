@@ -1014,7 +1014,6 @@ class Vitals:
         subplots_kwargs
             Keyword arguments passed to ``matplotlib.pyplot.subplots``.
         """
-
         return self.data.plot(
             channels=channels,
             labels=labels,
@@ -1082,7 +1081,6 @@ class Vitals:
         subplots_kwargs
             Keyword arguments passed to ``matplotlib.pyplot.subplots``.
         """
-
         return self.data.plot_interactive(
             channels=channels,
             labels=labels,
