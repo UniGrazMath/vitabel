@@ -33,7 +33,7 @@ logger: logging.Logger = logging.getLogger("vitabel")
 def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
     """Summarizes basic information about a list of time series data.
 
-    If the time series objects has a ``metadata`` attribute, the
+    If the time series objects have ``metadata`` attributes, the
     metadata will also be included in the summary.
 
     Parameters
