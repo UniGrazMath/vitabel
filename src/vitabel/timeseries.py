@@ -137,6 +137,8 @@ class TimeSeriesBase:
             time_type = type(time_index[0])
         
         elif hasattr(time_index, "dtype"):
+            # try to infer time type for empty time_index
+            # based on the dtype
             dtype = time_index.dtype
             if np.issubdtype(dtype, np.datetime64):
                 time_type = pd.Timestamp
@@ -144,8 +146,8 @@ class TimeSeriesBase:
                 time_type = pd.Timedelta
             else:
                 time_type = pd.Timedelta
-        else:
-            time_type = pd.Timedelta #fallback
+        else:  # general fallback: assume relative time
+            time_type = pd.Timedelta
 
         if not all(isinstance(t, time_type) for t in time_index) and not all(
             isinstance(t, numbers.Number) for t in time_index
