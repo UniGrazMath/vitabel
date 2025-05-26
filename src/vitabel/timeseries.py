@@ -33,7 +33,7 @@ logger: logging.Logger = logging.getLogger("vitabel")
 def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
     """Summarizes basic information about a list of time series data.
 
-    If the time series objects have a ``metadata`` attribute, the
+    If the time series objects have ``metadata`` attributes, the
     metadata will also be included in the summary.
 
     Parameters
@@ -55,6 +55,7 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
             if series.is_time_absolute():
                 min_time += series.time_start
                 max_time += series.time_start
+
         info_dict[idx].update(
             {
                 "First Entry": min_time,
@@ -134,7 +135,18 @@ class TimeSeriesBase:
 
         if len(time_index) > 0:
             time_type = type(time_index[0])
-        else:
+        
+        elif hasattr(time_index, "dtype"):
+            # try to infer time type for empty time_index
+            # based on the dtype
+            dtype = time_index.dtype
+            if np.issubdtype(dtype, np.datetime64):
+                time_type = pd.Timestamp
+            elif np.issubdtype(dtype, np.timedelta64):
+                time_type = pd.Timedelta
+            else:
+                time_type = pd.Timedelta
+        else:  # general fallback: assume relative time
             time_type = pd.Timedelta
 
         if not all(isinstance(t, time_type) for t in time_index) and not all(
@@ -159,7 +171,8 @@ class TimeSeriesBase:
             # check that time_start does not conflict
             if time_start is not None:
                 raise ValueError("time_start cannot be passed if time data is absolute")
-            time_start = pd.Timestamp(time_index[0])
+            if len(time_index) > 0:
+                time_start = pd.Timestamp(time_index[0])
             time_index = pd.to_timedelta([time - time_start for time in time_index])
 
         elif time_type in (pd.Timedelta, np.timedelta64):
@@ -327,6 +340,12 @@ class TimeSeriesBase:
             return bound_cond
 
         mean_dt_bounded_time = (bounded_time[1:] - bounded_time[:-1]).mean()
+        if mean_dt_bounded_time == pd.Timedelta(0):
+            logger.warning(
+                "The time index has no variation, so the resolution "
+                "cannot be applied. Returning the full time index."
+            )
+            return bound_cond
         n_downsample = resolution / mean_dt_bounded_time
         if n_downsample <= 2:
             return bound_cond
