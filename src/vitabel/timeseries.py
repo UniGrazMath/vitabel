@@ -334,12 +334,17 @@ class TimeSeriesBase:
             resolution = pd.to_timedelta(resolution, unit=self.time_unit)
 
         bounded_time = time_index[bound_cond]
-        if len(list(set(bounded_time))) == 1: #unique values, otherwise mean:dt_bounded_time would be 0
+        if len(bounded_time) == 1:
             return bound_cond
 
         mean_dt_bounded_time = (bounded_time[1:] - bounded_time[:-1]).mean()
+        if mean_dt_bounded_time == pd.Timedelta(0):
+            logger.warning(
+                "The time index has no variation, so the resolution "
+                "cannot be applied. Returning the full time index."
+            )
+            return bound_cond
         n_downsample = resolution / mean_dt_bounded_time
-
         if n_downsample <= 2:
             return bound_cond
 
