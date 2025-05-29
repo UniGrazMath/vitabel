@@ -187,7 +187,7 @@ class TimeSeriesBase:
         self.time_index = time_index + offset
 
         if time_start is not None:
-            time_start = pd.Timestamp(time_start)
+            time_start = pd.Timestamp(time_start) + self.offset
             time_start = time_start.tz_localize(None)
         self.time_start = time_start
 
@@ -237,7 +237,10 @@ class TimeSeriesBase:
         time_unit = time_unit or self.time_unit
         if isinstance(delta_t, numbers.Number):
             delta_t = pd.to_timedelta(delta_t, unit=time_unit)
-        self.time_index += delta_t
+        if self.time_start is not None:
+            self.time_start += delta_t
+        else:
+            self.time_index += delta_t
         self.offset += delta_t
 
     def convert_time_input(self, time_input: Timestamp | Timedelta | float | str):
