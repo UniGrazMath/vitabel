@@ -538,13 +538,19 @@ class Channel(TimeSeriesBase):
     def to_dict(self) -> dict[str, Any]:
         """Construct a serializable dictionary that represents
         this channel."""
+        numeric_offset = self.offset / pd.to_timedelta(1, unit=self.time_unit)
+        numeric_time = self.numeric_time() - numeric_offset
+        time_start = self.time_start
+        if time_start is not None:
+            time_start = time_start - self.offset
+
         return {
             "name": self.name,
-            "time_index": self.numeric_time(),
+            "time_index": numeric_time,
             "data": self.data,
-            "time_start": str(self.time_start) if self.time_start is not None else None,
+            "time_start": str(time_start) if time_start is not None else None,
             "time_unit": self.time_unit,
-            "offset": self.offset / pd.to_timedelta(1, unit=self.time_unit),
+            "offset": numeric_offset,
             "labels": [label.to_dict() for label in self.labels],
             "plotstyle": self.plotstyle,
             "metadata": self.metadata,
@@ -993,13 +999,19 @@ class Label(TimeSeriesBase):
 
     def to_dict(self) -> dict[str, Any]:
         """A serialization of the label as a dictionary."""
+        numeric_offset = self.offset / pd.to_timedelta(1, unit=self.time_unit)
+        numeric_time = self.numeric_time() - numeric_offset
+        time_start = self.time_start
+        if time_start is not None:
+            time_start = time_start - self.offset
+
         return {
             "name": self.name,
-            "time_index": self.numeric_time(),
+            "time_index": numeric_time,
             "data": self.data,
-            "time_start": str(self.time_start) if self.time_start is not None else None,
+            "time_start": str(time_start) if time_start is not None else None,
             "time_unit": self.time_unit,
-            "offset": self.offset / pd.to_timedelta(1, unit=self.time_unit),
+            "offset": numeric_offset,
             "is_interval": False,
             "plotstyle": self.plotstyle,
             "metadata": self.metadata,
