@@ -690,8 +690,9 @@ def test_saving_and_loading_with_offset(tmpdir):
         np.array([1, 2, 3]),
     )
     channel.shift_time_index(pd.Timedelta("1 hour"))
-    assert channel.time_start == pd.Timestamp(2020, 4, 13, 3, 48, 0)
+    assert channel.time_start == pd.Timestamp(2020, 4, 13, 2, 48, 0)
     assert channel.offset == pd.Timedelta("1 hour")
+    assert channel.get_data()[0][0] == pd.Timestamp(2020, 4, 13, 3, 48, 0)
     vital_case = Vitals()
     vital_case.add_channel(channel)
     filepath = tmpdir / "testdata.json"
@@ -700,8 +701,9 @@ def test_saving_and_loading_with_offset(tmpdir):
     loaded_case = Vitals()
     loaded_case.load_data(filepath)
     loaded_channel = loaded_case.get_channel("Channel1")
-    assert loaded_channel.time_start == pd.Timestamp(2020, 4, 13, 3, 48, 0)
+    assert loaded_channel.time_start == pd.Timestamp(2020, 4, 13, 2, 48, 0)
     assert loaded_channel.offset == pd.Timedelta("1 hour")
+    assert loaded_channel.get_data()[0][0] == pd.Timestamp(2020, 4, 13, 3, 48, 0)
     assert vital_case.data == loaded_case.data
 
 def test_create_shock_information_DataFrame():

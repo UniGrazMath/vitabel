@@ -187,7 +187,7 @@ class TimeSeriesBase:
         self.time_index = time_index + offset
 
         if time_start is not None:
-            time_start = pd.Timestamp(time_start) + self.offset
+            time_start = pd.Timestamp(time_start)
             time_start = time_start.tz_localize(None)
         self.time_start = time_start
 
@@ -237,10 +237,7 @@ class TimeSeriesBase:
         time_unit = time_unit or self.time_unit
         if isinstance(delta_t, numbers.Number):
             delta_t = pd.to_timedelta(delta_t, unit=time_unit)
-        if self.time_start is not None:
-            self.time_start += delta_t
-        else:
-            self.time_index += delta_t
+        self.time_index += delta_t
         self.offset += delta_t
 
     def convert_time_input(self, time_input: Timestamp | Timedelta | float | str):
@@ -543,15 +540,12 @@ class Channel(TimeSeriesBase):
         this channel."""
         numeric_offset = self.offset / pd.to_timedelta(1, unit=self.time_unit)
         numeric_time = self.numeric_time() - numeric_offset
-        time_start = self.time_start
-        if time_start is not None:
-            time_start = time_start - self.offset
 
         return {
             "name": self.name,
             "time_index": numeric_time,
             "data": self.data,
-            "time_start": str(time_start) if time_start is not None else None,
+            "time_start": str(self.time_start) if self.time_start is not None else None,
             "time_unit": self.time_unit,
             "offset": numeric_offset,
             "labels": [label.to_dict() for label in self.labels],
@@ -1004,15 +998,12 @@ class Label(TimeSeriesBase):
         """A serialization of the label as a dictionary."""
         numeric_offset = self.offset / pd.to_timedelta(1, unit=self.time_unit)
         numeric_time = self.numeric_time() - numeric_offset
-        time_start = self.time_start
-        if time_start is not None:
-            time_start = time_start - self.offset
 
         return {
             "name": self.name,
             "time_index": numeric_time,
             "data": self.data,
-            "time_start": str(time_start) if time_start is not None else None,
+            "time_start": str(self.time_start) if self.time_start is not None else None,
             "time_unit": self.time_unit,
             "offset": numeric_offset,
             "is_interval": False,
