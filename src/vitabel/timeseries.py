@@ -111,7 +111,7 @@ class TimeSeriesBase:
     time_unit: str
     """The unit of the time data."""
 
-    offset: Timedelta
+    _offset: Timedelta
     """The offset applied to the time data."""
 
     def __init__(
@@ -126,7 +126,7 @@ class TimeSeriesBase:
             offset = pd.Timedelta(0)
         elif isinstance(offset, numbers.Number):
             offset = pd.to_timedelta(offset, unit=self.time_unit)
-        self.offset = offset
+        self._offset = offset
 
         if not isinstance(
             time_index, (pd.TimedeltaIndex, pd.DatetimeIndex, np.ndarray)
@@ -194,6 +194,26 @@ class TimeSeriesBase:
     def __len__(self) -> int:
         """Return the number of time points."""
         return len(self.time_index)
+    
+    @property
+    def offset(self) -> Timedelta:
+        """The offset applied to the time data."""
+        return self._offset
+    
+    @offset.setter
+    def offset(self, value: Timedelta | float):
+        """Set the offset applied to the time data.
+
+        Parameters
+        ----------
+        value
+            The new offset to apply. Can be a timedelta or a numeric value
+            (which is taken with respect to the time unit of the base class).
+        """
+        if isinstance(value, numbers.Number):
+            value = pd.to_timedelta(value, unit=self.time_unit)
+        delta_t = value - self._offset
+        self.shift_time_index(delta_t, time_unit=self.time_unit)
 
     def is_empty(self) -> bool:
         """Return whether the time data is empty."""
@@ -238,7 +258,7 @@ class TimeSeriesBase:
         if isinstance(delta_t, numbers.Number):
             delta_t = pd.to_timedelta(delta_t, unit=time_unit)
         self.time_index += delta_t
-        self.offset += delta_t
+        self._offset += delta_t
 
     def convert_time_input(self, time_input: Timestamp | Timedelta | float | str):
         """Convert a given time input to either a timedelta or a timestamp,
