@@ -164,6 +164,31 @@ def test_timeseriesbase_offset(time_offset):
     np.testing.assert_array_equal(ts.numeric_time(), np.arange(0, 10, 0.5) + 60)
 
 
+@pytest.mark.parametrize("time_offset", [60, pd.Timedelta("1min")])
+def test_timeseriesbase_absolute_offset(time_offset):
+    ts = TimeSeriesBase(
+        time_index=np.arange(0, 10, 0.5),
+        time_unit="s",
+        time_start=pd.Timestamp("2020-02-02 12:00:00"),
+        offset=time_offset,
+    )
+    np.testing.assert_array_equal(ts.numeric_time(), np.arange(0, 10, 0.5) + 60)
+
+
+def test_timeseriesbase_offset_property():
+    ts = TimeSeriesBase(
+        time_index=np.arange(0, 10, 0.5),
+        time_unit="s",
+    )
+    assert ts.offset.total_seconds() == 0
+
+    ts.offset = pd.Timedelta("1min")
+    np.testing.assert_array_equal(ts.numeric_time(), np.arange(0, 10, 0.5) + 60)
+
+    ts.offset += pd.Timedelta("30s")
+    np.testing.assert_array_equal(ts.numeric_time(), np.arange(0, 10, 0.5) + 90)
+
+
 def test_timeseriesbase_shift_index():
     time = np.arange(0, 10, 0.5)
     ts = TimeSeriesBase(

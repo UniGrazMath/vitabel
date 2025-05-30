@@ -111,7 +111,7 @@ class TimeSeriesBase:
     time_unit: str
     """The unit of the time data."""
 
-    offset: Timedelta
+    _offset: Timedelta
     """The offset applied to the time data."""
 
     def __init__(
@@ -126,7 +126,7 @@ class TimeSeriesBase:
             offset = pd.Timedelta(0)
         elif isinstance(offset, numbers.Number):
             offset = pd.to_timedelta(offset, unit=self.time_unit)
-        self.offset = offset
+        self._offset = offset
 
         if not isinstance(
             time_index, (pd.TimedeltaIndex, pd.DatetimeIndex, np.ndarray)
@@ -194,6 +194,26 @@ class TimeSeriesBase:
     def __len__(self) -> int:
         """Return the number of time points."""
         return len(self.time_index)
+    
+    @property
+    def offset(self) -> Timedelta:
+        """The offset applied to the time data."""
+        return self._offset
+    
+    @offset.setter
+    def offset(self, value: Timedelta | float):
+        """Set the offset applied to the time data.
+
+        Parameters
+        ----------
+        value
+            The new offset to apply. Can be a timedelta or a numeric value
+            (which is taken with respect to the time unit of the base class).
+        """
+        if isinstance(value, numbers.Number):
+            value = pd.to_timedelta(value, unit=self.time_unit)
+        delta_t = value - self._offset
+        self.shift_time_index(delta_t, time_unit=self.time_unit)
 
     def is_empty(self) -> bool:
         """Return whether the time data is empty."""
@@ -238,7 +258,7 @@ class TimeSeriesBase:
         if isinstance(delta_t, numbers.Number):
             delta_t = pd.to_timedelta(delta_t, unit=time_unit)
         self.time_index += delta_t
-        self.offset += delta_t
+        self._offset += delta_t
 
     def convert_time_input(self, time_input: Timestamp | Timedelta | float | str):
         """Convert a given time input to either a timedelta or a timestamp,
@@ -538,13 +558,16 @@ class Channel(TimeSeriesBase):
     def to_dict(self) -> dict[str, Any]:
         """Construct a serializable dictionary that represents
         this channel."""
+        numeric_offset = self.offset / pd.to_timedelta(1, unit=self.time_unit)
+        numeric_time = self.numeric_time() - numeric_offset
+
         return {
             "name": self.name,
-            "time_index": self.numeric_time(),
+            "time_index": numeric_time,
             "data": self.data,
             "time_start": str(self.time_start) if self.time_start is not None else None,
             "time_unit": self.time_unit,
-            "offset": self.offset / pd.to_timedelta(1, unit=self.time_unit),
+            "offset": numeric_offset,
             "labels": [label.to_dict() for label in self.labels],
             "plotstyle": self.plotstyle,
             "metadata": self.metadata,
@@ -993,13 +1016,16 @@ class Label(TimeSeriesBase):
 
     def to_dict(self) -> dict[str, Any]:
         """A serialization of the label as a dictionary."""
+        numeric_offset = self.offset / pd.to_timedelta(1, unit=self.time_unit)
+        numeric_time = self.numeric_time() - numeric_offset
+
         return {
             "name": self.name,
-            "time_index": self.numeric_time(),
+            "time_index": numeric_time,
             "data": self.data,
             "time_start": str(self.time_start) if self.time_start is not None else None,
             "time_unit": self.time_unit,
-            "offset": self.offset / pd.to_timedelta(1, unit=self.time_unit),
+            "offset": numeric_offset,
             "is_interval": False,
             "plotstyle": self.plotstyle,
             "metadata": self.metadata,

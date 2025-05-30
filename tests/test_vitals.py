@@ -679,7 +679,32 @@ def test_saving_and_loading(tmpdir):
     assert "vitabel version" in cardio_object2.metadata
     assert cardio_object2.metadata["vitabel version"] == __version__
 
+def test_saving_and_loading_with_offset(tmpdir):
+    channel = Channel(
+        "Channel1",
+        [
+            "2020-04-13 02:48:00",
+            "2020-04-13 02:50:00",
+            "2020-04-13 02:56:00",
+        ],
+        np.array([1, 2, 3]),
+    )
+    channel.shift_time_index(pd.Timedelta("1 hour"))
+    assert channel.time_start == pd.Timestamp(2020, 4, 13, 2, 48, 0)
+    assert channel.offset == pd.Timedelta("1 hour")
+    assert channel.get_data()[0][0] == pd.Timestamp(2020, 4, 13, 3, 48, 0)
+    vital_case = Vitals()
+    vital_case.add_channel(channel)
+    filepath = tmpdir / "testdata.json"
+    vital_case.save_data(filepath)
 
+    loaded_case = Vitals()
+    loaded_case.load_data(filepath)
+    loaded_channel = loaded_case.get_channel("Channel1")
+    assert loaded_channel.time_start == pd.Timestamp(2020, 4, 13, 2, 48, 0)
+    assert loaded_channel.offset == pd.Timedelta("1 hour")
+    assert loaded_channel.get_data()[0][0] == pd.Timestamp(2020, 4, 13, 3, 48, 0)
+    assert vital_case.data == loaded_case.data
 
 def test_create_shock_information_DataFrame():
     shock_energie = Channel(
