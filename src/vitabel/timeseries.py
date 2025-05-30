@@ -128,31 +128,48 @@ class TimeSeriesBase:
             offset = pd.to_timedelta(offset, unit=self.time_unit)
         self._offset = offset
 
-        if not isinstance(
-            time_index, (pd.TimedeltaIndex, pd.DatetimeIndex, np.ndarray)
-        ):
-            time_index = np.array(time_index)
+        # we need to process the passed time_index. in the end,
+        # the stored time_index should always be a pandas.TimedeltaIndex,
+        # with time_start set to None for relative time data,
+        # and to a pandas.Timestamp for absolute time data.
+        # it is possible that the specified time_index is empty
+        # or contains undefined values like pandas.NaT, numpy.nan, or None.
 
-        if len(time_index) > 0:
-            time_type = type(time_index[0])
-        
-        elif hasattr(time_index, "dtype"):
-            # try to infer time type for empty time_index
-            # based on the dtype
-            dtype = time_index.dtype
-            if np.issubdtype(dtype, np.datetime64):
-                time_type = pd.Timestamp
-            elif np.issubdtype(dtype, np.timedelta64):
-                time_type = pd.Timedelta
-            else:
-                time_type = pd.Timedelta
-        else:  # general fallback: assume relative time
-            time_type = pd.Timedelta
+        cleaned_time_index_iter = (
+            value for value in time_index
+            if not pd.isna(value)
+        )
 
-        if not all(isinstance(t, time_type) for t in time_index) and not all(
-            isinstance(t, numbers.Number) for t in time_index
-        ):
-            raise ValueError("All time data must be of the same type")
+        try:
+            value = next(cleaned_time_index_iter)
+            time_type = type(value)
+        except StopIteration:
+            # no non-na values in time_index
+            if hasattr(time_index, "dtype"):
+                # try to infer time type for empty time_index
+                # based on the dtype
+                dtype = time_index.dtype
+                if np.issubdtype(dtype, np.datetime64):
+                    time_type = pd.Timestamp
+                elif np.issubdtype(dtype, np.timedelta64):
+                    time_type = pd.Timedelta
+                else:
+                    time_type = pd.Timedelta
+            else:  # general fallback: assume relative time
+                time_type = pd.Timedelta
+
+        all_same_time_type = True
+        all_numeric = True
+        for value in cleaned_time_index_iter:
+            if all_same_time_type and not isinstance(value, time_type):
+                all_same_time_type = False
+            if all_numeric and not isinstance(value, numbers.Number):
+                all_numeric = False
+            if not all_same_time_type and not all_numeric:
+                raise ValueError(
+                    "All time data must be of the same type or numeric, "
+                    f"but found {value} ({type(value)}) instead of {time_type}"
+                )
 
         if time_type in (str, np.str_):
             for convert_func in [pd.to_datetime, pd.to_timedelta]:

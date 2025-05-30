@@ -140,8 +140,19 @@ def test_timeseriesbase_relative():
 
 
 def test_timeseriesbase_unsupported_type():
-    with pytest.raises(ValueError, match="<class 'NoneType'> is not supported"):
-        TimeSeriesBase(time_index=[None, None, None])
+    with pytest.raises(ValueError, match="<class 'set'> is not supported"):
+        TimeSeriesBase(time_index=[{"hello", "world"}, None, None])
+
+
+def test_timeseriesbase_nonetype_skipped():
+    ts = TimeSeriesBase(time_index=[None, 1, 2, None, 3])
+    assert len(ts) == 5
+    assert ts.time_index[0] is pd.NaT
+    ts.shift_time_index(10)
+    np.testing.assert_array_equal(
+        ts.numeric_time(),
+        [np.nan, 11, 12, np.nan, 13],
+    )
 
 
 def test_timeseriesbase_numeric_time():
