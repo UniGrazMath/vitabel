@@ -831,7 +831,7 @@ class Label(TimeSeriesBase):
     """
     _sentinel = object()
     valid_vline_text_source={'data', 'text_payload'}
-    
+
     def __init__(
         self,
         name: str,
@@ -1367,7 +1367,10 @@ class Label(TimeSeriesBase):
         if time_unit is None:
             time_unit = self.time_unit
         time_index /= pd.to_timedelta(1, unit=time_unit)
-        ymin, ymax = plot_axes.get_ylim()
+        if plot_axes is not None:
+            ymin, ymax = plot_axes.get_ylim()
+        else: 
+            ymin, ymax = 0, 1
 
 
         #sources for plotting
