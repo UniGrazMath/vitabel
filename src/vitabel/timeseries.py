@@ -361,9 +361,9 @@ class TimeSeriesBase:
             bound_cond &= time_index <= stop
 
         if resolution is None or resolution == 0 or not bound_cond.any():
-            if not self.is_empty():
+            if self.is_empty():
                 logger.warning(
-                    f"The queried time interval is empty: check the"
+                    f"The queried time interval is empty for '{self.name}': check the"
                     f"specified start ({start}) and stop ({stop}) times."
                 )
             return bound_cond
@@ -862,6 +862,9 @@ class Label(TimeSeriesBase):
                 if text_payload is None:
                     text_payload = np.array(data, dtype=object)
                     data = None
+                    if plot_type is None and vline_text_source is None:
+                        plot_type = "vline"
+                        vline_text_source = "text_payload"
                     logger.warning(f"`data` of the label '{name}' contains strings. Treating it as `text_payload` instead.")
                     if plot_type == "vline" and vline_text_source == "data":
                         vline_text_source = "text_payload"
@@ -870,6 +873,9 @@ class Label(TimeSeriesBase):
                     raise ValueError(f"`data` of the label '{name}' contains strings but `text_payload` is already set.")
             else:
                 data = np.asarray(data)
+                if plot_type is not None:
+                    plot_type = "scatter"
+
         self._check_data_shape(time_index, data)
 
         if text_payload is not None:
