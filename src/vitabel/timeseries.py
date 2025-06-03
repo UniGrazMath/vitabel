@@ -360,7 +360,7 @@ class TimeSeriesBase:
             bound_cond &= time_index <= stop
 
         if resolution is None or resolution == 0 or not bound_cond.any():
-            if not self.is_empty():
+            if self.is_empty():
                 logger.warning(
                     f"The queried time interval is empty: check the"
                     f"specified start ({start}) and stop ({stop}) times."
