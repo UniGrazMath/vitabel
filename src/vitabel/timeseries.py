@@ -830,7 +830,7 @@ class Label(TimeSeriesBase):
         If `None`, no text is shown. Ignored if `plot_type='scatter'`.
     """
     _sentinel = object()
-    valid_vline_text_source={'data', 'text_payload'}
+    _valid_vline_text_source={'data', 'text_payload'}
 
     def __init__(
         self,
@@ -890,9 +890,9 @@ class Label(TimeSeriesBase):
             raise ValueError(f"Invalid `plot_type`: '{plot_type}' for label '{self.name}'")
         
 
-        if vline_text_source is not None and vline_text_source not in valid_vline_text_source:
+        if vline_text_source is not None and vline_text_source not in self._valid_vline_text_source:
             raise ValueError(
-                f"`vline_text_source` must be one of {valid_vline_text_source} or None when `plot_type='vline'`. "
+                f"`vline_text_source` must be one of {self._valid_vline_text_source} or None when `plot_type='vline'`. "
                 f"Got: '{vline_text_source}'"
             )
 
@@ -1354,9 +1354,9 @@ class Label(TimeSeriesBase):
 
         if vline_text_source is self._sentinel: # go with the presepcified properties of sthe label
             vline_text_source = self.vline_text_source                
-        elif vline_text_source is not None and vline_text_source not in valid_vline_text_source: # check new specification
+        elif vline_text_source is not None and vline_text_source not in self._valid_vline_text_source: # check new specification
             raise ValueError(
-                f"`vline_text_source` must be one of {valid_vline_text_source} or None when `plot_type='vline'`. "
+                f"`vline_text_source` must be one of {self._valid_vline_text_source} or None when `plot_type='vline'`. "
                 f"Got: '{vline_text_source}'"
             )
 
