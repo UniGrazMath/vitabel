@@ -1416,6 +1416,9 @@ class Label(TimeSeriesBase):
                     scatter_data = data[~mask_nan]
                     vline_time_index = time_index[mask_nan]
                     vline_text_payload = text_payload[mask_nan] if text_payload is not None else None
+                else:
+                    scatter_time_index = time_index
+                    scatter_data = data
             else:
                 vline_time_index = time_index
                 vline_text_payload = text_payload 
