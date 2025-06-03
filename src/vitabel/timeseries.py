@@ -858,7 +858,7 @@ class Label(TimeSeriesBase):
 
         if data is not None:
             if len(data) > 0 and isinstance(data[0], str):
-                # Consider this a mistake: strings should go to text_payload
+                # Consider this a mistake: strings should go to text_payload, can be considered as legacy functionality
                 if text_payload is None:
                     text_payload = np.array(data, dtype=object)
                     data = None
