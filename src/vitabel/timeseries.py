@@ -1161,7 +1161,10 @@ class Label(TimeSeriesBase):
         if time_unit is None:
             time_unit = self.time_unit
         time_index /= pd.to_timedelta(1, unit=time_unit)
-        ymin, ymax = plot_axes.get_ylim()
+        if plot_axes is not None:
+            ymin, ymax = plot_axes.get_ylim()
+        else: 
+            ymin, ymax = 0, 1
 
         if data is None:
             data = np.ones_like(time_index, dtype=float) * (ymin + ymax) / 2
