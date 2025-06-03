@@ -979,7 +979,7 @@ class Label(TimeSeriesBase):
             flag = False
             if self.data is None:
                 logger.warning(
-                    f"Cannot plot '{self.name}': `plot_type='scatter'` requires `data` to be set.")
+                    f"Cannot plot label '{self.name}': `plot_type='scatter'` requires `data` to be set.")
                 return False
             if vline_text_source is not None:
                 logger.warning("`vline_text_source` is ignored when `plot_type='scatter'`.")
@@ -994,23 +994,23 @@ class Label(TimeSeriesBase):
                 return True
             elif vline_text_source == "data":
                 if self.data is None:
-                    logger.warning("Cannot plot: `vline_text_source='data'` requires `data` to be set.")
+                    logger.warning(f"Cannot plot label '{self.name}': `vline_text_source='data'` requires `data` to be set.")
                     return False
             elif vline_text_source == "text_payload":
                 if self.text_payload is None:
-                    logger.warning("Cannot plot: `vline_text_source='text_payload'` requires `text_payload` to be set.")
+                    logger.warning(f"Cannot plot label '{self.name}': `vline_text_source='text_payload'` requires `text_payload` to be set.")
                     return False
                 if not all(isinstance(x, str) for x in self.text_payload):
-                    logger.warning("Cannot plot: `text_payload` must contain only strings.")
+                    logger.warning(f"Cannot plot label '{self.name}': `text_payload` must contain only strings.")
                     return False
             else:
-                logger.warning(f"Invalid `vline_text_source`: {vline_text_source}")
+                logger.warning(f"Invalid `vline_text_source`: {vline_text_source} for label '{self.name}'")
                 return False
             return True
 
         if plot_type is None:
             if vline_text_source is not None:
-                logger.warning("`vline_text_source` is ignored when `plot_type=None`.")
+                logger.warning(f"`vline_text_source` is ignored when `plot_type=None` for label '{self.name}'")
                 return False
             return True
 
