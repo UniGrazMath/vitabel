@@ -2586,11 +2586,6 @@ class TimeDataCollection:
             ADJUST = 1
             SETTINGS = 2
 
-        class LabelValueType(Enum):
-            ONLY_TIMESTAMP = "Only Timestamp"            
-            NUMERIC = "Numeric"
-            TEXTUAL = "Textual"
-
         value_text_input = widgets.Text(placeholder="Label text ...")
         value_text_stack = widgets.Stack([
             widgets.HTML(),
@@ -3075,10 +3070,9 @@ class TimeDataCollection:
                                 )
                                 if t2 < t1:
                                     t1, t2 = t2, t1
-                                y = (y1 + y2) / 2
-                                if value_type_dropdown.value == LabelValueType.TEXTUAL:
-                                    y = value_text_input.value
-                                active_label.add_data((t1, t2), value=y)
+                                ydata = (y1 + y2) / 2 if add_numeric_check.value else None
+                                text_input = value_text_input.value if add_text_check.value and value_text_input.value and value_text_input.value != "" else None
+                                active_label.add_data((t1, t2), value=ydata, value_text=text_input) #TODO
                                 repaint_plot(start, stop)
                                 partial_interval_data = None
                                 fig.canvas._figure_label = ""
@@ -3100,11 +3094,10 @@ class TimeDataCollection:
                                 if len(selected_times) > 0:
                                     selected_time = min(selected_times)
                                     active_label.remove_data(time_data=selected_time)
-                            else:
-                                ydata = event.ydata
-                                if value_type_dropdown.value == LabelValueType.TEXTUAL:
-                                    ydata = value_text_input.value
-                                active_label.add_data(time_data, value=ydata)
+                            else:             
+                                ydata = event.ydata if add_numeric_check.value else None
+                                text_input = value_text_input.value if add_text_check.value and value_text_input.value and value_text_input.value != "" else None
+                                active_label.add_data(time_data=time_data, value=ydata, value_text=text_input)
                             repaint_plot(start, stop)
 
                     elif current_mode == InteractionMode.ADJUST:
