@@ -1070,7 +1070,6 @@ class Label(TimeSeriesBase):
         if value is not None: # A value has to be inserted
             if self.data is None: # not initialized yet
                 self.data = np.full(len(self.time_index) - 1, np.nan) #creates an array to the length of time_index before insertion with np.na
-
             self.data = np.insert(self.data, insert_index, value)
             
         if value_text == "":
@@ -1115,6 +1114,8 @@ class Label(TimeSeriesBase):
                 offset = self.time_index[0]
                 self.time_start += offset
                 self.time_index -= offset
+            self.data = None
+            self.text_payload = None
 
     def truncate(
         self,
@@ -1517,7 +1518,55 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
     metadata
         A dictionary that can be used to store additional
         information about the label.
+    plot_type : {'area', 'hline'} 
+        Determines how entries of the label are plotted.
+        - 'area': Entries of the label are plotted as points. Requires `data` to be provided (i.e., not None).
+        - 'hline'  : Entries of the label are plotted as a vertical lines. Captioning of the lines is determined by `vline_text_source`.
+    hline_reference : float, {'data', 'distributed'}, or None, optional
+        Reference value on y-axis for plotting horizontal lines. 
+        If 'data', uses data values; if 'distributed', distributes lines evenly; if float, uses the given value.
+    hline_text_source : {'data', 'text_payload'}, optional
+        Defines the source of the text shown next to each vertical line when `plot_type='hline'`.
+        - 'data': Converts corresponding numeric `data` values to strings.
+        If `None`, no text is shown.
     """
+
+    _sentinel = object()
+
+    def __init___(
+        self,
+        name: str,
+        time_index: npt.ArrayLike[tuple[Timestamp, Timestamp] | tuple[Timedelta, Timedelta]] | None = None,
+        data: npt.ArrayLike[float | np.number] | None = None,
+        text_payload: npt.ArrayLike[str | None] | None = None,
+        time_start: Timestamp | None = None,
+        time_unit: str | None = None,
+        offset: Timedelta | float | None = None,
+        anchored_channel: Channel | None = None,
+        plotstyle: dict[str, Any] | None = None,
+        metadata: dict[str, Any] | None = None,
+        plot_type: Literal['area', 'hline'] | None = None,
+        hline_reference: float | Literal['data', 'distributed'] | None = None, 
+        hline_text_source: Literal['data', 'text_payload'] | None = None, 
+    ):
+        super().__init__(
+            name=name, color="",
+            time_index= time_index,
+            data = data,
+            text_payload = text_payload,
+            time_start = time_start,
+            time_unit = time_unit,
+            offset = offset,
+            anchored_channel = anchored_channel,
+            plotstyle = plotstyle,
+            metadata = matadata,
+            ),
+
+        self.plot_type = plot_type 
+        self.hline_reference = hline_reference
+        self.hline_text_source = hline_text_source
+        
+
 
     def _check_data_shape(self, time_index: npt.ArrayLike, data: npt.ArrayLike):
         """Check that the time data is well-formed, and that there is either no data,
@@ -1771,6 +1820,9 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
         stop: Timestamp | Timedelta | float | None = None,
         time_unit: str | None = None,
         reference_time: Timestamp | Timedelta | float | None = None,
+        plot_type: Literal['vline', 'scatter'] | None = _sentinel,
+        hline_reference: float | Literal['data', 'distributed'] | None = _sentinel,
+        hline_text_source: Literal['data', 'text_payload'] | None = _sentinel, 
     ):
         """Plot the label data using an error bar or a
         filled background region.
@@ -1800,6 +1852,15 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
         reference_time
             For labels with absolute time, a reference time to subtract from
             the time data. If not specified, the :attr:`time_start` attribute is used.
+        plot_type : {'area', 'hline'} or None, optional # TODO adapt for Interval
+            Specifies the plot type: vertical lines (`'vline'`) or scatter plot (`'scatter'`).
+            If not explicitly passed, a default will be chosen based on context.
+            Pass ``None`` explicitly to disable the specification of the label.
+        hline_reference :  
+        hline_text_source : {'data', 'text_payload'} or None, optional
+            Controls whether and what text is displayed next to vertical lines.
+            If not passed, the default behavior is used. Pass ``None`` to suppress text 
+            and/or override specification in label properties.
         """
         time_index, data = self.get_data(start=start, stop=stop)
         artist = None
