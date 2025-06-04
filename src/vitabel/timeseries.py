@@ -361,7 +361,7 @@ class TimeSeriesBase:
             bound_cond &= time_index <= stop
 
         if resolution is None or resolution == 0 or not bound_cond.any():
-            if self.is_empty():
+            if not self.is_empty():
                 logger.warning(
                     f"The queried time interval is empty for '{self.name}': check the"
                     f"specified start ({start}) and stop ({stop}) times."
@@ -1476,7 +1476,7 @@ class Label(TimeSeriesBase):
         return figure
 
 
-class IntervalLabel(Label):
+class IntervalLabel(Label): #TODO: add text_payload and refactor plotting according to new architecture
     """A special type of label that holds time interval data.
 
 
@@ -2578,42 +2578,42 @@ class TimeDataCollection:
         if ipy_shell is None:
             raise RuntimeError("This method can only be used in an IPython environment")
 
+
+        # ---------- WIDGETS FOR ANNOTATION ----------------------
+        # --------------------------------------------------------
         class InteractionMode(Enum):
             ANNOTATE = 0
             ADJUST = 1
             SETTINGS = 2
 
         class LabelValueType(Enum):
+            ONLY_TIMESTAMP = "Only Timestamp"            
             NUMERIC = "Numeric"
-            ONLY_TIMESTAMP = "Only Timestamp"
             TEXTUAL = "Textual"
 
-        value_type_dropdown = widgets.Dropdown(
-            options=[(label_type.value, label_type) for label_type in LabelValueType],
-            description="Value type:",
-        )
         value_text_input = widgets.Text(placeholder="Label text ...")
-        value_type_stack = widgets.Stack(
-            [
-                widgets.HTML(),
-                widgets.HTML(),
-                value_text_input,
-            ]
-        )
-        widgets.jslink(
-            (value_type_dropdown, "index"), (value_type_stack, "selected_index")
-        )
+        value_text_stack = widgets.Stack([
+            widgets.HTML(),
+            value_text_input,
+        ])
+        value_text_stack.selected_index = 1
 
-        distinct_labels = []
+        distinct_labels = {"single":[], "interval":[]}
         for label_list in label_lists:
             for label in label_list:
-                if label not in distinct_labels:
-                    distinct_labels.append(label)
+                if isinstance(label, IntervalLabel):
+                    if label not in distinct_labels["interval"]: #NOTE: would a dict of sets avoid this check?
+                        distinct_labels["interval"].append(label)
+                else:
+                    if label not in distinct_labels["single"]:
+                        distinct_labels["single"].append(label)
+
+        # First load "single" labels, then "interval" labels, preserving order
+        # Use label.name as the sort key
+        label_options = sorted(distinct_labels["single"], key=lambda l: l.name) + sorted(distinct_labels["interval"], key=lambda l: l.name)
 
         label_dropdown = widgets.Dropdown(
-            options=[
-                label for label in distinct_labels if label._data_can_hold_number()
-            ],
+            options=label_options,
             description="Active label",
             disabled=False,
         )
@@ -2625,39 +2625,66 @@ class TimeDataCollection:
             button_style="success",
         )
 
+        add_timestamp_check = widgets.Checkbox(
+            value=True,
+            description='',
+            disabled=True,
+            indent=False,
+        )
+
+        add_numeric_check = widgets.Checkbox(
+            value=True,
+            description='',
+            disabled=False,
+            indent=False,       
+        )
+
+        add_text_check = widgets.Checkbox(
+            value=True,
+            description='',
+            disabled=False, #TODO make this dynamic in conjuncton with value_text_input
+            indent=False,
+            layout=widgets.Layout(margin='0 4px 0 0') 
+        )
+
+        def toggle_add_text(change):
+            if change["name"] == "value":
+                value_text_stack.selected_index = 1 if change["new"] else 0
+        
+        add_text_check.observe(toggle_add_text, names="value")
+
+        add_stack = widgets.Stack([
+            widgets.HTML(),
+            widgets.HBox([
+                widgets.VBox([widgets.Label("Timestamp"), add_timestamp_check],),
+                widgets.VBox([widgets.Label("Numeric value"), add_numeric_check],),
+                widgets.VBox([
+                    widgets.Label("Textual value"),
+                    #add_text_check,
+                    widgets.HBox([add_text_check, value_text_stack])
+                ],),        
+            ],)
+        ]) # TODO: this design stretches all columns to the length of value_text_input, which is not desired
+        add_stack.selected_index = 1
+
         def delete_toggle_handler(change):
             nonlocal DELETE_ANNOTATIONS
 
             if change["new"]:  # value of "new" attribute is new button value
                 delete_toggle_button.description = "Mode: Delete Data"
                 delete_toggle_button.button_style = "danger"
+                add_stack.selected_index = 0
                 DELETE_ANNOTATIONS = True
             else:
                 delete_toggle_button.description = "Mode: Add Data"
                 delete_toggle_button.button_style = "success"
+                add_stack.selected_index = 1
                 DELETE_ANNOTATIONS = False
 
         delete_toggle_button.observe(delete_toggle_handler, names="value")
 
-        def value_type_dropdown_handler(change):
-            new_type = change.get("new", None)
-            if new_type == LabelValueType.NUMERIC:
-                label_dropdown.options = [
-                    label for label in distinct_labels if label._data_can_hold_number()
-                ]
-            elif new_type == LabelValueType.ONLY_TIMESTAMP:
-                label_dropdown.options = [
-                    label for label in distinct_labels if label.data is None
-                ]
-            elif new_type == LabelValueType.TEXTUAL:
-                label_dropdown.options = [
-                    label for label in distinct_labels if label._data_can_hold_text()
-                ]
-
-        value_type_dropdown.observe(handler=value_type_dropdown_handler, names="value")
-
-        # ---------- WIDGETS FOR SHIFTING ----------------------
-
+        # ---------- WIDGETS FOR SHIFTING ------------------------
+        # --------------------------------------------------------
         shifting_channel_selection = widgets.SelectMultiple(
             value=[self.channels[0]],
             options=[(chan.name, chan) for chan in self.channels],
@@ -2666,8 +2693,8 @@ class TimeDataCollection:
             continuous_update=True,
         )
 
-        # ----------- WIDGETS FOR SETTINGS ----------------------------
-
+        # ----------- WIDGETS FOR SETTINGS -----------------------
+        # --------------------------------------------------------
         limit_widgets = []
         for idx, channel_list in enumerate(channel_lists, start=1):
             min_slider = widgets.FloatText(value=0, description="min")
@@ -2683,8 +2710,8 @@ class TimeDataCollection:
             )
         settings_apply_button = widgets.Button(description="Apply")
 
-        # ------------------ ENTIRE WIDGET DESIGN ---------------------
-
+        # ------------------ ENTIRE WIDGET DESIGN ----------------
+        # --------------------------------------------------------
         tab = widgets.Tab()
         tab.children = [
             widgets.VBox(
@@ -2709,17 +2736,12 @@ class TimeDataCollection:
                     ),
                     widgets.HBox(
                         [
-                            value_type_dropdown,
-                            value_type_stack,
-                        ]
-                    ),
-                    widgets.HBox(
-                        [
                             label_dropdown,
                             delete_toggle_button,
                         ]
                     ),
-                ]
+                    add_stack
+                ],
             ),
             widgets.VBox(
                 [
