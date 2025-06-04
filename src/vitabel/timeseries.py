@@ -1494,7 +1494,11 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
     data
         The data points of the label. If not specified, the label
         only holds time data. If specified, the length of the data must
-        be half of the length of the passed time index. Can be numeric data or strings.
+        match the length of the time index. Must be numeric. For strings see `text_payload`.
+    text_payload
+        If specified, the length of the data must match the length of the time index. 
+        While `data` must contain numeric values `text_payload` must contain string values or None,
+        serving as captions for the respective entries in `time_index`.       
     time_start
         If the specified ``time_index`` holds relative time data
         (timedeltas or numeric values), this parameter can be used
@@ -1560,16 +1564,18 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
             The stop time for the truncated label.
         """
 
-        truncated_time_index, truncated_data = self.get_data(
+        truncated_time_index, truncated_data, truncated_text_payload = self.get_data(
             start=start_time, stop=stop_time
         )
         truncated_label = IntervalLabel(
             name=self.name,
             time_index=truncated_time_index.flatten(),
             data=truncated_data,
+            text_payload=truncated_text_payload,
             time_unit=self.time_unit,
             plotstyle=copy(self.plotstyle),
             metadata=copy(self.metadata),
+            plot_type=self.plot_type,
         )
         return truncated_label
 
@@ -1657,12 +1663,20 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
         # TODO: the time intervals should be clipped to the start and stop
         # times if they are not fully contained in the range
         data = self.data[time_mask] if self.data is not None else None
-        return intervals, data
+        text_payload = self.text_payload[time_mask] if self.text_payload is not None else None
+
+        # destructing zero length arrays
+        data = None if data is not None and len(data) == 0 else data
+        text_payload = None if text_payload is not None and len(text_payload) == 0 else text_payload
+
+        return intervals, data, text_payload
+    
 
     def add_data(
         self,
         time_data: tuple[Timestamp, Timestamp] | tuple[Timedelta, Timedelta],
-        value: float | None = None,
+        value: float | np.number | str | None = None,  
+        value_text: str | None = None
     ):
         """Add data to the label.
 
@@ -1671,7 +1685,10 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
         time_data
             A time data tuple specifying an interval.
         value
-            The value of the data point.
+            The value of the data point. If vlaue is a string it will be assigned to 
+            text_payload. If not specified, the data point is set to `np.nan`.
+        value_text
+            The string to be inserted into `text_payload`. 
         """
         interval_start, interval_end = time_data
         if self.is_empty() and isinstance(interval_start, Timestamp):
@@ -1687,12 +1704,30 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
         self.time_index = self.time_index.append(
             pd.TimedeltaIndex([interval_start, interval_end])
         )
-        if self.data is not None:
-            if len(self.data) == 0 and isinstance(value, str):
-                self.data = np.array([], dtype=object)
-            elif len(self.data) == 0:
-                self.data = np.array([])
+
+        if isinstance(value, str):  # Legacy routine to handle string added to data
+            if value_text is None:
+                value_text = value
+                value = None
+                logger.warning(f"`value` got a string; treating it as `value_text` instead.")
+            else:
+                raise ValueError("`value` got a string and `value_text` also got a string.")
+    
+        if value is None and self.data is not None:  # data has to be kept the same length as time_index by inserting np.nan
+            value = np.nan
+        
+        if value is not None:  # A value has to be inserted
+            if self.data is None:  # not initialized yet
+                self.data = np.full(len(self.time_index) - 1, np.nan) #creates an array to the length of time_index before insertion with np.na
             self.data = np.append(self.data, value)
+        
+        if value_text == "":
+            value_text = None
+
+        if value_text is not None:
+            if self.text_payload is None: #not initialized yet
+                self.text_payload = np.full(len(self.time_index) - 1, None, dtype=object) #creates an array to the length of time_index before insertion with None
+            self.text_payload = np.apped(self.text_payload, value_text)
 
     def remove_data(
         self,
@@ -1724,9 +1759,13 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
         )
         if self.data is not None:
             self.data = np.delete(self.data, remove_index)
+        if self.text_payload is not None:
+            self.text_payload = np.delete(self.text_payload, remove_index)
 
         if len(self.time_index) == 0:
             self.time_start = None
+            self.data = None
+            self.text_payload = None
 
     def plot(
         self,
