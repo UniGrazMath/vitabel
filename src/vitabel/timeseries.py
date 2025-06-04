@@ -2614,8 +2614,8 @@ class TimeDataCollection:
 
         label_dropdown = widgets.Dropdown(
             options=label_options,
-            description="Active label",
             disabled=False,
+            layout=widgets.Layout(margin='3px 0px 0px 0px')
         )
         DELETE_ANNOTATIONS = False
         delete_toggle_button = widgets.ToggleButton(
@@ -2630,13 +2630,15 @@ class TimeDataCollection:
             description='',
             disabled=True,
             indent=False,
+            layout=widgets.Layout(width='max-content')
         )
 
         add_numeric_check = widgets.Checkbox(
             value=True,
             description='',
             disabled=False,
-            indent=False,       
+            indent=False,
+            layout=widgets.Layout(width='max-content')
         )
 
         add_text_check = widgets.Checkbox(
@@ -2644,7 +2646,7 @@ class TimeDataCollection:
             description='',
             disabled=False, #TODO make this dynamic in conjuncton with value_text_input
             indent=False,
-            layout=widgets.Layout(margin='0 4px 0 0') 
+           layout=widgets.Layout(width='max-content')
         )
 
         def toggle_add_text(change):
@@ -2654,17 +2656,33 @@ class TimeDataCollection:
         add_text_check.observe(toggle_add_text, names="value")
 
         add_stack = widgets.Stack([
-            widgets.HTML(),
-            widgets.HBox([
-                widgets.VBox([widgets.Label("Timestamp"), add_timestamp_check],),
-                widgets.VBox([widgets.Label("Numeric value"), add_numeric_check],),
-                widgets.VBox([
-                    widgets.Label("Textual value"),
-                    #add_text_check,
-                    widgets.HBox([add_text_check, value_text_stack])
-                ],),        
-            ],)
-        ]) # TODO: this design stretches all columns to the length of value_text_input, which is not desired
+            widgets.HTML(), # alternative to empty widget
+            widgets.HBox([ # Hbox to add alligned Label
+                widgets.Label( # alligned label
+                    "Data to add:",
+                    layout=widgets.Layout(min_width='85px', margin='0px 5px 0px 0px', text_align='right', justify_content='flex-end')
+                ),  
+                widgets.HBox([ #Hbox for content
+
+                    widgets.VBox(
+                        [widgets.Label("Timestamp"), add_timestamp_check],
+                        layout=widgets.Layout(margin="0 20px 0 0")
+                    ),
+                    widgets.VBox(
+                        [widgets.Label("Numeric value"), add_numeric_check],
+                        layout=widgets.Layout(margin="0 20px 0 0")
+                    ),
+                    widgets.VBox([
+                        widgets.Label("Textual value"),
+                        widgets.HBox([add_text_check, value_text_stack])
+                    ])
+                ],
+                    layout=widgets.Layout(border='1px dotted gray', padding='3px 8px')
+                ),
+            ])
+        ],  
+            layout=widgets.Layout(margin='3px 0 0 0 ')  # top margin only                     
+        )
         add_stack.selected_index = 1
 
         def delete_toggle_handler(change):
@@ -2736,11 +2754,15 @@ class TimeDataCollection:
                     ),
                     widgets.HBox(
                         [
+                            widgets.Label("Label:", 
+                                        layout=widgets.Layout(min_width='85px', margin='0px 5px 0px 0px',text_align='right',justify_content='flex-end'),
+                                        ),
                             label_dropdown,
                             delete_toggle_button,
                         ]
                     ),
                     add_stack
+
                 ],
             ),
             widgets.VBox(
@@ -2775,6 +2797,9 @@ class TimeDataCollection:
             "Settings",
         ]
 
+        tab.layout = widgets.Layout(
+            min_height="270px", #NOTE avoids ynamics witht concomittant plot. yet not flexibel
+        )
         ipy_shell.enable_matplotlib(gui="widget")
 
         with plt.ioff():
