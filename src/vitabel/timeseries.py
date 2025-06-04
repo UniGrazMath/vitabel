@@ -1076,13 +1076,10 @@ class Label(TimeSeriesBase):
         if value_text == "":
             value_text = None
 
-        if self.text_payload is None:
-            if value_text is None: # nothing has to be inserted
-                return 
-            else: 
+        if value_text is None: 
+            if self.text_payload is None: # not initalized yet
                 self.text_payload = np.full(len(self.time_index) - 1, None, dtype=object) #creates an array to the length of time_index before insertion with None
-            
-        self.text_payload = np.insert(self.text_payload, insert_index, value_text)
+            self.text_payload = np.insert(self.text_payload, insert_index, value_text)
 
     def remove_data(
         self,
@@ -1291,10 +1288,9 @@ class Label(TimeSeriesBase):
         data = self.data[time_mask] if self.data is not None else None 
         text_payload = self.text_payload[time_mask] if self.text_payload is not None else None
 
-        if data is not None and len(data) == 0:
-            data = None
-        if text_payload is not None and len(text_payload) == 0:
-            text_payload = None
+        # destructing zero length arrays
+        data = None if data is not None and len(data) == 0 else data
+        text_payload = None if text_payload is not None and len(text_payload) else text_payload
 
         return time_index, data, text_payload
 
