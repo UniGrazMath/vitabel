@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import copy
-from typing import Any
+from typing import Any, Literal
 from matplotlib.text import Text
 from matplotlib.patches import Rectangle
 
@@ -13,13 +13,15 @@ import logging
 import pandas as pd
 import matplotlib.pyplot as plt
 import numbers
+import typing
 import numpy as np
 import numpy.typing as npt
 import hashlib
-from typing import Literal
 
 from vitabel.utils.helpers import match_object, NumpyEncoder, decompress_array
 from vitabel.typing import (
+    LabelPlotType,
+    LabelPlotVLineTextSource,
     Timedelta,
     Timestamp,
     ChannelSpecification,
@@ -363,7 +365,7 @@ class TimeSeriesBase:
         if resolution is None or resolution == 0 or not bound_cond.any():
             if not self.is_empty():
                 logger.warning(
-                    f"The queried time interval is empty for '{self.name}': check the"
+                    f"The queried time interval for {self.name} is empty: check the"
                     f"specified start ({start}) and stop ({stop}) times."
                 )
             return bound_cond
@@ -770,7 +772,6 @@ class Channel(TimeSeriesBase):
 # TODO: handling of name, data, plotstyle, metadata is
 # the same as for channel and could be factored out
 class Label(TimeSeriesBase):
-
     """A time data label, holding a time series and optional data points.
 
     Where :class:`.Channel` is intended for data extracted from some external,
@@ -837,14 +838,14 @@ class Label(TimeSeriesBase):
         name: str,
         time_index: npt.ArrayLike[Timestamp | Timedelta | float | str] | None = None,
         data: npt.ArrayLike[float | np.number] | None = None,
-        text_payload: npt.ArrayLike[str | None] | None = None,
+        text_data: npt.ArrayLike[str | None] | None = None,
         time_start: Timestamp | None = None,
         time_unit: str | None = None,
         offset: Timedelta | float | None = None,
         anchored_channel: Channel | None = None,
         plotstyle: dict[str, Any] | None = None,
         metadata: dict[str, Any] | None = None,
-        plot_type: Literal['vline', 'scatter'] | None = None,
+        plot_type: LabelPlotType | None = None,
         vline_text_source: Literal['data', 'text_payload'] | None = None, 
     ):
         self.name = name
@@ -858,46 +859,38 @@ class Label(TimeSeriesBase):
 
         if data is not None:
             if len(data) > 0 and isinstance(data[0], str):
-                # Consider this a mistake: strings should go to text_payload, can be considered as legacy functionality
-                if text_payload is None:
-                    text_payload = np.array(data, dtype=object)
-                    data = None
-                    if plot_type is None and vline_text_source is None:
-                        plot_type = "vline"
-                        vline_text_source = "text_payload"
-                    logger.warning(f"`data` of the label '{name}' contains strings. Treating it as `text_payload` instead.")
-                    if plot_type == "vline" and vline_text_source == "data":
-                        vline_text_source = "text_payload"
-                        logger.info("Switched `vline_text_source` to 'text_payload' because `data` contained strings.")                   
-                else:
-                    raise ValueError(f"`data` of the label '{name}' contains strings but `text_payload` is already set.")
+                # legacy support for string data: pass data as text_data
+                # and adjust arguments accordingly
+                if text_data is not None:
+                    raise ValueError("Label data is not allowed to contain strings")
+                
+                text_data = np.array(data, dtype=object)
+                data = None
+                logger.warning(
+                    "Label data is not allowed to contain strings. "
+                    "Automatically populating text_data instead of data."
+                )
+
+                if plot_type == "vline" and vline_text_source == "data":
+                    vline_text_source = "text_payload"
+                    logger.info(
+                        "Automatically changed vline_text_source to 'text_payload' as well."
+                    )
+
             else:
                 data = np.asarray(data)
-                if plot_type is not None:
-                    plot_type = "scatter"
-
-        self._check_data_shape(time_index, data)
-
-        if text_payload is not None:
-            text_payload = np.asarray(text_payload, dtype=object)
-            # Vectorized conversion of "" entries to None
-            mask = text_payload == ""
-            if np.any(mask):
-                text_payload[mask] = None
-        self._check_data_shape(time_index, text_payload)
-
-        if plot_type is not None and plot_type not in {"vline", "scatter"}:
-            raise ValueError(f"Invalid `plot_type`: '{plot_type}' for label '{self.name}'")
         
+        if text_data is not None:
+            text_data = np.asarray(text_data, dtype=object)
+            text_data[text_data == ""] = None
 
-        if vline_text_source is not None and vline_text_source not in self._valid_vline_text_source:
-            raise ValueError(
-                f"`vline_text_source` must be one of {self._valid_vline_text_source} or None when `plot_type='vline'`. "
-                f"Got: '{vline_text_source}'"
-            )
+        self._check_data_shape(time_index, data=data, text_data=text_data)
 
         self.data = data
         """The data points of the label, if any."""
+
+        self.text_data = text_data
+        """Text associated to the individual time data points, if any."""
 
         self.plotstyle = copy(plotstyle) or {
             "marker": "o",
@@ -909,16 +902,18 @@ class Label(TimeSeriesBase):
         self.metadata = copy(metadata) or {}
         """Additional label metadata."""
 
+        self.plot_type = plot_type
+        """The type of plot to use to visualize the label."""
+
+        self.vline_text_source = vline_text_source
+        """The source of the text to be shown next to vertical lines."""
+
         super().__init__(
             time_index=time_index,
             time_start=time_start,
             time_unit=time_unit,
             offset=offset,
         )
-
-        self.text_payload = text_payload
-        self.plot_type = plot_type
-        self.vline_text_source = vline_text_source
 
         if anchored_channel is not None:
             self.attach_to(anchored_channel)
@@ -939,25 +934,46 @@ class Label(TimeSeriesBase):
         """A string representation of the label."""
         return f"{self.__class__.__name__}({self.name})"
 
+    @property
+    def plot_type(self) -> LabelPlotType | None:
+        """The type of plot to use to visualize the label."""
+        return self._plot_type
+    
+    @plot_type.setter
+    def plot_type(self, value: LabelPlotType | None):
+        if value is not None and value not in typing.get_args(LabelPlotType):
+            raise ValueError(f"Value '{value}' is not a valid choice for plot_type")
+        self._plot_type = value
 
-    def _check_data_shape(self, time_index: npt.ArrayLike, data: npt.ArrayLike):
+    @property
+    def vline_text_source(self) -> LabelPlotVLineTextSource | None:
+        """The source attribute of the text to be shown next to vertical lines."""
+        return self._vline_text_source
+    
+    @vline_text_source.setter
+    def vline_text_source(self, value: LabelPlotVLineTextSource | None):
+        if value is not None and value not in typing.get_args(LabelPlotVLineTextSource):
+            raise ValueError(
+                f"Value '{value}' is not a valid choice for vline_text_source."
+            )
+        self._vline_text_source = value
+    
+    def _check_data_shape(
+        self,
+        time_index: npt.ArrayLike,
+        data: npt.ArrayLike | None,
+        text_data: npt.ArrayLike | None,
+    ):
         """Check that the data has the same length as the time index."""
         if data is not None and len(data) != len(time_index):
             raise ValueError(
                 "The length of the data must be equal to the length of the time index"
             )
 
-    def _data_can_hold_number(self) -> bool: #TODO reconcile how to handle this function
-        """Check whether this label can hold numeric values."""
-        return self.data is not None and (
-            self.is_empty() or np.issubdtype(self.data.dtype, np.number)
-        )
-
-    def _data_can_hold_text(self) -> bool: #TODO reconcile how to handle this function
-        """Check whether this label can hold string values."""
-        return self.data is not None and (
-            self.is_empty() or self.data.dtype == "object"
-        )
+        if text_data is not None and len(text_data) != len(time_index):
+            raise ValueError(
+                "The length of the text data must be equal to the length of the time index"
+            )
 
     def _check_plot_parameters(
             self,
@@ -1003,10 +1019,10 @@ class Label(TimeSeriesBase):
                     logger.warning(f"Cannot plot label '{self.name}': `vline_text_source='data'` requires `data` to be set.")
                     return False
             elif vline_text_source == "text_payload":
-                if self.text_payload is None:
+                if self.text_data is None:
                     logger.warning(f"Cannot plot label '{self.name}': `vline_text_source='text_payload'` requires `text_payload` to be set.")
                     return False
-                if not all(isinstance(x, str) for x in self.text_payload):
+                if not all(isinstance(x, str) for x in self.text_data):
                     logger.warning(f"Cannot plot label '{self.name}': `text_payload` must contain only strings.")
                     return False
             else:
@@ -1024,7 +1040,10 @@ class Label(TimeSeriesBase):
         return False  
 
     def add_data(
-        self, time_data: Timestamp | Timedelta, value: float | np.number | str | None = None,  value_text: str | None = None
+        self,
+        time_data: Timestamp | Timedelta,
+        value: float | np.number | str | None = None,
+        text: str | None = None,
     ):
         """Add a data point to the label.
 
@@ -1033,10 +1052,10 @@ class Label(TimeSeriesBase):
         time
             The time of the data point.
         value
-            The value of the data point. If vlaue is a string it will be assigned to 
-            text_payload. If not specified, the data point is set to `np.nan`.
-        value_text
-            The string to be inserted into `text_payload`. 
+            The value of the data point. If not specified,
+            the value is set to ``numpy.nan``.
+        text
+            The string to be inserted into :attr:`.text_data`. 
         """
         #NOTE check docstring was the value really set to zero previously? Was it meaningfull?
 
@@ -1054,32 +1073,36 @@ class Label(TimeSeriesBase):
 
         [insert_index] = self.time_index.searchsorted([time_data])
         self.time_index = self.time_index.insert(insert_index, time_data)
-        
-        #Legacy routine to handle string added to data
+
         if isinstance(value, str):
-            if value_text is None:
-                value_text = value
-                value = None
-                logger.warning(f"`value` got a string; treating it as `value_text` instead.")
-            else:
-                raise ValueError("`value` got a string and `value_text` also got a string.")
+            # legacy support: add string data 
+            if text is not None:
+                raise ValueError("Only numeric values can be added to data")
+            logger.warning(
+                "Only numeric values can be added to data. Automatically passed "
+                "value to the text argument instead."
+            )
+            text, value = value, None
 
-        if value is None and self.data is not None: # data has to be kept the same length as time_index by inserting np.nan
-            value = np.nan
+        if self.data is not None:
+            if len(self.data) == 0:  # TODO: still needed?
+                # make sure that the data attribute is a suitable numpy array
+                self.data = np.array([])
 
-        if value is not None: # A value has to be inserted
-            if self.data is None: # not initialized yet
-                self.data = np.full(len(self.time_index) - 1, np.nan) #creates an array to the length of time_index before insertion with np.na
+            if value is None:
+                value = np.nan
 
             self.data = np.insert(self.data, insert_index, value)
-            
-        if value_text == "":
-            value_text = None
 
-        if value_text is None: 
-            if self.text_payload is None: # not initalized yet
-                self.text_payload = np.full(len(self.time_index) - 1, None, dtype=object) #creates an array to the length of time_index before insertion with None
-            self.text_payload = np.insert(self.text_payload, insert_index, value_text)
+        if self.text_data is not None:
+            if len(self.text_data) == 0:  # TODO: still needed?
+                # make sure that the text_data attribute is a suitable numpy array
+                self.text_data = np.array([], dtype=object)
+            
+            if text == "":
+                text = None
+            
+            self.text_data = np.insert(self.text_data, insert_index, text)
 
     def remove_data(
         self,
@@ -1105,8 +1128,8 @@ class Label(TimeSeriesBase):
         self.time_index = self.time_index.delete(remove_index)
         if self.data is not None:
             self.data = np.delete(self.data, remove_index)
-        if self.text_payload is not None:
-            self.text_payload = np.delete(self.text_payload, remove_index)
+        if self.text_data is not None:
+            self.text_data = np.delete(self.text_data, remove_index)
 
         if remove_index == 0 and self.is_time_absolute():
             if self.is_empty():
@@ -1131,7 +1154,7 @@ class Label(TimeSeriesBase):
             The stop time for the truncated label.
         """
         
-        truncated_time_index, truncated_data, truncated_text_payload = self.get_data(
+        truncated_time_index, truncated_data, truncated_text_data = self.get_data(
             start=start_time, stop=stop_time
         )
 
@@ -1139,7 +1162,7 @@ class Label(TimeSeriesBase):
             name=self.name,
             time_index=truncated_time_index,
             data=truncated_data,
-            text_payload=truncated_text_payload,
+            text_data=truncated_text_data,
             time_unit=self.time_unit,
             plotstyle=copy(self.plotstyle),
             metadata=copy(self.metadata),
@@ -1169,9 +1192,9 @@ class Label(TimeSeriesBase):
         except (TypeError, ValueError, EOFError):
             pass
 
-        text_payload = datadict.get("text_payload")
+        text_data = datadict.get("text_data")
         try:
-            text_payload = decompress_array(text_payload)
+            text_data = decompress_array(text_data)
         except (TypeError, ValueError, EOFError):
             pass
 
@@ -1179,7 +1202,7 @@ class Label(TimeSeriesBase):
             name=datadict.get("name"),
             time_index=time_index,
             data=data,
-            text_payload=text_payload,
+            text_data=text_data,
             time_start=datadict.get("time_start"),
             time_unit=datadict.get("time_unit"),
             offset=datadict.get("offset"),
@@ -1198,14 +1221,14 @@ class Label(TimeSeriesBase):
             "name": self.name,
             "time_index": numeric_time,
             "data": self.data,
-            "text_payload": self.text_payload,
+            "text_data": self.text_data,
             "time_start": str(self.time_start) if self.time_start is not None else None,
             "time_unit": self.time_unit,
             "offset": numeric_offset,
             "is_interval": False,
             "plotstyle": self.plotstyle,
             "metadata": self.metadata,
-            "plot_txpe": self.plot_type,
+            "plot_type": self.plot_type,
             "vline_text_source": self.vline_text_source
         }
 
@@ -1230,15 +1253,15 @@ class Label(TimeSeriesBase):
             specified, the data is exported to a file with the
             name of the channel.
         """
-        time_index, data, text_payload = self.get_data(start=start, stop=stop)
+        time_index, data, text_data = self.get_data(start=start, stop=stop)
         if filename is None:
             filename = f"{self.name}.csv"
 
         df_dict = {"time": time_index}
         if data is not None:
             df_dict["data"] = data
-        if text_payload is not None:
-            df_dict["text_payload"] = text_payload
+        if text_data is not None:
+            df_dict["text_data"] = text_data
 
         df = pd.DataFrame(df_dict)
         df.to_csv(filename)
@@ -1265,8 +1288,8 @@ class Label(TimeSeriesBase):
         self,
         start: Timestamp | Timedelta | float | None = None,
         stop: Timestamp | Timedelta | float | None = None,
-    ) -> tuple[npt.NDArray, npt.NDArray | None]:
-        """Return a tuple of time, data, text_payload values with optional
+    ) -> tuple[npt.NDArray, npt.NDArray | None, npt.NDArray | None]:
+        """Return a tuple of time, data, and text data values with optional
         filtering.
 
         Parameters
@@ -1285,14 +1308,15 @@ class Label(TimeSeriesBase):
         if self.is_time_absolute():
             time_index += self.time_start
 
-        data = self.data[time_mask] if self.data is not None else None 
-        text_payload = self.text_payload[time_mask] if self.text_payload is not None else None
+        data = None
+        if self.data is not None and time_mask.any():
+            data = self.data[time_mask]
+        
+        text_data = None
+        if self.text_data is not None and time_mask.any():
+            text_data = self.text_data[time_mask]
 
-        # destructing zero length arrays
-        data = None if data is not None and len(data) == 0 else data
-        text_payload = None if text_payload is not None and len(text_payload) else text_payload
-
-        return time_index, data, text_payload
+        return time_index, data, text_data
 
     def plot(
         self,
@@ -1302,8 +1326,8 @@ class Label(TimeSeriesBase):
         stop: Timestamp | Timedelta | float | None = None,
         time_unit: str | None = None,
         reference_time: Timestamp | Timedelta | float | None = None,
-        plot_type: Literal['vline', 'scatter'] | None = _sentinel,
-        vline_text_source: Literal['data', 'text_payload'] | None = _sentinel, 
+        plot_type: LabelPlotType | None = _sentinel,
+        vline_text_source: LabelPlotVLineTextSource | None = _sentinel, 
     ):
         """Plot the label data.
 
@@ -1360,7 +1384,7 @@ class Label(TimeSeriesBase):
             logger.warning(
                 f"Plotting specifications of the label '{self.name}' are inconsistent. The plot style will be adapted to the present content")
 
-        time_index, data, text_payload = self.get_data(start=start, stop=stop)
+        time_index, data, text_data = self.get_data(start=start, stop=stop)
 
         if self.is_time_absolute():
             reference_time = reference_time or self.time_start
@@ -1388,7 +1412,7 @@ class Label(TimeSeriesBase):
                     scatter_data = data[~mask_nan]
                     vline_time_index = time_index[mask_nan] 
                     vline_text_payload = None
-                    if text_payload is not None and np.any(text_payload[mask_nan] != None):
+                    if text_data is not None and np.any(text_data[mask_nan] != None):
                         logging.warning (f"by setting`plot_type='scatter'` text output on the vertial lines was supressed")
                 else:
                     scatter_time_index = time_index
@@ -1397,14 +1421,14 @@ class Label(TimeSeriesBase):
         if plot_type == 'vline':
             vline_time_index = time_index
             if vline_text_source == 'text_payload':
-                vline_text_payload = text_payload
+                vline_text_payload = text_data
             elif vline_text_source == 'data':
                 if data is not None:
                     # Vectorized: np.nan becomes None, others to str
                     mask_nan = np.isnan(data)
                     vline_text_payload = data.astype(object)
                     vline_text_payload[mask_nan] = None
-                    vline_text_payload[~mask_nan] = text_payload[~mask_nan].astype(str)
+                    vline_text_payload[~mask_nan] = text_data[~mask_nan].astype(str)
                 else:
                     vline_text_payload = None
             elif vline_text_source is None: 
@@ -1417,13 +1441,13 @@ class Label(TimeSeriesBase):
                     scatter_time_index = time_index[~mask_nan]
                     scatter_data = data[~mask_nan]
                     vline_time_index = time_index[mask_nan]
-                    vline_text_payload = text_payload[mask_nan] if text_payload is not None else None
+                    vline_text_payload = text_data[mask_nan] if text_data is not None else None
                 else:
                     scatter_time_index = time_index
                     scatter_data = data
             else:
                 vline_time_index = time_index
-                vline_text_payload = text_payload 
+                vline_text_payload = text_data 
 
         if plot_axes is None:
             figure, plot_axes = plt.subplots()
@@ -1560,14 +1584,14 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
             The stop time for the truncated label.
         """
 
-        truncated_time_index, truncated_data, truncated_text_payload = self.get_data(
+        truncated_time_index, truncated_data, truncated_text_data = self.get_data(
             start=start_time, stop=stop_time
         )
         truncated_label = IntervalLabel(
             name=self.name,
             time_index=truncated_time_index.flatten(),
             data=truncated_data,
-            text_payload=truncated_text_payload,
+            text_data=truncated_text_data,
             time_unit=self.time_unit,
             plotstyle=copy(self.plotstyle),
             metadata=copy(self.metadata),
@@ -1605,18 +1629,22 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
             specified, the data is exported to a file with the
             name of the channel.
         """
-        time_index, data = self.get_data(start=start, stop=stop)
+        time_index, data, text_data = self.get_data(start=start, stop=stop)
         time_start, time_stop = time_index.transpose()
 
         if filename is None:
             filename = f"{self.name}.csv"
 
-        if data is None:
-            df = pd.DataFrame({"time_start": time_start, "time_stop": time_stop})
-        else:
-            df = pd.DataFrame(
-                {"time_start": time_start, "time_stop": time_stop, "data": data}
-            )
+        csv_data_dict = {
+            "time_start": time_start,
+            "time_stop": time_stop,
+        }
+        if data is not None:
+            csv_data_dict["data"] = data
+        if text_data is not None:
+            csv_data_dict["text_payload"] = text_data
+
+        df = pd.DataFrame(csv_data_dict)
         df.to_csv(filename)
 
     def get_data(
@@ -1672,7 +1700,7 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
         self,
         time_data: tuple[Timestamp, Timestamp] | tuple[Timedelta, Timedelta],
         value: float | np.number | str | None = None,  
-        value_text: str | None = None
+        text: str | None = None
     ):
         """Add data to the label.
 
@@ -1681,10 +1709,10 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
         time_data
             A time data tuple specifying an interval.
         value
-            The value of the data point. If vlaue is a string it will be assigned to 
-            text_payload. If not specified, the data point is set to `np.nan`.
-        value_text
-            The string to be inserted into `text_payload`. 
+            The numeric value of the data point. If not specified,
+            the value is set to ``numpy.nan``.
+        text
+            The string to be inserted into :attr:`.text_data`.
         """
         interval_start, interval_end = time_data
         if self.is_empty() and isinstance(interval_start, Timestamp):
@@ -1702,8 +1730,8 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
         )
 
         if isinstance(value, str):  # Legacy routine to handle string added to data
-            if value_text is None:
-                value_text = value
+            if text is None:
+                text = value
                 value = None
                 logger.warning(f"`value` got a string; treating it as `value_text` instead.")
             else:
@@ -1717,13 +1745,13 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
                 self.data = np.full(len(self.time_index) - 1, np.nan) #creates an array to the length of time_index before insertion with np.na
             self.data = np.append(self.data, value)
         
-        if value_text == "":
-            value_text = None
+        if text == "":
+            text = None
 
-        if value_text is not None:
+        if text is not None:
             if self.text_payload is None: #not initialized yet
                 self.text_payload = np.full(len(self.time_index) - 1, None, dtype=object) #creates an array to the length of time_index before insertion with None
-            self.text_payload = np.apped(self.text_payload, value_text)
+            self.text_payload = np.apped(self.text_payload, text)
 
     def remove_data(
         self,
@@ -1801,7 +1829,7 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
             For labels with absolute time, a reference time to subtract from
             the time data. If not specified, the :attr:`time_start` attribute is used.
         """
-        time_index, data = self.get_data(start=start, stop=stop)
+        time_index, data, text_data = self.get_data(start=start, stop=stop)
         artist = None
 
         if self.is_time_absolute():
@@ -3107,7 +3135,7 @@ class TimeDataCollection:
                                     t1, t2 = t2, t1
                                 ydata = (y1 + y2) / 2 if add_numeric_check.value else None
                                 text_input = value_text_input.value if add_text_check.value and value_text_input.value and value_text_input.value != "" else None
-                                active_label.add_data((t1, t2), value=ydata, value_text=text_input) #TODO
+                                active_label.add_data((t1, t2), value=ydata, text=text_input) #TODO
                                 repaint_plot(start, stop)
                                 partial_interval_data = None
                                 fig.canvas._figure_label = ""
@@ -3122,7 +3150,7 @@ class TimeDataCollection:
                                     / screen_pixel_width
                                     * CANVAS_SELECTION_TOLERANCE_PX
                                 )
-                                selected_times, _ = active_label.get_data(
+                                selected_times, _, _ = active_label.get_data(
                                     start=time_data - tolerance,
                                     stop=time_data + tolerance,
                                 )
@@ -3132,7 +3160,7 @@ class TimeDataCollection:
                             else:             
                                 ydata = event.ydata if add_numeric_check.value else None
                                 text_input = value_text_input.value if add_text_check.value and value_text_input.value and value_text_input.value != "" else None
-                                active_label.add_data(time_data=time_data, value=ydata, value_text=text_input)
+                                active_label.add_data(time_data=time_data, value=ydata, text=text_input)
                             repaint_plot(start, stop)
 
                     elif current_mode == InteractionMode.ADJUST:
