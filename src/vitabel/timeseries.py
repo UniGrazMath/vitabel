@@ -793,11 +793,11 @@ class Label(TimeSeriesBase):
     data
         The data points of the label. If not specified, the label
         only holds time data. If specified, the length of the data must
-        match the length of the time index. Must be numeric. For strings see `text_payload`.
-    text_payload
-        If specified, the length of the data must match the length of the time index. 
-        While `data` must contain numeric values `text_payload` must contain string values or None,
-        serving as captions for the respective entries in `time_index`. 
+        match the length of the time index. Must be numeric, strings are not allowed
+        (use :attr:`text_data` instead for string data).
+    text_data
+        If specified, the length of the data must match the length of the time index.
+        Must contain strings or ``None``.
     time_start
         If the specified ``time_index`` holds relative time data
         (timedeltas or numeric values), this parameter can be used
@@ -820,15 +820,25 @@ class Label(TimeSeriesBase):
     metadata
         A dictionary that can be used to store additional
         information about the label.
-    plot_type : {'scatter', 'vline'}
-        Determines how entries of the label are plotted.
-        - 'scatter': Entries of the label are plotted as points. Requires `data` to be provided (i.e., not None).
-        - 'vline'  : Entries of the label are plotted as a vertical lines. Captioning of the lines is determined by `vline_text_source`.
-    vline_text_source : {'data', 'text_payload'}, optional
-        Defines the source of the text shown next to each vertical line when `plot_type='vline'`.
-        - 'data'        : Converts corresponding numeric `data` values to strings.
-        - 'text_payload': Uses strings from the `text_payload` array.
-        If `None`, no text is shown. Ignored if `plot_type='scatter'`.
+    plot_type
+        Determines how entries of the label are plotted. Available options are:
+
+        - ``'scatter'``: Entries of the label are plotted as points. Requires a
+          label with numeric data.
+        - ``'vline'``  : Entries of the label are plotted as a vertical lines whose
+          plot labels are determined by ``vline_text_source``.
+        - ``None``: ???
+
+    vline_text_source
+        When plotting label data using vertical lines, this argument
+        controls where the content for the line labels. Available settings include:
+
+        - ``'data'``: Uses string representations of the numeric `data` values
+          as line labels.
+        - ``'text_data'``: Uses strings from the `text_data` array as line labels.
+        - ``'unlabeled'``: No text is shown next to the vertical lines.
+        - ``None``: automatic source selection based on the given :attr:`.data`
+          and :attr:`.text_data` attributes.
     """
     _sentinel = object()
     _valid_vline_text_source={'data', 'text_payload'}
@@ -998,13 +1008,9 @@ class Label(TimeSeriesBase):
 
         # checks for scatter
         if plot_type == "scatter":
-            flag = False
             if self.data is None:
                 logger.warning(
                     f"Cannot plot label '{self.name}': `plot_type='scatter'` requires `data` to be set.")
-                return False
-            if vline_text_source is not None:
-                logger.warning("`vline_text_source` is ignored when `plot_type='scatter'`.")
                 return False
             return True 
         
@@ -1022,18 +1028,9 @@ class Label(TimeSeriesBase):
                 if self.text_data is None:
                     logger.warning(f"Cannot plot label '{self.name}': `vline_text_source='text_payload'` requires `text_payload` to be set.")
                     return False
-                if not all(isinstance(x, str) for x in self.text_data):
-                    logger.warning(f"Cannot plot label '{self.name}': `text_payload` must contain only strings.")
-                    return False
-            else:
-                logger.warning(f"Invalid `vline_text_source`: {vline_text_source} for label '{self.name}'")
-                return False
             return True
 
         if plot_type is None:
-            if vline_text_source is not None:
-                logger.warning(f"`vline_text_source` is ignored when `plot_type=None` for label '{self.name}'")
-                return False
             return True
 
         logger.warning(f"Invalid `plot_type`: '{plot_type}' for the label '{self.name}'")
