@@ -912,6 +912,9 @@ class Label(TimeSeriesBase):
         self.metadata = copy(metadata) or {}
         """Additional label metadata."""
 
+        if plot_type is None:
+            plot_type = "combined"
+
         self.plot_type = plot_type
         """The type of plot to use to visualize the label."""
 
@@ -951,7 +954,7 @@ class Label(TimeSeriesBase):
     
     @plot_type.setter
     def plot_type(self, value: LabelPlotType | None):
-        if value is not None and value not in typing.get_args(LabelPlotType):
+        if value not in typing.get_args(LabelPlotType):
             raise ValueError(f"Value '{value}' is not a valid choice for plot_type")
         self._plot_type = value
 
@@ -986,13 +989,12 @@ class Label(TimeSeriesBase):
             )
 
     def _check_plot_parameters(
-            self,
-            plot_type: Literal['vline', 'scatter'] | None = _sentinel,
-            vline_text_source: Literal['data', 'text_payload'] | None = _sentinel, 
-            ) -> bool:
-        """
-        Checks whether the data provided are sufficient to perform the plot 
-        as specified by `plot_type` and `vline_text_source`.
+        self,
+        plot_type: LabelPlotType | None = None,
+        vline_text_source: LabelPlotVLineTextSource | None = _sentinel, 
+    ) -> bool:
+        """Check whether the data provided are sufficient to draw the plot
+        as requested by the specified arguments.
 
         Returns
         -------
@@ -1000,7 +1002,7 @@ class Label(TimeSeriesBase):
             True if the current state is consistent with the specified plot configuration, False otherwise.
         """
 
-        if plot_type == self._sentinel:
+        if plot_type is None:
             plot_type = self.plot_type
         
         if vline_text_source is self._sentinel:
@@ -1030,7 +1032,7 @@ class Label(TimeSeriesBase):
                     return False
             return True
 
-        if plot_type is None:
+        if plot_type == "combined":
             return True
 
         logger.warning(f"Invalid `plot_type`: '{plot_type}' for the label '{self.name}'")
@@ -1054,8 +1056,6 @@ class Label(TimeSeriesBase):
         text
             The string to be inserted into :attr:`.text_data`. 
         """
-        #NOTE check docstring was the value really set to zero previously? Was it meaningfull?
-
         # check corner case first: is label empty and passed time absolute?
         if self.is_empty() and isinstance(time_data, Timestamp):
             self.time_start = time_data
@@ -1150,7 +1150,6 @@ class Label(TimeSeriesBase):
         stop_time
             The stop time for the truncated label.
         """
-        
         truncated_time_index, truncated_data, truncated_text_data = self.get_data(
             start=start_time, stop=stop_time
         )
@@ -1323,7 +1322,7 @@ class Label(TimeSeriesBase):
         stop: Timestamp | Timedelta | float | None = None,
         time_unit: str | None = None,
         reference_time: Timestamp | Timedelta | float | None = None,
-        plot_type: LabelPlotType | None = _sentinel,
+        plot_type: LabelPlotType | None = None,
         vline_text_source: LabelPlotVLineTextSource | None = _sentinel, 
     ):
         """Plot the label data.
@@ -1363,10 +1362,13 @@ class Label(TimeSeriesBase):
 
         """
 
-        if plot_type == self._sentinel: # go with the presepcified properties of sthe label
+        if plot_type is None:  # use plot_type from label
             plot_type = self.plot_type
-        elif plot_type is not None and plot_type not in {"vline", "scatter"}: # check new specification
-            raise ValueError(f"Invalid `plot_type`: '{plot_type}' for label '{self.name}'")
+
+        if plot_type not in typing.get_args(LabelPlotType):
+            raise ValueError(
+                f"Value '{plot_type}' is not a valid choice for plot_type"
+            )
         
 
         if vline_text_source is self._sentinel: # go with the presepcified properties of sthe label
@@ -1378,6 +1380,7 @@ class Label(TimeSeriesBase):
             )
 
         if not self._check_plot_parameters(plot_type=plot_type, vline_text_source=vline_text_source):
+            # discuss? should we really do this?
             logger.warning(
                 f"Plotting specifications of the label '{self.name}' are inconsistent. The plot style will be adapted to the present content")
 
@@ -1394,57 +1397,12 @@ class Label(TimeSeriesBase):
             ymin, ymax = plot_axes.get_ylim()
         else: 
             ymin, ymax = 0, 1
-
-
-        #sources for plotting
-        scatter_data, vline_text_payload, scatter_time_index, vline_time_index = None, None, None, None
-
-        if plot_type == 'scatter':
-            if data is None: #will be plotted as vline (default fallback)
-                plot_type="vline"
-            else:
-                mask_nan = np.isnan(data)
-                if mask_nan.any(): # has to be partially plotted as vline (with no text)
-                    scatter_time_index = time_index[~mask_nan]
-                    scatter_data = data[~mask_nan]
-                    vline_time_index = time_index[mask_nan] 
-                    vline_text_payload = None
-                    if text_data is not None and np.any(text_data[mask_nan] != None):
-                        logging.warning (f"by setting`plot_type='scatter'` text output on the vertial lines was supressed")
-                else:
-                    scatter_time_index = time_index
-                    scatter_data = data
-
-        if plot_type == 'vline':
-            vline_time_index = time_index
-            if vline_text_source == 'text_payload':
-                vline_text_payload = text_data
-            elif vline_text_source == 'data':
-                if data is not None:
-                    # Vectorized: np.nan becomes None, others to str
-                    mask_nan = np.isnan(data)
-                    vline_text_payload = data.astype(object)
-                    vline_text_payload[mask_nan] = None
-                    vline_text_payload[~mask_nan] = text_data[~mask_nan].astype(str)
-                else:
-                    vline_text_payload = None
-            elif vline_text_source is None: 
-                vline_text_payload =  None 
-
-        if plot_type is None: # plotting 
-            if data is not None:
-                mask_nan = np.isnan(data)
-                if mask_nan.any(): # has to be partially plotted as vline with text
-                    scatter_time_index = time_index[~mask_nan]
-                    scatter_data = data[~mask_nan]
-                    vline_time_index = time_index[mask_nan]
-                    vline_text_payload = text_data[mask_nan] if text_data is not None else None
-                else:
-                    scatter_time_index = time_index
-                    scatter_data = data
-            else:
-                vline_time_index = time_index
-                vline_text_payload = text_data 
+        
+        if data is None:
+            data = np.full_like(time_index, np.nan, dtype=float)
+        
+        if text_data is None:
+            text_data = np.full_like(time_index, None, dtype=object)
 
         if plot_axes is None:
             figure, plot_axes = plt.subplots()
@@ -1455,25 +1413,54 @@ class Label(TimeSeriesBase):
         if plotstyle is not None:
             base_plotstyle.update(plotstyle)
 
-        scatter_artist = []
-        if scatter_time_index is not None and scatter_data is not None:
-            scatter_artist = plot_axes.plot(scatter_time_index, scatter_data, **base_plotstyle) 
+        scatterplot_artists = []
+        if plot_type in {'scatter', 'combined'}:
+            nan_mask = np.isnan(data)
+            if nan_mask.any() and plot_type == 'scatter':
+                logger.warning(
+                    f"Data in label {self.name} contains NaN values, "
+                    "skipping them in the scatter plot"
+                )
+            scatterplot_artists = plot_axes.plot(
+                time_index[~nan_mask],
+                data[~nan_mask],
+                **base_plotstyle
+            )
 
-        vline_artists = []
-        if vline_time_index is not None:
-            if plotstyle is None:
+        vlineplot_artists = []
+        if plot_type in {'vline', 'combined'}:
+            if plot_type == 'combined':
+                # only need to plot lines where there is no scatter
+                nan_mask = np.isnan(data)
+                time_index = time_index[nan_mask]
+                data = data[nan_mask]
+                text_data = text_data[nan_mask]
+
+            match vline_text_source:
+                case 'text_data':
+                    vline_text = text_data
+                case 'data':
+                    vline_text = data.astype(str)
+                    vline_text[np.isnan(data)] = ""  # replace NaN with empty string
+                case 'disabled':
+                    vline_text = np.full_like(time_index, "", dtype=str)
+                case _:
+                    raise ValueError(f"Invalid choice for vline_text_source: '{vline_text_source}'")
+            
+            if plotstyle is None:  # TODO: think about direction
                 base_plotstyle.update({"linestyle": "solid", "marker": None})
-            for t, text in zip(vline_time_index, vline_text_payload if vline_text_payload is not None else [None]*len(vline_time_index)):
-                vline_artist = plot_axes.axvline(t, **base_plotstyle) 
-                line_color = vline_artist.get_color()
+            
+            for t, text in zip(time_index, vline_text):
+                vline_artist = plot_axes.axvline(t, **base_plotstyle)
                 if text:
-                    box_props = {
+                    line_color = vline_artist.get_color()
+                    box_props = {  # TODO: make customizable?
                         "boxstyle": "round",
                         "alpha": 0.6,
                         "facecolor": "white",
                         "edgecolor": "black",
                     }
-                    txt = plot_axes.text(
+                    vline_text_artist = plot_axes.text(
                         t,
                         0.9 * ymin + 0.1 * ymax,
                         text,
@@ -1482,11 +1469,10 @@ class Label(TimeSeriesBase):
                         color=line_color,
                         bbox=box_props,
                     )
-                    txt._from_vitals_label = True
-                vline_artists=[vline_artist]
+                    vline_text_artist._from_vitals_label = True
+                vlineplot_artists.append(vline_artist)
 
-        artists = [] + scatter_artist + vline_artists
-        for artist in artists:
+        for artist in scatterplot_artists + vlineplot_artists:
             if "label" not in base_plotstyle:
                 artist.set_label(self.name)
 
