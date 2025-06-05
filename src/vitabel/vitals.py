@@ -1729,10 +1729,10 @@ class Vitals:
                 self.find_CC_periods_acc()
 
             CC_period_start_label = self.data.get_label("cc_period_start_acc")
-            CC_starts, data = CC_period_start_label.get_data()  # get data
+            CC_starts, data,_ = CC_period_start_label.get_data()  # get data
 
             CC_period_stop_label = self.data.get_label("cc_period_stop_acc")
-            CC_stops, data = CC_period_stop_label.get_data()  # get data
+            CC_stops, data,_ = CC_period_stop_label.get_data()  # get data
 
             if ACC_channel.is_time_relative():
                 acctime = np.asarray([pd.Timedelta(c).total_seconds() for c in acctime])
