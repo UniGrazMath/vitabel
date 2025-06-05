@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 
 from dataclasses import dataclass
-from typing import Any, Union, TypeAlias, TYPE_CHECKING
+from typing import Any, Union, TypeAlias, Literal, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from vitabel import Channel, Label
@@ -24,6 +24,8 @@ ChannelSpecification: TypeAlias = Union[str, dict[str, Any], "Channel"]
 LabelSpecification: TypeAlias = Union[str, dict[str, Any], "Label"]
 """Type alias for different ways to specify a Label."""
 
+LabelPlotType: TypeAlias = Literal["scatter", "vline"]
+LabelPlotVLineTextSource: TypeAlias = Literal["data", "text_data"]
 
 @dataclass
 class Metric:
