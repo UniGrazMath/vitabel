@@ -24,8 +24,8 @@ ChannelSpecification: TypeAlias = Union[str, dict[str, Any], "Channel"]
 LabelSpecification: TypeAlias = Union[str, dict[str, Any], "Label"]
 """Type alias for different ways to specify a Label."""
 
-LabelPlotType: TypeAlias = Literal["scatter", "vline"]
-LabelPlotVLineTextSource: TypeAlias = Literal["data", "text_data"]
+LabelPlotType: TypeAlias = Literal["scatter", "vline", "combined"]
+LabelPlotVLineTextSource: TypeAlias = Literal["data", "text_data", "combined", "disabled"]
 
 @dataclass
 class Metric:

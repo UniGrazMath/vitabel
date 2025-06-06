@@ -367,11 +367,14 @@ def test_channel_to_and_from_dict():
         "offset": 0,
         "is_interval": False,
         "data": [None, "test"],
+        "text_data": None,
         "plotstyle": {
             "marker": "o",
             "ms": 5,
             "linestyle": "none",
         },
+        "plot_type": "combined",
+        "vline_text_source": "text_data",
         "metadata": {},
     }
     np.testing.assert_equal(label_dict, label_dict_expected)
@@ -526,7 +529,7 @@ def test_label_get_data():
         time_start=time_start,
         data=[42, None, -100, 1.1, 2.2, 3.3],
     )
-    t1, val1 = label.get_data(start=8, stop=16)
+    t1, val1, _ = label.get_data(start=8, stop=16)
     t1 -= time_start
     np.testing.assert_array_equal(t1.total_seconds(), [13.15, 15.13])
     np.testing.assert_array_equal(val1, [1.1, 2.2])
@@ -633,19 +636,19 @@ def test_interval_label_get_data():
         name="rainfall",
         time_index=time_index,
     )
-    t, _ = label.get_data()
+    t, _, _ = label.get_data()
     assert len(t) == 2
     assert tuple(t[0]) == tuple(
         pd.Timestamp(stmp) for stmp in ["2020-02-02 12:00:00", "2020-02-02 12:45:00"]
     )
 
-    t, _ = label.get_data(start=pd.Timestamp("2020-02-03 14:00:00"))
+    t, _, _ = label.get_data(start=pd.Timestamp("2020-02-03 14:00:00"))
     assert len(t) == 1
     assert tuple(t[0]) == tuple(
         pd.Timestamp(stmp) for stmp in ["2020-02-03 14:42:00", "2020-02-03 18:00:00"]
     )
 
-    t, _ = label.get_data(start=pd.Timestamp("2020-02-03 15:00:00"))
+    t, _, _ = label.get_data(start=pd.Timestamp("2020-02-03 15:00:00"))
     assert len(t) == 1
     assert tuple(t[0]) == tuple(
         pd.Timestamp(stmp) for stmp in ["2020-02-03 14:42:00", "2020-02-03 18:00:00"]
