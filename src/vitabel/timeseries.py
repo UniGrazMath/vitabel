@@ -365,7 +365,7 @@ class TimeSeriesBase:
         if resolution is None or resolution == 0 or not bound_cond.any():
             if not self.is_empty():
                 logger.warning(
-                    f"The queried time interval for {self.name} is empty: check the"
+                    f"The queried time interval for {self.name} is empty: check the "
                     f"specified start ({start}) and stop ({stop}) times."
                 )
             return bound_cond
@@ -856,7 +856,7 @@ class Label(TimeSeriesBase):
         plotstyle: dict[str, Any] | None = None,
         metadata: dict[str, Any] | None = None,
         plot_type: LabelPlotType | None = None,
-        vline_text_source: Literal['data', 'text_payload'] | None = None, 
+        vline_text_source: LabelPlotVLineTextSource | None = None, 
     ):
         self.name = name
         """The name of the label."""
@@ -909,6 +909,14 @@ class Label(TimeSeriesBase):
         }
         """Keyword arguments passed to the plotting routine."""
 
+        self.plot_vline_bbox_settings = {
+            "boxstyle": "round",
+            "alpha": 0.6,
+            "facecolor": "white",
+            "edgecolor": "black",
+        }
+        """Settings for the bounding box around the vertical line text."""
+
         self.metadata = copy(metadata) or {}
         """Additional label metadata."""
 
@@ -918,6 +926,9 @@ class Label(TimeSeriesBase):
         self.plot_type = plot_type
         """The type of plot to use to visualize the label."""
 
+        if vline_text_source is None:
+            vline_text_source = "text_data"
+        
         self.vline_text_source = vline_text_source
         """The source of the text to be shown next to vertical lines."""
 
@@ -965,7 +976,7 @@ class Label(TimeSeriesBase):
     
     @vline_text_source.setter
     def vline_text_source(self, value: LabelPlotVLineTextSource | None):
-        if value is not None and value not in typing.get_args(LabelPlotVLineTextSource):
+        if value not in typing.get_args(LabelPlotVLineTextSource):
             raise ValueError(
                 f"Value '{value}' is not a valid choice for vline_text_source."
             )
@@ -991,7 +1002,7 @@ class Label(TimeSeriesBase):
     def _check_plot_parameters(
         self,
         plot_type: LabelPlotType | None = None,
-        vline_text_source: LabelPlotVLineTextSource | None = _sentinel, 
+        vline_text_source: LabelPlotVLineTextSource | None = None, 
     ) -> bool:
         """Check whether the data provided are sufficient to draw the plot
         as requested by the specified arguments.
@@ -1005,7 +1016,7 @@ class Label(TimeSeriesBase):
         if plot_type is None:
             plot_type = self.plot_type
         
-        if vline_text_source is self._sentinel:
+        if vline_text_source is None:
             vline_text_source = self.vline_text_source 
 
         # checks for scatter
@@ -1017,26 +1028,38 @@ class Label(TimeSeriesBase):
             return True 
         
         # checks for vline
-        # three options exist 1) vline without text, 2) vline with data as text, 3) vline with text from text_payload
         if plot_type == "vline":
-            if vline_text_source is None:
-                # Valid: vline with no label
-                return True
-            elif vline_text_source == "data":
+            if vline_text_source == "disabled":
+                return True  # valid: vline without text
+            
+            if vline_text_source == "combined":
+                return True  # valid: automatic combined source selection
+            
+            if vline_text_source == "data":
                 if self.data is None:
-                    logger.warning(f"Cannot plot label '{self.name}': `vline_text_source='data'` requires `data` to be set.")
+                    logger.warning(
+                        f"Conflicting plot settings for label {self.name}: "
+                        f"if vline_text_source='data' there needs to be data"
+                    )
                     return False
-            elif vline_text_source == "text_payload":
+                return True
+
+            if vline_text_source == "text_data":
                 if self.text_data is None:
-                    logger.warning(f"Cannot plot label '{self.name}': `vline_text_source='text_payload'` requires `text_payload` to be set.")
+                    logger.warning(
+                        f"Conflicting plot settings for label {self.name}: "
+                        f"if vline_text_source='text_data' there needs to be text data"
+                    )
                     return False
-            return True
+                return True
 
         if plot_type == "combined":
             return True
 
-        logger.warning(f"Invalid `plot_type`: '{plot_type}' for the label '{self.name}'")
-        return False  
+        raise ValueError(
+            f"Invalid arguments for plot_type ({plot_type}) "
+            f"or vline_text_source ({vline_text_source}"
+        )
 
     def add_data(
         self,
@@ -1442,6 +1465,9 @@ class Label(TimeSeriesBase):
                 case 'data':
                     vline_text = data.astype(str)
                     vline_text[np.isnan(data)] = ""  # replace NaN with empty string
+                case 'combined':
+                    vline_text = text_data.astype(str)
+                    vline_text[np.isnan(text_data)] = data.astype(str)[np.isnan(text_data)]
                 case 'disabled':
                     vline_text = np.full_like(time_index, "", dtype=str)
                 case _:
@@ -1454,12 +1480,6 @@ class Label(TimeSeriesBase):
                 vline_artist = plot_axes.axvline(t, **base_plotstyle)
                 if text:
                     line_color = vline_artist.get_color()
-                    box_props = {  # TODO: make customizable?
-                        "boxstyle": "round",
-                        "alpha": 0.6,
-                        "facecolor": "white",
-                        "edgecolor": "black",
-                    }
                     vline_text_artist = plot_axes.text(
                         t,
                         0.9 * ymin + 0.1 * ymax,
@@ -1467,7 +1487,7 @@ class Label(TimeSeriesBase):
                         rotation=90,
                         clip_on=True,
                         color=line_color,
-                        bbox=box_props,
+                        bbox=self.plot_vline_bbox_settings,
                     )
                     vline_text_artist._from_vitals_label = True
                 vlineplot_artists.append(vline_artist)
@@ -1479,9 +1499,8 @@ class Label(TimeSeriesBase):
         return figure
 
 
-class IntervalLabel(Label): #TODO: add text_payload and refactor plotting according to new architecture
+class IntervalLabel(Label):
     """A special type of label that holds time interval data.
-
 
     Parameters
     ----------
@@ -1526,15 +1545,31 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
         information about the label.
     """
 
-    def _check_data_shape(self, time_index: npt.ArrayLike, data: npt.ArrayLike):
+    def _check_data_shape(
+        self,
+        time_index: npt.ArrayLike,
+        data: npt.ArrayLike | None,
+        text_data: npt.ArrayLike | None,
+    ):
         """Check that the time data is well-formed, and that there is either no data,
         or as many data points as intervals.
         """
         if len(time_index) % 2 != 0:
             raise ValueError("The time index must contain an even number of elements")
+        
         if data is not None and len(time_index) != 2 * len(data):
             raise ValueError(
                 "The length of the data must be half the length of the time index"
+            )
+        
+        if data is not None and len(time_index) != 2 * len(data):
+            raise ValueError(
+                "The length of the data must be half the length of the time index"
+            )
+
+        if text_data is not None and len(time_index) != 2 * len(text_data):
+            raise ValueError(
+                "The length of the text data must be half the length of the time index"
             )
 
     def __len__(self) -> int:
@@ -1625,7 +1660,7 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
         if data is not None:
             csv_data_dict["data"] = data
         if text_data is not None:
-            csv_data_dict["text_payload"] = text_data
+            csv_data_dict["text_data"] = text_data
 
         df = pd.DataFrame(csv_data_dict)
         df.to_csv(filename)
@@ -1670,13 +1705,13 @@ class IntervalLabel(Label): #TODO: add text_payload and refactor plotting accord
         # TODO: the time intervals should be clipped to the start and stop
         # times if they are not fully contained in the range
         data = self.data[time_mask] if self.data is not None else None
-        text_payload = self.text_payload[time_mask] if self.text_payload is not None else None
+        text_data = self.text_data[time_mask] if self.text_data is not None else None
 
         # destructing zero length arrays
         data = None if data is not None and len(data) == 0 else data
-        text_payload = None if text_payload is not None and len(text_payload) == 0 else text_payload
+        text_data = None if text_data is not None and len(text_data) == 0 else text_data
 
-        return intervals, data, text_payload
+        return intervals, data, text_data
     
 
     def add_data(
