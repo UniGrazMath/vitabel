@@ -825,20 +825,27 @@ class Label(TimeSeriesBase):
 
         - ``'scatter'``: Entries of the label are plotted as points. Requires a
           label with numeric data.
-        - ``'vline'``  : Entries of the label are plotted as a vertical lines whose
+        - ``'vline'``: Entries of the label are plotted as a vertical lines whose
           plot labels are determined by ``vline_text_source``.
-        - ``None``: ???
+        - ``'combined'``: Entries of the label are plotted as points when there
+          is associated numeric data, and as vertical lines otherwise.
+
+        Defaults to ``'combined'``.
 
     vline_text_source
         When plotting label data using vertical lines, this argument
-        controls where the content for the line labels. Available settings include:
+        controls how text labels for the lines are determined. Available options are:
 
-        - ``'data'``: Uses string representations of the numeric `data` values
-          as line labels.
-        - ``'text_data'``: Uses strings from the `text_data` array as line labels.
-        - ``'unlabeled'``: No text is shown next to the vertical lines.
-        - ``None``: automatic source selection based on the given :attr:`.data`
-          and :attr:`.text_data` attributes.
+        - ``'text_data'``: Uses strings from :attr:`.text_data` as line labels.
+        - ``'data'``: Uses string representations of the numeric :attr:`.data` 
+          values as line labels.
+        - ``'combined'``: Uses texts from :attr:`.text_data` where available and
+          fills the rest with entries from :attr:`.data`.
+        - ``'disabled'``: No text is shown next to the vertical lines.
+
+        Defaults to ``'text_data'``. The text labels can be customized by
+        modifying the dictionary stored in the :attr:`plot_vline_bbox_settings`
+        attribute of the label.
     """
     def __init__(
         self,
@@ -879,9 +886,9 @@ class Label(TimeSeriesBase):
                 )
 
                 if plot_type == "vline" and vline_text_source == "data":
-                    vline_text_source = "text_payload"
+                    vline_text_source = "text_data"
                     logger.info(
-                        "Automatically changed vline_text_source to 'text_payload' as well."
+                        "Automatically changed vline_text_source to 'text_data' as well."
                     )
 
             else:
@@ -1004,10 +1011,19 @@ class Label(TimeSeriesBase):
         """Check whether the data provided are sufficient to draw the plot
         as requested by the specified arguments.
 
+        Parameters
+        ----------
+        plot_type
+            The type of plot to use to visualize the label.
+
+        vline_text_source
+            The source of the text to be shown next to vertical lines.
+
         Returns
         -------
         bool
-            True if the current state is consistent with the specified plot configuration, False otherwise.
+            ``True`` if the current state is consistent with the specified plot configuration,
+            ``False`` otherwise.
         """
 
         if plot_type is None:
@@ -1363,23 +1379,19 @@ class Label(TimeSeriesBase):
         time_unit
             The time unit values used along the x-axis. If ``None``
             (the default), the time unit of the channel is used.
-        plot_type : {'vline', 'scatter'} or None, optional
-            Specifies the plot type: vertical lines (`'vline'`) or scatter plot (`'scatter'`).
-            If not explicitly passed, a default will be chosen based on context.
-            Pass ``None`` explicitly to disable the specification of the label.
-        vline_text_source : {'data', 'text_payload'} or None, optional
-            Controls whether and what text is displayed next to vertical lines.
-            If not passed, the default behavior is used. Pass ``None`` to suppress text 
-            and/or override specification in label properties.
+        plot_type
+            Override for :attr:`.plot_type`, see :class:`.Label` for details.
+            If ``None`` (the default) is passed, the value from the attribute
+            is used.
+        vline_text_source
+            Override for :attr:`.vline_text_source`, see :class:`.Label` for details.
+            If ``None`` (the default) is passed, the value from the attribute
+            is used.
 
         Notes
         -----
-        if plot_type and vline_text_source are inconsistent with the entries for data and text_payload,
-        the routine will make the plotstyle available closest to specified style with the given entries.
-        The default are vlines without additional text, barely marking the time_point - being the fallback.
-        NaN in data will be equally plotted as vertical line with
-
-
+        If ``plot_type`` and/or ``vline_text_source`` are inconsistent with the available
+        (text) data, the routine will emit warnings.
         """
 
         if plot_type is None:  # use plot_type from label
@@ -1394,10 +1406,9 @@ class Label(TimeSeriesBase):
             vline_text_source = self.vline_text_source
 
         if not self._check_plot_parameters(plot_type=plot_type, vline_text_source=vline_text_source):
-            # discuss? should we really do this?
             logger.warning(
-                f"Plotting specifications of the label '{self.name}' are inconsistent. "
-                "The plot style will be adapted to the present content"
+                f"Plotting specifications of the label '{self.name}' are inconsistent, "
+                "data or labels might be missing from the plot."
             )
 
         time_index, data, text_data = self.get_data(start=start, stop=stop)
@@ -1509,11 +1520,11 @@ class IntervalLabel(Label):
     data
         The data points of the label. If not specified, the label
         only holds time data. If specified, the length of the data must
-        match the length of the time index. Must be numeric. For strings see `text_payload`.
-    text_payload
-        If specified, the length of the data must match the length of the time index. 
-        While `data` must contain numeric values `text_payload` must contain string values or None,
-        serving as captions for the respective entries in `time_index`.       
+        match the number of time intervals. Must be numeric, strings are
+        not allowed (use :attr:`text_data` instead for string data).
+    text_data
+        If specified, the length of the data must match the number of time intervals.
+        Must contain strings or ``None``.      
     time_start
         If the specified ``time_index`` holds relative time data
         (timedeltas or numeric values), this parameter can be used
@@ -1740,29 +1751,35 @@ class IntervalLabel(Label):
             pd.TimedeltaIndex([interval_start, interval_end])
         )
 
-        if isinstance(value, str):  # Legacy routine to handle string added to data
-            if text is None:
-                text = value
-                value = None
-                logger.warning(f"`value` got a string; treating it as `value_text` instead.")
-            else:
-                raise ValueError("`value` got a string and `value_text` also got a string.")
-    
-        if value is None and self.data is not None:  # data has to be kept the same length as time_index by inserting np.nan
-            value = np.nan
-        
-        if value is not None:  # A value has to be inserted
-            if self.data is None:  # not initialized yet
-                self.data = np.full(len(self.time_index) - 1, np.nan) #creates an array to the length of time_index before insertion with np.na
+        if isinstance(value, str):
+            # legacy support: add string data
+            if text is not None:
+                raise ValueError("Only numeric values can be added to data")
+            logger.warning(
+                "Only numeric values can be added to data. Automatically passed "
+                "value to the text argument instead."
+            )
+            text, value = value, None
+
+        if self.data is not None:
+            if len(self.data) == 0:
+                # make sure that the data attribute is a suitable numpy array
+                self.data = np.array([])
+            
+            if value is None:
+                value = np.nan
+            
             self.data = np.append(self.data, value)
         
-        if text == "":
-            text = None
-
-        if text is not None:
-            if self.text_payload is None: #not initialized yet
-                self.text_payload = np.full(len(self.time_index) - 1, None, dtype=object) #creates an array to the length of time_index before insertion with None
-            self.text_payload = np.apped(self.text_payload, text)
+        if self.text_data is not None:
+            if len(self.text_data) == 0:
+                # make sure that the text_data attribute is a suitable numpy array
+                self.text_data = np.array([], dtype=object)
+            
+            if text == "":
+                text = None
+            
+            self.text_data = np.append(self.text_data, text)
 
     def remove_data(
         self,
@@ -1794,13 +1811,13 @@ class IntervalLabel(Label):
         )
         if self.data is not None:
             self.data = np.delete(self.data, remove_index)
-        if self.text_payload is not None:
-            self.text_payload = np.delete(self.text_payload, remove_index)
+        if self.text_data is not None:
+            self.text_data = np.delete(self.text_data, remove_index)
 
         if len(self.time_index) == 0:
             self.time_start = None
             self.data = None
-            self.text_payload = None
+            self.text_data = None
 
     def plot(
         self,
