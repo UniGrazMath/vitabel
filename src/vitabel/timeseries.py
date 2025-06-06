@@ -1688,7 +1688,7 @@ class IntervalLabel(Label):
             data ends at the last time point.
         """
         if self.is_empty() or (start is None and stop is None):
-            return self.intervals, self.data
+            return self.intervals, self.data, self.text_data
 
         if start is None:
             start = self.time_index.min()
