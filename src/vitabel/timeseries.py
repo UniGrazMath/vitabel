@@ -840,9 +840,6 @@ class Label(TimeSeriesBase):
         - ``None``: automatic source selection based on the given :attr:`.data`
           and :attr:`.text_data` attributes.
     """
-    _sentinel = object()
-    _valid_vline_text_source={'data', 'text_payload'}
-
     def __init__(
         self,
         name: str,
@@ -1346,7 +1343,7 @@ class Label(TimeSeriesBase):
         time_unit: str | None = None,
         reference_time: Timestamp | Timedelta | float | None = None,
         plot_type: LabelPlotType | None = None,
-        vline_text_source: LabelPlotVLineTextSource | None = _sentinel, 
+        vline_text_source: LabelPlotVLineTextSource | None = None,
     ):
         """Plot the label data.
 
@@ -1393,19 +1390,15 @@ class Label(TimeSeriesBase):
                 f"Value '{plot_type}' is not a valid choice for plot_type"
             )
         
-
-        if vline_text_source is self._sentinel: # go with the presepcified properties of sthe label
-            vline_text_source = self.vline_text_source                
-        elif vline_text_source is not None and vline_text_source not in self._valid_vline_text_source: # check new specification
-            raise ValueError(
-                f"`vline_text_source` must be one of {self._valid_vline_text_source} or None when `plot_type='vline'`. "
-                f"Got: '{vline_text_source}'"
-            )
+        if vline_text_source is None:
+            vline_text_source = self.vline_text_source
 
         if not self._check_plot_parameters(plot_type=plot_type, vline_text_source=vline_text_source):
             # discuss? should we really do this?
             logger.warning(
-                f"Plotting specifications of the label '{self.name}' are inconsistent. The plot style will be adapted to the present content")
+                f"Plotting specifications of the label '{self.name}' are inconsistent. "
+                "The plot style will be adapted to the present content"
+            )
 
         time_index, data, text_data = self.get_data(start=start, stop=stop)
 
