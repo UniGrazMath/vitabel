@@ -1117,16 +1117,23 @@ class Label(TimeSeriesBase):
             )
             text, value = value, None
 
-        if self.data is not None:
+        if self.data is None:
+            if value is not None: # data not initalized but a value has to be inserted
+                self.data = np.full(len(self.time_index) - 1, np.nan, dtype=float)
+        
+        if self.data is not None: 
             if len(self.data) == 0:  # TODO: still needed?
                 # make sure that the data attribute is a suitable numpy array
-                self.data = np.array([])
-
+                self.data = np.array([], dtype=float)
             if value is None:
                 value = np.nan
 
             self.data = np.insert(self.data, insert_index, value)
 
+        if self.text_data is None:
+            if text is not None: # text_data not initialized but a text has to be inserted
+                self.text_data = np.full(len(self.time_index) - 1, None, dtype=object)
+       
         if self.text_data is not None:
             if len(self.text_data) == 0:  # TODO: still needed?
                 # make sure that the text_data attribute is a suitable numpy array
@@ -1688,7 +1695,7 @@ class IntervalLabel(Label):
             data ends at the last time point.
         """
         if self.is_empty() or (start is None and stop is None):
-            return self.intervals, self.data
+            return self.intervals, self.data, self.text_data
 
         if start is None:
             start = self.time_index.min()
@@ -1761,6 +1768,10 @@ class IntervalLabel(Label):
             )
             text, value = value, None
 
+        if self.data is None:
+            if value is None: # data has to be initialized
+                self.data = np.full(len(self.time_index) - 1, np.nan, dtype=float)
+            
         if self.data is not None:
             if len(self.data) == 0:
                 # make sure that the data attribute is a suitable numpy array
@@ -1770,7 +1781,11 @@ class IntervalLabel(Label):
                 value = np.nan
             
             self.data = np.append(self.data, value)
-        
+
+        if self.text_data is None:
+            if text is not None: # text_data not initialized but a text has to be inserted
+                self.text_data = np.full(len(self.time_index) - 1, None, dtype=object)
+       
         if self.text_data is not None:
             if len(self.text_data) == 0:
                 # make sure that the text_data attribute is a suitable numpy array
