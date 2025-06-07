@@ -625,7 +625,7 @@ def test_truncate():
             "2020-04-13 02:56:00",
             "2020-04-13 03:00:00",
         ],
-        data=["one", "two", "three"],
+        text_data=["one", "two", "three"],
     )
     case = Vitals()
     case.add_channel(cha)
@@ -640,7 +640,7 @@ def test_truncate():
     assert len(local_label) == 1
     global_label = truncated_case.get_label("global label")
     assert len(global_label) == 2
-    np.testing.assert_equal(global_label.data, ["two", "three"])
+    np.testing.assert_equal(global_label.text_data, ["two", "three"])
     np.testing.assert_equal(
         global_label.intervals[-1],
         pd.DatetimeIndex(["2020-04-13 02:56:00", "2020-04-13 03:00:00"]),
