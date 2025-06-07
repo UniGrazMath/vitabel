@@ -359,12 +359,13 @@ class TimeSeriesBase:
             stop = self.convert_time_input(stop)
             bound_cond &= time_index <= stop
 
+        if start is not None and stop is not None and start > stop:
+            logger.warning(
+                f"Start time {start} is after stop time {stop}, "
+                "the queried interval is empty."
+            )
+
         if resolution is None or resolution == 0 or not bound_cond.any():
-            if not self.is_empty():
-                logger.warning(
-                    f"The queried time interval is empty: check the"
-                    f"specified start ({start}) and stop ({stop}) times."
-                )
             return bound_cond
 
         if isinstance(resolution, str):
