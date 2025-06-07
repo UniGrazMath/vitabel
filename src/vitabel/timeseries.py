@@ -1448,7 +1448,6 @@ class Label(TimeSeriesBase):
         if plotstyle is not None:
             base_plotstyle.update(plotstyle)
 
-        scatterplot_artists = []
         if plot_type in {'scatter', 'combined'}:
             nan_mask = np.isnan(data)
             if nan_mask.any() and plot_type == 'scatter':
@@ -1456,12 +1455,13 @@ class Label(TimeSeriesBase):
                     f"Data in label {self.name} contains NaN values, "
                     "skipping them in the scatter plot"
                 )
-            scatterplot_artists = plot_axes.plot(
+            scatterplot_artist = plot_axes.plot(
                 time_index[~nan_mask],
                 data[~nan_mask],
                 **base_plotstyle
             )
-
+            scatterplot_artist[0].set_label(self.name) 
+        
         vlineplot_artists = []
         if plot_type in {'vline', 'combined'}:
             if plot_type == 'combined':
@@ -1488,8 +1488,10 @@ class Label(TimeSeriesBase):
             if plotstyle is None:  # TODO: think about direction
                 base_plotstyle.update({"linestyle": "solid", "marker": None})
             
-            for t, text in zip(time_index, vline_text):
+            for i, (t, text) in enumerate(zip(time_index, vline_text)):
                 vline_artist = plot_axes.axvline(t, **base_plotstyle)
+                if i == 0: 
+                    vline_artist.set_label(self.name)
                 if text:
                     line_color = vline_artist.get_color()
                     vline_text_artist = plot_axes.text(
@@ -1503,10 +1505,6 @@ class Label(TimeSeriesBase):
                     )
                     vline_text_artist._from_vitals_label = True
                 vlineplot_artists.append(vline_artist)
-
-        for artist in scatterplot_artists + vlineplot_artists:
-            if "label" not in base_plotstyle:
-                artist.set_label(self.name)
 
         return figure
 
