@@ -1460,9 +1460,9 @@ class Label(TimeSeriesBase):
                 data[~nan_mask],
                 **base_plotstyle
             )
-            scatterplot_artist[0].set_label(self.name) 
+            if data[~nan_mask].any(): 
+                scatterplot_artist.set_label(self.name) 
         
-        vlineplot_artists = []
         if plot_type in {'vline', 'combined'}:
             if plot_type == 'combined':
                 # only need to plot lines where there is no scatter
@@ -1490,7 +1490,7 @@ class Label(TimeSeriesBase):
             
             for i, (t, text) in enumerate(zip(time_index, vline_text)):
                 vline_artist = plot_axes.axvline(t, **base_plotstyle)
-                if i == 0: 
+                if i == 0: # add a legend only for the first line
                     vline_artist.set_label(self.name)
                 if text:
                     line_color = vline_artist.get_color()
@@ -1504,7 +1504,6 @@ class Label(TimeSeriesBase):
                         bbox=self.plot_vline_bbox_settings,
                     )
                     vline_text_artist._from_vitals_label = True
-                vlineplot_artists.append(vline_artist)
 
         return figure
 
