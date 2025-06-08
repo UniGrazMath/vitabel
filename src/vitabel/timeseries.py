@@ -1179,7 +1179,7 @@ class Label(TimeSeriesBase):
 
         if np.all(np.isnan(self.data)):
             self.data = None
-       
+
         if np.all(pd.isna(self.text_data)):
             self.text_data = None
 
@@ -1462,13 +1462,16 @@ class Label(TimeSeriesBase):
                     f"Data in label {self.name} contains NaN values, "
                     "skipping them in the scatter plot"
                 )
+            if base_plotstyle.get("marker", "") in ("", None) and len(data[~nan_mask])== 1: #make single vlaue visible 
+                base_plotstyle.update({"marker": "X"}) 
+
             scatterplot_artist = plot_axes.plot(
                 time_index[~nan_mask],
                 data[~nan_mask],
                 **base_plotstyle
             )
             if data[~nan_mask].any(): 
-                scatterplot_artist.set_label(self.name) 
+                scatterplot_artist[0].set_label(self.name) 
         
         if plot_type in {'vline', 'combined'}:
             if plot_type == 'combined':
