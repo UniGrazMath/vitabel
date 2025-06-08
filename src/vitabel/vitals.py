@@ -1158,7 +1158,7 @@ class Vitals:
 
     def compute_etco2_and_ventilations(
         self,
-        mode: Literal["threshold", "filter"] = filter,
+        mode: Literal['threshold', 'filter'] = 'filter',
         breath_thresh: float = 2,
         etco2_thresh: float = 3,
         **kwargs,
