@@ -9,7 +9,7 @@ DEFAULT_PLOT_STYLE = {
     "cpr_acceleration": {
         "color": "teal",
         "label": "Accelerometry",
-        "alpha": 0.6,
+        "alpha": 0.8,
     },
     "ecg_filtered": {
         "color": "darkgreen",
@@ -222,11 +222,15 @@ DEFAULT_PLOT_STYLE = {
         "label": "CC Period Stop",
         "color": "firebrick",
         "alpha": 0.6,
-
     },
-
-
-
-
-
+    "cc_period_start_acc": {
+        "label": "CC Period Start (Accelerometry)",
+        "color": "forestgreen",        
+        "alpha": 0.6,
+    },
+    "cc_period_stop_acc": {
+        "label": "CC Period Stop (Accelerometry)",
+        "color": "firebrick",
+        "alpha": 0.6,
+    },
 }
