@@ -27,6 +27,9 @@ LabelSpecification: TypeAlias = Union[str, dict[str, Any], "Label"]
 LabelPlotType: TypeAlias = Literal["scatter", "vline", "combined"]
 LabelPlotVLineTextSource: TypeAlias = Literal["data", "text_data", "combined", "disabled"]
 
+IntervalLabelPlotType: TypeAlias = Literal["box", "hline", "combined"]
+# IntervalLabelPlotVLineTextSource: TypeAlias = Literal["data", "text_data", "combined", "disabled"] #TODO: yet not implemented
+
 @dataclass
 class Metric:
     """Auxiliary dataclass used to store (numeric) values and their unit.

@@ -22,6 +22,7 @@ from vitabel.utils.helpers import match_object, NumpyEncoder, decompress_array
 from vitabel.typing import (
     LabelPlotType,
     LabelPlotVLineTextSource,
+    IntervalLabelPlotType,
     Timedelta,
     Timestamp,
     ChannelSpecification,
@@ -826,7 +827,7 @@ class Label(TimeSeriesBase):
 
         - ``'scatter'``: Entries of the label are plotted as points. Requires a
           label with numeric data.
-        - ``'vline'``: Entries of the label are plotted as a vertical lines whose
+        - ``'vline'``: Entries of the label are plotted as vertical lines whose
           plot labels are determined by ``vline_text_source``.
         - ``'combined'``: Entries of the label are plotted as points when there
           is associated numeric data, and as vertical lines otherwise.
@@ -927,6 +928,10 @@ class Label(TimeSeriesBase):
 
         if plot_type is None:
             plot_type = "combined"
+
+        ALLOWED_PLOT_TYPES = typing.get_args(LabelPlotType)
+        if plot_type not in ALLOWED_PLOT_TYPES:
+            raise ValueError(f"Invalid plot_type '{plot_type}'. Must be one of {ALLOWED_PLOT_TYPES}.")
 
         self.plot_type = plot_type
         """The type of plot to use to visualize the label."""
@@ -1549,7 +1554,83 @@ class IntervalLabel(Label):
     metadata
         A dictionary that can be used to store additional
         information about the label.
+    plot_type
+        Determines how entries of the label are plotted. Available options are:
+
+        - ``'box'``: Entries of the label are plotted as colorized area. 
+            Requries no additional data.
+        - ``'hline'``: Entries of the label are plotted as horizontal lines.
+            Requires a label with numeric data.
+        - ``'combined'``: Entries of the label are plotted as horizontal line when there 
+            is associated numeric data, and as rectangle lines otherwise.
+
+
+        Defaults to ``'combined'``.
+
     """
+
+    def __init__(
+        self,   
+        name: str,
+        time_index: npt.ArrayLike[Timestamp | Timedelta | float | str] | None = None,
+        data: npt.ArrayLike[float | np.number] | None = None,
+        text_data: npt.ArrayLike[str | None] | None = None,                 
+        time_start: Timestamp | None = None,
+        time_unit: str | None = None,
+        offset: Timedelta | float | None = None,
+        anchored_channel: Channel | None = None,
+        plotstyle: dict[str, Any] | None = None,
+        metadata: dict[str, Any] | None = None,
+        plot_type: IntervalLabelPlotType | None = None,
+        **kwargs: Any,  # for compatibility with Label constructor
+    ):
+        
+        if time_index is None:   
+            time_index = np.array([])
+
+        if data is not None:
+            if len(data) > 0 and isinstance(data[0], str):
+                # legacy support for string data: pass data as text_data
+                # and adjust arguments accordingly
+                if text_data is not None:
+                    raise ValueError("Label data is not allowed to contain strings")
+                
+                text_data = np.array(data, dtype=object)
+                data = None
+                logger.warning(
+                    "Label data is not allowed to contain strings. "
+                    "Automatically populating text_data instead of data."
+                )
+            else:
+                data = np.asarray(data)
+
+        if text_data is not None:
+            text_data = np.asarray(text_data, dtype=object)
+            text_data[text_data == ""] = None
+
+        self._check_data_shape(time_index, data=data, text_data=text_data)
+        
+        if plot_type is None:
+            plot_type = "combined"
+
+        ALLOWED_PLOT_TYPES = typing.get_args(IntervalLabelPlotType)     
+        if plot_type not in ALLOWED_PLOT_TYPES:
+            raise ValueError(f"Invalid plot_type '{plot_type}'. Must be one of {ALLOWED_PLOT_TYPES}.")
+
+        super().__init__(
+            name=name,
+            time_index=time_index,
+            data=data,
+            text_data=text_data,
+            time_start=time_start,
+            time_unit=time_unit,
+            offset=offset,
+            anchored_channel=anchored_channel,
+            plotstyle=plotstyle,
+            metadata=metadata,
+            plot_type=plot_type,
+        )
+
 
     def _check_data_shape(
         self,
@@ -1764,7 +1845,7 @@ class IntervalLabel(Label):
             text, value = value, None
 
         if self.data is None:
-            if value is None: # data has to be initialized
+            if value is not None: # data has to be initialized
                 self.data = np.full(len(self) - 1, np.nan, dtype=float)
             
         if self.data is not None:
