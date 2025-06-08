@@ -895,7 +895,9 @@ class Label(TimeSeriesBase):
                     )
 
             else:
-                data = np.asarray(data)
+                data = np.asarray(data, dtype=object)
+                data = np.where(data == None, np.nan, data).astype(float)
+
         
         if text_data is not None:
             text_data = np.asarray(text_data, dtype=object)
@@ -1608,7 +1610,8 @@ class IntervalLabel(Label):
                     "Automatically populating text_data instead of data."
                 )
             else:
-                data = np.asarray(data, dtype=float)
+                data = np.asarray(data, dtype=object)
+                data = np.where(data == None, np.nan, data).astype(float)
 
         if text_data is not None:
             text_data = np.asarray(text_data, dtype=object)

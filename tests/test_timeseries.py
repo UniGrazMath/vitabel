@@ -545,7 +545,7 @@ def test_label_relative_time_add_remove_data():
     label.add_data(pd.to_timedelta(10, unit="s"), 42)
     label.add_data(pd.to_timedelta(20, unit="s"), 100)
     assert len(label) == 8
-    np.testing.assert_equal(label.data, [42, None, -100, 42, 1.1, 2.2, 3.3, 100])
+    np.testing.assert_equal(label.data, [42, np.nan, -100, 42, 1.1, 2.2, 3.3, 100])
 
     label.remove_data(pd.to_timedelta(17, unit="s"))
     assert 3.3 not in label.data
