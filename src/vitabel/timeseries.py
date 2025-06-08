@@ -1769,7 +1769,7 @@ class IntervalLabel(Label):
 
         if self.data is None:
             if value is None: # data has to be initialized
-                self.data = np.full(len(self.time_index) - 1, np.nan, dtype=float)
+                self.data = np.full(len(self) - 1, np.nan, dtype=float)
             
         if self.data is not None:
             if len(self.data) == 0:
@@ -1783,7 +1783,7 @@ class IntervalLabel(Label):
 
         if self.text_data is None:
             if text is not None: # text_data not initialized but a text has to be inserted
-                self.text_data = np.full(len(self.time_index) - 1, None, dtype=object)
+                self.text_data = np.full(len(self) - 1, None, dtype=object)
        
         if self.text_data is not None:
             if len(self.text_data) == 0:
