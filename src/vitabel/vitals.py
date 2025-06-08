@@ -1157,8 +1157,8 @@ class Vitals:
     def compute_etco2_and_ventilations(
         self,
         mode="threshold",
-        breaththresh: float = 4,
-        etco2_thresh: float = 4,
+        breaththresh: float = 2,
+        etco2_thresh: float = 3,
     ):
         """Computes the etCO2 values and the timestamps of the ventilations based
         on CO2 waveform and add it to the labels.
@@ -1171,9 +1171,9 @@ class Vitals:
             Which method to use to detect ventilations from CO2 signal. Either 'filter' which is a unpublished method by Wolfgang Kern or 'threshold',
             which is the method presented by Aramendi et al. "Feasibility of the capnogram to monitor ventilation rate during cardiopulmonary resuscitation" `10.1016/j.resuscitation.2016.08.033 <https://doi.org/10.1016/j.resuscitation.2016.08.033>`_
         breaththresh : float, optional
-            Threshold value below which a minimum is identified as ventilation/respiration . The default is 2 (mmHg).
+            Threshold value below which a minimum is identified as ventilation/respiration. The default is 2 (mmHg).
         etco2_thresh : float, optional
-            Threshold value above which a maximum is identified as etCo2 value of an expiration. The default is 4 (mmHg).
+            Threshold value above which a maximum is identified as etCo2 value of an expiration. The default is 3 (mmHg).
 
 
         """
