@@ -2038,11 +2038,7 @@ class IntervalLabel(Label):
             time_radius = np.diff(hline_time_index, axis=1).reshape(-1) / 2.0
 
             # TODO: deal with data string entries (or disallow them)
-            if "fmt" not in base_plotstyle:
-                base_plotstyle.update({"fmt" : "none"})
-            if "capsize" not in base_plotstyle:
-                base_plotstyle.update({"capsize" : 3})
-            
+            base_plotstyle = self.plotstyle.copy()      
             filtered_base_plotstyle = {
                 k: v for k, v in base_plotstyle.items()
                 if k in Line2D([],[]).properties()
