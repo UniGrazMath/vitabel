@@ -12,6 +12,7 @@ import json
 import logging
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numbers
 import typing
 import numpy as np
@@ -1607,7 +1608,7 @@ class IntervalLabel(Label):
                     "Automatically populating text_data instead of data."
                 )
             else:
-                data = np.asarray(data)
+                data = np.asarray(data, dtype=float)
 
         if text_data is not None:
             text_data = np.asarray(text_data, dtype=object)
@@ -1863,7 +1864,7 @@ class IntervalLabel(Label):
         if self.data is not None:
             if len(self.data) == 0:
                 # make sure that the data attribute is a suitable numpy array
-                self.data = np.array([])
+                self.data = np.array([], dtype=float)
             
             if value is None:
                 value = np.nan
@@ -1941,6 +1942,7 @@ class IntervalLabel(Label):
         stop: Timestamp | Timedelta | float | None = None,
         time_unit: str | None = None,
         reference_time: Timestamp | Timedelta | float | None = None,
+        plot_type: IntervalLabelPlotType | None = None,
     ):
         """Plot the label data using an error bar or a
         filled background region.
@@ -1974,6 +1976,14 @@ class IntervalLabel(Label):
         time_index, data, text_data = self.get_data(start=start, stop=stop)
         artist = None
 
+        if plot_type is None:  # use plot_type from label
+            plot_type = self.plot_type
+
+        if plot_type not in typing.get_args(IntervalLabelPlotType):
+            raise ValueError(
+                f"Value '{plot_type}' is not a valid choice for plot_type"
+            )
+
         if self.is_time_absolute():
             reference_time = reference_time or self.time_start
             time_index = time_index - np.datetime64(reference_time)
@@ -1981,9 +1991,6 @@ class IntervalLabel(Label):
         if time_unit is None:
             time_unit = self.time_unit
         time_index /= pd.to_timedelta(1, unit=time_unit)
-
-        time_midpoints = np.mean(time_index, axis=1)
-        time_radius = np.diff(time_index, axis=1).reshape(-1) / 2.0
 
         if plot_axes is None:
             figure, plot_axes = plt.subplots()
@@ -1994,28 +2001,56 @@ class IntervalLabel(Label):
         if plotstyle is not None:
             base_plotstyle.update(plotstyle)
 
-        if data is not None:
-            # TODO: deal with data string entries (or disallow them)
-            if "fmt" not in base_plotstyle:
-                base_plotstyle["fmt"] = "none"
-            if "capsize" not in base_plotstyle:
-                base_plotstyle["capsize"] = 3
-            artist = plot_axes.errorbar(
-                time_midpoints, data, xerr=time_radius, **base_plotstyle
-            )
-        else:
+        if plot_type in {'box', 'combined'}:
             if "alpha" not in base_plotstyle:
-                base_plotstyle["alpha"] = 0.2
+                base_plotstyle.update({"alpha": 0.2})
             if "color" not in base_plotstyle:
-                base_plotstyle["color"] = "blue"
+                base_plotstyle.update({"color" :"blue"})
             if not any(k in base_plotstyle for k in ('facecolor', 'fc')):
-                base_plotstyle["facecolor"] = base_plotstyle["color"]
-                
-            for xmin, xmax in time_index:
+                base_plotstyle.update({"facecolor" : base_plotstyle["color"]})
+            
+            if plot_type == 'combined'and data is not None:
+                box_time_index = time_index[np.isnan(data)]
+            else:
+                box_time_index = time_index
+           
+            for xmin, xmax in box_time_index:
                 # Filter for props in kwargs which can be handled by axvspan / pathces.Rectangle
                 rectangle_props = Rectangle((0, 0), 1, 1).properties().keys()
                 filtered_base_plotstyle = {k: v for k, v in base_plotstyle.items() if k in rectangle_props}
                 artist = plot_axes.axvspan(xmin, xmax, **filtered_base_plotstyle)
+
+        if plot_type == "hline" and len(self) > 0 and data is None:
+            logger.warning(
+                f"Label {self.name} has no data, skipping horizontal line plot"
+            )
+            return figure
+        
+        if plot_type in {'hline', 'combined'} and data is not None:
+            
+            if plot_type == 'combined':
+                hline_time_index = time_index[~np.isnan(data)]
+                hline_data = data[~np.isnan(data)]  
+            else:
+                hline_time_index = time_index 
+            
+            time_midpoints = np.mean(hline_time_index, axis=1)
+            time_radius = np.diff(hline_time_index, axis=1).reshape(-1) / 2.0
+
+            # TODO: deal with data string entries (or disallow them)
+            if "fmt" not in base_plotstyle:
+                base_plotstyle.update({"fmt" : "none"})
+            if "capsize" not in base_plotstyle:
+                base_plotstyle.update({"capsize" : 3})
+            
+            filtered_base_plotstyle = {
+                k: v for k, v in base_plotstyle.items()
+                if k in Line2D([],[]).properties()
+            }  
+            filtered_base_plotstyle.update({"linestyle": ""})
+            artist = plot_axes.errorbar(
+                time_midpoints, hline_data, xerr=time_radius, **filtered_base_plotstyle
+            )
         
         # check if any artist was generated
         if artist is not None:
@@ -2924,7 +2959,6 @@ class TimeDataCollection:
                             "Right-click to set start time, then right-click again to set end time."
                         )
 
-
         delete_toggle_button.observe(delete_toggle_handler, names="value")
 
         label_dropdown.observe(label_dropdown_change, names="value")
@@ -3045,13 +3079,6 @@ class TimeDataCollection:
             fig.canvas.header_visible = True
             if self.is_time_absolute():
                 fig.suptitle(f"Reference time: {reference_time}")
-
-            # for channel_list, ax in zip(channel_lists,channel_axes):
-            #     axes_title = ''
-            #     for channel in channel_list:
-            #         axes_title += channel.name + ', '
-            #     ax.set_title(axes_title,loc='center')
-            #     ax.set_ylabel(axes_title,loc='center')
 
         x_indicators = [
             ax.axvline(x=0, color="black", linestyle="--", linewidth=0.5)
