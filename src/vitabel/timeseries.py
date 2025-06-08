@@ -929,10 +929,6 @@ class Label(TimeSeriesBase):
         if plot_type is None:
             plot_type = "combined"
 
-        ALLOWED_PLOT_TYPES = typing.get_args(LabelPlotType)
-        if plot_type not in ALLOWED_PLOT_TYPES:
-            raise ValueError(f"Invalid plot_type '{plot_type}'. Must be one of {ALLOWED_PLOT_TYPES}.")
-
         self.plot_type = plot_type
         """The type of plot to use to visualize the label."""
 
@@ -1622,10 +1618,6 @@ class IntervalLabel(Label):
         if plot_type is None:
             plot_type = "combined"
 
-        ALLOWED_PLOT_TYPES = typing.get_args(IntervalLabelPlotType)     
-        if plot_type not in ALLOWED_PLOT_TYPES:
-            raise ValueError(f"Invalid plot_type '{plot_type}'. Must be one of {ALLOWED_PLOT_TYPES}.")
-
         super().__init__(
             name=name,
             time_index=time_index,
@@ -1639,6 +1631,17 @@ class IntervalLabel(Label):
             metadata=metadata,
             plot_type=plot_type,
         )
+
+    @property
+    def plot_type(self) -> IntervalLabelPlotType | None:
+        """The type of plot to use to visualize the label."""
+        return self._plot_type
+        
+    @plot_type.setter
+    def plot_type(self, value: IntervalLabelPlotType | None):
+        if value not in typing.get_args(IntervalLabelPlotType):
+            raise ValueError(f"Value '{value}' is not a valid choice for plot_type")
+        self._plot_type = value
 
 
     def _check_data_shape(
