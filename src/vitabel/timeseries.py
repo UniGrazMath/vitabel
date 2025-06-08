@@ -1177,6 +1177,12 @@ class Label(TimeSeriesBase):
         if self.text_data is not None:
             self.text_data = np.delete(self.text_data, remove_index)
 
+        if np.all(np.isnan(self.data)):
+            self.data = None
+       
+        if np.all(pd.isna(self.text_data)):
+            self.text_data = None
+
         if remove_index == 0 and self.is_time_absolute():
             if self.is_empty():
                 self.time_start = None
@@ -1905,11 +1911,15 @@ class IntervalLabel(Label):
         if self.text_data is not None:
             self.text_data = np.delete(self.text_data, remove_index)
 
-        if len(self.time_index) == 0:
-            self.time_start = None
+        if np.all(np.isnan(self.data)):
             self.data = None
+       
+        if np.all(pd.isna(self.text_data)):
             self.text_data = None
 
+        if len(self.time_index) == 0:
+            self.time_start = None
+ 
     def plot(
         self,
         plot_axes: plt.Axes | None = None,
