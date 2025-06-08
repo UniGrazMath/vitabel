@@ -1428,10 +1428,6 @@ class Label(TimeSeriesBase):
         if time_unit is None:
             time_unit = self.time_unit
         time_index /= pd.to_timedelta(1, unit=time_unit)
-        if plot_axes is not None:
-            ymin, ymax = plot_axes.get_ylim()
-        else: 
-            ymin, ymax = 0, 1
         
         if data is None:
             data = np.full_like(time_index, np.nan, dtype=float)
@@ -1488,6 +1484,7 @@ class Label(TimeSeriesBase):
             if plotstyle is None:  # TODO: think about direction
                 base_plotstyle.update({"linestyle": "solid", "marker": None})
             
+            ymin, ymax = plot_axes.get_ylim()
             for i, (t, text) in enumerate(zip(time_index, vline_text)):
                 vline_artist = plot_axes.axvline(t, **base_plotstyle)
                 if i == 0: # add a legend only for the first line
