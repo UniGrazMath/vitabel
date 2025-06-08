@@ -1923,8 +1923,15 @@ class IntervalLabel(Label):
         if np.all(pd.isna(self.text_data)):
             self.text_data = None
 
-        if len(self.time_index) == 0:
-            self.time_start = None
+        if remove_index == 0 and self.is_time_absolute():
+            if self.is_empty():
+                self.time_start = None
+            else:
+                offset = self.time_index[0]
+                self.time_start += offset
+                self.time_index -= offset
+        
+        return
  
     def plot(
         self,
@@ -2879,20 +2886,48 @@ class TimeDataCollection:
         add_stack.selected_index = 1
 
         def delete_toggle_handler(change):
-            nonlocal DELETE_ANNOTATIONS
+            nonlocal DELETE_ANNOTATIONS, partial_interval_data, shifting_reference_time
+            partial_interval_data = None             
+            shifting_reference_time = None
+            fig.canvas._figure_label = "."
 
             if change["new"]:  # value of "new" attribute is new button value
                 delete_toggle_button.description = "Mode: Delete Data"
                 delete_toggle_button.button_style = "danger"
                 add_stack.selected_index = 0
                 DELETE_ANNOTATIONS = True
+                active_label = label_dropdown.value
+                if isinstance(active_label, IntervalLabel):
+                    fig.canvas._figure_label = (
+                        "To delete an Interval click close to its start with the right mouse button.")
             else:
                 delete_toggle_button.description = "Mode: Add Data"
                 delete_toggle_button.button_style = "success"
                 add_stack.selected_index = 1
                 DELETE_ANNOTATIONS = False
+                if isinstance(label_dropdown.value, IntervalLabel):
+                    fig.canvas._figure_label = (
+                        "Right-click to set start time, then right-click again to set end time."
+                    )
+        
+        def label_dropdown_change(change):
+            nonlocal DELETE_ANNOTATIONS, partial_interval_data, shifting_reference_time
+            partial_interval_data = None             
+            shifting_reference_time = None
+            fig.canvas._figure_label = "."
+            if change["new"] is not None:
+                if isinstance(change["new"], IntervalLabel):
+                    if DELETE_ANNOTATIONS:
+                        fig.canvas._figure_label = ("To delete an Interval click close to its start with the right mouse button.")
+                    else:
+                        fig.canvas._figure_label = (
+                            "Right-click to set start time, then right-click again to set end time."
+                        )
+
 
         delete_toggle_button.observe(delete_toggle_handler, names="value")
+
+        label_dropdown.observe(label_dropdown_change, names="value")
 
         # ---------- WIDGETS FOR SHIFTING ------------------------
         # --------------------------------------------------------
@@ -3214,7 +3249,7 @@ class TimeDataCollection:
             elif event.key == "escape":
                 partial_interval_data = None
                 shifting_reference_time = None
-                fig.canvas._figure_label = ""
+                fig.canvas._figure_label = "."
                 repaint_plot(start, stop)
 
         def mouse_click_listener(event: MouseEvent):
@@ -3230,6 +3265,8 @@ class TimeDataCollection:
                         active_label: Label = label_dropdown.value
                         if isinstance(active_label, IntervalLabel):
                             if DELETE_ANNOTATIONS:
+
+
                                 time_data = (
                                     event.xdata * pd.to_timedelta(1, unit=time_unit)
                                     + reference_time
@@ -3248,9 +3285,10 @@ class TimeDataCollection:
                                         active_label.intervals[interval_index, :]
                                     )
                                     repaint_plot(start, stop)
+                               
                                 return
 
-                            if partial_interval_data is None:
+                            elif partial_interval_data is None:
                                 partial_interval_data = (event.xdata, event.ydata)
                                 fig.canvas._figure_label = (
                                     "Creating interval label, select end point "
@@ -3273,7 +3311,7 @@ class TimeDataCollection:
                                 active_label.add_data((t1, t2), value=ydata, text=text_input) #TODO
                                 repaint_plot(start, stop)
                                 partial_interval_data = None
-                                fig.canvas._figure_label = ""
+                                fig.canvas._figure_label = "."
                         else:
                             time_data = (
                                 event.xdata * pd.to_timedelta(1, unit=time_unit)
