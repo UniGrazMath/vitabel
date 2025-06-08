@@ -875,7 +875,8 @@ class Label(TimeSeriesBase):
             time_index = np.array([])
 
         if data is not None:
-            if len(data) > 0 and isinstance(data[0], str):
+            data = np.asarray(data, dtype=object)
+            if np.any(np.vectorize(lambda x: isinstance(x, str))(data)):
                 # legacy support for string data: pass data as text_data
                 # and adjust arguments accordingly
                 if text_data is not None:
@@ -893,9 +894,7 @@ class Label(TimeSeriesBase):
                     logger.info(
                         "Automatically changed vline_text_source to 'text_data' as well."
                     )
-
             else:
-                data = np.asarray(data, dtype=object)
                 data = np.where(data == None, np.nan, data).astype(float)
 
         
@@ -1592,35 +1591,6 @@ class IntervalLabel(Label):
         plot_type: IntervalLabelPlotType | None = None,
         **kwargs: Any,  # for compatibility with Label constructor
     ):
-        
-        if time_index is None:   
-            time_index = np.array([])
-
-        if data is not None:
-            if len(data) > 0 and isinstance(data[0], str):
-                # legacy support for string data: pass data as text_data
-                # and adjust arguments accordingly
-                if text_data is not None:
-                    raise ValueError("Label data is not allowed to contain strings")
-                
-                text_data = np.array(data, dtype=object)
-                data = None
-                logger.warning(
-                    "Label data is not allowed to contain strings. "
-                    "Automatically populating text_data instead of data."
-                )
-            else:
-                data = np.asarray(data, dtype=object)
-                data = np.where(data == None, np.nan, data).astype(float)
-
-        if text_data is not None:
-            text_data = np.asarray(text_data, dtype=object)
-            text_data[text_data == ""] = None
-
-        self._check_data_shape(time_index, data=data, text_data=text_data)
-        
-        if plot_type is None:
-            plot_type = "combined"
 
         super().__init__(
             name=name,
