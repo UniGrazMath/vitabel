@@ -366,8 +366,8 @@ def test_channel_to_and_from_dict():
         "time_start": "2020-02-02 12:00:00",
         "offset": 0,
         "is_interval": False,
-        "data": [None, "test"],
-        "text_data": None,
+        "text_data": [None, "test"],
+        "data": None,
         "plotstyle": {
             "marker": "o",
             "ms": 5,
