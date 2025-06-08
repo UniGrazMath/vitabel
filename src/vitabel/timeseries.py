@@ -876,7 +876,7 @@ class Label(TimeSeriesBase):
 
         if data is not None:
             data = np.asarray(data, dtype=object)
-            if np.any(np.vectorize(lambda x: isinstance(x, str))(data)):
+            if len(data) > 0 and np.any(np.vectorize(lambda x: isinstance(x, str))(data)):
                 # legacy support for string data: pass data as text_data
                 # and adjust arguments accordingly
                 if text_data is not None:
@@ -894,13 +894,17 @@ class Label(TimeSeriesBase):
                     logger.info(
                         "Automatically changed vline_text_source to 'text_data' as well."
                     )
+            elif len(data) == 0:
+                data = None
             else:
                 data = np.where(data == None, np.nan, data).astype(float)
 
         
-        if text_data is not None:
+        if text_data is not None and len(text_data) > 0:
             text_data = np.asarray(text_data, dtype=object)
             text_data[text_data == ""] = None
+        else:
+            text_data = None
 
         self._check_data_shape(time_index, data=data, text_data=text_data)
 
@@ -2918,14 +2922,19 @@ class TimeDataCollection:
             partial_interval_data = None             
             shifting_reference_time = None
             fig.canvas._figure_label = "."
-            if change["new"] is not None:
-                if isinstance(change["new"], IntervalLabel):
+            label=change["new"]
+            if label is not None:
+                if isinstance(label, IntervalLabel):
                     if DELETE_ANNOTATIONS:
                         fig.canvas._figure_label = ("To delete an Interval click close to its start with the right mouse button.")
                     else:
                         fig.canvas._figure_label = (
                             "Right-click to set start time, then right-click again to set end time."
                         )
+                if label.data is not None:
+                    add_numeric_check.value = True
+                if label.text is not None:
+                    add_text_check.value = True
 
         delete_toggle_button.observe(delete_toggle_handler, names="value")
 

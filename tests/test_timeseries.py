@@ -462,6 +462,36 @@ def test_label_creation():
     assert label.time_start is None
     assert label.offset.total_seconds() == 0
 
+def test_label_creation_with_empty_data():
+    label = Label(
+        name="Anesthesia", 
+        time_index=[], 
+        data=[], 
+        plotstyle={"linestyle": "--", "marker": None, "color": "teal"}
+    )
+    assert label.name == "Anesthesia"
+    assert len(label) == 0 
+    label_dict = label.to_dict()
+    expected_dict = {
+        "name": "Anesthesia",
+        "time_index": np.array([]),   
+        "time_unit": "s",   
+        "time_start": None,
+        "offset": 0,
+        "is_interval": False,
+        "text_data": None,
+        "data": None,
+        "plotstyle": {
+            "linestyle": "--",
+            "marker": None, 
+            "color": "teal",    
+        },  
+        "plot_type": "combined",
+        "vline_text_source": "text_data",
+        "metadata": {},
+    }
+    np.testing.assert_equal(label_dict, expected_dict)
+    
 
 def test_label_creation_errors():
     with pytest.raises(
