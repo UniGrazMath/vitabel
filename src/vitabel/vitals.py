@@ -1175,8 +1175,10 @@ class Vitals:
         ----------
         mode : {'filter', 'threshold'}, optional
             Method to use for detecting ventilations from the CO₂ signal.
+
             - 'filter': An unpublished method by Kern (default)
-            - 'threshold': The method described by Aramendi et al. 
+            - 'threshold': The method described by Aramendi et al.
+
         breath_thresh : float, optional
             Threshold below which a minimum is identified as a ventilation (default: 2 mmHg). Used by the 'filter' method.
         etco2_thresh : float, optional
