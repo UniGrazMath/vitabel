@@ -1168,6 +1168,7 @@ class Vitals:
         and adds them as labels.
 
         The capnography signal must be present as a channel named 'capnography'. Two detection methods are supported:
+
         - 'filter': An unpublished method by Wolfgang Kern (default).
         - 'threshold': The method described by Aramendi et al., "Feasibility of the capnogram to monitor ventilation rate during cardiopulmonary resuscitation"
           (Resuscitation, 2016, DOI: `10.1016/j.resuscitation.2016.08.033 <https://doi.org/10.1016/j.resuscitation.2016.08.033>`_).
