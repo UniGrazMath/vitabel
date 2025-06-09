@@ -5,6 +5,7 @@ import pytest
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 from vitabel import TimeDataCollection, Channel, Label, IntervalLabel
 from vitabel.utils.helpers import NumpyEncoder
@@ -1038,3 +1039,25 @@ def test_serialization():
 
     assert collection.channel_data_hash() == cloned_collection.channel_data_hash()
     assert collection.label_names == cloned_collection.label_names
+
+def test_to_csv(tmpdir):
+    collection = get_random_collection(
+        num_channels=5, num_labels=10, num_attached_labels=5
+    )
+
+    for chanel in collection.get_channels():
+        chanel.to_csv(tmpdir / f"{chanel.name}_channel.csv")
+
+    for label in collection.get_labels():
+        label.to_csv(tmpdir / f"{label.name}_label.csv")
+
+    # Check the number of files written
+    files_channels = list(Path(tmpdir).glob("*_channel.csv"))
+    files_labels = list(Path(tmpdir).glob("*_label.csv"))
+    num_channels = len(collection.get_channels())
+    num_labels = len(collection.get_labels())
+    assert len(files_channels) == num_channels
+    assert len(files_labels) == num_labels
+
+#TODO check the content of the files
+
