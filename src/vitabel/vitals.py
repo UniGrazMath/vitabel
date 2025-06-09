@@ -1173,25 +1173,25 @@ class Vitals:
 
         Parameters
         ----------
-        mode : {'filter', 'threshold'}, optional
+        mode
             Method to use for detecting ventilations from the CO₂ signal.
 
             - 'filter': An unpublished method by Kern (default)
             - 'threshold': The method described by Aramendi et al.
 
-        breath_thresh : float, optional
+        breath_threshold
             Threshold below which a minimum is identified as a ventilation (default: 2 mmHg). Used by the 'filter' method.
-        etco2_thresh : float, optional
+        etco2_threshold 
             Threshold above which a maximum is identified as an etCO₂ value of an expiration (default: 3 mmHg). Used by the 'filter' method.
         """
         # Support legacy parameter name
         if 'breaththresh' in kwargs:
-            if breath_thresh is not None:
-                raise TypeError("Cannot specify both 'breath_thresh' and legacy 'breaththresh'")
-            breath_thresh = kwargs.pop('breaththresh')
+            if breath_threshold is not None:
+                raise TypeError("Cannot specify both 'breath_threshold' and legacy 'breaththresh'")
+            breath_threshold = kwargs.pop('breaththresh')
             logger.warning(
                 "The keyword argument breaththresh is deprecated, "
-                "use breath_thresh instead"
+                "use breath_threshold instead"
             )
 
         if "capnography" not in self.get_channel_names():
@@ -1208,11 +1208,11 @@ class Vitals:
             if mode == "filter":  # Wolfgang Kern's unpublished method
                 but = sgn.butter(4, 1 * 2 / freq, btype="lowpass", output="sos")
                 co2 = sgn.sosfiltfilt(but, co)  # Filter forwarsd and backward
-                et_index = sgn.find_peaks(co2, distance=1 * freq, height=etco2_thresh)[
+                et_index = sgn.find_peaks(co2, distance=1 * freq, height=etco2_threshold )[
                     0
                 ]  # find peaks of filtered signal as markers for etco2
                 resp_index = sgn.find_peaks(
-                    -co2, distance=1 * freq, height=-breath_thresh
+                    -co2, distance=1 * freq, height=-breath_threshold
                 )[  # find dips of filtered signal as markers for ventilations
                     0
                 ]
