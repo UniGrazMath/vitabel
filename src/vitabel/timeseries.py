@@ -2815,7 +2815,7 @@ class TimeDataCollection:
                     distinct_labels["single"].append(label)
 
         label_master = sorted(distinct_labels["single"], key=lambda l: l.name) + sorted(distinct_labels["interval"], key=lambda l: l.name)
-        label_dict = {i : label for i, label in enumerate(label_master, start=1)}
+        label_dict =  dict(enumerate(label_master, start=1))
         dropdown_options = [(label.name, i) for i, label in label_dict.items()]
 
         label_dropdown = widgets.Dropdown(
@@ -2940,7 +2940,7 @@ class TimeDataCollection:
                     add_numeric_check.value = False
                 if label.text_data is not None:
                     add_text_check.value = True
-                    strings = label.text_data[np.vectorize(lambda x: isinstance(x, str))(label.text_data)]
+                    strings = label.text_data[~pd.isna(label.text_data)]
                     if strings.size > 0:
                         values, counts = np.unique(strings, return_counts=True)
                         value_text_input.value = values[np.argmax(counts)]
