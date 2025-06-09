@@ -2944,13 +2944,10 @@ class TimeDataCollection:
                     if label.vline_text_source in ("data", "combined"):
                         add_numeric_check.value = True
 
-                    if label.plot_type is not None:
-                        add_numeric_check.value = False
-                        add_text_check.value = False
-                        if label.plot_type in ("scatter", "hline", "combined"):
-                            add_numeric_check.value = True
-                        if label.plot_type in ("vline", "combined"):
-                            add_text_check.value = True
+                    if label.plot_type in ("scatter", "hline", "combined"):
+                        add_numeric_check.value = True
+                    if label.plot_type in ("vline", "combined"):
+                        add_text_check.value = True
                 # non empty label with no data
                 elif label.data is None and label.text_data is None:
                     add_numeric_check.value = False
