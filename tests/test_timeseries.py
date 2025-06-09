@@ -1065,10 +1065,10 @@ def test_to_csv(tmpdir):
 
     for export_chan in Path(tmpdir).glob("*_channel.csv"):
         df=pd.read_csv(export_chan, index_col=0)
-        export_chan.stem.strip("_channel")
-        assert df.shape[0] == len(collection.get_channel(export_chan.stem).time_index)  
+        chan_name = export_chan.stem.split("_channel")[0]
+        assert df.shape[0] == len(collection.get_channel(chan_name).time_index)  
 
     for export_label in Path(tmpdir).glob("*_label.csv"):
         df=pd.read_csv(export_label, index_col=0)
-        export_label.stem.strip("_label")
-        assert df.shape[0] == len(collection.get_label(export_label.stem).time_index)
+        lab_name = export_label.stem.split("_label")[0]
+        assert df.shape[0] == len(collection.get_label(lab_name).time_index)
