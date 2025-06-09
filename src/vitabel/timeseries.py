@@ -17,6 +17,7 @@ import typing
 import numpy as np
 import numpy.typing as npt
 import hashlib
+from pathlib import Path
 
 from vitabel.utils.helpers import match_object, NumpyEncoder, decompress_array
 from vitabel.typing import (
@@ -596,7 +597,7 @@ class Channel(TimeSeriesBase):
 
     def to_csv(
         self,
-        filename: str | None = None,
+        filename: str | Path | None = None,
         start: Timestamp | Timedelta | None = None,
         stop: Timestamp | Timedelta | None = None,
     ) -> None:
@@ -604,20 +605,24 @@ class Channel(TimeSeriesBase):
 
         Parameters
         ----------
+        filename
+            The name of the file to export the data to. If not
+            specified, the data is exported to a file with the
+            name of the channel.
         start
             The start time for the data. If not specified, the
             data starts from the beginning.
         stop
             The stop time for the data. If not specified, the
             data ends at the last time point.
-        filename
-            The name of the file to export the data to. If not
-            specified, the data is exported to a file with the
-            name of the channel.
         """
+       
         time_index, data = self.get_data(start=start, stop=stop)
         if filename is None:
             filename = f"{self.name}.csv"
+        
+        if isinstance(filename, str):
+            filename = Path(filename)
 
         if data is None:
             df = pd.DataFrame({"time": time_index})
@@ -1274,7 +1279,7 @@ class Label(TimeSeriesBase):
 
     def to_csv(
         self,
-        filename: str | None = None,
+        filename: str | Path | None = None,
         start: Timestamp | Timedelta | None = None,
         stop: Timestamp | Timedelta | None = None,
     ) -> None:
@@ -1282,20 +1287,23 @@ class Label(TimeSeriesBase):
 
         Parameters
         ----------
+        filename
+            The name of the file to export the data to. If not
+            specified, the data is exported to a file with the
+            name of the channel.
         start
             The start time for the data. If not specified, the
             data starts from the beginning.
         stop
             The stop time for the data. If not specified, the
             data ends at the last time point.
-        filename
-            The name of the file to export the data to. If not
-            specified, the data is exported to a file with the
-            name of the channel.
         """
         time_index, data, text_data = self.get_data(start=start, stop=stop)
         if filename is None:
             filename = f"{self.name}.csv"
+
+        if isinstance(filename, str):
+            filename = Path(filename)
 
         df_dict = {"time": time_index}
         if data is not None:
@@ -1631,7 +1639,7 @@ class IntervalLabel(Label):
 
     def to_csv(
         self,
-        filename: str | None = None,
+        filename: str | Path | None = None,
         start: Timestamp | Timedelta | None = None,
         stop: Timestamp | Timedelta | None = None,
     ) -> None:
@@ -1642,22 +1650,26 @@ class IntervalLabel(Label):
 
         Parameters
         ----------
+        filename
+            The name of the file to export the data to. If not
+            specified, the data is exported to a file with the
+            name of the channel.
         start
             The start time for the data. If not specified, the
             data starts from the beginning.
         stop
             The stop time for the data. If not specified, the
             data ends at the last time point.
-        filename
-            The name of the file to export the data to. If not
-            specified, the data is exported to a file with the
-            name of the channel.
+
         """
         time_index, data, text_data = self.get_data(start=start, stop=stop)
         time_start, time_stop = time_index.transpose()
 
         if filename is None:
             filename = f"{self.name}.csv"
+
+        if isinstance(filename, str):
+            filename = Path(filename)
 
         csv_data_dict = {
             "time_start": time_start,
