@@ -596,9 +596,9 @@ class Channel(TimeSeriesBase):
 
     def to_csv(
         self,
+        filename: str | None = None,
         start: Timestamp | Timedelta | None = None,
         stop: Timestamp | Timedelta | None = None,
-        filename: str | None = None,
     ) -> None:
         """Export the channel data to a CSV file.
 
@@ -1274,9 +1274,9 @@ class Label(TimeSeriesBase):
 
     def to_csv(
         self,
+        filename: str | None = None,
         start: Timestamp | Timedelta | None = None,
         stop: Timestamp | Timedelta | None = None,
-        filename: str | None = None,
     ) -> None:
         """Export the label data to a CSV file.
 
@@ -1631,9 +1631,9 @@ class IntervalLabel(Label):
 
     def to_csv(
         self,
+        filename: str | None = None,
         start: Timestamp | Timedelta | None = None,
         stop: Timestamp | Timedelta | None = None,
-        filename: str | None = None,
     ) -> None:
         """Export the interval label data to a CSV file.
 
