@@ -1592,7 +1592,6 @@ class IntervalLabel(Label):
         plotstyle: dict[str, Any] | None = None,
         metadata: dict[str, Any] | None = None,
         plot_type: IntervalLabelPlotType | None = None,
-        **kwargs: Any,  # for compatibility with Label constructor
     ):
 
         super().__init__(
@@ -1606,8 +1605,11 @@ class IntervalLabel(Label):
             anchored_channel=anchored_channel,
             plotstyle=plotstyle,
             metadata=metadata,
-            plot_type=plot_type,
         )
+
+        if plot_type is None:
+            plot_type = "combined"
+        self.plot_type = plot_type
 
     @property
     def plot_type(self) -> IntervalLabelPlotType | None:
