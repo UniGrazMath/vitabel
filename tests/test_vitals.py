@@ -748,7 +748,7 @@ def test_etco2_and_ventilation_detection(vitabel_test_data_dir):
         "capnography", t, data, time_start=pd.Timestamp(2024, 1, 1, 0, 0, 0)
     )
     cardio_object.add_channel(co2_channel)
-    cardio_object.compute_etco2_and_ventilations()
+    cardio_object.compute_etco2_and_ventilations(mode="threshold",breath_thresh=4,etco2_thresh=4) #TODO: test might be adapted to new default values in the future
     vent_dict = cardio_object.get_label("ventilations_from_capnography").to_dict()
     etCO2_dict = cardio_object.get_label("etco2_from_capnography").to_dict()
 

@@ -1156,30 +1156,47 @@ class Vitals:
 
     def compute_etco2_and_ventilations(
         self,
-        mode="threshold",
-        breaththresh: float = 4,
-        etco2_thresh: float = 4,
+        mode: Literal['threshold', 'filter'] = 'filter',
+        breath_threshold: float = 2,
+        etco2_threshold: float = 3,
+        **kwargs,
     ):
-        """Computes the etCO2 values and the timestamps of the ventilations based
-        on CO2 waveform and add it to the labels.
+        """
+        Computes end-tidal CO2 (etCO₂) values and timestamps of ventilations from the capnography waveform,
+        and adds them as labels.
 
-        The capnography signal must be a channel of the file and needs to be named 'capnography'. Currently two different versions are implemented: 'threshold' and 'filter'. The default is 'filter'.
+        The capnography signal must be present as a channel named 'capnography'. Two detection methods are supported:
+
+        - 'filter': An unpublished method by Wolfgang Kern (default).
+        - 'threshold': The method described by Aramendi et al., "Feasibility of the capnogram to monitor ventilation rate during cardiopulmonary resuscitation"
+          (Resuscitation, 2016, DOI: `10.1016/j.resuscitation.2016.08.033 <https://doi.org/10.1016/j.resuscitation.2016.08.033>`_).
 
         Parameters
         ----------
-        mode : str, optional,
-            Which method to use to detect ventilations from CO2 signal. Either 'filter' which is a unpublished method by Wolfgang Kern or 'threshold',
-            which is the method presented by Aramendi et al. "Feasibility of the capnogram to monitor ventilation rate during cardiopulmonary resuscitation" `10.1016/j.resuscitation.2016.08.033 <https://doi.org/10.1016/j.resuscitation.2016.08.033>`_
-        breaththresh : float, optional
-            Threshold value below which a minimum is identified as ventilation/respiration . The default is 2 (mmHg).
+        mode : {'filter', 'threshold'}, optional
+            Method to use for detecting ventilations from the CO₂ signal.
+
+            - 'filter': An unpublished method by Kern (default)
+            - 'threshold': The method described by Aramendi et al.
+
+        breath_thresh : float, optional
+            Threshold below which a minimum is identified as a ventilation (default: 2 mmHg). Used by the 'filter' method.
         etco2_thresh : float, optional
-            Threshold value above which a maximum is identified as etCo2 value of an expiration. The default is 4 (mmHg).
-
-
+            Threshold above which a maximum is identified as an etCO₂ value of an expiration (default: 3 mmHg). Used by the 'filter' method.
         """
+        # Support legacy parameter name
+        if 'breaththresh' in kwargs:
+            if breath_thresh is not None:
+                raise TypeError("Cannot specify both 'breath_thresh' and legacy 'breaththresh'")
+            breath_thresh = kwargs.pop('breaththresh')
+            logger.warning(
+                "The keyword argument breaththresh is deprecated, "
+                "use breath_thresh instead"
+            )
+
         if "capnography" not in self.get_channel_names():
             logger.error(
-                "Error! No Capnography Signal found. Cannot compute etCO2 and detect ventilations"
+                "Error! No Capnography Signal found. Cannot compute etCO₂ and detect ventilations"
             )
         else:
             co2_channel = self.data.get_channel("capnography")
@@ -1188,14 +1205,14 @@ class Vitals:
             freq = np.timedelta64(1, "s") / np.nanmedian(cotime.diff())
             cotime = np.asarray(cotime)
             co = np.asarray(co)
-            if mode == "filter":
+            if mode == "filter":  # Wolfgang Kern's unpublished method
                 but = sgn.butter(4, 1 * 2 / freq, btype="lowpass", output="sos")
                 co2 = sgn.sosfiltfilt(but, co)  # Filter forwarsd and backward
                 et_index = sgn.find_peaks(co2, distance=1 * freq, height=etco2_thresh)[
                     0
                 ]  # find peaks of filtered signal as markers for etco2
                 resp_index = sgn.find_peaks(
-                    -co2, distance=1 * freq, height=-breaththresh
+                    -co2, distance=1 * freq, height=-breath_thresh
                 )[  # find dips of filtered signal as markers for ventilations
                     0
                 ]
@@ -1229,7 +1246,7 @@ class Vitals:
                         etco2time = np.delete(etco2time, k + 1)
                     k += 1
 
-                # id there is no maximum
+                # if there is no maximum
                 elif netco2 == 0:
                     pass
                 # if there is a single maximum
@@ -1282,7 +1299,7 @@ class Vitals:
                 for i in del_resp[::-1]:
                     resptime = np.delete(resptime, i)
 
-            elif mode == "threshold":
+            elif mode == "threshold":   # Aramendi et al., 2016
                 but = sgn.butter(4, 10 * 2 / freq, btype="lowpass", output="sos")
                 co2 = sgn.sosfiltfilt(but, co)  # Filter forwarsd and backward
                 d = freq * (co2[1:] - co2[:-1])
