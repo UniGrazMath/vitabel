@@ -2929,9 +2929,9 @@ class TimeDataCollection:
                         fig.canvas._figure_label = (
                             "Right-click to set start time, then right-click again to set end time."
                         )
-            _preset_adding_menu(label)
+            _populate_label_add_menu(label)
 
-        def _preset_adding_menu(label: Label | IntervalLabel | None):
+        def _populate_label_add_menu(label: Label | IntervalLabel | None):
             if label is not None:
                 value_text_input.value = ""
                 if label.data is not None:
@@ -2950,7 +2950,7 @@ class TimeDataCollection:
         delete_toggle_button.observe(delete_toggle_handler, names="value")
 
         label_dropdown.observe(label_dropdown_change, names="value")
-        _preset_adding_menu(label_dict[label_dropdown.value])
+        _populate_label_add_menu(label_dict[label_dropdown.value])
 
 
         # ---------- WIDGETS FOR SHIFTING ------------------------
