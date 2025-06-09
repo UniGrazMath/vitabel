@@ -2809,18 +2809,16 @@ class TimeDataCollection:
         for label_list in label_lists:
             for label in label_list:
                 if isinstance(label, IntervalLabel):
-                    if label not in distinct_labels["interval"]: #NOTE: would a dict of sets avoid this check?
-                        distinct_labels["interval"].append(label)
+                    distinct_labels["interval"].append(label)    
                 else:
-                    if label not in distinct_labels["single"]:
-                        distinct_labels["single"].append(label)
+                    distinct_labels["single"].append(label)
 
-        # First load "single" labels, then "interval" labels, preserving order
-        # Use label.name as the sort key
-        label_options = sorted(distinct_labels["single"], key=lambda l: l.name) + sorted(distinct_labels["interval"], key=lambda l: l.name)
+        label_master = sorted(distinct_labels["single"], key=lambda l: l.name) + sorted(distinct_labels["interval"], key=lambda l: l.name)
+        label_dict = {i : label for i, label in enumerate(label_master, start=1)}
+        dropdown_options = [(label.name, i) for i, label in label_dict.items()]
 
         label_dropdown = widgets.Dropdown(
-            options=label_options,
+            options=dropdown_options,
             disabled=False,
             layout=widgets.Layout(margin='3px 0px 0px 0px')
         )
@@ -2897,13 +2895,12 @@ class TimeDataCollection:
             partial_interval_data = None             
             shifting_reference_time = None
             fig.canvas._figure_label = "."
-
+            active_label = label_dict[label_dropdown.value]
             if change["new"]:  # value of "new" attribute is new button value
                 delete_toggle_button.description = "Mode: Delete Data"
                 delete_toggle_button.button_style = "danger"
                 add_stack.selected_index = 0
                 DELETE_ANNOTATIONS = True
-                active_label = label_dropdown.value
                 if isinstance(active_label, IntervalLabel):
                     fig.canvas._figure_label = (
                         "To delete an Interval click close to its start with the right mouse button.")
@@ -2912,7 +2909,7 @@ class TimeDataCollection:
                 delete_toggle_button.button_style = "success"
                 add_stack.selected_index = 1
                 DELETE_ANNOTATIONS = False
-                if isinstance(label_dropdown.value, IntervalLabel):
+                if isinstance(active_label, IntervalLabel):
                     fig.canvas._figure_label = (
                         "Right-click to set start time, then right-click again to set end time."
                     )
@@ -2922,7 +2919,7 @@ class TimeDataCollection:
             partial_interval_data = None             
             shifting_reference_time = None
             fig.canvas._figure_label = "."
-            label=change["new"]
+            label=label_dict[label_dropdown.value]
             if label is not None:
                 if isinstance(label, IntervalLabel):
                     if DELETE_ANNOTATIONS:
@@ -2931,14 +2928,29 @@ class TimeDataCollection:
                         fig.canvas._figure_label = (
                             "Right-click to set start time, then right-click again to set end time."
                         )
+            _preset_adding_menu(label)
+
+        def _preset_adding_menu(label: Label | IntervalLabel | None):
+            if label is not None:
+                value_text_input.value = ""
                 if label.data is not None:
                     add_numeric_check.value = True
-                if label.text is not None:
+                else:
+                    add_numeric_check.value = False
+                if label.text_data is not None:
                     add_text_check.value = True
+                    strings = label.text_data[np.vectorize(lambda x: isinstance(x, str))(label.text_data)]
+                    if strings.size > 0:
+                        values, counts = np.unique(strings, return_counts=True)
+                        value_text_input.value = values[np.argmax(counts)]
+                else:
+                    add_text_check.value = False
 
         delete_toggle_button.observe(delete_toggle_handler, names="value")
 
         label_dropdown.observe(label_dropdown_change, names="value")
+        _preset_adding_menu(label_dict[label_dropdown.value])
+
 
         # ---------- WIDGETS FOR SHIFTING ------------------------
         # --------------------------------------------------------
@@ -3266,7 +3278,7 @@ class TimeDataCollection:
             ):  # If click is within current detail plot, annotate something
                 if event.button is MouseButton.RIGHT:
                     if current_mode == InteractionMode.ANNOTATE:
-                        active_label: Label = label_dropdown.value
+                        active_label: Label = label_dict[label_dropdown.value]
                         if isinstance(active_label, IntervalLabel):
                             if DELETE_ANNOTATIONS:
 
