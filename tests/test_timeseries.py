@@ -1058,6 +1058,3 @@ def test_to_csv(tmpdir):
     num_labels = len(collection.get_labels())
     assert len(files_channels) == num_channels
     assert len(files_labels) == num_labels
-
-#TODO check the content of the files
-
