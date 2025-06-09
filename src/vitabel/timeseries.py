@@ -2905,7 +2905,9 @@ class TimeDataCollection:
                 DELETE_ANNOTATIONS = True
                 if isinstance(active_label, IntervalLabel):
                     fig.canvas._figure_label = (
-                        "To delete an Interval click close to its start with the right mouse button.")
+                        "To delete an Interval click close to its "
+                        "start with the right mouse button."
+                    )
             else:
                 delete_toggle_button.description = "Mode: Add Data"
                 delete_toggle_button.button_style = "success"
@@ -2913,7 +2915,8 @@ class TimeDataCollection:
                 DELETE_ANNOTATIONS = False
                 if isinstance(active_label, IntervalLabel):
                     fig.canvas._figure_label = (
-                        "Right-click to set start time, then right-click again to set end time."
+                        "Right-click to set start time, then "
+                        "right-click again to set end time."
                     )
         
         def label_dropdown_change(change):
@@ -2924,10 +2927,14 @@ class TimeDataCollection:
             label = label_dict[label_dropdown.value]
             if isinstance(label, IntervalLabel):
                 if DELETE_ANNOTATIONS:
-                    fig.canvas._figure_label = ("To delete an Interval click close to its start with the right mouse button.")
+                    fig.canvas._figure_label = (
+                        "To delete an Interval click close to its "
+                        "start with the right mouse button."
+                    )
                 else:
                     fig.canvas._figure_label = (
-                        "Right-click to set start time, then right-click again to set end time."
+                        "Right-click to set start time, then "
+                        "right-click again to set end time."
                     )
             _populate_label_add_menu(label)
 
