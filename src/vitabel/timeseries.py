@@ -2935,7 +2935,7 @@ class TimeDataCollection:
                 value_text_input.value = ""
 
                 # empty label -> presets on plottype and vline_text_source
-                if label.data is None and label.text_data is None and len(label) == 0:
+                if len(label) == 0:
                     if label.vline_text_source is not None:
                         if label.vline_text_source == "combined":
                             add_numeric_check.value = True
@@ -2962,8 +2962,8 @@ class TimeDataCollection:
                         elif label.plot_type == "box":
                             add_numeric_check.value = False
                             add_text_check.value = False 
-                # non empty label with data
-                elif label.data is None and label.text_data is None and len(label) > 0:
+                # non empty label with no data
+                elif label.data is None and label.text_data is None:
                     add_numeric_check.value = False
                     add_text_check.value = False  
                 # label with data
