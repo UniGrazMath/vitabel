@@ -1189,7 +1189,10 @@ class Vitals:
             if breath_thresh is not None:
                 raise TypeError("Cannot specify both 'breath_thresh' and legacy 'breaththresh'")
             breath_thresh = kwargs.pop('breaththresh')
-            warnings.warn("'breaththresh' is deprecated, use 'breath_thresh' instead", DeprecationWarning)
+            logger.warning(
+                "The keyword argument breaththresh is deprecated, "
+                "use breath_thresh instead"
+            )
 
         if "capnography" not in self.get_channel_names():
             logger.error(
@@ -1202,7 +1205,7 @@ class Vitals:
             freq = np.timedelta64(1, "s") / np.nanmedian(cotime.diff())
             cotime = np.asarray(cotime)
             co = np.asarray(co)
-            if mode == "filter": # Wolfgang Kern's unpublished method
+            if mode == "filter":  # Wolfgang Kern's unpublished method
                 but = sgn.butter(4, 1 * 2 / freq, btype="lowpass", output="sos")
                 co2 = sgn.sosfiltfilt(but, co)  # Filter forwarsd and backward
                 et_index = sgn.find_peaks(co2, distance=1 * freq, height=etco2_thresh)[
