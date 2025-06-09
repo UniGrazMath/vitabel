@@ -2934,18 +2934,37 @@ class TimeDataCollection:
         def _populate_label_add_menu(label: Label | IntervalLabel | None):
             if label is not None:
                 value_text_input.value = ""
-                if label.data is not None:
-                    add_numeric_check.value = True
-                else:
+
+                # empty label -> presets on plottype and vline_text_source
+                if len(label) == 0:
                     add_numeric_check.value = False
-                if label.text_data is not None:
-                    add_text_check.value = True
-                    strings = label.text_data[~pd.isna(label.text_data)]
-                    if strings.size > 0:
-                        values, counts = np.unique(strings, return_counts=True)
-                        value_text_input.value = values[np.argmax(counts)]
-                else:
+
                     add_text_check.value = False
+                    if label.vline_text_source in ("text_data", "combined"):
+                        add_text_check.value = True
+                        value_text_input.value = label.name
+                    if label.vline_text_source in ("data", "combined"):
+                        add_numeric_check.value = True
+
+                    if label.plot_type in ("scatter", "hline", "combined"):
+                        add_numeric_check.value = True
+                    if label.plot_type in ("vline", "combined"):
+                        add_text_check.value = True
+                # non empty label with no data
+                elif label.data is None and label.text_data is None:
+                    add_numeric_check.value = False
+                    add_text_check.value = False  
+                # label with data
+                else:
+                    add_numeric_check.value = bool(label.data is not None)
+                    
+                    add_text_check.value = bool(label.text_data is not None)
+                    if add_text_check.value:
+                        strings = label.text_data[~pd.isna(label.text_data)]
+                        if strings.size > 0:
+                            values, counts = np.unique(strings, return_counts=True)
+                            value_text_input.value = values[np.argmax(counts)]
+
 
         delete_toggle_button.observe(delete_toggle_handler, names="value")
 
