@@ -1181,7 +1181,7 @@ class Vitals:
 
         breath_threshold
             Threshold below which a minimum is identified as a ventilation (default: 2 mmHg). Used by the 'filter' method.
-        etco2_threshold 
+        etco2_threshold
             Threshold above which a maximum is identified as an etCO₂ value of an expiration (default: 3 mmHg). Used by the 'filter' method.
         """
         # Support legacy parameter name
@@ -1208,7 +1208,7 @@ class Vitals:
             if mode == "filter":  # Wolfgang Kern's unpublished method
                 but = sgn.butter(4, 1 * 2 / freq, btype="lowpass", output="sos")
                 co2 = sgn.sosfiltfilt(but, co)  # Filter forwarsd and backward
-                et_index = sgn.find_peaks(co2, distance=1 * freq, height=etco2_threshold )[
+                et_index = sgn.find_peaks(co2, distance=1 * freq, height=etco2_threshold)[
                     0
                 ]  # find peaks of filtered signal as markers for etco2
                 resp_index = sgn.find_peaks(
