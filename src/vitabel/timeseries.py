@@ -1575,7 +1575,6 @@ class IntervalLabel(Label):
         - ``'combined'``: Entries of the label are plotted as horizontal line when there 
             is associated numeric data, and as rectangle lines otherwise.
 
-
         Defaults to ``'combined'``.
 
     """
@@ -1982,11 +1981,11 @@ class IntervalLabel(Label):
             if "alpha" not in base_plotstyle:
                 base_plotstyle.update({"alpha": 0.2})
             if "color" not in base_plotstyle:
-                base_plotstyle.update({"color" :"blue"})
+                base_plotstyle.update({"color": "blue"})
             if not any(k in base_plotstyle for k in ('facecolor', 'fc')):
                 base_plotstyle.update({"facecolor" : base_plotstyle["color"]})
             
-            if plot_type == 'combined'and data is not None:
+            if plot_type == 'combined' and data is not None:
                 box_time_index = time_index[np.isnan(data)]
             else:
                 box_time_index = time_index
@@ -2016,7 +2015,7 @@ class IntervalLabel(Label):
             time_midpoints = np.mean(hline_time_index, axis=1)
             time_radius = np.diff(hline_time_index, axis=1).reshape(-1) / 2.0
 
-            # TODO: deal with data string entries (or disallow them)
+            # TODO: deal with text_data
             base_plotstyle = self.plotstyle.copy()      
             filtered_base_plotstyle = {
                 k: v for k, v in base_plotstyle.items()
@@ -2918,7 +2917,7 @@ class TimeDataCollection:
                     )
         
         def label_dropdown_change(change):
-            nonlocal DELETE_ANNOTATIONS, partial_interval_data, shifting_reference_time
+            nonlocal partial_interval_data, shifting_reference_time
             partial_interval_data = None             
             shifting_reference_time = None
             fig.canvas._figure_label = "."
@@ -3292,7 +3291,7 @@ class TimeDataCollection:
                                
                                 return
 
-                            elif partial_interval_data is None:
+                            if partial_interval_data is None:
                                 partial_interval_data = (event.xdata, event.ydata)
                                 fig.canvas._figure_label = (
                                     "Creating interval label, select end point "
