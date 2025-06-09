@@ -2936,51 +2936,35 @@ class TimeDataCollection:
 
                 # empty label -> presets on plottype and vline_text_source
                 if len(label) == 0:
-                    if label.vline_text_source is not None:
-                        if label.vline_text_source == "combined":
-                            add_numeric_check.value = True
-                            add_text_check.value = True
-                            value_text_input.value = label.name
-                        elif label.vline_text_source == "text_data": 
-                            add_numeric_check.value = False
-                            add_text_check.value = True
-                            value_text_input.value = label.name
-                        elif label.vline_text_source == "numeric_data":   
-                            add_numeric_check.value = True
-                            add_text_check.value = False
+                    add_numeric_check.value = False
+                    add_text_check.value = False
+                    if label.vline_text_source in ("text_data", "combined"):
+                        add_text_check.value = True
+                        value_text_input.value = label.name
+                    if label.vline_text_source in ("data", "combined"):
+                        add_numeric_check.value = True
 
                     if label.plot_type is not None:
-                        if label.plot_type  == "combined":
+                        add_numeric_check.value = False
+                        add_text_check.value = False
+                        if label.plot_type in ("scatter", "hline", "combined"):
                             add_numeric_check.value = True
+                        if label.plot_type in ("vline", "combined"):
                             add_text_check.value = True
-                        elif label.plot_type in {"scatter", "hline"}:
-                            add_numeric_check.value = True
-                            add_text_check.value = False
-                        elif label.plot_type == "vline":
-                            add_numeric_check.value = False
-                            add_text_check.value = True
-                        elif label.plot_type == "box":
-                            add_numeric_check.value = False
-                            add_text_check.value = False 
                 # non empty label with no data
                 elif label.data is None and label.text_data is None:
                     add_numeric_check.value = False
                     add_text_check.value = False  
                 # label with data
                 else:
-                    if label.data is not None:
-                        add_numeric_check.value = True
-                    else:
-                        add_numeric_check.value = False
+                    add_numeric_check.value = bool(label.data is not None)
                     
-                    if label.text_data is not None:
-                        add_text_check.value = True
-                        strings = label.text_data[np.vectorize(lambda x: isinstance(x, str))(label.text_data)]
+                    add_text_check.value = bool(label.text_data is not None)
+                    if add_text_check.value:
+                        strings = label.text_data[~pd.isna(label.text_data)]
                         if strings.size > 0:
                             values, counts = np.unique(strings, return_counts=True)
                             value_text_input.value = values[np.argmax(counts)]
-                    else:
-                        add_text_check.value = False
 
 
         delete_toggle_button.observe(delete_toggle_handler, names="value")
