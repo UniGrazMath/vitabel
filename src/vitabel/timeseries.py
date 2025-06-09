@@ -2809,8 +2809,9 @@ class TimeDataCollection:
         for label_list in label_lists:
             for label in label_list:
                 if isinstance(label, IntervalLabel):
-                    distinct_labels["interval"].append(label)    
-                else:
+                    if label not in distinct_labels["interval"]:
+                        distinct_labels["interval"].append(label)    
+                elif label not in distinct_labels["single"]:
                     distinct_labels["single"].append(label)
 
         label_master = sorted(distinct_labels["single"], key=lambda l: l.name) + sorted(distinct_labels["interval"], key=lambda l: l.name)
