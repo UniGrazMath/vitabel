@@ -2809,12 +2809,13 @@ class TimeDataCollection:
         for label_list in label_lists:
             for label in label_list:
                 if isinstance(label, IntervalLabel):
-                    distinct_labels["interval"].append(label)    
-                else:
+                    if label not in distinct_labels["interval"]:
+                        distinct_labels["interval"].append(label)    
+                elif label not in distinct_labels["single"]:
                     distinct_labels["single"].append(label)
 
         label_master = sorted(distinct_labels["single"], key=lambda l: l.name) + sorted(distinct_labels["interval"], key=lambda l: l.name)
-        label_dict = {i : label for i, label in enumerate(label_master, start=1)}
+        label_dict =  dict(enumerate(label_master, start=1))
         dropdown_options = [(label.name, i) for i, label in label_dict.items()]
 
         label_dropdown = widgets.Dropdown(
@@ -2937,6 +2938,7 @@ class TimeDataCollection:
                 # empty label -> presets on plottype and vline_text_source
                 if len(label) == 0:
                     add_numeric_check.value = False
+
                     add_text_check.value = False
                     if label.vline_text_source in ("text_data", "combined"):
                         add_text_check.value = True
