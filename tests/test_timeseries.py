@@ -5,6 +5,7 @@ import pytest
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 from vitabel import TimeDataCollection, Channel, Label, IntervalLabel
 from vitabel.utils.helpers import NumpyEncoder
@@ -1038,3 +1039,36 @@ def test_serialization():
 
     assert collection.channel_data_hash() == cloned_collection.channel_data_hash()
     assert collection.label_names == cloned_collection.label_names
+
+def test_to_csv(tmpdir):
+    collection = get_random_collection(
+        num_channels=5, num_labels=10, num_attached_labels=5
+    )
+
+    for idx, channel in enumerate(collection.get_channels()):
+        path = Path(tmpdir) / f"{channel.name}_channel.csv"
+        if idx % 2 == 0:
+            channel.to_csv(str(path))
+        else:
+            channel.to_csv(path)
+
+    for label in collection.get_labels():
+        label.to_csv(tmpdir / f"{label.name}_label.csv")
+
+    # Check the number of files written
+    files_channels = list(Path(tmpdir).glob("*_channel.csv"))
+    files_labels = list(Path(tmpdir).glob("*_label.csv"))
+    num_channels = len(collection.get_channels())
+    num_labels = len(collection.get_labels())
+    assert len(files_channels) == num_channels
+    assert len(files_labels) == num_labels
+
+    for export_chan in Path(tmpdir).glob("*_channel.csv"):
+        df=pd.read_csv(export_chan, index_col=0)
+        chan_name = export_chan.stem.split("_channel")[0]
+        assert df.shape[0] == len(collection.get_channel(chan_name).time_index)  
+
+    for export_label in Path(tmpdir).glob("*_label.csv"):
+        df=pd.read_csv(export_label, index_col=0)
+        lab_name = export_label.stem.split("_label")[0]
+        assert df.shape[0] == len(collection.get_label(lab_name).time_index)
