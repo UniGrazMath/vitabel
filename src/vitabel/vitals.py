@@ -49,8 +49,6 @@ from vitabel.typing import (
 logger: logging.Logger = logging.getLogger("vitabel")
 """Global package logger."""
 
-import warnings # Fore Deprecation Warning
-
 
 class Vitals:
     """Container for vital data and labels, central interface of this package.
