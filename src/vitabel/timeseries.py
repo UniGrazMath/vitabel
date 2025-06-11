@@ -1464,7 +1464,8 @@ class Label(TimeSeriesBase):
                     f"Data in label {self.name} contains NaN values, "
                     "skipping them in the scatter plot"
                 )
-            if base_plotstyle.get("marker", "") in ("", None) and len(data[~nan_mask])== 1: #make single vlaue visible 
+            if "marker" not in base_plotstyle and len(data[~nan_mask]) == 1:
+                # no marker style set, override to make single value visible
                 base_plotstyle.update({"marker": "X"}) 
 
             scatterplot_artist = plot_axes.plot(
