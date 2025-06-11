@@ -367,8 +367,8 @@ def test_channel_to_and_from_dict():
         "time_start": "2020-02-02 12:00:00",
         "offset": 0,
         "is_interval": False,
-        "data": [None, "test"],
-        "text_data": None,
+        "text_data": [None, "test"],
+        "data": None,
         "plotstyle": {
             "marker": "o",
             "ms": 5,
@@ -463,6 +463,36 @@ def test_label_creation():
     assert label.time_start is None
     assert label.offset.total_seconds() == 0
 
+def test_label_creation_with_empty_data():
+    label = Label(
+        name="Anesthesia", 
+        time_index=[], 
+        data=[], 
+        plotstyle={"linestyle": "--", "marker": None, "color": "teal"}
+    )
+    assert label.name == "Anesthesia"
+    assert len(label) == 0 
+    label_dict = label.to_dict()
+    expected_dict = {
+        "name": "Anesthesia",
+        "time_index": np.array([]),   
+        "time_unit": "s",   
+        "time_start": None,
+        "offset": 0,
+        "is_interval": False,
+        "text_data": None,
+        "data": None,
+        "plotstyle": {
+            "linestyle": "--",
+            "marker": None, 
+            "color": "teal",    
+        },  
+        "plot_type": "combined",
+        "vline_text_source": "text_data",
+        "metadata": {},
+    }
+    np.testing.assert_equal(label_dict, expected_dict)
+    
 
 def test_label_creation_errors():
     with pytest.raises(
@@ -546,7 +576,7 @@ def test_label_relative_time_add_remove_data():
     label.add_data(pd.to_timedelta(10, unit="s"), 42)
     label.add_data(pd.to_timedelta(20, unit="s"), 100)
     assert len(label) == 8
-    np.testing.assert_equal(label.data, [42, None, -100, 42, 1.1, 2.2, 3.3, 100])
+    np.testing.assert_equal(label.data, [42, np.nan, -100, 42, 1.1, 2.2, 3.3, 100])
 
     label.remove_data(pd.to_timedelta(17, unit="s"))
     assert 3.3 not in label.data
