@@ -875,8 +875,7 @@ class Label(TimeSeriesBase):
             time_index = np.array([])
 
         if data is not None:
-            data = np.asarray(data, dtype=object)
-            if len(data) > 0 and np.any(np.vectorize(lambda x: isinstance(x, str))(data)):
+            if len(data) > 0 and any(isinstance(value, (str, np.str_)) for value in data):
                 # legacy support for string data: pass data as text_data
                 # and adjust arguments accordingly
                 if text_data is not None:
