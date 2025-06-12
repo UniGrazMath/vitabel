@@ -1445,7 +1445,7 @@ class Vitals:
         t_ref = cc_events_channel.time_start
 
         if cc_events_channel.is_time_relative():
-            comp = comp.astype("timedelta64[s]").astype(float)
+            comp = comp.dt.total_seconds().to_numpy()
         else:
             comp = np.array([pd.Timedelta(t - t_ref).total_seconds() for t in comp]) #TODO: check if times have ti be coerced
 
@@ -1549,7 +1549,7 @@ class Vitals:
         t_ref = ACC_channel.time_start
 
         if ACC_channel.is_time_relative():
-            acctime = acctime.astype("timedelta64[s]").astype(float)
+            acctime = acctime.dt.total_seconds().to_numpy()
         else:
             acctime = np.asarray([(t - t_ref).total_seconds() for t in acctime])
 
@@ -1767,18 +1767,18 @@ class Vitals:
             t_ref = ACC_channel.time_start
             
             if label_cc_periods.is_time_relative():
-                cc_periods = cc_periods.astype("timedelta64[s]").astype(float)
+                cc_periods = cc_periods.dt.total_seconds().to_numpy()
             else:
                 cc_periods = np.array([(t - t_ref).total_seconds() for t in cc_periods])
             
             if ACC_channel.is_time_relative():
-                acctime = acctime.astype("timedelta64[s]").astype(float)
+                acctime = acctime.dt.total_seconds().to_numpy()
             else:
                 acctime = np.array([(t - t_ref).total_seconds() for t in acctime])
 
             # Time conversion for ECG channel
             if ECG_channel.is_time_relative():
-                ecgtime = ecgtime.astype("timedelta64[s]").astype(float)
+                ecgtime = ecgtime.dt.total_seconds().to_numpy()
             else:
                 ecgtime = np.array([(t - t_ref).total_seconds() for t in ecgtime])
             
