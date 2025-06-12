@@ -1432,11 +1432,11 @@ class Vitals:
         elif isinstance(cc_events_channel, str):
             cc_events_channel = self.get_channel(cc_events_channel)
         elif not isinstance(cc_events_channel, Channel):
-            logger.error(
+            raise ValueError(
                 "No valid channel with chest compression specified. Can not identify CC-periods via single CCs."
                 "Please specify a channel or a string with the name of the channel."
             )
-            return
+
 
             
         comp, *_ = cc_events_channel.get_data() # get data
@@ -1537,11 +1537,10 @@ class Vitals:
         if isinstance(accelerometer_channel, str):
             ACC_channel = self.get_channel(accelerometer_channel)
         elif not isinstance(accelerometer_channel, Channel):
-            logger.error(
+            raise ValueError(
                 "No valid accelerometer channel specified. Can not identify CC-periods via acceleration."
                 "Please specify a channel or a string with the name of the channel."
             )
-            return
         else:
             ACC_channel = accelerometer_channel
 
