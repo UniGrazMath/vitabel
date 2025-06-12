@@ -1495,26 +1495,45 @@ class Vitals:
         )
         CC_channel.attach_label(sto_lab)
 
-    def find_CC_periods_acc(self):  # part of register application
-        """Determines start and stop of periods with continuous chest compressions.
+    def find_CC_periods_acc(
+            self, 
+            accelerometer_channel: Channel | str = 'cpr_acceleration',
+        ) -> None:  # part of register application
+        """
+        Automatically detects periods of continuous chest compressions.
 
-        The procedure is implemented as described in `10.1016/j.resuscitation.2021.12.028 <https://doi.org/10.1016/j.resuscitation.2021.12.028>`_ and `10.1016/j.dib.2022.107973 <https://doi.org/10.1016/j.dib.2022.107973>`_.
+        The procedure is implemented as described in `10.1016/j.resuscitation.2021.12.028 <https://doi.org/10.1016/j.resuscitation.2021.12.028>` and `10.1016/j.dib.2022.107973 <https://doi.org/10.1016/j.dib.2022.107973>`_.
+        In essence it uses the root mean square of the accelerometer signal of feedback sensor for cardiopulmonary resuscitation to detect the rise in "power" of the signal linked to the alteration by the accelerations of continous chest compressions. 
 
-        Requires a channel 'cpr_acceleration' in the recording, which is the signal of an accelerometry-based feedback sensor for cardiopulmonary resuscitation.
+        Parameters
+        ----------
+        accelerometer_channel
+            The channel containing the accelerometer signal. If not specified the channel called 'cpr_acceleration' is called. 
 
         Returns
         -------
         None.
-        Adds two labels 'cc_period_start_acc' and 'cc_period_stop_acc' to the recording.
-
+        Attaches an IntervalLabel withe the name 'cc_periods' to the accelerometer channel.
+        Every entry in the label describes a single period of chest compressions.
         """
-        if "cpr_acceleration" not in self.get_channel_names():
+        if isinstance(accelerometer_channel, str):
+            if accelerometer_channel not in self.get_channel_names():
+                logger.error(
+                    "No Acceleration data found. Can not identify CC-periods via acceleration."
+                )
+                return
+            else:
+                ACC_channel = self.get_channel(accelerometer_channel)
+        elif not isinstance(accelerometer_channel, Channel):
             logger.error(
-                "No Acceleration data found. Can not identify CC-periods via acceleration."
+                "No valid accelerometer channel specified. Can not identify CC-periods via acceleration."
+                "Please specify a channel or a string with the name of the channel."
             )
             return
+        else:
+            ACC_channel = accelerometer_channel
+        #NOTE: Do we need a check if the acclerometer channel specified as channel is a channel of self?
 
-        ACC_channel = self.data.get_channel("cpr_acceleration")
         acctime, acc = ACC_channel.get_data()  # get data
         freq = np.timedelta64(1, "s") / np.nanmedian(acctime.diff())
         if ACC_channel.is_time_relative():
@@ -1675,35 +1694,32 @@ class Vitals:
 
         starts = np.sort(starts)
         stops = np.sort(stops)
+        #NOTE: unsure if we have to maintain starts and stops, we might even just go wit append and sort
+        periods = np.empty(starts.size + stops.size, dtype=starts.dtype)
+        periods[0::2] = starts
+        periods[1::2] = stops
 
         metadata = {
             "creator": "automatic",
             "creation_date": pd.Timestamp.now(),
-            "method": "Period_dection",
+            "method": "RMS_period_dection",
         }
         if ACC_channel.is_time_absolute():
             time_start = ACC_channel.time_start
         else:
             time_start = None
 
-        sta_lab = Label(
-            "cc_period_start_acc",
-            starts,
-            None,
-            time_start=time_start,
-            metadata=metadata,
-            plotstyle=DEFAULT_PLOT_STYLE.get("cc_period_start_acc", None),
+        cc_periods = IntervalLabel(
+            name = "cc_periods",
+            time_index = periods, 
+            time_start = time_start, 
+            plot_type = "box",
+            metadata = metadata,
+            plot_type = "box",
+            plotstyle = DEFAULT_PLOT_STYLE.get("cc_periods", None)
         )
-        ACC_channel.attach_label(sta_lab)
-        sto_lab = Label(
-            "cc_period_stop_acc",
-            stops,
-            None,
-            time_start=time_start,
-            metadata=metadata,
-            plotstyle=DEFAULT_PLOT_STYLE.get("cc_period_stop_acc", None),
-        )
-        ACC_channel.attach_label(sto_lab)
+
+        ACC_channel.attach_label(cc_periods)
 
     def predict_circulation(self):
         """Predicts the circulation of a case by using the channels
