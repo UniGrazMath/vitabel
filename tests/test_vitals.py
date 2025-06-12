@@ -748,7 +748,7 @@ def test_etco2_and_ventilation_detection(vitabel_test_data_dir):
         "capnography", t, data, time_start=pd.Timestamp(2024, 1, 1, 0, 0, 0)
     )
     cardio_object.add_channel(co2_channel)
-    cardio_object.compute_etco2_and_ventilations()
+    cardio_object.compute_etco2_and_ventilations(mode="threshold",breath_thresh=4,etco2_thresh=4) #TODO: test might be adapted to new default values in the future
     vent_dict = cardio_object.get_label("ventilations_from_capnography").to_dict()
     etCO2_dict = cardio_object.get_label("etco2_from_capnography").to_dict()
 
@@ -833,15 +833,21 @@ def test_cycle_duration_analysis_absolute(vitabel_test_data_dir):
     cardio_object.channels.append(CC_channel)
     cardio_object.cycle_duration_analysis()
 
-    CC_Start_dict = cardio_object.get_label("cc_period_start").to_dict()
-    CC_Stop_dict = cardio_object.get_label("cc_period_stop").to_dict()
+    cc_periods = cardio_object.get_label("cc_periods").to_dict()["time_index"]
 
     with open(vitabel_test_data_dir / "CC_Start_test_data.json", "r") as fd:
         CC_Start_dict_test = json.load(fd)
     with open(vitabel_test_data_dir / "CC_Stop_test_data.json", "r") as fd:
         CC_Stop_dict_test = json.load(fd)
-    assert (CC_Start_dict["time_index"] == CC_Start_dict_test["time_index"]).all()
-    assert (CC_Stop_dict["time_index"] == CC_Stop_dict_test["time_index"]).all()
+
+    starts = np.array(CC_Start_dict_test["time_index"])
+    stops = np.array(CC_Stop_dict_test["time_index"])
+ 
+    periods_test = np.empty(starts.size + stops.size, dtype=starts.dtype)
+    periods_test[0::2] = starts
+    periods_test[1::2] = stops
+
+    assert (cc_periods == periods_test).all()
 
 
 def test_cycle_duration_analysis_relative():
@@ -859,11 +865,10 @@ def test_cycle_duration_analysis_relative():
 
     cardio_object = Vitals()
     CC_channel = Channel("cc", compressions)
-    cardio_object.channels.append(CC_channel)
+    cardio_object.add_channel(CC_channel)
     cardio_object.cycle_duration_analysis()
     assert cardio_object.labels
-    assert "cc_period_start" in cardio_object.get_label_names()
-    assert "cc_period_stop" in cardio_object.get_label_names()
+    assert "cc_periods" in cardio_object.get_label_names()
 
 
 def test_acceleration_CC_period_dection_absolute(vitabel_test_data_dir):
@@ -877,14 +882,21 @@ def test_acceleration_CC_period_dection_absolute(vitabel_test_data_dir):
     )
     cardio_object.channels.append(acc_channel)
     cardio_object.find_CC_periods_acc()
-    CC_Start_dict = cardio_object.get_label("cc_period_start_acc").to_dict()
-    CC_Stop_dict = cardio_object.get_label("cc_period_stop_acc").to_dict()
+    cc_periods = cardio_object.get_label("cc_periods").to_dict()["time_index"]
+
     with open(vitabel_test_data_dir / "CC_Start_acc_test_data.json", "r") as fd:
         CC_Start_dict_test = json.load(fd)
     with open(vitabel_test_data_dir / "CC_Stop_acc_test_data.json", "r") as fd:
         CC_Stop_dict_test = json.load(fd)
-    assert (CC_Start_dict["time_index"] == CC_Start_dict_test["time_index"]).all()
-    assert (CC_Stop_dict["time_index"] == CC_Stop_dict_test["time_index"]).all()
+
+    starts = np.array(CC_Start_dict_test["time_index"])
+    stops = np.array(CC_Stop_dict_test["time_index"])
+ 
+    periods_test = np.empty(starts.size + stops.size, dtype=starts.dtype)
+    periods_test[0::2] = starts
+    periods_test[1::2] = stops
+        
+    assert (cc_periods == periods_test).all()
 
 
 def test_acceleration_CC_period_dection_relative(vitabel_test_data_dir):
@@ -897,8 +909,7 @@ def test_acceleration_CC_period_dection_relative(vitabel_test_data_dir):
     cardio_object.channels.append(acc_channel)
     cardio_object.find_CC_periods_acc()
     assert cardio_object.labels
-    assert "cc_period_start_acc" in cardio_object.get_label_names()
-    assert "cc_period_start_acc" in cardio_object.get_label_names()
+    assert "cc_periods" in cardio_object.get_label_names()
 
 
 def test_rosc_detection_absolute_time(vitabel_test_data_dir):
@@ -962,24 +973,23 @@ def test_real_evaluation(vitabel_example_data_dir):
     assert "etco2_from_capnography" in cardio_recording.get_label_names()
 
     cardio_recording.cycle_duration_analysis()
-    assert "cc_period_start" in cardio_recording.get_label_names()
-    assert "cc_period_stop" in cardio_recording.get_label_names()
+    assert "cc_periods" in cardio_recording.get_label_names()
     cardio_recording.predict_circulation()
 
 
 def test_analysis_exception_for_missing_data(caplog):
     cardio_recording = Vitals()
     cardio_recording.compute_etco2_and_ventilations()
-    cardio_recording.find_CC_periods_acc()
-    cardio_recording.cycle_duration_analysis()
+    with pytest.raises(ValueError, match="Channel specification was ambiguous"):
+        cardio_recording.find_CC_periods_acc()
+    with pytest.raises(ValueError, match="Could not identify channels with single chest compressions."):
+        cardio_recording.cycle_duration_analysis()
     cardio_recording.predict_circulation()
     assert len(cardio_recording.labels) == 0
     assert all(
         warning in caplog.text
         for warning in [
             "No Capnography Signal found.",
-            "No Acceleration data found.",
-            "Case contains no compression markers.",
             "No Feedback-Sensor-Acceleration or ECG found.",
         ]
     )

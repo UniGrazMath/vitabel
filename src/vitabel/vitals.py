@@ -1156,30 +1156,47 @@ class Vitals:
 
     def compute_etco2_and_ventilations(
         self,
-        mode="threshold",
-        breaththresh: float = 4,
-        etco2_thresh: float = 4,
+        mode: Literal['threshold', 'filter'] = 'filter',
+        breath_threshold: float = 2,
+        etco2_threshold: float = 3,
+        **kwargs,
     ):
-        """Computes the etCO2 values and the timestamps of the ventilations based
-        on CO2 waveform and add it to the labels.
+        """
+        Computes end-tidal CO2 (etCO₂) values and timestamps of ventilations from the capnography waveform,
+        and adds them as labels.
 
-        The capnography signal must be a channel of the file and needs to be named 'capnography'. Currently two different versions are implemented: 'threshold' and 'filter'. The default is 'filter'.
+        The capnography signal must be present as a channel named 'capnography'. Two detection methods are supported:
+
+        - 'filter': An unpublished method by Wolfgang Kern (default).
+        - 'threshold': The method described by Aramendi et al., "Feasibility of the capnogram to monitor ventilation rate during cardiopulmonary resuscitation"
+          (Resuscitation, 2016, DOI: `10.1016/j.resuscitation.2016.08.033 <https://doi.org/10.1016/j.resuscitation.2016.08.033>`_).
 
         Parameters
         ----------
-        mode : str, optional,
-            Which method to use to detect ventilations from CO2 signal. Either 'filter' which is a unpublished method by Wolfgang Kern or 'threshold',
-            which is the method presented by Aramendi et al. "Feasibility of the capnogram to monitor ventilation rate during cardiopulmonary resuscitation" `10.1016/j.resuscitation.2016.08.033 <https://doi.org/10.1016/j.resuscitation.2016.08.033>`_
-        breaththresh : float, optional
-            Threshold value below which a minimum is identified as ventilation/respiration . The default is 2 (mmHg).
-        etco2_thresh : float, optional
-            Threshold value above which a maximum is identified as etCo2 value of an expiration. The default is 4 (mmHg).
+        mode
+            Method to use for detecting ventilations from the CO₂ signal.
 
+            - 'filter': An unpublished method by Kern (default)
+            - 'threshold': The method described by Aramendi et al.
 
+        breath_threshold
+            Threshold below which a minimum is identified as a ventilation (default: 2 mmHg). Used by the 'filter' method.
+        etco2_threshold
+            Threshold above which a maximum is identified as an etCO₂ value of an expiration (default: 3 mmHg). Used by the 'filter' method.
         """
+        # Support legacy parameter name
+        if 'breaththresh' in kwargs:
+            if breath_threshold is not None:
+                raise TypeError("Cannot specify both 'breath_threshold' and legacy 'breaththresh'")
+            breath_threshold = kwargs.pop('breaththresh')
+            logger.warning(
+                "The keyword argument breaththresh is deprecated, "
+                "use breath_threshold instead"
+            )
+
         if "capnography" not in self.get_channel_names():
             logger.error(
-                "Error! No Capnography Signal found. Cannot compute etCO2 and detect ventilations"
+                "Error! No Capnography Signal found. Cannot compute etCO₂ and detect ventilations"
             )
         else:
             co2_channel = self.data.get_channel("capnography")
@@ -1188,14 +1205,14 @@ class Vitals:
             freq = np.timedelta64(1, "s") / np.nanmedian(cotime.diff())
             cotime = np.asarray(cotime)
             co = np.asarray(co)
-            if mode == "filter":
+            if mode == "filter":  # Wolfgang Kern's unpublished method
                 but = sgn.butter(4, 1 * 2 / freq, btype="lowpass", output="sos")
                 co2 = sgn.sosfiltfilt(but, co)  # Filter forwarsd and backward
-                et_index = sgn.find_peaks(co2, distance=1 * freq, height=etco2_thresh)[
+                et_index = sgn.find_peaks(co2, distance=1 * freq, height=etco2_threshold)[
                     0
                 ]  # find peaks of filtered signal as markers for etco2
                 resp_index = sgn.find_peaks(
-                    -co2, distance=1 * freq, height=-breaththresh
+                    -co2, distance=1 * freq, height=-breath_threshold
                 )[  # find dips of filtered signal as markers for ventilations
                     0
                 ]
@@ -1229,7 +1246,7 @@ class Vitals:
                         etco2time = np.delete(etco2time, k + 1)
                     k += 1
 
-                # id there is no maximum
+                # if there is no maximum
                 elif netco2 == 0:
                     pass
                 # if there is a single maximum
@@ -1282,7 +1299,7 @@ class Vitals:
                 for i in del_resp[::-1]:
                     resptime = np.delete(resptime, i)
 
-            elif mode == "threshold":
+            elif mode == "threshold":   # Aramendi et al., 2016
                 but = sgn.butter(4, 10 * 2 / freq, btype="lowpass", output="sos")
                 co2 = sgn.sosfiltfilt(but, co)  # Filter forwarsd and backward
                 d = freq * (co2[1:] - co2[:-1])
@@ -1377,39 +1394,59 @@ class Vitals:
                     f"mode {mode} not known. Please use either 'filter' or 'threshold' as argument"
                 )
 
-    def cycle_duration_analysis(self):
-        """Determine start and end of periods of continuous chest compressions
-        based on single chest compression markers.
+    def cycle_duration_analysis(
+            self,
+            cc_events_channel: Channel | str | None = None
+            ) -> None:
+        """
+        Determines periods of continuous chest compressions
+        based on single chest compression events.
 
-        Adds two labels ``cc_period_start`` and ``cc_period_stop`` to the data set.
+        Parameters
+        ----------
+        cc_events_channel
+            The channel containing the data of single chest compression events, such that every timepoint in the timeindex represents a chest compression. 
+            Defaults to 'cc' or 'cc_depth' depending on the availability.
+
+        Returns
+        -------
+        None
+        
+        Attaches an IntervalLabel withe the name ``cc_periods`` to the channel of single chest compressions.
 
         .. SEEALSO::
-
             The method is described in `10.1016/j.resuscitation.2021.12.028 <https://doi.org/10.1016/j.resuscitation.2021.12.028>`_ or in the
             Thesis 'Towards a data-driven cardiac arrest treatment' by Wolfgang Kern in more detail.
             See https://unipub.uni-graz.at/obvugrhs/content/titleinfo/10138095 for more information.
         """
-        if (
-            "cc" not in self.data.channel_names
-            and "cc_depth" not in self.data.channel_names
-        ):
-            logger.error(
-                "Case contains no compression markers. Cycle duration analysis can not be computed."
+        if cc_events_channel is None:
+            available_channels = set(self.get_channel_names()) & {"cc", "cc_depth"}
+            if available_channels:
+                cc_events_channel = self.get_channel(next(iter(available_channels)))
+            else:            
+                raise ValueError(
+                    "Could not identify channels with single chest compressions. "
+                    "Please specify a channel or a string with the name of the channel."
+                )
+        elif isinstance(cc_events_channel, str):
+            cc_events_channel = self.get_channel(cc_events_channel)
+        elif not isinstance(cc_events_channel, Channel):
+            raise ValueError(
+                "No valid channel with chest compression specified. Can not identify CC-periods via single CCs."
+                "Please specify a channel or a string with the name of the channel."
             )
-            return
 
-        if "cc" in self.data.channel_names:
-            CC_channel = self.data.get_channel("cc")
+
+            
+        comp, *_ = cc_events_channel.get_data() # get data
+
+        t_ref = cc_events_channel.time_start
+
+        if cc_events_channel.is_time_relative():
+            comp = comp.total_seconds().to_numpy()
         else:
-            CC_channel = self.data.get_channel("cc_depth")
-        comp, data = CC_channel.get_data()  # get data
-        comp = np.sort(comp)
-        if CC_channel.is_time_relative():
-            comp = np.asarray([pd.Timedelta(c).total_seconds() for c in comp])
-        else:
-            comp = np.asarray(
-                [pd.Timedelta(c - CC_channel.time_start).total_seconds() for c in comp]
-            )
+            comp = np.sort(comp)
+            comp = np.array([pd.Timedelta(t - t_ref).total_seconds() for t in comp]) #TODO: check if times have ti be coerced
 
         compression_counter = 1  # number of compressions in cc period
         last_c = comp[0]  # initilaize last compression
@@ -1451,64 +1488,70 @@ class Vitals:
         metadata = {
             "creator": "automatic",
             "creation_date": pd.Timestamp.now(),
-            "method": "Cycle_duration_analysis",
+            "method": "cycle_duration_analysis",
         }
 
-        if CC_channel.is_time_absolute():
-            time_start = CC_channel.time_start
-        else:
-            time_start = None
+        periods = np.empty(sta.size + sto.size, dtype=sta.dtype)
+        periods[0::2] = sta
+        periods[1::2] = sto
 
-        sta_lab = Label(
-            "cc_period_start",
-            time_index=sta,
-            data=None,
-            time_start=time_start,
-            metadata=metadata,
-            plotstyle=DEFAULT_PLOT_STYLE.get("cc_period_start", None),
+        cc_periods = IntervalLabel(
+            name = "cc_periods",
+            time_index = periods, 
+            time_start = t_ref, 
+            metadata = metadata,
+            plot_type = "box",
+            plotstyle = DEFAULT_PLOT_STYLE.get("cc_periods", None)
         )
-        CC_channel.attach_label(sta_lab)
-        sto_lab = Label(
-            "cc_period_stop",
-            time_index=sto,
-            data=None,
-            time_start=time_start,
-            metadata=metadata,
-            plotstyle=DEFAULT_PLOT_STYLE.get("cc_period_stop", None),
-        )
-        CC_channel.attach_label(sto_lab)
 
-    def find_CC_periods_acc(self):  # part of register application
-        """Determines start and stop of periods with continuous chest compressions.
+        cc_events_channel.attach_label(cc_periods)
 
-        The procedure is implemented as described in `10.1016/j.resuscitation.2021.12.028 <https://doi.org/10.1016/j.resuscitation.2021.12.028>`_ and `10.1016/j.dib.2022.107973 <https://doi.org/10.1016/j.dib.2022.107973>`_.
+    def find_CC_periods_acc(
+            self, 
+            accelerometer_channel: Channel | str = 'cpr_acceleration',
+        ) -> None:  # part of register application
+        """
+        Automatically detects periods of continuous chest compressions.
 
-        Requires a channel 'cpr_acceleration' in the recording, which is the signal of an accelerometry-based feedback sensor for cardiopulmonary resuscitation.
+        The procedure is implemented as described in `10.1016/j.resuscitation.2021.12.028 <https://doi.org/10.1016/j.resuscitation.2021.12.028>` and `10.1016/j.dib.2022.107973 <https://doi.org/10.1016/j.dib.2022.107973>`_.
+        In essence it uses the root mean square of the accelerometer signal of feedback sensor for cardiopulmonary resuscitation to detect the rise in "power" of the signal linked to the alteration by the accelerations of continous chest compressions. 
+
+        Parameters
+        ----------
+        accelerometer_channel
+            The channel containing the accelerometer signal. Defaults to 'cpr_acceleration'. 
 
         Returns
         -------
         None.
-        Adds two labels 'cc_period_start_acc' and 'cc_period_stop_acc' to the recording.
 
+        Attaches an IntervalLabel withe the name ``cc_periods`` to the accelerometer channel.
+        Every entry in the label describes a single period of chest compressions.
+
+        .. SEEALSO::
+            The method is described in `10.1016/j.resuscitation.2021.12.028 <https://doi.org/10.1016/j.resuscitation.2021.12.028>`_ or in the
+            Thesis 'Towards a data-driven cardiac arrest treatment' by Wolfgang Kern in more detail.
+            See https://unipub.uni-graz.at/obvugrhs/content/titleinfo/10138095 for more information.
         """
-        if "cpr_acceleration" not in self.get_channel_names():
-            logger.error(
-                "No Acceleration data found. Can not identify CC-periods via acceleration."
+        if isinstance(accelerometer_channel, str):
+            ACC_channel = self.get_channel(accelerometer_channel)
+        elif not isinstance(accelerometer_channel, Channel):
+            raise ValueError(
+                "No valid accelerometer channel specified. Can not identify CC-periods via acceleration."
+                "Please specify a channel or a string with the name of the channel."
             )
-            return
+        else:
+            ACC_channel = accelerometer_channel
 
-        ACC_channel = self.data.get_channel("cpr_acceleration")
         acctime, acc = ACC_channel.get_data()  # get data
         freq = np.timedelta64(1, "s") / np.nanmedian(acctime.diff())
+        t_ref = ACC_channel.time_start
+
         if ACC_channel.is_time_relative():
-            acctime = np.asarray([pd.Timedelta(c).total_seconds() for c in acctime])
+            acctime = acctime.dt.total_seconds().to_numpy()
         else:
-            acctime = np.asarray(
-                [
-                    pd.Timedelta(c - ACC_channel.time_start).total_seconds()
-                    for c in acctime
-                ]
-            )
+            acctime = np.asarray([(t - t_ref).total_seconds() for t in acctime])
+
         acctime = np.asarray(acctime)
         acc = np.asarray(acc - np.mean(acc))
         gap_start, gap_stop, gap_start_indices = determine_gaps_in_recording(
@@ -1658,52 +1701,42 @@ class Vitals:
 
         starts = np.sort(starts)
         stops = np.sort(stops)
+        #NOTE: unsure if we have to maintain starts and stops, we might even just go wit append and sort
+        periods = np.empty(starts.size + stops.size, dtype=starts.dtype)
+        periods[0::2] = starts
+        periods[1::2] = stops
 
         metadata = {
             "creator": "automatic",
             "creation_date": pd.Timestamp.now(),
-            "method": "Period_dection",
+            "method": "RMS_period_dection",
         }
-        if ACC_channel.is_time_absolute():
-            time_start = ACC_channel.time_start
-        else:
-            time_start = None
 
-        sta_lab = Label(
-            "cc_period_start_acc",
-            starts,
-            None,
-            time_start=time_start,
-            metadata=metadata,
-            plotstyle=DEFAULT_PLOT_STYLE.get("cc_period_start_acc", None),
+        cc_periods = IntervalLabel(
+            name = "cc_periods",
+            time_index = periods, 
+            time_start = t_ref, 
+            metadata = metadata,
+            plot_type = "box",
+            plotstyle = DEFAULT_PLOT_STYLE.get("cc_periods", None)
         )
-        ACC_channel.attach_label(sta_lab)
-        sto_lab = Label(
-            "cc_period_stop_acc",
-            stops,
-            None,
-            time_start=time_start,
-            metadata=metadata,
-            plotstyle=DEFAULT_PLOT_STYLE.get("cc_period_stop_acc", None),
-        )
-        ACC_channel.attach_label(sto_lab)
 
-    def predict_circulation(self):
+        ACC_channel.attach_label(cc_periods)
+
+    def predict_circulation(self) -> None:
         """Predicts the circulation of a case by using the channels
         'cpr_acceleration' channel and the 'ecg_pads' channel.
 
         The procedure that is used has been published by Kern et al. in `10.1109/TBME.2023.3242717 <https://doi.org/10.1109/TBME.2023.3242717>`_.
-
-        Adds three labels 'rosc_prediction', 'rosc_probability', and
-        'rosc_decision_function'. Here 'rosc_decision_function' is the output
-        of the kernelized SVM used in the paper, 'rosc_decision_function' is a
-        pseudo-probability computed from the decision function, and
-        'rosc_prediction' is the binary prediction.
+        Here 'rosc_decision_function' is the output of the kernelized SVM used in and trained for the paper.
 
         Returns
         -------
         None.
-
+        Adds three labels 'rosc_prediction', 'rosc_probability', and
+        'rosc_decision_function'. 'rosc_decision_function' is a
+        pseudo-probability computed from the decision function, and
+        'rosc_prediction' is the binary prediction.
         """
 
         if (
@@ -1723,55 +1756,33 @@ class Vitals:
             ECG_channel = self.data.get_channel("ecg_pads")
             ecgtime, ecg = ECG_channel.get_data()  # get data
 
-            if ("cc_period_start_acc" not in self.get_label_names()) and (
-                "cc_period_stop_acc" not in self.get_label_names()
-            ):
+            if "cc_periods" not in self.get_label_names():
                 self.find_CC_periods_acc()
+ 
+            label_cc_periods = self.data.get_label("cc_periods")
+            cc_periods, *_ = label_cc_periods.get_data()
+            cc_periods =  np.asarray([t for pair in cc_periods for t in pair])
 
-            CC_period_start_label = self.data.get_label("cc_period_start_acc")
-            CC_starts, data,_ = CC_period_start_label.get_data()  # get data
-
-            CC_period_stop_label = self.data.get_label("cc_period_stop_acc")
-            CC_stops, data,_ = CC_period_stop_label.get_data()  # get data
-
+            t_ref = ACC_channel.time_start
+            
+            if label_cc_periods.is_time_relative():
+                cc_periods = pd.Series(pd.to_timedelta(cc_periods)).dt.total_seconds().to_numpy()
+            else:
+                cc_periods = np.array([(t - t_ref).total_seconds() for t in cc_periods])
+            
             if ACC_channel.is_time_relative():
-                acctime = np.asarray([pd.Timedelta(c).total_seconds() for c in acctime])
-                CC_starts = np.asarray(
-                    [pd.Timedelta(c).total_seconds() for c in CC_starts]
-                )
-                CC_stops = np.asarray(
-                    [pd.Timedelta(c).total_seconds() for c in CC_stops]
-                )
-
+                acctime = acctime.dt.total_seconds().to_numpy()
             else:
-                acctime = np.asarray(
-                    [
-                        pd.Timedelta(c - ACC_channel.time_start).total_seconds()
-                        for c in acctime
-                    ]
-                )
-                CC_starts = np.asarray(
-                    [
-                        pd.Timedelta(c - ACC_channel.time_start).total_seconds()
-                        for c in CC_starts
-                    ]
-                )
-                CC_stops = np.asarray(
-                    [
-                        pd.Timedelta(c - ACC_channel.time_start).total_seconds()
-                        for c in CC_stops
-                    ]
-                )
+                acctime = np.array([(t - t_ref).total_seconds() for t in acctime])
 
+            # Time conversion for ECG channel
             if ECG_channel.is_time_relative():
-                ecgtime = np.asarray([pd.Timedelta(c).total_seconds() for c in ecgtime])
+                ecgtime = ecgtime.dt.total_seconds().to_numpy()
             else:
-                ecgtime = np.asarray(
-                    [
-                        pd.Timedelta(c - ACC_channel.time_start).total_seconds()
-                        for c in ecgtime
-                    ]
-                )
+                ecgtime = np.array([(t - t_ref).total_seconds() for t in ecgtime])
+            
+            CC_starts = cc_periods[0::2]
+            CC_stops = cc_periods[1::2]
 
             snippets = construct_snippets(
                 acctime, acc, ecgtime, ecg, CC_starts, CC_stops
@@ -1783,16 +1794,13 @@ class Vitals:
                 "creation_date": pd.Timestamp.now(),
                 "method": "Period_dection",
             }
-            if ACC_channel.is_time_absolute():
-                time_start = ACC_channel.time_start
-            else:
-                time_start = None
+
 
             pred_lab = Label(
                 "rosc_prediction",
                 case_pred["Starttime"],
                 case_pred["Predicted"],
-                time_start=time_start,
+                time_start=t_ref,
                 metadata=metadata,
                 plotstyle=DEFAULT_PLOT_STYLE.get("rosc_prediction", None),
             )
@@ -1800,7 +1808,7 @@ class Vitals:
                 "rosc_probability",
                 case_pred["Starttime"],
                 case_pred["Probability"],
-                time_start=time_start,
+                time_start=t_ref,
                 metadata=metadata,
                 plotstyle=DEFAULT_PLOT_STYLE.get("rosc_probability", None),
             )
@@ -1808,7 +1816,7 @@ class Vitals:
                 "rosc_decision_function",
                 case_pred["Starttime"],
                 case_pred["DecisionFunction"],
-                time_start=time_start,
+                time_start=t_ref,
                 metadata=metadata,
                 plotstyle=DEFAULT_PLOT_STYLE.get("rosc_decision_function", None),
             )

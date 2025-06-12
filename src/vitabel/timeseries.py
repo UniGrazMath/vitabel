@@ -18,6 +18,7 @@ import typing
 import numpy as np
 import numpy.typing as npt
 import hashlib
+from pathlib import Path
 
 from vitabel.utils.helpers import match_object, NumpyEncoder, decompress_array
 from vitabel.typing import (
@@ -598,28 +599,32 @@ class Channel(TimeSeriesBase):
 
     def to_csv(
         self,
+        filename: str | Path | None = None,
         start: Timestamp | Timedelta | None = None,
         stop: Timestamp | Timedelta | None = None,
-        filename: str | None = None,
     ) -> None:
         """Export the channel data to a CSV file.
 
         Parameters
         ----------
+        filename
+            The name of the file to export the data to. If not
+            specified, the data is exported to a file with the
+            name of the channel.
         start
             The start time for the data. If not specified, the
             data starts from the beginning.
         stop
             The stop time for the data. If not specified, the
             data ends at the last time point.
-        filename
-            The name of the file to export the data to. If not
-            specified, the data is exported to a file with the
-            name of the channel.
         """
+       
         time_index, data = self.get_data(start=start, stop=stop)
         if filename is None:
             filename = f"{self.name}.csv"
+        
+        if isinstance(filename, str):
+            filename = Path(filename)
 
         if data is None:
             df = pd.DataFrame({"time": time_index})
@@ -875,8 +880,7 @@ class Label(TimeSeriesBase):
             time_index = np.array([])
 
         if data is not None:
-            data = np.asarray(data, dtype=object)
-            if len(data) > 0 and np.any(np.vectorize(lambda x: isinstance(x, str))(data)):
+            if len(data) > 0 and any(isinstance(value, (str, np.str_)) for value in data):
                 # legacy support for string data: pass data as text_data
                 # and adjust arguments accordingly
                 if text_data is not None:
@@ -1287,28 +1291,31 @@ class Label(TimeSeriesBase):
 
     def to_csv(
         self,
+        filename: str | Path | None = None,
         start: Timestamp | Timedelta | None = None,
         stop: Timestamp | Timedelta | None = None,
-        filename: str | None = None,
     ) -> None:
         """Export the label data to a CSV file.
 
         Parameters
         ----------
+        filename
+            The name of the file to export the data to. If not
+            specified, the data is exported to a file with the
+            name of the channel.
         start
             The start time for the data. If not specified, the
             data starts from the beginning.
         stop
             The stop time for the data. If not specified, the
             data ends at the last time point.
-        filename
-            The name of the file to export the data to. If not
-            specified, the data is exported to a file with the
-            name of the channel.
         """
         time_index, data, text_data = self.get_data(start=start, stop=stop)
         if filename is None:
             filename = f"{self.name}.csv"
+
+        if isinstance(filename, str):
+            filename = Path(filename)
 
         df_dict = {"time": time_index}
         if data is not None:
@@ -1464,7 +1471,8 @@ class Label(TimeSeriesBase):
                     f"Data in label {self.name} contains NaN values, "
                     "skipping them in the scatter plot"
                 )
-            if base_plotstyle.get("marker", "") in ("", None) and len(data[~nan_mask])== 1: #make single vlaue visible 
+            if "marker" not in base_plotstyle and len(data[~nan_mask]) == 1:
+                # no marker style set, override to make single value visible
                 base_plotstyle.update({"marker": "X"}) 
 
             scatterplot_artist = plot_axes.plot(
@@ -1703,9 +1711,9 @@ class IntervalLabel(Label):
 
     def to_csv(
         self,
+        filename: str | Path | None = None,
         start: Timestamp | Timedelta | None = None,
         stop: Timestamp | Timedelta | None = None,
-        filename: str | None = None,
     ) -> None:
         """Export the interval label data to a CSV file.
 
@@ -1714,22 +1722,26 @@ class IntervalLabel(Label):
 
         Parameters
         ----------
+        filename
+            The name of the file to export the data to. If not
+            specified, the data is exported to a file with the
+            name of the channel.
         start
             The start time for the data. If not specified, the
             data starts from the beginning.
         stop
             The stop time for the data. If not specified, the
             data ends at the last time point.
-        filename
-            The name of the file to export the data to. If not
-            specified, the data is exported to a file with the
-            name of the channel.
+
         """
         time_index, data, text_data = self.get_data(start=start, stop=stop)
         time_start, time_stop = time_index.transpose()
 
         if filename is None:
             filename = f"{self.name}.csv"
+
+        if isinstance(filename, str):
+            filename = Path(filename)
 
         csv_data_dict = {
             "time_start": time_start,
