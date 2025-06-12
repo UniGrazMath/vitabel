@@ -1424,11 +1424,10 @@ class Vitals:
             if available_channels:
                 cc_events_channel = self.get_channel(next(iter(available_channels)))
             else:            
-                logger.error(
-                    "Could not identify channels with single chest compressions."
+                raise ValueError(
+                    "Could not identify channels with single chest compressions. "
                     "Please specify a channel or a string with the name of the channel."
                 )
-                return
         elif isinstance(cc_events_channel, str):
             cc_events_channel = self.get_channel(cc_events_channel)
         elif not isinstance(cc_events_channel, Channel):
