@@ -1463,6 +1463,7 @@ class Label(TimeSeriesBase):
         base_plotstyle = self.plotstyle.copy()
         if plotstyle is not None:
             base_plotstyle.update(plotstyle)
+        base_plotstyle.setdefault("label", self.name)
 
         if plot_type in {'scatter', 'combined'}:
             nan_mask = np.isnan(data)
@@ -1471,17 +1472,17 @@ class Label(TimeSeriesBase):
                     f"Data in label {self.name} contains NaN values, "
                     "skipping them in the scatter plot"
                 )
-            if "marker" not in base_plotstyle and len(data[~nan_mask]) == 1:
-                # no marker style set, override to make single value visible
-                base_plotstyle.update({"marker": "X"}) 
 
-            scatterplot_artist = plot_axes.plot(
-                time_index[~nan_mask],
-                data[~nan_mask],
-                **base_plotstyle
-            )
             if data[~nan_mask].any(): 
-                scatterplot_artist[0].set_label(self.name) 
+                if "marker" not in base_plotstyle and len(data[~nan_mask]) == 1:
+                    # no marker style set, override to make single value visible
+                    base_plotstyle.update({"marker": "X"}) 
+
+                scatterplot_artist = plot_axes.plot(
+                    time_index[~nan_mask],
+                    data[~nan_mask],
+                    **base_plotstyle
+            )
         
         if plot_type in {'vline', 'combined'}:
             if plot_type == 'combined':
@@ -2006,8 +2007,8 @@ class IntervalLabel(Label):
 
             # Filter for props in kwargs which can be handled by axvspan / pathces.Rectangle
             rectangle_props = Rectangle((0, 0), 1, 1).properties().keys()
-            filtered_base_plotstyle = {k: v for k, v in base_plotstyle.items() if k in rectangle_props}
             filtered_base_plotstyle.setdefault("label", self.name)
+            filtered_base_plotstyle = {k: v for k, v in base_plotstyle.items() if k in rectangle_props}
 
             for i, (xmin, xmax) in enumerate(box_time_index):
                 artist = plot_axes.axvspan(xmin, xmax, **filtered_base_plotstyle)     
