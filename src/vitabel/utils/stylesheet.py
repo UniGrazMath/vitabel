@@ -223,14 +223,9 @@ DEFAULT_PLOT_STYLE = {
         "color": "firebrick",
         "alpha": 0.6,
     },
-    "cc_period_start_acc": {
-        "label": "CC Period Start (Accelerometry)",
-        "color": "forestgreen",        
-        "alpha": 0.6,
-    },
-    "cc_period_stop_acc": {
-        "label": "CC Period Stop (Accelerometry)",
-        "color": "firebrick",
-        "alpha": 0.6,
-    },
+    "cc_periods" : {
+        "label" : "CC Periods",
+        "color" : "lightsteelblue",
+        "alpha" : 0.6
+    }
 }
