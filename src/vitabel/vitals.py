@@ -1419,7 +1419,17 @@ class Vitals:
             Thesis 'Towards a data-driven cardiac arrest treatment' by Wolfgang Kern in more detail.
             See https://unipub.uni-graz.at/obvugrhs/content/titleinfo/10138095 for more information.
         """
-        if isinstance(cc_events_channel, str):
+        if cc_events_channel is None:
+            available_channels = set(self.get_channel_names()) & {"cc", "cc_depth"}
+            if available_channels:
+                cc_events_channel = self.get_channel(next(iter(available_channels)))
+            else:            
+                logger.error(
+                    "Could not identify channels with single chest compressions."
+                    "Please specify a channel or a string with the name of the channel."
+                )
+                return
+        elif isinstance(cc_events_channel, str):
             if cc_events_channel not in self.get_channel_names():
                 logger.error(
                     f"The specified channel '{cc_events_channel}' could not be identified."
@@ -1434,16 +1444,7 @@ class Vitals:
                 "Please specify a channel or a string with the name of the channel."
             )
             return
-        elif cc_events_channel is None:
-            available_channels = set(self.get_channel_names()) & {"cc", "cc_depth"}
-            if available_channels:
-                cc_events_channel = self.get_channel(next(iter(available_channels)))
-            else:            
-                logger.error(
-                    "Could not identify channels with single chest compressions."
-                    "Please specify a channel or a string with the name of the channel."
-                )
-                return
+
             
         comp, *_ = cc_events_channel.get_data() # get data
         comp = np.sort(comp)
@@ -1453,7 +1454,7 @@ class Vitals:
         if cc_events_channel.is_time_relative():
             comp = comp.astype("timedelta64[s]").astype(float)
         else:
-            comp = np.array([(t - t_ref).total_seconds() for t in comp]) #TODO: check if times have ti be coerced
+            comp = np.array([pd.Timedelta(t - t_ref).total_seconds() for t in comp]) #TODO: check if times have ti be coerced
 
         compression_counter = 1  # number of compressions in cc period
         last_c = comp[0]  # initilaize last compression

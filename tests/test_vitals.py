@@ -833,15 +833,21 @@ def test_cycle_duration_analysis_absolute(vitabel_test_data_dir):
     cardio_object.channels.append(CC_channel)
     cardio_object.cycle_duration_analysis()
 
-    CC_Start_dict = cardio_object.get_label("cc_period_start").to_dict()
-    CC_Stop_dict = cardio_object.get_label("cc_period_stop").to_dict()
+    cc_periods = cardio_object.get_label("cc_periods").to_dict()["time_index"]
 
     with open(vitabel_test_data_dir / "CC_Start_test_data.json", "r") as fd:
         CC_Start_dict_test = json.load(fd)
     with open(vitabel_test_data_dir / "CC_Stop_test_data.json", "r") as fd:
         CC_Stop_dict_test = json.load(fd)
-    assert (CC_Start_dict["time_index"] == CC_Start_dict_test["time_index"]).all()
-    assert (CC_Stop_dict["time_index"] == CC_Stop_dict_test["time_index"]).all()
+
+    starts = np.array(CC_Start_dict_test["time_index"])
+    stops = np.array(CC_Stop_dict_test["time_index"])
+ 
+    periods_test = np.empty(starts.size + stops.size, dtype=starts.dtype)
+    periods_test[0::2] = starts
+    periods_test[1::2] = stops
+
+    assert (cc_periods == periods_test).all()
 
 
 def test_cycle_duration_analysis_relative():
