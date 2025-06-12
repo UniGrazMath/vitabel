@@ -1396,7 +1396,7 @@ class Vitals:
 
     def cycle_duration_analysis(
             self,
-            cc_events_channel: Channel | str | None
+            cc_events_channel: Channel | str | None = None
             ) -> None:
         """
         Determines periods of continuous chest compressions
