@@ -2003,14 +2003,15 @@ class IntervalLabel(Label):
                 box_time_index = time_index[np.isnan(data)]
             else:
                 box_time_index = time_index
-           
+
+            # Filter for props in kwargs which can be handled by axvspan / pathces.Rectangle
+            rectangle_props = Rectangle((0, 0), 1, 1).properties().keys()
+            filtered_base_plotstyle = {k: v for k, v in base_plotstyle.items() if k in rectangle_props}
+
             for i, (xmin, xmax) in enumerate(box_time_index):
-                # Filter for props in kwargs which can be handled by axvspan / pathces.Rectangle
-                rectangle_props = Rectangle((0, 0), 1, 1).properties().keys()
-                filtered_base_plotstyle = {k: v for k, v in base_plotstyle.items() if k in rectangle_props}
-                artist = plot_axes.axvspan(xmin, xmax, **filtered_base_plotstyle)
-                if i == 0:  # add a legend only for the first rectangle
-                    artist.set_label(self.name)
+                artist = plot_axes.axvspan(xmin, xmax, **filtered_base_plotstyle)     
+                if i == 0: 
+                    filtered_base_plotstyle.pop("label", None) 
 
         if plot_type == "hline" and len(self) > 0 and data is None:
             logger.warning(
