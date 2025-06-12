@@ -1508,12 +1508,13 @@ class Label(TimeSeriesBase):
             
             if plotstyle is None:  # TODO: think about direction
                 base_plotstyle.update({"linestyle": "solid", "marker": None})
+            base_plotstyle.setdefault("label", self.name)
             
             ymin, ymax = plot_axes.get_ylim()
             for i, (t, text) in enumerate(zip(time_index, vline_text)):
                 vline_artist = plot_axes.axvline(t, **base_plotstyle)
-                if i == 0: # add a legend only for the first line
-                    vline_artist.set_label(self.name)
+                if i == 0: 
+                    base_plotstyle.pop("label", None) 
                 if text:
                     line_color = vline_artist.get_color()
                     vline_text_artist = plot_axes.text(
