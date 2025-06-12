@@ -1544,7 +1544,6 @@ class Vitals:
             return
         else:
             ACC_channel = accelerometer_channel
-        #NOTE: Do we need a check if the acclerometer channel specified as channel is a channel of self?
 
         acctime, acc = ACC_channel.get_data()  # get data
         freq = np.timedelta64(1, "s") / np.nanmedian(acctime.diff())
