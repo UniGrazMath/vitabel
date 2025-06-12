@@ -193,6 +193,7 @@ DEFAULT_PLOT_STYLE = {
         "linestyle": "",
         "marker": "s",
         "ms": 2,
+        "label": "etCO₂"
     },
     "ventilations_from_capnography": {
         "label": "Ventilation (Capnography)",
