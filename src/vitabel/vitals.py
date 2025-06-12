@@ -1713,7 +1713,6 @@ class Vitals:
             name = "cc_periods",
             time_index = periods, 
             time_start = time_start, 
-            plot_type = "box",
             metadata = metadata,
             plot_type = "box",
             plotstyle = DEFAULT_PLOT_STYLE.get("cc_periods", None)
@@ -1721,22 +1720,20 @@ class Vitals:
 
         ACC_channel.attach_label(cc_periods)
 
-    def predict_circulation(self):
+    def predict_circulation(self) -> None:
         """Predicts the circulation of a case by using the channels
         'cpr_acceleration' channel and the 'ecg_pads' channel.
 
         The procedure that is used has been published by Kern et al. in `10.1109/TBME.2023.3242717 <https://doi.org/10.1109/TBME.2023.3242717>`_.
-
-        Adds three labels 'rosc_prediction', 'rosc_probability', and
-        'rosc_decision_function'. Here 'rosc_decision_function' is the output
-        of the kernelized SVM used in the paper, 'rosc_decision_function' is a
-        pseudo-probability computed from the decision function, and
-        'rosc_prediction' is the binary prediction.
+        Here 'rosc_decision_function' is the output of the kernelized SVM used in and trained for the paper.
 
         Returns
         -------
         None.
-
+        Adds three labels 'rosc_prediction', 'rosc_probability', and
+        'rosc_decision_function'. 'rosc_decision_function' is a
+        pseudo-probability computed from the decision function, and
+        'rosc_prediction' is the binary prediction.
         """
 
         if (
@@ -1756,55 +1753,33 @@ class Vitals:
             ECG_channel = self.data.get_channel("ecg_pads")
             ecgtime, ecg = ECG_channel.get_data()  # get data
 
-            if ("cc_period_start_acc" not in self.get_label_names()) and (
-                "cc_period_stop_acc" not in self.get_label_names()
-            ):
+            if "cc_periods" not in self.get_label_names():
                 self.find_CC_periods_acc()
+ 
+            label_cc_periods = self.data.get_label("cc_periods")
+            cc_periods, *_ = label_cc_periods.get_data()
+            cc_periods =  np.asarray([t for pair in cc_periods for t in pair])
 
-            CC_period_start_label = self.data.get_label("cc_period_start_acc")
-            CC_starts, data,_ = CC_period_start_label.get_data()  # get data
-
-            CC_period_stop_label = self.data.get_label("cc_period_stop_acc")
-            CC_stops, data,_ = CC_period_stop_label.get_data()  # get data
-
+            t_ref = ACC_channel.time_start
+            
+            if label_cc_periods.is_time_relative():
+                cc_periods = cc_periods.astype("timedelta64[s]").astype(float)
+            else:
+                cc_periods = np.array([(t - t_ref).total_seconds() for t in cc_periods])
+            
             if ACC_channel.is_time_relative():
-                acctime = np.asarray([pd.Timedelta(c).total_seconds() for c in acctime])
-                CC_starts = np.asarray(
-                    [pd.Timedelta(c).total_seconds() for c in CC_starts]
-                )
-                CC_stops = np.asarray(
-                    [pd.Timedelta(c).total_seconds() for c in CC_stops]
-                )
-
+                acctime = acctime.astype("timedelta64[s]").astype(float)
             else:
-                acctime = np.asarray(
-                    [
-                        pd.Timedelta(c - ACC_channel.time_start).total_seconds()
-                        for c in acctime
-                    ]
-                )
-                CC_starts = np.asarray(
-                    [
-                        pd.Timedelta(c - ACC_channel.time_start).total_seconds()
-                        for c in CC_starts
-                    ]
-                )
-                CC_stops = np.asarray(
-                    [
-                        pd.Timedelta(c - ACC_channel.time_start).total_seconds()
-                        for c in CC_stops
-                    ]
-                )
+                acctime = np.array([(t - t_ref).total_seconds() for t in acctime])
 
+            # Time conversion for ECG channel
             if ECG_channel.is_time_relative():
-                ecgtime = np.asarray([pd.Timedelta(c).total_seconds() for c in ecgtime])
+                ecgtime = ecgtime.astype("timedelta64[s]").astype(float)
             else:
-                ecgtime = np.asarray(
-                    [
-                        pd.Timedelta(c - ACC_channel.time_start).total_seconds()
-                        for c in ecgtime
-                    ]
-                )
+                ecgtime = np.array([(t - t_ref).total_seconds() for t in ecgtime])
+            
+            CC_starts = cc_periods[0::2]
+            CC_stops = cc_periods[1::2]
 
             snippets = construct_snippets(
                 acctime, acc, ecgtime, ecg, CC_starts, CC_stops
@@ -1817,7 +1792,7 @@ class Vitals:
                 "method": "Period_dection",
             }
             if ACC_channel.is_time_absolute():
-                time_start = ACC_channel.time_start
+                time_start = t_ref
             else:
                 time_start = None
 
