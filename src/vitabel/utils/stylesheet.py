@@ -224,7 +224,7 @@ DEFAULT_PLOT_STYLE = {
         "alpha": 0.6,
     },
     "cc_periods" : {
-        "label" : "CC Period",
+        "label" : "CC Periods",
         "color" : "lightsteelblue",
         "alpha" : 0.6
     }
