@@ -1394,39 +1394,66 @@ class Vitals:
                     f"mode {mode} not known. Please use either 'filter' or 'threshold' as argument"
                 )
 
-    def cycle_duration_analysis(self):
-        """Determine start and end of periods of continuous chest compressions
-        based on single chest compression markers.
+    def cycle_duration_analysis(
+            self,
+            cc_events_channel: Channel | str | None
+            ) -> None:
+        """
+        Determines periods of continuous chest compressions
+        based on single chest compression events.
 
-        Adds two labels ``cc_period_start`` and ``cc_period_stop`` to the data set.
+        Parameters
+        ----------
+        cc_events_channel
+            The channel containing the data of single chest compression events, such that every timepoint in the timeindex represents a chest compression. 
+            Defaults to 'cc' or 'cc_depth' depending on the availability.
+
+        Returns
+        -------
+        None
+        
+        Attaches an IntervalLabel withe the name ``cc_periods`` to the channel of single chest compressions.
 
         .. SEEALSO::
-
             The method is described in `10.1016/j.resuscitation.2021.12.028 <https://doi.org/10.1016/j.resuscitation.2021.12.028>`_ or in the
             Thesis 'Towards a data-driven cardiac arrest treatment' by Wolfgang Kern in more detail.
             See https://unipub.uni-graz.at/obvugrhs/content/titleinfo/10138095 for more information.
         """
-        if (
-            "cc" not in self.data.channel_names
-            and "cc_depth" not in self.data.channel_names
-        ):
+        if isinstance(cc_events_channel, str):
+            if cc_events_channel not in self.get_channel_names():
+                logger.error(
+                    f"The specified channel '{cc_events_channel}' could not be identified."
+                    "Please specify a channel or a string with the name of the channel."
+                )
+                return
+            else:
+                cc_events_channel = self.get_channel(cc_events_channel)
+        elif not isinstance(cc_events_channel, Channel):
             logger.error(
-                "Case contains no compression markers. Cycle duration analysis can not be computed."
+                "No valid channel with chest compression specified. Can not identify CC-periods via single CCs."
+                "Please specify a channel or a string with the name of the channel."
             )
             return
-
-        if "cc" in self.data.channel_names:
-            CC_channel = self.data.get_channel("cc")
-        else:
-            CC_channel = self.data.get_channel("cc_depth")
-        comp, data = CC_channel.get_data()  # get data
+        elif cc_events_channel is None:
+            available_channels = set(self.get_channel_names()) & {"cc", "cc_depth"}
+            if available_channels:
+                cc_events_channel = self.get_channel(next(iter(available_channels)))
+            else:            
+                logger.error(
+                    "Could not identify channels with single chest compressions."
+                    "Please specify a channel or a string with the name of the channel."
+                )
+                return
+            
+        comp, *_ = cc_events_channel.get_data() # get data
         comp = np.sort(comp)
-        if CC_channel.is_time_relative():
-            comp = np.asarray([pd.Timedelta(c).total_seconds() for c in comp])
+
+        t_ref = cc_events_channel.time_start
+
+        if cc_events_channel.is_time_relative():
+            comp = comp.astype("timedelta64[s]").astype(float)
         else:
-            comp = np.asarray(
-                [pd.Timedelta(c - CC_channel.time_start).total_seconds() for c in comp]
-            )
+            comp = np.array([(t - t_ref).total_seconds() for t in comp]) #TODO: check if times have ti be coerced
 
         compression_counter = 1  # number of compressions in cc period
         last_c = comp[0]  # initilaize last compression
@@ -1468,32 +1495,23 @@ class Vitals:
         metadata = {
             "creator": "automatic",
             "creation_date": pd.Timestamp.now(),
-            "method": "Cycle_duration_analysis",
+            "method": "cycle_duration_analysis",
         }
 
-        if CC_channel.is_time_absolute():
-            time_start = CC_channel.time_start
-        else:
-            time_start = None
+        periods = np.empty(sta.size + sto.size, dtype=sta.dtype)
+        periods[0::2] = sta
+        periods[1::2] = sto
 
-        sta_lab = Label(
-            "cc_period_start",
-            time_index=sta,
-            data=None,
-            time_start=time_start,
-            metadata=metadata,
-            plotstyle=DEFAULT_PLOT_STYLE.get("cc_period_start", None),
+        cc_periods = IntervalLabel(
+            name = "cc_periods",
+            time_index = periods, 
+            time_start = t_ref, 
+            metadata = metadata,
+            plot_type = "box",
+            plotstyle = DEFAULT_PLOT_STYLE.get("cc_periods", None)
         )
-        CC_channel.attach_label(sta_lab)
-        sto_lab = Label(
-            "cc_period_stop",
-            time_index=sto,
-            data=None,
-            time_start=time_start,
-            metadata=metadata,
-            plotstyle=DEFAULT_PLOT_STYLE.get("cc_period_stop", None),
-        )
-        CC_channel.attach_label(sto_lab)
+
+        cc_events_channel.attach_label(cc_periods)
 
     def find_CC_periods_acc(
             self, 
@@ -1508,18 +1526,25 @@ class Vitals:
         Parameters
         ----------
         accelerometer_channel
-            The channel containing the accelerometer signal. If not specified the channel called 'cpr_acceleration' is called. 
+            The channel containing the accelerometer signal. Defaults to 'cpr_acceleration'. 
 
         Returns
         -------
         None.
-        Attaches an IntervalLabel withe the name 'cc_periods' to the accelerometer channel.
+
+        Attaches an IntervalLabel withe the name ``cc_periods`` to the accelerometer channel.
         Every entry in the label describes a single period of chest compressions.
+
+        .. SEEALSO::
+            The method is described in `10.1016/j.resuscitation.2021.12.028 <https://doi.org/10.1016/j.resuscitation.2021.12.028>`_ or in the
+            Thesis 'Towards a data-driven cardiac arrest treatment' by Wolfgang Kern in more detail.
+            See https://unipub.uni-graz.at/obvugrhs/content/titleinfo/10138095 for more information.
         """
         if isinstance(accelerometer_channel, str):
             if accelerometer_channel not in self.get_channel_names():
                 logger.error(
-                    "No Acceleration data found. Can not identify CC-periods via acceleration."
+                    f"The specified channel '{accelerometer_channel}' could not be identified."
+                    "Please specify a channel or a string with the name of the channel."
                 )
                 return
             else:
@@ -1536,15 +1561,13 @@ class Vitals:
 
         acctime, acc = ACC_channel.get_data()  # get data
         freq = np.timedelta64(1, "s") / np.nanmedian(acctime.diff())
+        t_ref = ACC_channel.time_start
+
         if ACC_channel.is_time_relative():
-            acctime = np.asarray([pd.Timedelta(c).total_seconds() for c in acctime])
+            acctime = acctime.astype("timedelta64[s]").astype(float)
         else:
-            acctime = np.asarray(
-                [
-                    pd.Timedelta(c - ACC_channel.time_start).total_seconds()
-                    for c in acctime
-                ]
-            )
+            acctime = np.asarray([(t - t_ref).total_seconds() for t in acctime])
+
         acctime = np.asarray(acctime)
         acc = np.asarray(acc - np.mean(acc))
         gap_start, gap_stop, gap_start_indices = determine_gaps_in_recording(
@@ -1704,15 +1727,11 @@ class Vitals:
             "creation_date": pd.Timestamp.now(),
             "method": "RMS_period_dection",
         }
-        if ACC_channel.is_time_absolute():
-            time_start = ACC_channel.time_start
-        else:
-            time_start = None
 
         cc_periods = IntervalLabel(
             name = "cc_periods",
             time_index = periods, 
-            time_start = time_start, 
+            time_start = t_ref, 
             metadata = metadata,
             plot_type = "box",
             plotstyle = DEFAULT_PLOT_STYLE.get("cc_periods", None)
@@ -1791,16 +1810,13 @@ class Vitals:
                 "creation_date": pd.Timestamp.now(),
                 "method": "Period_dection",
             }
-            if ACC_channel.is_time_absolute():
-                time_start = t_ref
-            else:
-                time_start = None
+
 
             pred_lab = Label(
                 "rosc_prediction",
                 case_pred["Starttime"],
                 case_pred["Predicted"],
-                time_start=time_start,
+                time_start=t_ref,
                 metadata=metadata,
                 plotstyle=DEFAULT_PLOT_STYLE.get("rosc_prediction", None),
             )
@@ -1808,7 +1824,7 @@ class Vitals:
                 "rosc_probability",
                 case_pred["Starttime"],
                 case_pred["Probability"],
-                time_start=time_start,
+                time_start=t_ref,
                 metadata=metadata,
                 plotstyle=DEFAULT_PLOT_STYLE.get("rosc_probability", None),
             )
@@ -1816,7 +1832,7 @@ class Vitals:
                 "rosc_decision_function",
                 case_pred["Starttime"],
                 case_pred["DecisionFunction"],
-                time_start=time_start,
+                time_start=t_ref,
                 metadata=metadata,
                 plotstyle=DEFAULT_PLOT_STYLE.get("rosc_decision_function", None),
             )
