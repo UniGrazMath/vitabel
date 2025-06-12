@@ -1430,14 +1430,7 @@ class Vitals:
                 )
                 return
         elif isinstance(cc_events_channel, str):
-            if cc_events_channel not in self.get_channel_names():
-                logger.error(
-                    f"The specified channel '{cc_events_channel}' could not be identified."
-                    "Please specify a channel or a string with the name of the channel."
-                )
-                return
-            else:
-                cc_events_channel = self.get_channel(cc_events_channel)
+            cc_events_channel = self.get_channel(cc_events_channel)
         elif not isinstance(cc_events_channel, Channel):
             logger.error(
                 "No valid channel with chest compression specified. Can not identify CC-periods via single CCs."
