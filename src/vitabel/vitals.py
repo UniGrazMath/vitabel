@@ -1439,13 +1439,13 @@ class Vitals:
 
             
         comp, *_ = cc_events_channel.get_data() # get data
-        comp = np.sort(comp)
 
         t_ref = cc_events_channel.time_start
 
         if cc_events_channel.is_time_relative():
-            comp = comp.dt.total_seconds().to_numpy()
+            comp = comp.total_seconds().to_numpy()
         else:
+            comp = np.sort(comp)
             comp = np.array([pd.Timedelta(t - t_ref).total_seconds() for t in comp]) #TODO: check if times have ti be coerced
 
         compression_counter = 1  # number of compressions in cc period
@@ -1766,7 +1766,7 @@ class Vitals:
             t_ref = ACC_channel.time_start
             
             if label_cc_periods.is_time_relative():
-                cc_periods = cc_periods.dt.total_seconds().to_numpy()
+                cc_periods = pd.Series(pd.to_timedelta(cc_periods)).dt.total_seconds().to_numpy()
             else:
                 cc_periods = np.array([(t - t_ref).total_seconds() for t in cc_periods])
             
