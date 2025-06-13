@@ -1481,8 +1481,8 @@ class Label(TimeSeriesBase):
                 scatterplot_artist = plot_axes.plot(
                     time_index[~nan_mask],
                     data[~nan_mask],
-                    **base_plotstyle
-            )
+                    **base_plotstyle,
+                )
         
         if plot_type in {'vline', 'combined'}:
             if plot_type == 'combined':
