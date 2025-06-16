@@ -1826,7 +1826,8 @@ class Vitals:
 
     def area_under_threshold(
         self,
-        name: str,
+        name: str | None = None,
+        channel_or_label: Channel | Label | None = None,
         start_time: Timestamp | Timedelta | None = None,
         stop_time: Timestamp | Timedelta | None = None,
         threshold: int = 0
@@ -1867,7 +1868,27 @@ class Vitals:
         if stop_time is None:
             stop_time = self.rec_stop()
 
-        index, data = self.get_channel_or_label(name).get_data()
+        if name and channel_or_label:
+            raise TypeError(
+                "Cannot specify both 'name' and 'channel_or_label'. "
+                "Please use only one of them."
+            )
+        
+        if name is None and channel_or_label is None:
+            raise ValueError(
+                "Either 'name' or 'channel_or_label' must be specified. "
+                "Please provide one of them."
+            )
+        
+        if name is not None:
+            channel_or_label = self.get_channel_or_label(name)
+
+        if not isinstance(channel_or_label, (Channel, Label)):
+            raise TypeError(
+                "The 'channel_or_label' argument must be a Channel or Label instance, "
+            )
+        
+        index, data, *_ = channel_or_label.get_data()
         timeseries = pd.Series(data, index=index)
 
         return helpers.area_under_threshold(
