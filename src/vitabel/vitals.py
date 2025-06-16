@@ -1848,7 +1848,10 @@ class Vitals:
         ----------
         name
             The name of the label or channel - retrieved by meth:`.get_channel_or_label`.
-            Allowed to be passed either as a positional or a keyword argument.
+            Cannot be used together with `channel_or_label`.
+        channel_or_label
+            The `Channel` or `Label` object to calculate the area under threshold for.
+            Cannot be used together with `name`.
         start_time
             Start time for truncating the timeseries (meth:`truncate).
             If ``None``, starts from the beginning.
