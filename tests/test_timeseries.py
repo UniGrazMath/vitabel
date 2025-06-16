@@ -685,6 +685,44 @@ def test_interval_label_get_data():
         pd.Timestamp(stmp) for stmp in ["2020-02-03 14:42:00", "2020-02-03 18:00:00"]
     )
 
+def test_interval_label_to_dict_and_from_dict():
+    # Create an IntervalLabel instance
+    label = IntervalLabel(
+        name="Test Interval",
+        time_index=np.array([
+            pd.Timestamp("2020-02-02 12:00:00"),
+            pd.Timestamp("2020-02-02 12:45:00"),
+            pd.Timestamp("2020-02-03 14:42:00"),
+            pd.Timestamp("2020-02-03 18:00:00"),
+            pd.Timestamp("2020-02-03 18:42:00"),
+            pd.Timestamp("2020-02-03 19:00:57"),                             
+        ]),
+        data=np.array([10, 20, 30]),
+        text_data=[None,"a", None],
+        time_unit="s",
+        offset=0,
+        plotstyle={"color": "red"},
+        metadata={"foo": "bar"},
+        plot_type="box"
+    )
+
+    # Serialize to dict
+    d = label.to_dict()
+
+    # Restore from dict
+    restored = IntervalLabel.from_dict(d)
+
+    # Check that fields match
+    assert restored.name == label.name
+    assert np.all(restored.time_index == label.time_index)
+    assert np.all(restored.data == label.data)
+    assert restored.time_start == label.time_start
+    assert restored.time_unit == label.time_unit
+    assert restored.offset == label.offset
+    assert restored.plotstyle == label.plotstyle
+    assert restored.metadata == label.metadata
+    assert restored.plot_type == label.plot_type
+
 
 def test_empty_collection():
     collection = TimeDataCollection()
