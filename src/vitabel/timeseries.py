@@ -1705,6 +1705,50 @@ class IntervalLabel(Label):
         )
         return truncated_label
 
+    @classmethod
+    def from_dict(cls, datadict: dict[str, Any]) -> Label:
+        """Create a IntervalLabel from a serialized dictionary representation.
+
+        Parameters
+        ----------
+        datadict
+            The dictionary representation of the label.
+
+        """
+        if not datadict.get("is_interval", False):
+            raise ValueError("Cannot create IntervalLabel from non-interval label data")
+
+        time_index = datadict.get("time_index")
+        try:
+            time_index = decompress_array(time_index)
+        except (TypeError, ValueError, EOFError):
+            pass
+
+        data = datadict.get("data")
+        try:
+            data = decompress_array(data)
+        except (TypeError, ValueError, EOFError):
+            pass
+
+        text_data = datadict.get("text_data")
+        try:
+            text_data = decompress_array(text_data)
+        except (TypeError, ValueError, EOFError):
+            pass
+
+        return cls(
+            name=datadict.get("name"),
+            time_index=time_index,
+            data=data,
+            text_data=text_data,
+            time_start=datadict.get("time_start"),
+            time_unit=datadict.get("time_unit"),
+            offset=datadict.get("offset"),
+            plotstyle=datadict.get("plotstyle"),
+            metadata=datadict.get("metadata"),
+            plot_type=datadict.get("plot_type"),
+        )
+
     def to_dict(self) -> dict[str, Any]:
         """A serialization of the label as a dictionary."""
         label_dict = super().to_dict()
