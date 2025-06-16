@@ -188,7 +188,6 @@ DEFAULT_PLOT_STYLE = {
     },
     "etco2_from_capnography": {
         "color": "darkred",
-        "label": "EtCO$_2$",
         "alpha": 0.8,
         "linestyle": "",
         "marker": "s",
