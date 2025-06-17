@@ -1463,6 +1463,7 @@ class Label(TimeSeriesBase):
         base_plotstyle = self.plotstyle.copy()
         if plotstyle is not None:
             base_plotstyle.update(plotstyle)
+        base_plotstyle.setdefault("label", self.name)
 
         if plot_type in {'scatter', 'combined'}:
             nan_mask = np.isnan(data)
@@ -1471,17 +1472,17 @@ class Label(TimeSeriesBase):
                     f"Data in label {self.name} contains NaN values, "
                     "skipping them in the scatter plot"
                 )
-            if "marker" not in base_plotstyle and len(data[~nan_mask]) == 1:
-                # no marker style set, override to make single value visible
-                base_plotstyle.update({"marker": "X"}) 
 
-            scatterplot_artist = plot_axes.plot(
-                time_index[~nan_mask],
-                data[~nan_mask],
-                **base_plotstyle
-            )
             if data[~nan_mask].any(): 
-                scatterplot_artist[0].set_label(self.name) 
+                if "marker" not in base_plotstyle and len(data[~nan_mask]) == 1:
+                    # no marker style set, override to make single value visible
+                    base_plotstyle.update({"marker": "X"}) 
+
+                scatterplot_artist = plot_axes.plot(
+                    time_index[~nan_mask],
+                    data[~nan_mask],
+                    **base_plotstyle,
+                )
         
         if plot_type in {'vline', 'combined'}:
             if plot_type == 'combined':
@@ -1507,12 +1508,13 @@ class Label(TimeSeriesBase):
             
             if plotstyle is None:  # TODO: think about direction
                 base_plotstyle.update({"linestyle": "solid", "marker": None})
+            base_plotstyle.setdefault("label", self.name)
             
             ymin, ymax = plot_axes.get_ylim()
             for i, (t, text) in enumerate(zip(time_index, vline_text)):
                 vline_artist = plot_axes.axvline(t, **base_plotstyle)
-                if i == 0: # add a legend only for the first line
-                    vline_artist.set_label(self.name)
+                if i == 0: 
+                    base_plotstyle.pop("label", None) 
                 if text:
                     line_color = vline_artist.get_color()
                     vline_text_artist = plot_axes.text(
@@ -2047,14 +2049,16 @@ class IntervalLabel(Label):
                 box_time_index = time_index[np.isnan(data)]
             else:
                 box_time_index = time_index
-           
+
+            # Filter for props in kwargs which can be handled by axvspan / pathces.Rectangle
+            rectangle_props = Rectangle((0, 0), 1, 1).properties().keys()
+            filtered_base_plotstyle = {k: v for k, v in base_plotstyle.items() if k in rectangle_props}
+            filtered_base_plotstyle.setdefault("label", self.name)
+
             for i, (xmin, xmax) in enumerate(box_time_index):
-                # Filter for props in kwargs which can be handled by axvspan / pathces.Rectangle
-                rectangle_props = Rectangle((0, 0), 1, 1).properties().keys()
-                filtered_base_plotstyle = {k: v for k, v in base_plotstyle.items() if k in rectangle_props}
-                artist = plot_axes.axvspan(xmin, xmax, **filtered_base_plotstyle)
-                if i == 0:  # add a legend only for the first rectangle
-                    artist.set_label(self.name)
+                artist = plot_axes.axvspan(xmin, xmax, **filtered_base_plotstyle)     
+                if i == 0: 
+                    filtered_base_plotstyle.pop("label", None) 
 
         if plot_type == "hline" and len(self) > 0 and data is None:
             logger.warning(
