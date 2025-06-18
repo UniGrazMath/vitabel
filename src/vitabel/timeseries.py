@@ -2292,6 +2292,39 @@ class TimeDataCollection:
             )
         self.global_labels.append(label)
 
+    def detach_label_from_channel(
+        self,
+        *,
+        label: Label | str,
+        channel: Channel | str,
+        reattach_as_global: bool = True,
+    ) -> Label:
+        """Detach a label from a channel in the collection.
+        
+        Parameters
+        ----------
+        label
+            The label to detach. Can be specified either as a
+            :class:`.Label` object or by its name.
+        channel
+            The channel to detach the label from. Can be specified
+            either as a :class:`.Channel` object or by its name.
+        reattach_as_global
+            If ``True``, the label is reattached as a global label
+            after detaching it from the channel. If ``False``, the
+            label is removed from the collection.
+        """
+        if isinstance(label, str):
+            label = self.get_label(name=label)
+        if isinstance(channel, str):
+            channel = self.get_channel(name=channel)
+
+        channel.detach_label(label)
+        if reattach_as_global:
+            self.add_global_label(label)
+
+        return label
+
     def get_channels(self, name: str | None = None, **kwargs) -> list[Channel]:
         """Return a list of channels.
 
