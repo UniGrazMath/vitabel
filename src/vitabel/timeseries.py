@@ -2446,7 +2446,7 @@ class TimeDataCollection:
             )
         return labels[0]
 
-    def remove_label(self, *, label: Label | None = None, **kwargs):
+    def remove_label(self, *, label: Label | None = None, **kwargs) -> Label:
         """Remove a local or global label from the collection.
 
         Local labels are removed by detaching them from their
@@ -2469,8 +2469,9 @@ class TimeDataCollection:
             label.detach()
         else:
             self.global_labels.remove(label)
+        return label
 
-    def remove_channel(self, *, channel: Channel | None = None, **kwargs):
+    def remove_channel(self, *, channel: Channel | None = None, **kwargs) -> Channel:
         """Remove a channel by name.
 
         Parameters
@@ -2489,6 +2490,7 @@ class TimeDataCollection:
             channel = self.get_channel(**kwargs)
 
         self.channels.remove(channel)
+        return channel
 
     def set_channel_plotstyle(
         self, channel_specification: ChannelSpecification | None = None, **kwargs

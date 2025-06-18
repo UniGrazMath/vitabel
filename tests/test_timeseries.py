@@ -897,7 +897,9 @@ def test_remove_label():
     assert len(collection.labels) == 2
     assert collection.label_names == ["events", "events 2"]
 
-    collection.remove_label(name="events")
+    events_label = collection.remove_label(name="events")
+    assert events_label is label
+    assert events_label not in collection.labels
     assert len(collection.labels) == 1
     assert collection.label_names == ["events 2"]
 
