@@ -3135,7 +3135,7 @@ class TimeDataCollection:
         # --------------------------------------------------------
         shifting_channel_selection = widgets.SelectMultiple(
             value=[self.channels[0]],
-            options=[(chan.name, chan) for chan in self.channels],
+            options=[(f"[{idx}] {chan.name}", chan) for idx, chan in enumerate(self.channels)],
             description="Channels / Labels",
             disabled=False,
             continuous_update=True,
