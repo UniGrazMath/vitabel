@@ -2784,6 +2784,8 @@ class TimeDataCollection:
             time_unit = self._get_timeunit_from_channels(channel_lists)
 
         fig, axes = plt.subplots(num_subplots, squeeze=False, **subplots_kwargs)
+        if self.is_time_absolute():
+            fig.suptitle(f"Reference time: {start}")
         axes = axes[:, 0]
 
         if resolution is None:
@@ -2806,6 +2808,7 @@ class TimeDataCollection:
 
             plot_duration = (stop - start) / pd.to_timedelta(1, unit=time_unit)
             subax.set_xlim((0, plot_duration))
+            subax.set_xlabel(f"time [{time_unit}]", labelpad=-12, fontsize=7)
             subax.grid(True)
             subax.legend(loc="upper right")
 
