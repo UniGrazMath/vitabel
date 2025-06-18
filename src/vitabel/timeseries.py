@@ -2036,10 +2036,10 @@ class IntervalLabel(Label):
         if self.text_data is not None:
             self.text_data = np.delete(self.text_data, remove_index)
 
-        if np.all(np.isnan(self.data)):
+        if self.data is not None and np.all(np.isnan(self.data)):
             self.data = None
        
-        if np.all(pd.isna(self.text_data)):
+        if self.text_data is not None and np.all(pd.isna(self.text_data)):
             self.text_data = None
 
         if remove_index == 0 and self.is_time_absolute():
@@ -3151,7 +3151,7 @@ class TimeDataCollection:
             preselected_channels.append(self.channels[0])
         shifting_channel_selection = widgets.SelectMultiple(
             value=preselected_channels,
-            options=[(chan.name, chan) for chan in self.channels],
+            options=[(f"[{idx}] {chan.name}", chan) for idx, chan in enumerate(self.channels)],
             description="Channels / Labels",
             disabled=False,
             continuous_update=True,
@@ -3270,6 +3270,10 @@ class TimeDataCollection:
         ]
         overview_indicators = []
 
+        partial_interval_data = None
+        shifting_reference_time = None
+        shifting_reference_axis = None
+
         def update_ylim_settings():
             for ax, limit_widget in zip(channel_axes, limit_widgets):
                 _, min_input, max_input = limit_widget.children
@@ -3356,6 +3360,13 @@ class TimeDataCollection:
                     )
                     for ax in overview_axes
                 ]
+                if shifting_reference_time is not None:
+                    shifting_reference_axis.axvline(
+                        x=(shifting_reference_time - reference_time) / pd.to_timedelta(1, unit=time_unit),
+                        color="red",
+                        linestyle="--",
+                        linewidth=1.5,
+                    )
             return
 
         def repaint_overview_plot():
@@ -3415,9 +3426,6 @@ class TimeDataCollection:
             elif mode == InteractionMode.SETTINGS:
                 pass
 
-        partial_interval_data = None
-        shifting_reference_time = None
-
         def key_press_listener(event: KeyEvent):
             nonlocal \
                 start, \
@@ -3466,7 +3474,7 @@ class TimeDataCollection:
                 repaint_plot(start, stop)
 
         def mouse_click_listener(event: MouseEvent):
-            nonlocal fig, partial_interval_data, shifting_reference_time, start, stop
+            nonlocal fig, partial_interval_data, shifting_reference_time, shifting_reference_axis, start, stop
 
             current_mode = InteractionMode(tab.selected_index)
             current_axes = event.inaxes
@@ -3478,8 +3486,6 @@ class TimeDataCollection:
                         active_label: Label = label_dict[label_dropdown.value]
                         if isinstance(active_label, IntervalLabel):
                             if DELETE_ANNOTATIONS:
-
-
                                 time_data = (
                                     event.xdata * pd.to_timedelta(1, unit=time_unit)
                                     + reference_time
@@ -3561,6 +3567,7 @@ class TimeDataCollection:
                                 event.xdata * pd.to_timedelta(1, unit=time_unit)
                                 + reference_time
                             )
+                            shifting_reference_axis = current_axes
                         else:
                             offset = (
                                 event.xdata * pd.to_timedelta(1, unit=time_unit)
@@ -3571,6 +3578,7 @@ class TimeDataCollection:
                                 channel: Channel
                                 channel.shift_time_index(delta_t=offset)
                             shifting_reference_time = None
+                            shifting_reference_axis = None
                             repaint_overview_plot()
                             repaint_plot(start, stop)
 
