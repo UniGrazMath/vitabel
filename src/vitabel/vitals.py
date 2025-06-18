@@ -1826,8 +1826,7 @@ class Vitals:
 
     def area_under_threshold(
         self,
-        name: str | None = None,
-        channel_or_label: Channel | Label | None = None,
+        source: Channel | Label | str,
         start_time: Timestamp | Timedelta | None = None,
         stop_time: Timestamp | Timedelta | None = None,
         threshold: int = 0
@@ -1846,14 +1845,12 @@ class Vitals:
 
         Parameters
         ----------
-        name
-            The name of the label or channel - retrieved by meth:`.get_channel_or_label`.
-            Cannot be used together with `channel_or_label`.
-        channel_or_label
-            The `Channel` or `Label` object to calculate the area under threshold for.
-            Cannot be used together with `name`.
+        source
+            The name of a label or channel as a string, which is passed
+            to meth:`.get_channel_or_label`, or a :class:`.Channel` or
+            :class:`.Label` object.
         start_time
-            Start time for truncating the timeseries (meth:`truncate).
+            Start time for truncating the timeseries (meth:`truncate`).
             If ``None``, starts from the beginning.
         stop_time
             End time for truncating the timeseries (meth:`truncate`).
@@ -1871,27 +1868,17 @@ class Vitals:
         if stop_time is None:
             stop_time = self.rec_stop()
 
-        if name and channel_or_label:
-            raise TypeError(
-                "Cannot specify both 'name' and 'channel_or_label'. "
-                "Please use only one of them."
-            )
-        
-        if name is None and channel_or_label is None:
-            raise ValueError(
-                "Either 'name' or 'channel_or_label' must be specified. "
-                "Please provide one of them."
-            )
-        
-        if name is not None:
-            channel_or_label = self.get_channel_or_label(name)
+        if isinstance(source, str):
+            source = self.get_channel_or_label(name)
 
-        if not isinstance(channel_or_label, (Channel, Label)):
-            raise TypeError(
-                "The 'channel_or_label' argument must be a Channel or Label instance, "
+        if not isinstance(source, (Channel, Label)):
+            raise ValueError(
+                f"The specified source {source} is neither a "
+                "Channel or Label, nor the name of a contained "
+                "Channel or Label"
             )
         
-        index, data, *_ = channel_or_label.get_data()
+        index, data, *_ = source.get_data()
         timeseries = pd.Series(data, index=index)
 
         return helpers.area_under_threshold(
