@@ -29,7 +29,8 @@ from vitabel.typing import (
     Timestamp,
     ChannelSpecification,
     LabelSpecification,
-    LabelAnnotationPresetType
+    LabelAnnotationPresetType,
+    DataSlice,
 )
 
 
@@ -561,9 +562,11 @@ class Channel(TimeSeriesBase):
             The stop time for the truncated channel.
         """
 
-        truncated_time_index, truncated_data = self.get_data(
+        channel_data = self.get_data(
             start=start_time, stop=stop_time
         )
+        truncated_time_index = channel_data.time_index
+        truncated_data = channel_data.data
         # if channel is absolute time, the truncated time index is absolute,
         # no need to set start_time. also, offset is applied to the truncated
         # time index.
@@ -620,17 +623,17 @@ class Channel(TimeSeriesBase):
             data ends at the last time point.
         """
        
-        time_index, data = self.get_data(start=start, stop=stop)
+        channel_data = self.get_data(start=start, stop=stop)
         if filename is None:
             filename = f"{self.name}.csv"
         
         if isinstance(filename, str):
             filename = Path(filename)
 
-        if data is None:
-            df = pd.DataFrame({"time": time_index})
+        if channel_data.data is None:
+            df = pd.DataFrame({"time": channel_data.time_index})
         else:
-            df = pd.DataFrame({"time": time_index, "data": data})
+            df = pd.DataFrame({"time": channel_data.time_index, "data": channel_data.data})
         df.to_csv(filename)
 
     @classmethod
@@ -675,7 +678,7 @@ class Channel(TimeSeriesBase):
         start: Timestamp | Timedelta | float | None = None,
         stop: Timestamp | Timedelta | float | None = None,
         resolution: Timedelta | float | str | None = None,
-    ) -> tuple[npt.NDArray, npt.NDArray | None]:
+    ) -> DataSlice:
         """Return a tuple of time and data values with optional
         filtering and downsampling.
 
@@ -702,7 +705,7 @@ class Channel(TimeSeriesBase):
             time_index += self.time_start
 
         data = self.data[time_mask] if self.data is not None else None
-        return time_index, data
+        return DataSlice(time_index=time_index, data=data)
 
     def plot(
         self,
@@ -738,7 +741,9 @@ class Channel(TimeSeriesBase):
             (the default), the time unit of the channel is used.
         """
 
-        time_index, data = self.get_data(start=start, stop=stop, resolution=resolution)
+        channel_data = self.get_data(start=start, stop=stop, resolution=resolution)
+        time_index = channel_data.time_index
+        data = channel_data.data
         if data is None:
             data = np.zeros_like(time_index, dtype=float)
 
@@ -1257,9 +1262,12 @@ class Label(TimeSeriesBase):
         stop_time
             The stop time for the truncated label.
         """
-        truncated_time_index, truncated_data, truncated_text_data = self.get_data(
+        label_data = self.get_data(
             start=start_time, stop=stop_time
         )
+        truncated_time_index = label_data.time_index
+        truncated_data = label_data.data
+        truncated_text_data = label_data.text_data
 
         truncated_label = Label(
             name=self.name,
@@ -1394,7 +1402,7 @@ class Label(TimeSeriesBase):
         self,
         start: Timestamp | Timedelta | float | None = None,
         stop: Timestamp | Timedelta | float | None = None,
-    ) -> tuple[npt.NDArray, npt.NDArray | None, npt.NDArray | None]:
+    ) -> DataSlice:
         """Return a tuple of time, data, and text data values with optional
         filtering.
 
@@ -1422,7 +1430,7 @@ class Label(TimeSeriesBase):
         if self.text_data is not None and time_mask.any():
             text_data = self.text_data[time_mask]
 
-        return time_index, data, text_data
+        return DataSlice(time_index=time_index, data=data, text_data=text_data)
 
     def plot(
         self,
@@ -1879,7 +1887,7 @@ class IntervalLabel(Label):
         self,
         start: Timestamp | Timedelta | float | None = None,
         stop: Timestamp | Timedelta | float | None = None,
-    ) -> tuple[npt.NDArray, npt.NDArray | None]:
+    ) -> DataSlice:
         """Return a tuple of interval endpoints and data values with optional
         filtering. This returns all intervals that intersect with the
         specified time range, shortening the intervals if necessary.
@@ -1894,7 +1902,7 @@ class IntervalLabel(Label):
             data ends at the last time point.
         """
         if self.is_empty() or (start is None and stop is None):
-            return self.intervals, self.data, self.text_data
+            return DataSlice(time_index=self.intervals, data=self.data, text_data=self.text_data)
 
         if start is None:
             start = self.time_index.min()
@@ -1921,7 +1929,7 @@ class IntervalLabel(Label):
         data = None if data is not None and len(data) == 0 else data
         text_data = None if text_data is not None and len(text_data) == 0 else text_data
 
-        return intervals, data, text_data
+        return DataSlice(time_index=intervals, data=data, text_data=text_data)
     
 
     def add_data(
@@ -3512,10 +3520,10 @@ class TimeDataCollection:
                                     / screen_pixel_width
                                     * CANVAS_SELECTION_TOLERANCE_PX
                                 )
-                                selected_times, _, _ = active_label.get_data(
+                                selected_times = active_label.get_data(
                                     start=time_data - tolerance,
                                     stop=time_data + tolerance,
-                                )
+                                ).time_index
                                 if len(selected_times) > 0:
                                     selected_time = min(selected_times)
                                     active_label.remove_data(time_data=selected_time)
