@@ -2036,10 +2036,10 @@ class IntervalLabel(Label):
         if self.text_data is not None:
             self.text_data = np.delete(self.text_data, remove_index)
 
-        if np.all(np.isnan(self.data)):
+        if self.data is not None and np.all(np.isnan(self.data)):
             self.data = None
        
-        if np.all(pd.isna(self.text_data)):
+        if self.text_data is not None and np.all(pd.isna(self.text_data)):
             self.text_data = None
 
         if remove_index == 0 and self.is_time_absolute():
