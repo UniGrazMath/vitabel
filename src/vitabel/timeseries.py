@@ -29,7 +29,8 @@ from vitabel.typing import (
     Timestamp,
     ChannelSpecification,
     LabelSpecification,
-    LabelAnnotationPresetType
+    LabelAnnotationPresetType,
+    DataSlice,
 )
 
 
@@ -675,7 +676,7 @@ class Channel(TimeSeriesBase):
         start: Timestamp | Timedelta | float | None = None,
         stop: Timestamp | Timedelta | float | None = None,
         resolution: Timedelta | float | str | None = None,
-    ) -> tuple[npt.NDArray, npt.NDArray | None]:
+    ) -> DataSlice:
         """Return a tuple of time and data values with optional
         filtering and downsampling.
 
@@ -702,7 +703,7 @@ class Channel(TimeSeriesBase):
             time_index += self.time_start
 
         data = self.data[time_mask] if self.data is not None else None
-        return time_index, data
+        return DataSlice(time_index=time_index, data=data)
 
     def plot(
         self,
@@ -1394,7 +1395,7 @@ class Label(TimeSeriesBase):
         self,
         start: Timestamp | Timedelta | float | None = None,
         stop: Timestamp | Timedelta | float | None = None,
-    ) -> tuple[npt.NDArray, npt.NDArray | None, npt.NDArray | None]:
+    ) -> DataSlice:
         """Return a tuple of time, data, and text data values with optional
         filtering.
 
@@ -1422,7 +1423,7 @@ class Label(TimeSeriesBase):
         if self.text_data is not None and time_mask.any():
             text_data = self.text_data[time_mask]
 
-        return time_index, data, text_data
+        return DataSlice(time_index=time_index, data=data, text_data=text_data)
 
     def plot(
         self,
@@ -1879,7 +1880,7 @@ class IntervalLabel(Label):
         self,
         start: Timestamp | Timedelta | float | None = None,
         stop: Timestamp | Timedelta | float | None = None,
-    ) -> tuple[npt.NDArray, npt.NDArray | None]:
+    ) -> DataSlice:
         """Return a tuple of interval endpoints and data values with optional
         filtering. This returns all intervals that intersect with the
         specified time range, shortening the intervals if necessary.
@@ -1894,7 +1895,7 @@ class IntervalLabel(Label):
             data ends at the last time point.
         """
         if self.is_empty() or (start is None and stop is None):
-            return self.intervals, self.data, self.text_data
+            return DataSlice(time_index=self.intervals, data=self.data, text_data=self.text_data)
 
         if start is None:
             start = self.time_index.min()
@@ -1921,7 +1922,7 @@ class IntervalLabel(Label):
         data = None if data is not None and len(data) == 0 else data
         text_data = None if text_data is not None and len(text_data) == 0 else text_data
 
-        return intervals, data, text_data
+        return DataSlice(time_index=intervals, data=data, text_data=text_data)
     
 
     def add_data(
