@@ -1826,7 +1826,7 @@ class Vitals:
 
     def area_under_threshold(
         self,
-        name: str,
+        source: Channel | Label | str,
         start_time: Timestamp | Timedelta | None = None,
         stop_time: Timestamp | Timedelta | None = None,
         threshold: int = 0
@@ -1845,11 +1845,12 @@ class Vitals:
 
         Parameters
         ----------
-        name
-            The name of the label or channel - retrieved by meth:`.get_channel_or_label`.
-            Allowed to be passed either as a positional or a keyword argument.
+        source
+            The name of a label or channel as a string, which is passed
+            to meth:`.get_channel_or_label`, or a :class:`.Channel` or
+            :class:`.Label` object.
         start_time
-            Start time for truncating the timeseries (meth:`truncate).
+            Start time for truncating the timeseries (meth:`truncate`).
             If ``None``, starts from the beginning.
         stop_time
             End time for truncating the timeseries (meth:`truncate`).
@@ -1867,7 +1868,17 @@ class Vitals:
         if stop_time is None:
             stop_time = self.rec_stop()
 
-        index, data = self.get_channel_or_label(name).get_data()
+        if isinstance(source, str):
+            source = self.get_channel_or_label(source)
+
+        if not isinstance(source, (Channel, Label)):
+            raise ValueError(
+                f"The specified source {source} is neither a "
+                "Channel or Label, nor the name of a contained "
+                "Channel or Label"
+            )
+        
+        index, data, *_ = source.get_data()
         timeseries = pd.Series(data, index=index)
 
         return helpers.area_under_threshold(

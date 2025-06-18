@@ -1007,18 +1007,18 @@ def test_area_under_threshold_computation():
             ]).transpose(),
         )
     )
-    threshold_metric = vital_case.area_under_threshold(name=0, threshold=10)
+    threshold_metric = vital_case.area_under_threshold(source="0", threshold=10)
     assert threshold_metric.duration_under_threshold == pd.Timedelta(0)
     assert threshold_metric.time_weighted_average_under_threshold.value == 0
 
-    threshold_metric = vital_case.area_under_threshold(name=0, threshold=100)
+    threshold_metric = vital_case.area_under_threshold(source="0", threshold=100)
     assert threshold_metric.duration_under_threshold == pd.Timedelta(2, unit="h")
     assert threshold_metric.time_weighted_average_under_threshold.value == 100 - 42
     assert threshold_metric.observational_interval_duration == pd.Timedelta(2, unit="h")
     assert threshold_metric.area_under_threshold.unit == "minutes × value units"
     assert threshold_metric.area_under_threshold.value == (100 - 42) * 60 * 2
 
-    threshold_metric = vital_case.area_under_threshold(name=1, threshold=0)
+    threshold_metric = vital_case.area_under_threshold(source="1", threshold=0)
     assert threshold_metric.observational_interval_duration == pd.Timedelta(2, unit="h")
     assert threshold_metric.duration_under_threshold == pd.Timedelta("01:00:00.000000001")
 
