@@ -81,6 +81,8 @@ class NumpyEncoder(json.JSONEncoder):
             return obj.strftime("%H:%M:%S")
         elif isinstance(obj, pd.Timestamp):
             return obj.strftime("%Y-%m-%d %X")
+        elif isinstance(obj, datetime.datetime):
+            return str(obj)
         elif isinstance(obj, pd.Timedelta):
             return str(obj)
         elif isinstance(obj, Path):
