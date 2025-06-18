@@ -964,6 +964,8 @@ class Label(TimeSeriesBase):
         self.metadata = copy(metadata) or {}
         """Additional label metadata."""
 
+        if plot_type is None:
+            plot_type = "combined"
         self._plot_type: LabelPlotType
         self.plot_type = plot_type
         """The type of plot to use to visualize the label."""
@@ -1688,6 +1690,8 @@ class IntervalLabel(Label):
             annotation_preset_type=annotation_preset_type,
         )
 
+        if plot_type is None:
+            plot_type = "combined"
         self._plot_type: IntervalLabelPlotType
         self.plot_type = plot_type
 
