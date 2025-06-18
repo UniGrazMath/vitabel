@@ -29,6 +29,7 @@ from vitabel.typing import (
     Timestamp,
     ChannelSpecification,
     LabelSpecification,
+    LabelAnnotationPresetType
 )
 
 
@@ -854,6 +855,27 @@ class Label(TimeSeriesBase):
         Defaults to ``'text_data'``. The text labels can be customized by
         modifying the dictionary stored in the :attr:`plot_vline_bbox_settings`
         attribute of the label.
+
+    annotation_preset_type
+        Specifies the initial preselection of the annotation menu checkboxes when a label is selected.
+
+        This preset is only applied **if the selected label has no existing data**. If the label already contains data, 
+        the menu's preselection will instead reflect the current contents of that label.
+
+        Note:
+        - This setting only affects the **initial** state of the annotation menu—users can still modify selections interactively.
+        - There is **no internal consistency check** between this setting and the `plot_type` or `vline_text_source` parameters.
+          For example, you can disable textual input using this argument even if you intend to display vertical lines with text.
+
+        Available options are:
+        
+        - ``'timestamp'``: Only the `Timestamp` checkbox is selected.
+        - ``'numerical'``: `Timestamp` and `Numerical value` checkboxes are selected.
+        - ``'textual'``: `Timestamp` and `Textual value` checkboxes are selected.
+        - ``'combined'``: All checkboxes are selected.
+
+        Defaults to the settings computed by the :func:`plot_interactive._populate_label_add_menu` function.
+    
     """
     def __init__(
         self,
@@ -869,6 +891,7 @@ class Label(TimeSeriesBase):
         metadata: dict[str, Any] | None = None,
         plot_type: LabelPlotType | None = None,
         vline_text_source: LabelPlotVLineTextSource | None = None, 
+        annotation_preset_type: LabelAnnotationPresetType | None = None,
     ):
         self.name = name
         """The name of the label."""
@@ -948,6 +971,9 @@ class Label(TimeSeriesBase):
         self.vline_text_source = vline_text_source
         """The source of the text to be shown next to vertical lines."""
 
+        self.annotation_preset_type = annotation_preset_type 
+        """The preselection of the labels annotation menu."""
+
         super().__init__(
             time_index=time_index,
             time_start=time_start,
@@ -997,6 +1023,21 @@ class Label(TimeSeriesBase):
                 f"Value '{value}' is not a valid choice for vline_text_source."
             )
         self._vline_text_source = value
+
+    @property
+    def annotation_preset_type(self) -> LabelAnnotationPresetType | None:
+        """The preselection of the labels annotation menu."""
+        return self._annotation_preset_type
+    
+    @annotation_preset_type.setter
+    def annotation_preset_type(self, value: LabelAnnotationPresetType | None):
+        
+        if value is not None:
+            if value not in typing.get_args(LabelAnnotationPresetType):
+                raise ValueError(
+                    f"Value '{value}' is not a valid choice for annotation_preset_type."
+                )
+        self._annotation_preset_type = value
     
     def _check_data_shape(
         self,
@@ -1587,6 +1628,25 @@ class IntervalLabel(Label):
 
         Defaults to ``'combined'``.
 
+    annotation_preset_type
+        Specifies the initial preselection of the annotation menu checkboxes when a label is selected.
+
+        This preset is only applied **if the selected label has no existing data**. If the label already contains data, 
+        the menu's preselection will instead reflect the current contents of that label.
+
+        Note:
+        - This setting only affects the **initial** state of the annotation menu—users can still modify selections interactively.
+        - There is **no internal consistency check** between this setting and the `plot_type` or `vline_text_source` parameters.
+          For example, you can disable textual input using this argument even if you intend to display vertical lines with text.
+
+        Available options are:
+        
+        - ``'timestamp'``: Only the `Timestamp` checkbox is selected.
+        - ``'numerical'``: `Timestamp` and `Numerical value` checkboxes are selected.
+        - ``'textual'``: `Timestamp` and `Textual value` checkboxes are selected.
+        - ``'combined'``: All checkboxes are selected.
+
+        Defaults to the settings computed by the :func:`plot_interactive._populate_label_add_menu` function.
     """
 
     def __init__(
@@ -1602,6 +1662,7 @@ class IntervalLabel(Label):
         plotstyle: dict[str, Any] | None = None,
         metadata: dict[str, Any] | None = None,
         plot_type: IntervalLabelPlotType | None = None,
+        annotation_preset_type: LabelAnnotationPresetType | None = None,
     ):
 
         super().__init__(
@@ -1615,6 +1676,7 @@ class IntervalLabel(Label):
             anchored_channel=anchored_channel,
             plotstyle=plotstyle,
             metadata=metadata,
+            annotation_preset_type=annotation_preset_type,
         )
 
         if plot_type is None:
@@ -3003,9 +3065,23 @@ class TimeDataCollection:
 
             # empty label -> presets on plottype and vline_text_source
             if len(label) == 0:
-                add_numeric_check.value = False
 
+                # defaulting
+                add_numeric_check.value = False
                 add_text_check.value = False
+                
+                # preset by annotation_preset_type specification
+                if label.annotation_preset_type is not None:
+                    if label.annotation_preset_type == "numerical":
+                        add_numeric_check.value = True
+                    elif label.annotation_preset_type == "textual":
+                        add_text_check.value = True
+                    elif label.annotation_preset_type == "combined":
+                        add_text_check.value = True
+                        add_numeric_check.value = True
+                    return
+
+                # preset by plot_type and vline_text_source
                 if label.vline_text_source in ("text_data", "combined"):
                     add_text_check.value = True
                     value_text_input.value = label.name
@@ -3016,6 +3092,7 @@ class TimeDataCollection:
                     add_numeric_check.value = True
                 if label.plot_type in ("vline", "combined"):
                     add_text_check.value = True
+                    
             # non empty label with no data
             elif label.data is None and label.text_data is None:
                 add_numeric_check.value = False
