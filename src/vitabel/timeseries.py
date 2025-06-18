@@ -544,6 +544,7 @@ class Channel(TimeSeriesBase):
         """
         if label not in self.labels:
             raise ValueError(f"The label {label.name} is not attached to this channel")
+        label.anchored_channel = None
         self.labels.remove(label)
 
     def shift_time_index(
