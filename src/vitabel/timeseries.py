@@ -1036,7 +1036,7 @@ class Label(TimeSeriesBase):
     
     @annotation_preset_type.setter
     def annotation_preset_type(self, value: LabelAnnotationPresetType | None):
-        if value not in typing.get_args(LabelAnnotationPresetType):
+        if value is not None and value not in typing.get_args(LabelAnnotationPresetType):
             raise ValueError(
                 f"Value '{value}' is not a valid choice for annotation_preset_type."
             )
