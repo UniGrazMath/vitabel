@@ -529,6 +529,14 @@ class Channel(TimeSeriesBase):
     def detach_label(self, label: Label):
         """Detach a label from this channel.
 
+        .. note::
+
+            This method only removes the reference from the channel
+            to the label, as well as the backreference from the label
+            to the channel. While this does not delete the label
+            object itself, the responsibility to manage the label
+            object is with the user.
+
         Parameters
         ----------
         label
@@ -1338,11 +1346,20 @@ class Label(TimeSeriesBase):
         self.anchored_channel = channel
 
     def detach(self):
-        """Detach the label from the channel."""
+        """Detach the label from the channel.
+        
+        .. note::
+
+            This method only removes the reference from the channel
+            to the label, as well as the backreference from the label
+            to the channel. While this does not delete the label
+            object itself, the responsibility to manage the label
+            object is with the user.
+        
+        """
         if self.anchored_channel is None:
             raise ValueError(f"The label {self.name} is not attached to any channel")
         self.anchored_channel.detach_label(self)
-        self.anchored_channel = None
 
     def get_data(
         self,
