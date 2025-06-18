@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 
 from dataclasses import dataclass
-from typing import Any, Union, TypeAlias, Literal, TYPE_CHECKING
+from typing import Any, Union, TypeAlias, Literal, Iterable, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from vitabel import Channel, Label
@@ -68,3 +68,30 @@ class ThresholdMetrics:
     duration_under_threshold: pd.Timedelta
     time_weighted_average_under_threshold: Metric
     observational_interval_duration: pd.Timedelta
+
+
+@dataclass
+class DataSlice:
+    """Auxiliary dataclass holding a slice of data from a label or channel.
+    
+    Primarily used in the various ``get_data`` methods.
+    """
+
+    time_index: pd.DatetimeIndex | pd.TimedeltaIndex | np.typing.NDArray
+    """The time index of the selected data range."""
+
+    data: np.typing.NDArray | None = None
+    """The data of the selected data range, or ``None`` if no data
+    is available.
+    """
+
+    text_data: np.typing.NDArray | None = None
+    """The text data of the selected data range, or ``None`` if no text data
+    is available.
+    """
+    
+    def __len__(self) -> int:
+        return len(self.time_index)
+    
+    def __iter__(self) -> Iterable:
+        return iter((self.time_index, self.data, self.text_data))
