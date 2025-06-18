@@ -562,9 +562,11 @@ class Channel(TimeSeriesBase):
             The stop time for the truncated channel.
         """
 
-        truncated_time_index, truncated_data = self.get_data(
+        channel_data = self.get_data(
             start=start_time, stop=stop_time
         )
+        truncated_time_index = channel_data.time_index
+        truncated_data = channel_data.data
         # if channel is absolute time, the truncated time index is absolute,
         # no need to set start_time. also, offset is applied to the truncated
         # time index.
@@ -621,17 +623,17 @@ class Channel(TimeSeriesBase):
             data ends at the last time point.
         """
        
-        time_index, data = self.get_data(start=start, stop=stop)
+        channel_data = self.get_data(start=start, stop=stop)
         if filename is None:
             filename = f"{self.name}.csv"
         
         if isinstance(filename, str):
             filename = Path(filename)
 
-        if data is None:
-            df = pd.DataFrame({"time": time_index})
+        if channel_data.data is None:
+            df = pd.DataFrame({"time": channel_data.time_index})
         else:
-            df = pd.DataFrame({"time": time_index, "data": data})
+            df = pd.DataFrame({"time": channel_data.time_index, "data": channel_data.data})
         df.to_csv(filename)
 
     @classmethod
@@ -739,7 +741,9 @@ class Channel(TimeSeriesBase):
             (the default), the time unit of the channel is used.
         """
 
-        time_index, data = self.get_data(start=start, stop=stop, resolution=resolution)
+        channel_data = self.get_data(start=start, stop=stop, resolution=resolution)
+        time_index = channel_data.time_index
+        data = channel_data.data
         if data is None:
             data = np.zeros_like(time_index, dtype=float)
 
@@ -1258,9 +1262,12 @@ class Label(TimeSeriesBase):
         stop_time
             The stop time for the truncated label.
         """
-        truncated_time_index, truncated_data, truncated_text_data = self.get_data(
+        label_data = self.get_data(
             start=start_time, stop=stop_time
         )
+        truncated_time_index = label_data.time_index
+        truncated_data = label_data.data
+        truncated_text_data = label_data.text_data
 
         truncated_label = Label(
             name=self.name,
@@ -3516,10 +3523,10 @@ class TimeDataCollection:
                                     / screen_pixel_width
                                     * CANVAS_SELECTION_TOLERANCE_PX
                                 )
-                                selected_times, _, _ = active_label.get_data(
+                                selected_times = active_label.get_data(
                                     start=time_data - tolerance,
                                     stop=time_data + tolerance,
-                                )
+                                ).time_index
                                 if len(selected_times) > 0:
                                     selected_time = min(selected_times)
                                     active_label.remove_data(time_data=selected_time)

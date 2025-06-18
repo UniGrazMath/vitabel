@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 
 from dataclasses import dataclass
-from typing import Any, Union, TypeAlias, Literal, Iterable, TYPE_CHECKING
+from typing import Any, Union, TypeAlias, Literal, Iterator, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from vitabel import Channel, Label
@@ -93,5 +93,5 @@ class DataSlice:
     def __len__(self) -> int:
         return len(self.time_index)
     
-    def __iter__(self) -> Iterable:
+    def __iter__(self) -> Iterator:
         return iter((self.time_index, self.data, self.text_data))
