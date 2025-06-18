@@ -3338,6 +3338,7 @@ class TimeDataCollection:
             return
 
         def repaint_overview_plot():
+            nonlocal overview_indicators
             channels_for_xlims = channel_lists
             for channel_list, subax in zip(channel_overviews, overview_axes):
                 if not channel_list:
@@ -3356,6 +3357,7 @@ class TimeDataCollection:
                 data_width = (ov_stop - ov_start).total_seconds()
                 resolution = data_width / screen_pixel_width
                 subax.clear()
+                overview_indicators = []
                 for channel in channel_list:
                     channel.plot(
                         plot_axes=subax,
