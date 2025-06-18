@@ -3117,7 +3117,9 @@ class TimeDataCollection:
         delete_toggle_button.observe(delete_toggle_handler, names="value")
 
         label_dropdown.observe(label_dropdown_change, names="value")
-        _populate_label_add_menu(label_dict[label_dropdown.value])
+
+        if label_dropdown.value in label_dict:
+            _populate_label_add_menu(label_dict[label_dropdown.value])
 
 
         # ---------- WIDGETS FOR SHIFTING ------------------------
