@@ -849,6 +849,31 @@ def test_collection_add_local_label_as_global():
         collection.add_global_label(label)
 
 
+def test_collection_detach_label_from_channel():
+    time = np.arange(0, 1, 0.1)
+    data = np.sin(2 * np.pi * time)
+    channel = Channel(name="test", time_index=time, data=data)
+    label1 = Label(name="events1", time_index=[0.5, 0.7, 0.9])
+    label2 = Label(name="events2", time_index=[0.1, 0.2, 0.3])
+    channel.attach_label(label1)
+    channel.attach_label(label2)
+
+    collection = TimeDataCollection(channels=[channel])
+    assert len(collection.local_labels) == 2
+
+    collection.detach_label_from_channel(label=label1, channel=channel)
+    assert label1 not in channel.labels
+    assert len(collection.local_labels) == 1
+    assert label1.anchored_channel is None
+    assert label1 in collection.global_labels
+
+    collection.detach_label_from_channel(label=label2, channel=channel, reattach_as_global=False)
+    assert label2 not in channel.labels
+    assert len(collection.local_labels) == 0
+    assert label2.anchored_channel is None
+    assert len(collection.global_labels) == 1
+
+
 def test_collection_label_time_type_mismatch():
     time = np.arange(0, 1, 0.1)
     data = np.sin(2 * np.pi * time)
