@@ -452,7 +452,7 @@ class Channel(TimeSeriesBase):
         plotstyle: dict[str, Any] | None = None,
         metadata: dict[str, Any] | None = None,
     ):
-        self.name = name
+        self.name = str(name)
         """The name of the channel."""
 
         self.labels = []
@@ -774,7 +774,7 @@ class Channel(TimeSeriesBase):
         new_name
             The new name of the channel.
         """
-        self.name = new_name
+        self.name = str(new_name)
 
 
 # TODO: handling of name, data, plotstyle, metadata is
@@ -870,7 +870,7 @@ class Label(TimeSeriesBase):
         plot_type: LabelPlotType | None = None,
         vline_text_source: LabelPlotVLineTextSource | None = None, 
     ):
-        self.name = name
+        self.name = str(name)
         """The name of the label."""
 
         self.anchored_channel: Channel | None = None
