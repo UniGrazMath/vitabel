@@ -2364,14 +2364,9 @@ class TimeDataCollection:
         """
         if name is not None:
             kwargs["name"] = name
-        channel_list = [
+        return [
             channel for channel in self.channels if match_object(channel, **kwargs)
         ]
-
-        if len(channel_list) == 0:
-            logger.warning(f"Channel specification {kwargs} returned no channels")
-
-        return channel_list
 
     def get_channel(self, name: str | None = None, **kwargs) -> Channel:
         """Return a channel by name.
