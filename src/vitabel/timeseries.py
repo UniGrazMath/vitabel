@@ -857,25 +857,30 @@ class Label(TimeSeriesBase):
         attribute of the label.
 
     annotation_preset_type
-        Specifies the initial preselection of the annotation menu checkboxes when a label is selected.
+        Specifies the initial preselection of the annotation menu checkboxes
+        when a label is selected.
 
-        This preset is only applied **if the selected label has no existing data**. If the label already contains data, 
-        the menu's preselection will instead reflect the current contents of that label.
-
-        Note:
-        - This setting only affects the **initial** state of the annotation menu—users can still modify selections interactively.
-        - There is **no internal consistency check** between this setting and the `plot_type` or `vline_text_source` parameters.
-          For example, you can disable textual input using this argument even if you intend to display vertical lines with text.
-
+        This preset is only applied **if the selected label has no existing data**.
+        If the label already contains data, the menu's preselection will instead
+        reflect the current contents of that label.
+        
         Available options are:
         
-        - ``'timestamp'``: Only the `Timestamp` checkbox is selected.
-        - ``'numerical'``: `Timestamp` and `Numerical value` checkboxes are selected.
-        - ``'textual'``: `Timestamp` and `Textual value` checkboxes are selected.
+        - ``'timestamp'``: Only the *Timestamp* checkbox is selected.
+        - ``'numerical'``: *Timestamp* and *Numerical value* checkboxes are selected.
+        - ``'textual'``: *Timestamp* and *Textual value* checkboxes are selected.
         - ``'combined'``: All checkboxes are selected.
+        - ``None`` (the default): automatically selects the checkboxes based
+          on other arguements like ``plot_type``.
 
-        Defaults to the settings computed by the :func:`plot_interactive._populate_label_add_menu` function.
-    
+        .. note::
+
+            - This setting only affects the **initial** state of the annotation
+              menu—users can still modify selections interactively.
+            - There is **no internal consistency check** between this setting and
+              the `plot_type` or `vline_text_source` parameters. For example, you
+              can disable textual input using this argument even if you intend to
+              display vertical lines with text.
     """
     def __init__(
         self,
@@ -1629,24 +1634,30 @@ class IntervalLabel(Label):
         Defaults to ``'combined'``.
 
     annotation_preset_type
-        Specifies the initial preselection of the annotation menu checkboxes when a label is selected.
+        Specifies the initial preselection of the annotation menu checkboxes
+        when a label is selected.
 
-        This preset is only applied **if the selected label has no existing data**. If the label already contains data, 
-        the menu's preselection will instead reflect the current contents of that label.
-
-        Note:
-        - This setting only affects the **initial** state of the annotation menu—users can still modify selections interactively.
-        - There is **no internal consistency check** between this setting and the `plot_type` or `vline_text_source` parameters.
-          For example, you can disable textual input using this argument even if you intend to display vertical lines with text.
-
+        This preset is only applied **if the selected label has no existing data**.
+        If the label already contains data, the menu's preselection will instead
+        reflect the current contents of that label.
+        
         Available options are:
         
-        - ``'timestamp'``: Only the `Timestamp` checkbox is selected.
-        - ``'numerical'``: `Timestamp` and `Numerical value` checkboxes are selected.
-        - ``'textual'``: `Timestamp` and `Textual value` checkboxes are selected.
+        - ``'timestamp'``: Only the *Timestamp* checkbox is selected.
+        - ``'numerical'``: *Timestamp* and *Numerical value* checkboxes are selected.
+        - ``'textual'``: *Timestamp* and *Textual value* checkboxes are selected.
         - ``'combined'``: All checkboxes are selected.
+        - ``None`` (the default): automatically selects the checkboxes based
+          on other arguements like ``plot_type``.
 
-        Defaults to the settings computed by the :func:`plot_interactive._populate_label_add_menu` function.
+        .. note::
+
+            - This setting only affects the **initial** state of the annotation
+              menu—users can still modify selections interactively.
+            - There is **no internal consistency check** between this setting and
+              the `plot_type` or `vline_text_source` parameters. For example, you
+              can disable textual input using this argument even if you intend to
+              display vertical lines with text.
     """
 
     def __init__(
