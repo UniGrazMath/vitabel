@@ -1869,7 +1869,7 @@ class Vitals:
             stop_time = self.rec_stop()
 
         if isinstance(source, str):
-            source = self.get_channel_or_label(name)
+            source = self.get_channel_or_label(source)
 
         if not isinstance(source, (Channel, Label)):
             raise ValueError(
