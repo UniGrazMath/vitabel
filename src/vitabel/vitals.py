@@ -724,11 +724,47 @@ class Vitals:
 
     # # Add loading iterable of Frame or Series to add more channels at once
     # time_unit = time_unit,
-    def remove_channel(self, *, channel: Channel | None = None, **kwargs):
-        self.data.remove_channel(channel=channel, **kwargs)
+    def remove_channel(self, *, channel: Channel | None = None, **kwargs) -> Channel:
+        """Remove a channel from the data collection.
+        
+        Parameters
+        ----------
+        channel
+            The channel object to remove. If not provided, the channel is
+            fetched from the collection using the other provided
+            keyword arguments.
+        kwargs
+            Keyword arguments to filter the channels by. Passed
+            to :meth:`.TimeDataCollection.get_channel`, resulting
+            channel needs to be uniquely identified.
+        
+        Returns
+        -------
+        Channel
+            The removed channel object.
+        """
+        return self.data.remove_channel(channel=channel, **kwargs)
 
-    def remove_label(self, *, label: Label | None = None, **kwargs):
-        self.data.remove_label(label=label, **kwargs)
+    def remove_label(self, *, label: Label | None = None, **kwargs) -> Label:
+        """Remove a label from the data collection.
+        
+        Parameters
+        ----------
+        label
+            The label object to remove. If not provided, the label is
+            fetched from the collection using the other provided
+            keyword arguments.
+        kwargs
+            Keyword arguments to filter the channels by. Passed
+            to :meth:`.TimeDataCollection.get_label`, resulting
+            label needs to be uniquely identified.
+        
+        Returns
+        -------
+        Label
+            The removed label object.
+        """
+        return self.data.remove_label(label=label, **kwargs)
 
     def set_channel_plotstyle(
         self, channel_specification: ChannelSpecification | None = None, **kwargs
