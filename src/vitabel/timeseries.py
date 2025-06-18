@@ -2316,6 +2316,10 @@ class TimeDataCollection:
         channel
             The channel to add.
         """
+        if not isinstance(channel, Channel):
+            raise ValueError(
+                f"Expected a Channel, got {type(channel).__name__}"
+            )
         if channel in self.channels:
             raise ValueError(
                 f"Identical channel {channel.name} has already "
@@ -2339,6 +2343,10 @@ class TimeDataCollection:
         label
             The label to add.
         """
+        if not isinstance(label, Label):
+            raise ValueError(
+                f"Expected a Label, got {type(label).__name__}"
+            )
         if label.anchored_channel is not None:
             raise ValueError(
                 f"Label {label.name} is attached to channel {label.anchored_channel.name} "

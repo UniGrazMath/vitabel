@@ -568,36 +568,6 @@ def test_get_channel_info():
     assert 1 in info_dict["test"]
 
 
-def test_get_label_info():
-    cha = Label(
-        "Label1",
-        [
-            "2020-04-13 02:48:16.666000",
-            "2020-04-13 02:50:34.445000",
-            "2020-04-13 02:56:57.449000",
-        ],
-        np.array([1, 2, 3]),
-        metadata={"test": "1"},
-    )
-    cha2 = Label(
-        "Label2",
-        [
-            "2020-01-01 00:00:01.000000",
-            "2020-04-13 02:50:34.445000",
-            "2020-04-13 02:56:57.449000",
-        ],
-        np.array([1, 2, 3]),
-    )
-    cardio_object = Vitals()
-    cardio_object.add_channel(cha)
-    cardio_object.add_channel(cha2)
-    info_dict = cardio_object.get_channel_infos()
-    assert isinstance(info_dict, pd.DataFrame)
-    assert "Label2" in np.asarray(info_dict["Name"])
-    assert "test" in info_dict.columns
-    assert 1 in info_dict["test"]
-
-
 def test_truncate():
     cha = Channel(
         "Channel1",
