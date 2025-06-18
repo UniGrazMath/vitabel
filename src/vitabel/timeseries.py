@@ -894,8 +894,8 @@ class Label(TimeSeriesBase):
         anchored_channel: Channel | None = None,
         plotstyle: dict[str, Any] | None = None,
         metadata: dict[str, Any] | None = None,
-        plot_type: LabelPlotType | None = None,
-        vline_text_source: LabelPlotVLineTextSource | None = None, 
+        plot_type: LabelPlotType = "combined",
+        vline_text_source: LabelPlotVLineTextSource = "text_data", 
         annotation_preset_type: LabelAnnotationPresetType | None = None,
     ):
         self.name = name
@@ -964,18 +964,18 @@ class Label(TimeSeriesBase):
         self.metadata = copy(metadata) or {}
         """Additional label metadata."""
 
-        if plot_type is None:
-            plot_type = "combined"
-
+        self._plot_type: LabelPlotType
         self.plot_type = plot_type
         """The type of plot to use to visualize the label."""
 
         if vline_text_source is None:
             vline_text_source = "text_data"
         
+        self._vline_text_source: LabelPlotVLineTextSource
         self.vline_text_source = vline_text_source
         """The source of the text to be shown next to vertical lines."""
 
+        self._annotation_preset_type: LabelAnnotationPresetType | None
         self.annotation_preset_type = annotation_preset_type 
         """The preselection of the labels annotation menu."""
 
@@ -1011,7 +1011,7 @@ class Label(TimeSeriesBase):
         return self._plot_type
     
     @plot_type.setter
-    def plot_type(self, value: LabelPlotType | None):
+    def plot_type(self, value: LabelPlotType):
         if value not in typing.get_args(LabelPlotType):
             raise ValueError(f"Value '{value}' is not a valid choice for plot_type")
         self._plot_type = value
@@ -1022,7 +1022,7 @@ class Label(TimeSeriesBase):
         return self._vline_text_source
     
     @vline_text_source.setter
-    def vline_text_source(self, value: LabelPlotVLineTextSource | None):
+    def vline_text_source(self, value: LabelPlotVLineTextSource):
         if value not in typing.get_args(LabelPlotVLineTextSource):
             raise ValueError(
                 f"Value '{value}' is not a valid choice for vline_text_source."
@@ -1036,12 +1036,10 @@ class Label(TimeSeriesBase):
     
     @annotation_preset_type.setter
     def annotation_preset_type(self, value: LabelAnnotationPresetType | None):
-        
-        if value is not None:
-            if value not in typing.get_args(LabelAnnotationPresetType):
-                raise ValueError(
-                    f"Value '{value}' is not a valid choice for annotation_preset_type."
-                )
+        if value not in typing.get_args(LabelAnnotationPresetType):
+            raise ValueError(
+                f"Value '{value}' is not a valid choice for annotation_preset_type."
+            )
         self._annotation_preset_type = value
     
     def _check_data_shape(
@@ -1672,7 +1670,7 @@ class IntervalLabel(Label):
         anchored_channel: Channel | None = None,
         plotstyle: dict[str, Any] | None = None,
         metadata: dict[str, Any] | None = None,
-        plot_type: IntervalLabelPlotType | None = None,
+        plot_type: IntervalLabelPlotType = "combined",
         annotation_preset_type: LabelAnnotationPresetType | None = None,
     ):
 
@@ -1690,20 +1688,19 @@ class IntervalLabel(Label):
             annotation_preset_type=annotation_preset_type,
         )
 
-        if plot_type is None:
-            plot_type = "combined"
+        self._plot_type: IntervalLabelPlotType
         self.plot_type = plot_type
 
     @property
-    def plot_type(self) -> IntervalLabelPlotType | None:
+    def plot_type(self) -> IntervalLabelPlotType:  # type: ignore[override]
         """The type of plot to use to visualize the label."""
         return self._plot_type
         
     @plot_type.setter
-    def plot_type(self, value: IntervalLabelPlotType | None):
+    def plot_type(self, value: IntervalLabelPlotType):  # type: ignore[override]
         if value not in typing.get_args(IntervalLabelPlotType):
             raise ValueError(f"Value '{value}' is not a valid choice for plot_type")
-        self._plot_type = value
+        self._plot_type = value  # type: ignore[override]
 
 
     def _check_data_shape(
