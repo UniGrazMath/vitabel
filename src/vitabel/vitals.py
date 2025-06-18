@@ -1107,9 +1107,6 @@ class Vitals:
         stop
             The stop time for the plot. If not specified, the plot stops
             at the last time point.
-        resolution
-            The resolution of the plot in the time unit of the channels.
-            If not specified, the channel and label data is not downsampled.
         time_unit
             The time unit in which channel and label data are represented
             in. If not specified, the time unit of the channels is used.
