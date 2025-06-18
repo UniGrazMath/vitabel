@@ -3083,13 +3083,10 @@ class TimeDataCollection:
                 
                 # preset by annotation_preset_type specification
                 if label.annotation_preset_type is not None:
-                    if label.annotation_preset_type == "numerical":
+                    if label.annotation_preset_type in ("numerical", "combined"):
                         add_numeric_check.value = True
-                    elif label.annotation_preset_type == "textual":
+                    if label.annotation_preset_type in ("textual", "combined"):
                         add_text_check.value = True
-                    elif label.annotation_preset_type == "combined":
-                        add_text_check.value = True
-                        add_numeric_check.value = True
                     return
 
                 # preset by plot_type and vline_text_source
