@@ -30,6 +30,8 @@ LabelPlotVLineTextSource: TypeAlias = Literal["data", "text_data", "combined", "
 IntervalLabelPlotType: TypeAlias = Literal["box", "hline", "combined"]
 # IntervalLabelPlotVLineTextSource: TypeAlias = Literal["data", "text_data", "combined", "disabled"] #TODO: yet not implemented
 
+LabelAnnotationPresetType: TypeAlias = Literal["timestamp", "numerical", "textual", "combined"]
+
 @dataclass
 class Metric:
     """Auxiliary dataclass used to store (numeric) values and their unit.
