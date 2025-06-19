@@ -3079,7 +3079,7 @@ class TimeDataCollection:
             nonlocal DELETE_ANNOTATIONS, partial_interval_data, shifting_reference_time
             partial_interval_data = None             
             shifting_reference_time = None
-            fig.canvas._figure_label = "."
+            fig.canvas._figure_label = " "
             active_label = label_dict[label_dropdown.value]
             if change["new"]:  # value of "new" attribute is new button value
                 delete_toggle_button.description = "Mode: Delete Data"
@@ -3106,7 +3106,7 @@ class TimeDataCollection:
             nonlocal partial_interval_data, shifting_reference_time
             partial_interval_data = None             
             shifting_reference_time = None
-            fig.canvas._figure_label = "."
+            fig.canvas._figure_label = " "
             label = label_dict[label_dropdown.value]
             if isinstance(label, IntervalLabel):
                 if DELETE_ANNOTATIONS:
@@ -3498,7 +3498,7 @@ class TimeDataCollection:
             elif event.key == "escape":
                 partial_interval_data = None
                 shifting_reference_time = None
-                fig.canvas._figure_label = "."
+                fig.canvas._figure_label = " "
                 repaint_plot(start, stop)
 
         def mouse_click_listener(event: MouseEvent):
@@ -3558,7 +3558,7 @@ class TimeDataCollection:
                                 active_label.add_data((t1, t2), value=ydata, text=text_input) #TODO
                                 repaint_plot(start, stop)
                                 partial_interval_data = None
-                                fig.canvas._figure_label = "."
+                                fig.canvas._figure_label = " "
                         else:
                             time_data = (
                                 event.xdata * pd.to_timedelta(1, unit=time_unit)
