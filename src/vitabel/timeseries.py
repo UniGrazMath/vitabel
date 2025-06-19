@@ -766,7 +766,12 @@ class Channel(TimeSeriesBase):
             (the default), the time unit of the channel is used.
         """
 
-        channel_data = self.get_data(start=start, stop=stop, resolution=resolution)
+        channel_data = self.get_data(
+            start=start,
+            stop=stop,
+            resolution=resolution,
+            include_adjacent=True
+        )
         time_index = channel_data.time_index
         data = channel_data.data
         if data is None:
@@ -1528,7 +1533,11 @@ class Label(TimeSeriesBase):
                 "data or labels might be missing from the plot."
             )
 
-        time_index, data, text_data = self.get_data(start=start, stop=stop)
+        time_index, data, text_data = self.get_data(
+            start=start,
+            stop=stop,
+            include_adjacent=True
+        )
 
         if self.is_time_absolute():
             reference_time = reference_time or self.time_start
