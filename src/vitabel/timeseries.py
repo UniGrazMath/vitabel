@@ -693,6 +693,7 @@ class Channel(TimeSeriesBase):
         start: Timestamp | Timedelta | float | None = None,
         stop: Timestamp | Timedelta | float | None = None,
         resolution: Timedelta | float | str | None = None,
+        include_adjacent: bool = False,
     ) -> DataSlice:
         """Return a tuple of time and data values with optional
         filtering and downsampling.
@@ -711,9 +712,18 @@ class Channel(TimeSeriesBase):
             points of the downsampled data is bounded below by
             the given resolution.
             Assumes that the time index is sorted.
+        include_adjacent
+            If ``True``, the returned data also includes the time
+            points that are adjacent to (but outside of) the start and
+            stop times; useful for plotting. Defaults to ``False``.
         """
 
-        time_mask = self.get_time_mask(start=start, stop=stop, resolution=resolution)
+        time_mask = self.get_time_mask(
+            start=start,
+            stop=stop,
+            resolution=resolution,
+            include_adjacent=include_adjacent
+        )
 
         time_index = self.time_index[time_mask]
         if self.is_time_absolute():
@@ -1417,6 +1427,7 @@ class Label(TimeSeriesBase):
         self,
         start: Timestamp | Timedelta | float | None = None,
         stop: Timestamp | Timedelta | float | None = None,
+        include_adjacent: bool = False,
     ) -> DataSlice:
         """Return a tuple of time, data, and text data values with optional
         filtering.
@@ -1429,9 +1440,18 @@ class Label(TimeSeriesBase):
         stop
             The stop time for the data. If not specified, the
             data ends at the last time point.
+        include_adjacent
+            If ``True``, the returned data also includes the time
+            points that are adjacent to (but outside of) the start and
+            stop times; useful for plotting. Defaults to ``False``.
         """
 
-        time_mask = self.get_time_mask(start=start, stop=stop, resolution=None)
+        time_mask = self.get_time_mask(
+            start=start,
+            stop=stop,
+            resolution=None,
+            include_adjacent=include_adjacent
+        )
 
         time_index = self.time_index[time_mask]
         if self.is_time_absolute():
