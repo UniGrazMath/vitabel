@@ -312,6 +312,20 @@ def test_add_data_from_incorrect_DataFrame():
         cardio_object.add_data_from_DataFrame(df, datatype="label")
 
 
+def test_add_data_from_DataFrame_relative_time():
+    df = pd.DataFrame(
+        data={
+            "random data 1": np.random.random(100),
+            "random data 2": np.random.random(100),
+        },
+        index=pd.timedelta_range(start="42s", end="1h30m", periods=100),
+    )
+    vitals_case = Vitals()
+    vitals_case.add_data_from_DataFrame(df, datatype="channel")
+    assert len(vitals_case.channels) == 2
+    assert vitals_case.data.is_time_relative()
+
+
 def test_add_label_data_from_DataFrame():
     df = pd.DataFrame.from_dict(
         {

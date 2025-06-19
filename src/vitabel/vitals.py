@@ -622,7 +622,7 @@ class Vitals:
         """
 
         if not (
-            isinstance(source.index, pd.DatetimeIndex)
+            isinstance(source.index, (pd.DatetimeIndex, pd.TimedeltaIndex))
             or (pd.api.types.is_numeric_dtype(source.index))
         ):
             raise ValueError(
@@ -650,9 +650,9 @@ class Vitals:
                 self.data.add_channel(channel)
             elif datatype == "label":
                 label = Label(
-                    col,
-                    time,
-                    data,
+                    name=col,
+                    time_index=time,
+                    data=data,
                     time_start=time_start,
                     time_unit=time_unit,
                     metadata=metadata,
