@@ -2307,7 +2307,9 @@ class TimeDataCollection:
 
     def is_empty(self) -> bool:
         """Return whether the collection is empty."""
-        return not self.channels and not self.global_labels
+        return all(
+            series.is_empty() for series in self.channels + self.labels
+        )
 
     def is_time_absolute(self) -> bool:
         """Return whether the collection contains only absolute time data."""
@@ -2358,6 +2360,10 @@ class TimeDataCollection:
         channel
             The channel to add.
         """
+        if not isinstance(channel, Channel):
+            raise ValueError(
+                f"Expected a Channel, got {type(channel).__name__}"
+            )
         if channel in self.channels:
             raise ValueError(
                 f"Identical channel {channel.name} has already "
@@ -2381,6 +2387,10 @@ class TimeDataCollection:
         label
             The label to add.
         """
+        if not isinstance(label, Label):
+            raise ValueError(
+                f"Expected a Label, got {type(label).__name__}"
+            )
         if label.anchored_channel is not None:
             raise ValueError(
                 f"Label {label.name} is attached to channel {label.anchored_channel.name} "
@@ -2750,7 +2760,7 @@ class TimeDataCollection:
                 if self.is_time_absolute():
                     ex_time += channel.time_start
                 time_list.append(ex_time)
-            time = op(time_list)
+            time = op(time_list) if time_list else op([pd.Timedelta("0s"), pd.Timedelta("1s")])
         return time
 
     def _get_timeunit_from_channels(self, channel_lists: list[list[Channel]]) -> str:
@@ -2766,7 +2776,10 @@ class TimeDataCollection:
             The channel lists to get the time unit from.
         """
         channel_iter = it.chain.from_iterable(channel_lists)
-        time_unit = next(channel_iter).time_unit
+        try:
+            time_unit = next(channel_iter).time_unit
+        except StopIteration:
+            return "s"
         if not all(channel.time_unit == time_unit for channel in channel_iter):
             raise ValueError(
                 "The channel time units are not uniform. Specify the plot time "
@@ -2836,7 +2849,7 @@ class TimeDataCollection:
             time_unit = self._get_timeunit_from_channels(channel_lists)
 
         fig, axes = plt.subplots(num_subplots, squeeze=False, **subplots_kwargs)
-        if self.is_time_absolute():
+        if self.is_time_absolute() and not self.is_empty():
             fig.suptitle(f"Reference time: {start}")
         axes = axes[:, 0]
 
@@ -3177,8 +3190,11 @@ class TimeDataCollection:
 
         # ---------- WIDGETS FOR SHIFTING ------------------------
         # --------------------------------------------------------
+        preselected_channels = []
+        if self.channels:
+            preselected_channels.append(self.channels[0])
         shifting_channel_selection = widgets.SelectMultiple(
-            value=[self.channels[0]],
+            value=preselected_channels,
             options=[(f"[{idx}] {chan.name}", chan) for idx, chan in enumerate(self.channels)],
             description="Channels / Labels",
             disabled=False,
