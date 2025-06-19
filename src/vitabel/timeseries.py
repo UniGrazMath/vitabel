@@ -327,6 +327,7 @@ class TimeSeriesBase:
         start: Timestamp | Timedelta | float | None = None,
         stop: Timestamp | Timedelta | float | None = None,
         resolution: Timedelta | float | str | None = None,
+        include_adjacent: bool = False,
     ):
         """Return a boolean mask for the time index.
 
@@ -343,6 +344,10 @@ class TimeSeriesBase:
             is downsampled, by keeping every n-th data point, where
             n is resolution/ (mean time difference in time_index)
             Assumes that the time index is sorted.
+        include_adjacent
+            If ``True``, the mask includes the time points that are
+            adjacent to (but outside of) the start and stop times; useful
+            for plotting. Defaults to ``False``.
         """
         if self.is_empty():
             return np.array([], dtype=bool)
@@ -366,6 +371,16 @@ class TimeSeriesBase:
         if stop is not None:
             stop = self.convert_time_input(stop)
             bound_cond &= time_index <= stop
+
+        if include_adjacent:
+            region = np.where(bound_cond)[0]
+            if len(region) > 0:
+                first_index = region[0]
+                if first_index > 0:
+                    bound_cond[first_index - 1] = True
+                last_index = region[-1]
+                if last_index < len(bound_cond) - 1:
+                    bound_cond[last_index + 1] = True
 
         if start is not None and stop is not None and start > stop:
             logger.warning(
@@ -678,6 +693,7 @@ class Channel(TimeSeriesBase):
         start: Timestamp | Timedelta | float | None = None,
         stop: Timestamp | Timedelta | float | None = None,
         resolution: Timedelta | float | str | None = None,
+        include_adjacent: bool = False,
     ) -> DataSlice:
         """Return a tuple of time and data values with optional
         filtering and downsampling.
@@ -696,9 +712,18 @@ class Channel(TimeSeriesBase):
             points of the downsampled data is bounded below by
             the given resolution.
             Assumes that the time index is sorted.
+        include_adjacent
+            If ``True``, the returned data also includes the time
+            points that are adjacent to (but outside of) the start and
+            stop times; useful for plotting. Defaults to ``False``.
         """
 
-        time_mask = self.get_time_mask(start=start, stop=stop, resolution=resolution)
+        time_mask = self.get_time_mask(
+            start=start,
+            stop=stop,
+            resolution=resolution,
+            include_adjacent=include_adjacent
+        )
 
         time_index = self.time_index[time_mask]
         if self.is_time_absolute():
@@ -741,7 +766,12 @@ class Channel(TimeSeriesBase):
             (the default), the time unit of the channel is used.
         """
 
-        channel_data = self.get_data(start=start, stop=stop, resolution=resolution)
+        channel_data = self.get_data(
+            start=start,
+            stop=stop,
+            resolution=resolution,
+            include_adjacent=True
+        )
         time_index = channel_data.time_index
         data = channel_data.data
         if data is None:
@@ -1402,6 +1432,7 @@ class Label(TimeSeriesBase):
         self,
         start: Timestamp | Timedelta | float | None = None,
         stop: Timestamp | Timedelta | float | None = None,
+        include_adjacent: bool = False,
     ) -> DataSlice:
         """Return a tuple of time, data, and text data values with optional
         filtering.
@@ -1414,9 +1445,18 @@ class Label(TimeSeriesBase):
         stop
             The stop time for the data. If not specified, the
             data ends at the last time point.
+        include_adjacent
+            If ``True``, the returned data also includes the time
+            points that are adjacent to (but outside of) the start and
+            stop times; useful for plotting. Defaults to ``False``.
         """
 
-        time_mask = self.get_time_mask(start=start, stop=stop, resolution=None)
+        time_mask = self.get_time_mask(
+            start=start,
+            stop=stop,
+            resolution=None,
+            include_adjacent=include_adjacent
+        )
 
         time_index = self.time_index[time_mask]
         if self.is_time_absolute():
@@ -1493,7 +1533,11 @@ class Label(TimeSeriesBase):
                 "data or labels might be missing from the plot."
             )
 
-        time_index, data, text_data = self.get_data(start=start, stop=stop)
+        time_index, data, text_data = self.get_data(
+            start=start,
+            stop=stop,
+            include_adjacent=True
+        )
 
         if self.is_time_absolute():
             reference_time = reference_time or self.time_start
