@@ -327,6 +327,7 @@ class TimeSeriesBase:
         start: Timestamp | Timedelta | float | None = None,
         stop: Timestamp | Timedelta | float | None = None,
         resolution: Timedelta | float | str | None = None,
+        include_adjacent: bool = False,
     ):
         """Return a boolean mask for the time index.
 
@@ -343,6 +344,10 @@ class TimeSeriesBase:
             is downsampled, by keeping every n-th data point, where
             n is resolution/ (mean time difference in time_index)
             Assumes that the time index is sorted.
+        include_adjacent
+            If ``True``, the mask includes the time points that are
+            adjacent to (but outside of) the start and stop times; useful
+            for plotting. Defaults to ``False``.
         """
         if self.is_empty():
             return np.array([], dtype=bool)
@@ -366,6 +371,16 @@ class TimeSeriesBase:
         if stop is not None:
             stop = self.convert_time_input(stop)
             bound_cond &= time_index <= stop
+
+        if include_adjacent:
+            region = np.where(bound_cond)[0]
+            if len(region) > 0:
+                first_index = region[0]
+                if first_index > 0:
+                    bound_cond[first_index - 1] = True
+                last_index = region[-1]
+                if last_index < len(bound_cond) - 1:
+                    bound_cond[last_index + 1] = True
 
         if start is not None and stop is not None and start > stop:
             logger.warning(
