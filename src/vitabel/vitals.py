@@ -622,7 +622,7 @@ class Vitals:
         """
 
         if not (
-            isinstance(source.index, pd.DatetimeIndex)
+            isinstance(source.index, (pd.DatetimeIndex, pd.TimedeltaIndex))
             or (pd.api.types.is_numeric_dtype(source.index))
         ):
             raise ValueError(
