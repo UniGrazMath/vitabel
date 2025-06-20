@@ -16,6 +16,9 @@ see a typical code snippet illustrating how `vitabel` is used.
 
 More detailed explicit examples (including the required test data) are
 contained in the [examples directory](https://github.com/UniGrazMath/vitabel/tree/main/examples).
+An interactive playground where you can try the package directly in your browser
+is available via Binder:
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/UniGrazMath/vitabel/main?urlpath=%2Flab%2Ftree%2Fexamples)
 
 
 ## Usecase: German Resuscitation Registry

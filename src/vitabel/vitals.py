@@ -622,7 +622,7 @@ class Vitals:
         """
 
         if not (
-            isinstance(source.index, pd.DatetimeIndex)
+            isinstance(source.index, (pd.DatetimeIndex, pd.TimedeltaIndex))
             or (pd.api.types.is_numeric_dtype(source.index))
         ):
             raise ValueError(
@@ -650,9 +650,9 @@ class Vitals:
                 self.data.add_channel(channel)
             elif datatype == "label":
                 label = Label(
-                    col,
-                    time,
-                    data,
+                    name=col,
+                    time_index=time,
+                    data=data,
                     time_start=time_start,
                     time_unit=time_unit,
                     metadata=metadata,
@@ -724,11 +724,47 @@ class Vitals:
 
     # # Add loading iterable of Frame or Series to add more channels at once
     # time_unit = time_unit,
-    def remove_channel(self, *, channel: Channel | None = None, **kwargs):
-        self.data.remove_channel(channel=channel, **kwargs)
+    def remove_channel(self, *, channel: Channel | None = None, **kwargs) -> Channel:
+        """Remove a channel from the data collection.
+        
+        Parameters
+        ----------
+        channel
+            The channel object to remove. If not provided, the channel is
+            fetched from the collection using the other provided
+            keyword arguments.
+        kwargs
+            Keyword arguments to filter the channels by. Passed
+            to :meth:`.TimeDataCollection.get_channel`, resulting
+            channel needs to be uniquely identified.
+        
+        Returns
+        -------
+        Channel
+            The removed channel object.
+        """
+        return self.data.remove_channel(channel=channel, **kwargs)
 
-    def remove_label(self, *, label: Label | None = None, **kwargs):
-        self.data.remove_label(label=label, **kwargs)
+    def remove_label(self, *, label: Label | None = None, **kwargs) -> Label:
+        """Remove a label from the data collection.
+        
+        Parameters
+        ----------
+        label
+            The label object to remove. If not provided, the label is
+            fetched from the collection using the other provided
+            keyword arguments.
+        kwargs
+            Keyword arguments to filter the channels by. Passed
+            to :meth:`.TimeDataCollection.get_label`, resulting
+            label needs to be uniquely identified.
+        
+        Returns
+        -------
+        Label
+            The removed label object.
+        """
+        return self.data.remove_label(label=label, **kwargs)
 
     def set_channel_plotstyle(
         self, channel_specification: ChannelSpecification | None = None, **kwargs
@@ -1071,9 +1107,6 @@ class Vitals:
         stop
             The stop time for the plot. If not specified, the plot stops
             at the last time point.
-        resolution
-            The resolution of the plot in the time unit of the channels.
-            If not specified, the channel and label data is not downsampled.
         time_unit
             The time unit in which channel and label data are represented
             in. If not specified, the time unit of the channels is used.
@@ -1126,7 +1159,8 @@ class Vitals:
 
         for channel in self.channels:
             if channel.name in defib_channel_names:
-                time, data = channel.get_data()
+                channel_data = channel.get_data()
+                time, data = channel_data.time_index, channel_data.data
                 defib_data[channel.name] = {"timestamp": time, "data": data}
 
         time_index = np.array([])
@@ -1200,7 +1234,8 @@ class Vitals:
             )
         else:
             co2_channel = self.data.get_channel("capnography")
-            cotime, co = co2_channel.get_data()  # get data
+            co2_data = co2_channel.get_data()  # get data
+            cotime, co = co2_data.time_index, co2_data.data
 
             freq = np.timedelta64(1, "s") / np.nanmedian(cotime.diff())
             cotime = np.asarray(cotime)
@@ -1438,7 +1473,7 @@ class Vitals:
 
 
             
-        comp, *_ = cc_events_channel.get_data() # get data
+        comp = cc_events_channel.get_data().time_index # get data
 
         t_ref = cc_events_channel.time_start
 
@@ -1543,7 +1578,8 @@ class Vitals:
         else:
             ACC_channel = accelerometer_channel
 
-        acctime, acc = ACC_channel.get_data()  # get data
+        acc_data = ACC_channel.get_data()  # get data
+        acctime, acc = acc_data.time_index, acc_data.data
         freq = np.timedelta64(1, "s") / np.nanmedian(acctime.diff())
         t_ref = ACC_channel.time_start
 
@@ -1751,16 +1787,18 @@ class Vitals:
             )
         else:
             ACC_channel = self.data.get_channel("cpr_acceleration")
-            acctime, acc = ACC_channel.get_data()  # get data
+            acc_data = ACC_channel.get_data()  # get data
+            acctime, acc = acc_data.time_index, acc_data.data
 
             ECG_channel = self.data.get_channel("ecg_pads")
-            ecgtime, ecg = ECG_channel.get_data()  # get data
+            ecg_data = ECG_channel.get_data()  # get data
+            ecgtime, ecg = ecg_data.time_index, ecg_data.data
 
             if "cc_periods" not in self.get_label_names():
                 self.find_CC_periods_acc()
  
             label_cc_periods = self.data.get_label("cc_periods")
-            cc_periods, *_ = label_cc_periods.get_data()
+            cc_periods = label_cc_periods.get_data().time_index
             cc_periods =  np.asarray([t for pair in cc_periods for t in pair])
 
             t_ref = ACC_channel.time_start
@@ -1878,8 +1916,8 @@ class Vitals:
                 "Channel or Label"
             )
         
-        index, data, *_ = source.get_data()
-        timeseries = pd.Series(data, index=index)
+        source_data = source.get_data()
+        timeseries = pd.Series(source_data.data, index=source_data.time_index)
 
         return helpers.area_under_threshold(
             timeseries=timeseries,

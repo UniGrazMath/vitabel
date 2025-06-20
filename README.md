@@ -9,6 +9,7 @@
 </table>
 
 [![Documentation Status](https://readthedocs.org/projects/vitabel/badge/?version=latest)](https://vitabel.readthedocs.io/en/latest/index.html)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/UniGrazMath/vitabel/main?urlpath=%2Flab%2Ftree%2Fexamples)
 
 In a nutshell, the vitabel package enables interactive loading, processing, and annotation of vital medical time-series data (e.g., from defibrillators, anesthesia records, or critical care monitors) within a Jupyter notebook. By structuring and labeling data efficiently and intuitively, it paves the way for AI-driven analysis.
 

@@ -312,6 +312,20 @@ def test_add_data_from_incorrect_DataFrame():
         cardio_object.add_data_from_DataFrame(df, datatype="label")
 
 
+def test_add_data_from_DataFrame_relative_time():
+    df = pd.DataFrame(
+        data={
+            "random data 1": np.random.random(100),
+            "random data 2": np.random.random(100),
+        },
+        index=pd.timedelta_range(start="42s", end="1h30m", periods=100),
+    )
+    vitals_case = Vitals()
+    vitals_case.add_data_from_DataFrame(df, datatype="channel")
+    assert len(vitals_case.channels) == 2
+    assert vitals_case.data.is_time_relative()
+
+
 def test_add_label_data_from_DataFrame():
     df = pd.DataFrame.from_dict(
         {
@@ -632,9 +646,9 @@ def test_truncate():
     case.add_global_label(lab)
     truncated_case = case.truncate("2020-04-13 02:49:30", "2020-04-13 02:57:00")
     assert len(truncated_case.channels[0]) == 2
-    ch_time, _ = truncated_case.channels[0].get_data()
-    assert np.all(pd.Timestamp("2020-04-13 02:49:30") <= ch_time)
-    assert np.all(pd.Timestamp("2020-04-13 02:57:00") >= ch_time)
+    channel_data = truncated_case.channels[0].get_data()
+    assert np.all(pd.Timestamp("2020-04-13 02:49:30") <= channel_data.time_index)
+    assert np.all(pd.Timestamp("2020-04-13 02:57:00") >= channel_data.time_index)
     assert len(truncated_case.labels) == 2
     local_label = truncated_case.get_label("local label")
     assert len(local_label) == 1
@@ -692,7 +706,7 @@ def test_saving_and_loading_with_offset(tmpdir):
     channel.shift_time_index(pd.Timedelta("1 hour"))
     assert channel.time_start == pd.Timestamp(2020, 4, 13, 2, 48, 0)
     assert channel.offset == pd.Timedelta("1 hour")
-    assert channel.get_data()[0][0] == pd.Timestamp(2020, 4, 13, 3, 48, 0)
+    assert channel.get_data().time_index[0] == pd.Timestamp(2020, 4, 13, 3, 48, 0)
     vital_case = Vitals()
     vital_case.add_channel(channel)
     filepath = tmpdir / "testdata.json"
@@ -703,7 +717,7 @@ def test_saving_and_loading_with_offset(tmpdir):
     loaded_channel = loaded_case.get_channel("Channel1")
     assert loaded_channel.time_start == pd.Timestamp(2020, 4, 13, 2, 48, 0)
     assert loaded_channel.offset == pd.Timedelta("1 hour")
-    assert loaded_channel.get_data()[0][0] == pd.Timestamp(2020, 4, 13, 3, 48, 0)
+    assert loaded_channel.get_data().time_index[0] == pd.Timestamp(2020, 4, 13, 3, 48, 0)
     assert vital_case.data == loaded_case.data
 
 def test_create_shock_information_DataFrame():

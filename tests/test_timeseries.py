@@ -294,25 +294,26 @@ def test_channel_get_data():
     channel = Channel(name="test", time_index=time, data=data)
     time_channel = Channel(name="test timeonly", time_index=time, data=None)
 
-    x, y = channel.get_data()
-    np.testing.assert_allclose(x.total_seconds(), time)
-    np.testing.assert_allclose(y, data)
+    dt = channel.get_data()
+    np.testing.assert_allclose(dt.time_index.total_seconds(), time)
+    np.testing.assert_allclose(dt.data, data)
 
-    x, y = time_channel.get_data()
-    np.testing.assert_allclose(x.total_seconds(), time)
-    assert y is None
+    dt = time_channel.get_data()
+    np.testing.assert_allclose(dt.time_index.total_seconds(), time)
+    assert dt.data is None
+    assert dt.text_data is None
 
-    x, y = channel.get_data(start=1.5, stop=3.5)
-    np.testing.assert_allclose(x.total_seconds(), time[15:36])
-    np.testing.assert_allclose(y, data[15:36])
+    dt = channel.get_data(start=1.5, stop=3.5)
+    np.testing.assert_allclose(dt.time_index.total_seconds(), time[15:36])
+    np.testing.assert_allclose(dt.data, data[15:36])
 
-    x, y = channel.get_data(start=1.0, stop=4.0, resolution="0.5s")
-    np.testing.assert_allclose(x.total_seconds(), np.arange(1.0, 4.01, 0.5))
-    np.testing.assert_allclose(y, 0, atol=1e-8)
+    dt = channel.get_data(start=1.0, stop=4.0, resolution="0.5s")
+    np.testing.assert_allclose(dt.time_index.total_seconds(), np.arange(1.0, 4.01, 0.5))
+    np.testing.assert_allclose(dt.data, 0, atol=1e-8)
 
-    x, y = channel.get_data(start=1.0, stop=4.0, resolution=1.0)
-    np.testing.assert_allclose(x.total_seconds(), np.arange(1.0, 4.01, 1.0))
-    np.testing.assert_allclose(y, 0, atol=1e-8)
+    dt = channel.get_data(start=1.0, stop=4.0, resolution=1.0)
+    np.testing.assert_allclose(dt.time_index.total_seconds(), np.arange(1.0, 4.01, 1.0))
+    np.testing.assert_allclose(dt.data, 0, atol=1e-8)
 
 
 def test_channel_get_data_absolute():
@@ -320,12 +321,12 @@ def test_channel_get_data_absolute():
     data = np.random.random(len(time))
     channel = Channel(name="test", time_index=time, data=data)
 
-    x, y = channel.get_data(
+    dt = channel.get_data(
         start=pd.Timestamp("2020-02-02 12:02:30"),
         stop=pd.Timestamp("2020-02-02 12:05:00"),
     )
-    assert np.all(x == time[25:51])
-    np.testing.assert_allclose(y, data[25:51])
+    assert np.all(dt.time_index == time[25:51])
+    np.testing.assert_allclose(dt.data, data[25:51])
 
 
 def test_channel_get_data_invalid_bounds():
@@ -667,19 +668,19 @@ def test_interval_label_get_data():
         name="rainfall",
         time_index=time_index,
     )
-    t, _, _ = label.get_data()
+    t = label.get_data().time_index
     assert len(t) == 2
     assert tuple(t[0]) == tuple(
         pd.Timestamp(stmp) for stmp in ["2020-02-02 12:00:00", "2020-02-02 12:45:00"]
     )
 
-    t, _, _ = label.get_data(start=pd.Timestamp("2020-02-03 14:00:00"))
+    t = label.get_data(start=pd.Timestamp("2020-02-03 14:00:00")).time_index
     assert len(t) == 1
     assert tuple(t[0]) == tuple(
         pd.Timestamp(stmp) for stmp in ["2020-02-03 14:42:00", "2020-02-03 18:00:00"]
     )
 
-    t, _, _ = label.get_data(start=pd.Timestamp("2020-02-03 15:00:00"))
+    t = label.get_data(start=pd.Timestamp("2020-02-03 15:00:00")).time_index
     assert len(t) == 1
     assert tuple(t[0]) == tuple(
         pd.Timestamp(stmp) for stmp in ["2020-02-03 14:42:00", "2020-02-03 18:00:00"]
@@ -897,7 +898,9 @@ def test_remove_label():
     assert len(collection.labels) == 2
     assert collection.label_names == ["events", "events 2"]
 
-    collection.remove_label(name="events")
+    events_label = collection.remove_label(name="events")
+    assert events_label is label
+    assert events_label not in collection.labels
     assert len(collection.labels) == 1
     assert collection.label_names == ["events 2"]
 

@@ -29,7 +29,8 @@ from vitabel.typing import (
     Timestamp,
     ChannelSpecification,
     LabelSpecification,
-    LabelAnnotationPresetType
+    LabelAnnotationPresetType,
+    DataSlice,
 )
 
 
@@ -326,6 +327,7 @@ class TimeSeriesBase:
         start: Timestamp | Timedelta | float | None = None,
         stop: Timestamp | Timedelta | float | None = None,
         resolution: Timedelta | float | str | None = None,
+        include_adjacent: bool = False,
     ):
         """Return a boolean mask for the time index.
 
@@ -342,6 +344,10 @@ class TimeSeriesBase:
             is downsampled, by keeping every n-th data point, where
             n is resolution/ (mean time difference in time_index)
             Assumes that the time index is sorted.
+        include_adjacent
+            If ``True``, the mask includes the time points that are
+            adjacent to (but outside of) the start and stop times; useful
+            for plotting. Defaults to ``False``.
         """
         if self.is_empty():
             return np.array([], dtype=bool)
@@ -365,6 +371,16 @@ class TimeSeriesBase:
         if stop is not None:
             stop = self.convert_time_input(stop)
             bound_cond &= time_index <= stop
+
+        if include_adjacent:
+            region = np.where(bound_cond)[0]
+            if len(region) > 0:
+                first_index = region[0]
+                if first_index > 0:
+                    bound_cond[first_index - 1] = True
+                last_index = region[-1]
+                if last_index < len(bound_cond) - 1:
+                    bound_cond[last_index + 1] = True
 
         if start is not None and stop is not None and start > stop:
             logger.warning(
@@ -561,9 +577,11 @@ class Channel(TimeSeriesBase):
             The stop time for the truncated channel.
         """
 
-        truncated_time_index, truncated_data = self.get_data(
+        channel_data = self.get_data(
             start=start_time, stop=stop_time
         )
+        truncated_time_index = channel_data.time_index
+        truncated_data = channel_data.data
         # if channel is absolute time, the truncated time index is absolute,
         # no need to set start_time. also, offset is applied to the truncated
         # time index.
@@ -620,17 +638,17 @@ class Channel(TimeSeriesBase):
             data ends at the last time point.
         """
        
-        time_index, data = self.get_data(start=start, stop=stop)
+        channel_data = self.get_data(start=start, stop=stop)
         if filename is None:
             filename = f"{self.name}.csv"
         
         if isinstance(filename, str):
             filename = Path(filename)
 
-        if data is None:
-            df = pd.DataFrame({"time": time_index})
+        if channel_data.data is None:
+            df = pd.DataFrame({"time": channel_data.time_index})
         else:
-            df = pd.DataFrame({"time": time_index, "data": data})
+            df = pd.DataFrame({"time": channel_data.time_index, "data": channel_data.data})
         df.to_csv(filename)
 
     @classmethod
@@ -675,7 +693,8 @@ class Channel(TimeSeriesBase):
         start: Timestamp | Timedelta | float | None = None,
         stop: Timestamp | Timedelta | float | None = None,
         resolution: Timedelta | float | str | None = None,
-    ) -> tuple[npt.NDArray, npt.NDArray | None]:
+        include_adjacent: bool = False,
+    ) -> DataSlice:
         """Return a tuple of time and data values with optional
         filtering and downsampling.
 
@@ -693,16 +712,25 @@ class Channel(TimeSeriesBase):
             points of the downsampled data is bounded below by
             the given resolution.
             Assumes that the time index is sorted.
+        include_adjacent
+            If ``True``, the returned data also includes the time
+            points that are adjacent to (but outside of) the start and
+            stop times; useful for plotting. Defaults to ``False``.
         """
 
-        time_mask = self.get_time_mask(start=start, stop=stop, resolution=resolution)
+        time_mask = self.get_time_mask(
+            start=start,
+            stop=stop,
+            resolution=resolution,
+            include_adjacent=include_adjacent
+        )
 
         time_index = self.time_index[time_mask]
         if self.is_time_absolute():
             time_index += self.time_start
 
         data = self.data[time_mask] if self.data is not None else None
-        return time_index, data
+        return DataSlice(time_index=time_index, data=data)
 
     def plot(
         self,
@@ -738,7 +766,14 @@ class Channel(TimeSeriesBase):
             (the default), the time unit of the channel is used.
         """
 
-        time_index, data = self.get_data(start=start, stop=stop, resolution=resolution)
+        channel_data = self.get_data(
+            start=start,
+            stop=stop,
+            resolution=resolution,
+            include_adjacent=True
+        )
+        time_index = channel_data.time_index
+        data = channel_data.data
         if data is None:
             data = np.zeros_like(time_index, dtype=float)
 
@@ -1257,9 +1292,12 @@ class Label(TimeSeriesBase):
         stop_time
             The stop time for the truncated label.
         """
-        truncated_time_index, truncated_data, truncated_text_data = self.get_data(
+        label_data = self.get_data(
             start=start_time, stop=stop_time
         )
+        truncated_time_index = label_data.time_index
+        truncated_data = label_data.data
+        truncated_text_data = label_data.text_data
 
         truncated_label = Label(
             name=self.name,
@@ -1394,7 +1432,8 @@ class Label(TimeSeriesBase):
         self,
         start: Timestamp | Timedelta | float | None = None,
         stop: Timestamp | Timedelta | float | None = None,
-    ) -> tuple[npt.NDArray, npt.NDArray | None, npt.NDArray | None]:
+        include_adjacent: bool = False,
+    ) -> DataSlice:
         """Return a tuple of time, data, and text data values with optional
         filtering.
 
@@ -1406,9 +1445,18 @@ class Label(TimeSeriesBase):
         stop
             The stop time for the data. If not specified, the
             data ends at the last time point.
+        include_adjacent
+            If ``True``, the returned data also includes the time
+            points that are adjacent to (but outside of) the start and
+            stop times; useful for plotting. Defaults to ``False``.
         """
 
-        time_mask = self.get_time_mask(start=start, stop=stop, resolution=None)
+        time_mask = self.get_time_mask(
+            start=start,
+            stop=stop,
+            resolution=None,
+            include_adjacent=include_adjacent
+        )
 
         time_index = self.time_index[time_mask]
         if self.is_time_absolute():
@@ -1422,7 +1470,7 @@ class Label(TimeSeriesBase):
         if self.text_data is not None and time_mask.any():
             text_data = self.text_data[time_mask]
 
-        return time_index, data, text_data
+        return DataSlice(time_index=time_index, data=data, text_data=text_data)
 
     def plot(
         self,
@@ -1485,7 +1533,11 @@ class Label(TimeSeriesBase):
                 "data or labels might be missing from the plot."
             )
 
-        time_index, data, text_data = self.get_data(start=start, stop=stop)
+        time_index, data, text_data = self.get_data(
+            start=start,
+            stop=stop,
+            include_adjacent=True
+        )
 
         if self.is_time_absolute():
             reference_time = reference_time or self.time_start
@@ -1879,7 +1931,7 @@ class IntervalLabel(Label):
         self,
         start: Timestamp | Timedelta | float | None = None,
         stop: Timestamp | Timedelta | float | None = None,
-    ) -> tuple[npt.NDArray, npt.NDArray | None]:
+    ) -> DataSlice:
         """Return a tuple of interval endpoints and data values with optional
         filtering. This returns all intervals that intersect with the
         specified time range, shortening the intervals if necessary.
@@ -1894,7 +1946,7 @@ class IntervalLabel(Label):
             data ends at the last time point.
         """
         if self.is_empty() or (start is None and stop is None):
-            return self.intervals, self.data, self.text_data
+            return DataSlice(time_index=self.intervals, data=self.data, text_data=self.text_data)
 
         if start is None:
             start = self.time_index.min()
@@ -1921,7 +1973,7 @@ class IntervalLabel(Label):
         data = None if data is not None and len(data) == 0 else data
         text_data = None if text_data is not None and len(text_data) == 0 else text_data
 
-        return intervals, data, text_data
+        return DataSlice(time_index=intervals, data=data, text_data=text_data)
     
 
     def add_data(
@@ -2028,10 +2080,10 @@ class IntervalLabel(Label):
         if self.text_data is not None:
             self.text_data = np.delete(self.text_data, remove_index)
 
-        if np.all(np.isnan(self.data)):
+        if self.data is not None and np.all(np.isnan(self.data)):
             self.data = None
        
-        if np.all(pd.isna(self.text_data)):
+        if self.text_data is not None and np.all(pd.isna(self.text_data)):
             self.text_data = None
 
         if remove_index == 0 and self.is_time_absolute():
@@ -2364,14 +2416,9 @@ class TimeDataCollection:
         """
         if name is not None:
             kwargs["name"] = name
-        channel_list = [
+        return [
             channel for channel in self.channels if match_object(channel, **kwargs)
         ]
-
-        if len(channel_list) == 0:
-            logger.warning(f"Channel specification {kwargs} returned no channels")
-
-        return channel_list
 
     def get_channel(self, name: str | None = None, **kwargs) -> Channel:
         """Return a channel by name.
@@ -2446,7 +2493,7 @@ class TimeDataCollection:
             )
         return labels[0]
 
-    def remove_label(self, *, label: Label | None = None, **kwargs):
+    def remove_label(self, *, label: Label | None = None, **kwargs) -> Label:
         """Remove a local or global label from the collection.
 
         Local labels are removed by detaching them from their
@@ -2469,8 +2516,9 @@ class TimeDataCollection:
             label.detach()
         else:
             self.global_labels.remove(label)
+        return label
 
-    def remove_channel(self, *, channel: Channel | None = None, **kwargs):
+    def remove_channel(self, *, channel: Channel | None = None, **kwargs) -> Channel:
         """Remove a channel by name.
 
         Parameters
@@ -2489,6 +2537,7 @@ class TimeDataCollection:
             channel = self.get_channel(**kwargs)
 
         self.channels.remove(channel)
+        return channel
 
     def set_channel_plotstyle(
         self, channel_specification: ChannelSpecification | None = None, **kwargs
@@ -2787,6 +2836,8 @@ class TimeDataCollection:
             time_unit = self._get_timeunit_from_channels(channel_lists)
 
         fig, axes = plt.subplots(num_subplots, squeeze=False, **subplots_kwargs)
+        if self.is_time_absolute():
+            fig.suptitle(f"Reference time: {start}")
         axes = axes[:, 0]
 
         if resolution is None:
@@ -2809,6 +2860,7 @@ class TimeDataCollection:
 
             plot_duration = (stop - start) / pd.to_timedelta(1, unit=time_unit)
             subax.set_xlim((0, plot_duration))
+            subax.set_xlabel(f"time [{time_unit}]", labelpad=-12, fontsize=7)
             subax.grid(True)
             subax.legend(loc="upper right")
 
@@ -2851,9 +2903,6 @@ class TimeDataCollection:
         stop
             The stop time for the plot. If not specified, the plot stops
             at the last time point.
-        resolution
-            The resolution of the plot in the time unit of the channels.
-            If not specified, the channel and label data is not downsampled.
         time_unit
             The time unit in which channel and label data are represented
             in. If not specified, the time unit of the channels is used.
@@ -3030,7 +3079,7 @@ class TimeDataCollection:
             nonlocal DELETE_ANNOTATIONS, partial_interval_data, shifting_reference_time
             partial_interval_data = None             
             shifting_reference_time = None
-            fig.canvas._figure_label = "."
+            fig.canvas._figure_label = " "
             active_label = label_dict[label_dropdown.value]
             if change["new"]:  # value of "new" attribute is new button value
                 delete_toggle_button.description = "Mode: Delete Data"
@@ -3057,7 +3106,7 @@ class TimeDataCollection:
             nonlocal partial_interval_data, shifting_reference_time
             partial_interval_data = None             
             shifting_reference_time = None
-            fig.canvas._figure_label = "."
+            fig.canvas._figure_label = " "
             label = label_dict[label_dropdown.value]
             if isinstance(label, IntervalLabel):
                 if DELETE_ANNOTATIONS:
@@ -3130,7 +3179,7 @@ class TimeDataCollection:
         # --------------------------------------------------------
         shifting_channel_selection = widgets.SelectMultiple(
             value=[self.channels[0]],
-            options=[(chan.name, chan) for chan in self.channels],
+            options=[(f"[{idx}] {chan.name}", chan) for idx, chan in enumerate(self.channels)],
             description="Channels / Labels",
             disabled=False,
             continuous_update=True,
@@ -3249,6 +3298,10 @@ class TimeDataCollection:
         ]
         overview_indicators = []
 
+        partial_interval_data = None
+        shifting_reference_time = None
+        shifting_reference_axis = None
+
         def update_ylim_settings():
             for ax, limit_widget in zip(channel_axes, limit_widgets):
                 _, min_input, max_input = limit_widget.children
@@ -3335,6 +3388,13 @@ class TimeDataCollection:
                     )
                     for ax in overview_axes
                 ]
+                if shifting_reference_time is not None:
+                    shifting_reference_axis.axvline(
+                        x=(shifting_reference_time - reference_time) / pd.to_timedelta(1, unit=time_unit),
+                        color="red",
+                        linestyle="--",
+                        linewidth=1.5,
+                    )
             return
 
         def repaint_overview_plot():
@@ -3394,9 +3454,6 @@ class TimeDataCollection:
             elif mode == InteractionMode.SETTINGS:
                 pass
 
-        partial_interval_data = None
-        shifting_reference_time = None
-
         def key_press_listener(event: KeyEvent):
             nonlocal \
                 start, \
@@ -3441,11 +3498,11 @@ class TimeDataCollection:
             elif event.key == "escape":
                 partial_interval_data = None
                 shifting_reference_time = None
-                fig.canvas._figure_label = "."
+                fig.canvas._figure_label = " "
                 repaint_plot(start, stop)
 
         def mouse_click_listener(event: MouseEvent):
-            nonlocal fig, partial_interval_data, shifting_reference_time, start, stop
+            nonlocal fig, partial_interval_data, shifting_reference_time, shifting_reference_axis, start, stop
 
             current_mode = InteractionMode(tab.selected_index)
             current_axes = event.inaxes
@@ -3457,8 +3514,6 @@ class TimeDataCollection:
                         active_label: Label = label_dict[label_dropdown.value]
                         if isinstance(active_label, IntervalLabel):
                             if DELETE_ANNOTATIONS:
-
-
                                 time_data = (
                                     event.xdata * pd.to_timedelta(1, unit=time_unit)
                                     + reference_time
@@ -3503,7 +3558,7 @@ class TimeDataCollection:
                                 active_label.add_data((t1, t2), value=ydata, text=text_input) #TODO
                                 repaint_plot(start, stop)
                                 partial_interval_data = None
-                                fig.canvas._figure_label = "."
+                                fig.canvas._figure_label = " "
                         else:
                             time_data = (
                                 event.xdata * pd.to_timedelta(1, unit=time_unit)
@@ -3515,10 +3570,10 @@ class TimeDataCollection:
                                     / screen_pixel_width
                                     * CANVAS_SELECTION_TOLERANCE_PX
                                 )
-                                selected_times, _, _ = active_label.get_data(
+                                selected_times = active_label.get_data(
                                     start=time_data - tolerance,
                                     stop=time_data + tolerance,
-                                )
+                                ).time_index
                                 if len(selected_times) > 0:
                                     selected_time = min(selected_times)
                                     active_label.remove_data(time_data=selected_time)
@@ -3540,6 +3595,7 @@ class TimeDataCollection:
                                 event.xdata * pd.to_timedelta(1, unit=time_unit)
                                 + reference_time
                             )
+                            shifting_reference_axis = current_axes
                         else:
                             offset = (
                                 event.xdata * pd.to_timedelta(1, unit=time_unit)
@@ -3550,6 +3606,7 @@ class TimeDataCollection:
                                 channel: Channel
                                 channel.shift_time_index(delta_t=offset)
                             shifting_reference_time = None
+                            shifting_reference_axis = None
                             repaint_overview_plot()
                             repaint_plot(start, stop)
 
