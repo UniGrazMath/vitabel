@@ -2365,6 +2365,7 @@ class TimeDataCollection:
             )
         if (
             not self.is_empty()
+            and not channel.is_empty() # empty channel will always be relative
             and self.is_time_absolute() != channel.is_time_absolute()
         ):
             raise ValueError(
