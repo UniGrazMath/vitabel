@@ -219,7 +219,7 @@ class TimeSeriesBase:
         return self._offset
     
     @property
-    def first_entry(self) -> Timestamp | None:
+    def first_entry(self) -> Timestamp | Timedelta | None:
         '''The time of the earliest entry in time_index, as shown by the info.'''
         min_time = None
         if len(self) > 0:
