@@ -1728,6 +1728,9 @@ class IntervalLabel(Label):
         annotation_preset_type: LabelAnnotationPresetType | None = None,
     ):
 
+        if time_index is not None and len(time_index) > 0 and all(isinstance(item, tuple) for item in time_index):
+            time_index = [interval for time_tuple in time_index for interval in time_tuple]
+        
         super().__init__(
             name=name,
             time_index=time_index,
