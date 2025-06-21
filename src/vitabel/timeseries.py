@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import copy
-from typing import Any, Literal
+from typing import Any, Literal, Tuple
 from matplotlib.text import Text
 from matplotlib.patches import Rectangle
 
@@ -1728,6 +1728,9 @@ class IntervalLabel(Label):
         annotation_preset_type: LabelAnnotationPresetType | None = None,
     ):
 
+        if time_index and all(isinstance(item, tuple) for item in time_index):
+            time_index = [interval for time_tuple in time_index for interval in time_tuple]
+        
         super().__init__(
             name=name,
             time_index=time_index,
