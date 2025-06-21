@@ -56,18 +56,11 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
             info_dict[idx].update(series.metadata)
         if hasattr(series, "name"):
             info_dict[idx]["Name"] = series.name
-        min_time = max_time = None
-        if len(series) > 0:
-            min_time = min(series.time_index)
-            max_time = max(series.time_index)
-            if series.is_time_absolute():
-                min_time += series.time_start
-                max_time += series.time_start
 
         info_dict[idx].update(
             {
-                "First Entry": min_time,
-                "Last Entry": max_time,
+                "First Entry": series.first_entry,
+                "Last Entry": series.last_entry,
                 "Length": len(series),
                 "Offset": series.offset,
             }
@@ -224,6 +217,26 @@ class TimeSeriesBase:
     def offset(self) -> Timedelta:
         """The offset applied to the time data."""
         return self._offset
+    
+    @property
+    def first_entry(self) -> Timestamp | Timedelta | None:
+        '''The time of the earliest entry in time_index, as shown by the info.'''
+        min_time = None
+        if len(self) > 0:
+            min_time = min(self.time_index)
+            if self.is_time_absolute():
+                min_time += self.time_start
+        return min_time
+        
+    @property
+    def last_entry(self) -> Timestamp | Timedelta | None:
+        '''The time of the latest entry in time_index, as shown by the info.'''       
+        max_time = None
+        if len(self) > 0:
+            max_time = max(self.time_index)
+            if self.is_time_absolute():
+                max_time += self.time_start
+        return max_time
     
     @offset.setter
     def offset(self, value: Timedelta | float):
