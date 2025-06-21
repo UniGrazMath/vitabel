@@ -2669,6 +2669,9 @@ class TimeDataCollection:
     def _parse_channel_specification(
         self, channels: list[list[ChannelSpecification | int]] | None
     ) -> list[list[Channel]]:
+        """Parse (nested) channel specifications into nested lists of channels.
+        Empty channels are excluded. 
+        """
         channel_lists = []
         if channels is None:
             channel_lists.append(self.channels)
@@ -2686,7 +2689,8 @@ class TimeDataCollection:
                         channel_list.append(spec)
                     else:
                         raise ValueError(f"Invalid channel specification: {spec}")
-
+                
+                channel_list = [channel for channel in channel_list if not channel.is_empty()]
                 channel_lists.append(channel_list)
         return channel_lists
 
@@ -2697,6 +2701,7 @@ class TimeDataCollection:
         include_attached_labels: bool = False,
     ) -> list[list[Label]]:
         """Parse (nested) label specifications into nested lists of labels.
+        Empty labels are excluded.
 
         Parameters
         ----------
@@ -2727,6 +2732,8 @@ class TimeDataCollection:
                         label_list.append(spec)
                     else:
                         raise ValueError(f"Invalid label specification: {spec}")
+
+                label_list = [label for label in label_list if not label.is_empty()]        
                 label_lists.append(label_list)
         if include_attached_labels:
             for idx in range(num_subplots):
