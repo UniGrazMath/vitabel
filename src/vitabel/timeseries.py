@@ -229,7 +229,7 @@ class TimeSeriesBase:
         return min_time
         
     @property
-    def last_entry(self) -> Timestamp | None:
+    def last_entry(self) -> Timestamp | Timedelta | None:
         '''The time of the latest entry in time_index, as shown by the info.'''       
         max_time = None
         if len(self) > 0:
@@ -237,7 +237,6 @@ class TimeSeriesBase:
             if self.is_time_absolute():
                 max_time += self.time_start
         return max_time
-        
     
     @offset.setter
     def offset(self, value: Timedelta | float):
