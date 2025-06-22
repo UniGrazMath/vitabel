@@ -1030,26 +1030,46 @@ class Vitals:
             If no channel matches the specification, an empty list is returned.
         """
 
-        if kwargs:
-            channel_names = self.data.get_channel_names(**kwargs)
-        else:
-            channel_names = self.data.channel_names
-            
-        return channel_names
+        channels = self.data.get_channels(**kwargs)
+        
+        return [channel.name for channel in channels]
 
     def get_label_names(self, **kwargs) -> list[str]:  # part of register application
         """Returns a list with the names of all labels.
+
+        Parameters
+        ----------
+        kwargs
+            Keyword arguments to filter the labels by.
+            See :meth:`.get_label` for valid specifications.
+
+        Returns
+        -------
+        list[str]
+            A list with the names of all labels in the recording.
+            If no label matches the specification, an empty list is returned.
         
         """
-        if kwargs:
-            label_names = self.data.get_label_names(**kwargs)
-        else:
-            label_names = self.data.label_names
 
-        return label_names
+        labels = self.data.get_labels(**kwargs)
+        
+        return [label.name for label in labels]
 
     def get_channel_or_label_names(self, **kwargs) -> list[str]:
-        """Returns a list with all names from either channels or labels."""
+        """Returns a list with all names from either channels or labels.
+        
+        Parameters
+        ----------
+        kwargs
+            Keyword arguments to filter the channels and labels by.
+            See :meth:`.get_channel` and :meth:`.get_label` for valid specifications.
+
+        Returns
+        -------
+        list[str]
+            A list with the names of all channels and labels in the recording.
+            If no channel or label matches the specification, an empty list is returned.
+        """
         return self.get_channel_names(**kwargs) + self.get_label_names(**kwargs)
 
     def keys(self, **kwargs) -> list[str]:

@@ -2312,35 +2312,12 @@ class TimeDataCollection:
     def channel_names(self) -> list[str]:
         """List of channel names."""
         return [channel.name for channel in self.channels]
-    
-    def get_channel_names(self, **kwargs) -> list[str]:
-        """Return a list of channel names.
-
-        Parameters
-        ----------
-        kwargs
-            Keyword arguments to filter the channels by. The
-            specified arguments are compared to the attributes
-            of the channels.
-        """
-        return [channel.name for channel in self.get_channels(**kwargs)]    
 
     @property
     def label_names(self) -> list[str]:
         """List of label names for all labels in the collection."""
         return [label.name for label in self.labels]
-    
-    def get_label_names(self, **kwargs) -> list[str]:
-        """Return a list of label names.
 
-        Parameters
-        ----------
-        kwargs
-            Keyword arguments to filter the labels by. The
-            specified arguments are compared to the attributes
-            of the labels.
-        """
-        return [label.name for label in self.get_labels(**kwargs)]
 
     def is_empty(self) -> bool:
         """Return whether the collection is empty."""
