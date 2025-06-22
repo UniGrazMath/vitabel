@@ -865,12 +865,12 @@ class Vitals:
     def get_channels(self, name: str | None = None, **kwargs) -> list[Channel]:
         """Returns a list of channels based on their name.
 
+        This method retrieves all channels that match the given name and
+        keyword arguments. If no name is specified, all channels are returned.
+
         See also
         --------
         :meth:`.TimeDataCollection.get_channels`
-        -----------
-        This method retrieves all channels that match the given name and
-        keyword arguments. If no name is specified, all channels are returned.
 
         Parameters
         ----------
@@ -893,8 +893,7 @@ class Vitals:
         See also
         --------
         :meth:`.TimeDataCollection.get_channel`
-        -----------
-        This method retrieves a single channel that matches the given name.
+
 
         Parameters
         ----------
@@ -924,9 +923,6 @@ class Vitals:
         See also
         --------
         :meth:`.TimeDataCollection.get_labels`
-        -----------
-        This method retrieves all labels that match the given name and
-        keyword arguments. If no name is specified, all labels are returned.
         
         Parameters
         ----------
@@ -971,15 +967,15 @@ class Vitals:
         self, name: str | None = None, label_type: type[Label] | None = None,  **kwargs
     ) -> list[Channel | Label]:
         """Returns a list of channels or labels based on their name.
-        
-        See also
-        --------
-        :meth:`.get_channel` and :meth:`.get_label`
-        -----------
 
         This method combines the results of :meth:`.get_channel` and :meth:`.
         get_label` to return both channels and labels that match the given name.
         If a `label_type` is specified, it filters the labels accordingly.
+        
+        See also
+        --------
+        :meth:`.get_channel` and :meth:`.get_label`
+
 
         Parameters
         ----------
@@ -1011,10 +1007,6 @@ class Vitals:
         See also
         --------
         :meth:`.get_channel` and :meth:`.get_label`
-        -----------
-        This method combines the results of :meth:`.get_channel` and :meth:`.get_label`
-        to return a single channel or label that matches the given name.
-        If a `label_type` is specified, it filters the labels accordingly.
 
         Parameters
         ----------
@@ -2084,7 +2076,6 @@ class Vitals:
 
         See also
         --------
-        
         :func:`.utils.helpers.area_under_threshold`
 
         Parameters
