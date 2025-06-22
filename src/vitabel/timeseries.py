@@ -3014,7 +3014,10 @@ class TimeDataCollection:
 
         label_master = sorted(distinct_labels["single"], key=lambda l: l.name) + sorted(distinct_labels["interval"], key=lambda l: l.name)
         label_dict =  dict(enumerate(label_master, start=1))
-        dropdown_options = [(label.name, i) for i, label in label_dict.items()]
+        dropdown_options = [
+            (f"{label.name}   [Interval]", i) if isinstance(label, IntervalLabel) else (label.name, i)
+            for i, label in label_dict.items()
+        ]
 
         label_dropdown = widgets.Dropdown(
             options=dropdown_options,
