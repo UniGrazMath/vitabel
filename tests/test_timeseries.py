@@ -855,23 +855,30 @@ def test_collection_detach_label_from_channel():
     channel = Channel(name="test", time_index=time, data=data)
     label1 = Label(name="events1", time_index=[0.5, 0.7, 0.9])
     label2 = Label(name="events2", time_index=[0.1, 0.2, 0.3])
-    channel.attach_label(label1)
-    channel.attach_label(label2)
+    label3 = Label(name="events3", time_index=[0.4, 0.7, 1.3])
+    for label in [label1, label2, label3]:
+        channel.attach_label(label)
 
     collection = TimeDataCollection(channels=[channel])
-    assert len(collection.local_labels) == 2
+    assert len(collection.local_labels) == 3
 
     collection.detach_label_from_channel(label=label1, channel=channel)
     assert label1 not in channel.labels
-    assert len(collection.local_labels) == 1
+    assert len(collection.local_labels) == 2
     assert label1.anchored_channel is None
     assert label1 in collection.global_labels
 
     collection.detach_label_from_channel(label=label2, channel=channel, reattach_as_global=False)
     assert label2 not in channel.labels
-    assert len(collection.local_labels) == 0
+    assert len(collection.local_labels) == 1
     assert label2.anchored_channel is None
-    assert len(collection.global_labels) == 1
+    assert label2 not in collection.global_labels and len(collection.global_labels) == 1
+
+    collection.detach_label_from_channel(label=label3, reattach_as_global=True)
+    assert label3 not in channel.labels
+    assert len(collection.local_labels) == 0
+    assert label3.anchored_channel is None
+    assert label3 in collection.global_labels and len(collection.global_labels) == 2
 
 
 def test_collection_label_time_type_mismatch():
