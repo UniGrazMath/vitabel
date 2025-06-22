@@ -863,24 +863,85 @@ class Vitals:
     # ----------------------------------------------- Retrieve data -------------------------------------------------------------------------------------------------
     # ---------------------------------------------------------------------------------------------------------------------------------------------
     def get_channels(self, name: str | None = None, **kwargs) -> list[Channel]:
+        """Returns a list of channels based on their name.
+
+        See also
+        --------
+        :meth:`.TimeDataCollection.get_channels`
+        -----------
+        This method retrieves all channels that match the given name and
+        keyword arguments. If no name is specified, all channels are returned.
+
+        Parameters
+        ----------
+        name : str
+            The name of the channels to retrieve.
+        kwargs
+            Keyword arguments to filter the channels by.
+
+        Returns
+        -------
+        list[Channel]
+            A list of channels that match the specification.
+            If no channel matches the specification, an empty list is returned.
+        """
         return self.data.get_channels(name, **kwargs)
 
     def get_channel(self, name: str | None = None, **kwargs) -> Channel:
+        """Returns a single channel based on its name.
+
+        See also
+        --------
+        :meth:`.TimeDataCollection.get_channel`
+        -----------
+        This method retrieves a single channel that matches the given name.
+
+        Parameters
+        ----------
+        name : str
+            The name of the channel to retrieve.
+        kwargs
+            Keyword arguments to filter the channels by.
+
+        Raises
+        ------
+        ValueError
+            If the specification is ambiguous, i.e., if more than one channel
+            matches the specification.
+
+        Returns
+        -------
+        Channel
+            The channel that matches the specification.
+            If no channel matches the specification, an empty list is returned.
+        """
+
         return self.data.get_channel(name, **kwargs)
 
     def get_labels(self, name: str | None = None, label_type: type[Label] | None = None, **kwargs) -> list[Label]:
         """Returns a list of labels based on their name.
+
+        See also
+        --------
+        :meth:`.TimeDataCollection.get_labels`
+        -----------
+        This method retrieves all labels that match the given name and
+        keyword arguments. If no name is specified, all labels are returned.
         
         Parameters
         ----------
         name : str
             The name of the labels to retrieve.
-            See :meth:`.get_label` for valid specifications.
         label_type : TYPE, optional
             A specification of the label type (IntervalLabel or Label) to retrieve
         kwargs
             Keyword arguments to filter the labels by. 
-            See :meth:`.get_label` for valid specifications
+
+        Returns
+        -------
+        list[Label]
+            A list of labels that match the specification.
+            If no label matches the specification, an empty list is returned.
         """
 
         if label_type is not None:
@@ -909,6 +970,35 @@ class Vitals:
     def get_channels_or_labels(
         self, name: str | None = None, label_type: type[Label] | None = None,  **kwargs
     ) -> list[Channel | Label]:
+        """Returns a list of channels or labels based on their name.
+        
+        See also
+        --------
+        :meth:`.get_channel` and :meth:`.get_label`
+        -----------
+
+        This method combines the results of :meth:`.get_channel` and :meth:`.
+        get_label` to return both channels and labels that match the given name.
+        If a `label_type` is specified, it filters the labels accordingly.
+
+        Parameters
+        ----------
+        name : str
+            The name of the channels or labels to retrieve.
+            See :meth:`.get_channel` and :meth:`.get_label` for valid specifications.   
+        label_type : TYPE, optional
+            A specification of the label type (IntervalLabel or Label) to retrieve.
+        kwargs  
+            Keyword arguments to filter the channels or labels by.
+            See :meth:`.get_channel` and :meth:`.get_label` for valid specifications.
+
+        Returns
+        -------
+        list[Channel | Label]
+            A list of channels or labels that match the specification.
+            If no channel or label matches the specification, an empty list is returned.
+
+        """
         return self.data.get_channels(name, **kwargs) + self.get_labels(
             name, label_type=label_type, **kwargs
         )
@@ -916,6 +1006,40 @@ class Vitals:
     def get_channel_or_label(
         self, name: str | None = None, label_type: type[Label] | None = None, **kwargs
     ) -> Channel | Label:
+        """Returns a single channel or label based on its name.
+
+        See also
+        --------
+        :meth:`.get_channel` and :meth:`.get_label`
+        -----------
+        This method combines the results of :meth:`.get_channel` and :meth:`.get_label`
+        to return a single channel or label that matches the given name.
+        If a `label_type` is specified, it filters the labels accordingly.
+
+        Parameters
+        ----------
+        name : str
+            The name of the channel or label to retrieve.
+            See :meth:`.get_channel` and :meth:`.get_label` for valid specifications.
+        label_type : TYPE, optional
+            A specification of the label type (IntervalLabel or Label) to retrieve.
+        kwargs
+            Keyword arguments to filter the channels or labels by.
+            See :meth:`.get_channel` and :meth:`.get_label` for valid specifications.
+
+        Raises  
+        ------
+        ValueError
+            If the specification is ambiguous, i.e., if more than one channel or label
+            matches the specification.
+
+        Returns
+        -------
+        Channel | Label
+            The channel or label that matches the specification.
+            If no channel or label matches the specification, an empty list is returned.
+        """
+
         channels_or_labels = self.get_channels_or_labels(name, label_type=label_type, **kwargs)
         if len(channels_or_labels) != 1:
             raise ValueError(
@@ -965,21 +1089,59 @@ class Vitals:
                     stop_time = cha_stop_time
         return stop_time
 
-    def get_channel_infos(self) -> pd.DataFrame:
+    def get_channel_infos(self, **kwargs) -> pd.DataFrame:
         """Returns information about all channels in a nicely formatted
-        ``pandas.DataFrame``.
+        ``pandas.DataFrame``.   
+        This includes the channel name, number of datapoints, first entry, last entry, offset, auxiliary metadata.
+        Parameters
+        ----------
+        kwargs
+            Keyword arguments to filter the channels by.
+            See :meth:`.get_channel` for valid specifications.
+        Returns
+        -------
+        pd.DataFrame
+            A DataFrame containing the channel information.
+        The DataFrame contains the following columns:
+        - ``Name``: The name of the channel.
+        - ``Length``: The number of data points in the channel.
+        - ``First Entry``: The first timestamp of the channel.
+        - ``Last Entry``: The last timestamp of the channel.
+        - ``Offset``: The offset of the channel, i.e., the time difference
+        - ``metadata``: All auxillary metadata of the channel.
         """
         return _timeseries_list_info(self.channels)
 
-    def get_label_infos(self) -> pd.DataFrame:
+    def get_label_infos(self, **kwargs) -> pd.DataFrame:
         """Returns information about all labels in a nicely formatted
         ``pandas.DataFrame``.
+        This includes the label name, number of datapoints, first entry, last entry, offset, auxiliary metadata.
+        Parameters
+        ----------
+        kwargs
+            Keyword arguments to filter the labels by.
+            See :meth:`.get_label` for valid specifications.
+        Returns
+        -------
+        pd.DataFrame
+            A DataFrame containing the label information.
+        The DataFrame contains the following columns:
+        - ``Name``: The name of the label.
+        - ``Length``: The number of data points in the label.
+        - ``First Entry``: The first timestamp of the label.
+        - ``Last Entry``: The last timestamp of the label.
+        - ``Offset``: The offset of the label, i.e., the time difference
+        - ``metadata``: All auxillary metadata of the label.
         """
         return _timeseries_list_info(self.labels)
 
     def info(self) -> None:
         """Displays relevant information about the channels and labels
-        currently present in the recording.
+        currently present in the recording in two separate
+        ``pandas.DataFrame``s.
+        See also
+        --------
+        :meth:`get_channel_infos` and :meth:`get_label_infos`
         """
         channel_info = self.get_channel_infos()
         label_info = self.get_label_infos()
