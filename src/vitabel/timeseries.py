@@ -1741,6 +1741,11 @@ class IntervalLabel(Label):
         annotation_preset_type: LabelAnnotationPresetType | None = None,
     ):
 
+        if time_index is not None and len(time_index) > 0:
+            time_index = np.array(time_index)
+            if time_index.ndim == 2 and time_index.shape[1] == 2:
+                # time data passed as pairs of interval end points
+                time_index = time_index.reshape(-1)
         super().__init__(
             name=name,
             time_index=time_index,
