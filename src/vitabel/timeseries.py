@@ -2297,7 +2297,7 @@ class TimeDataCollection:
         self,
         *,
         label: Label | str,
-        channel: Channel | str,
+        channel: Channel | str | None = None,
         reattach_as_global: bool = True,
     ) -> Label:
         """Detach a label from a channel in the collection.
@@ -2308,8 +2308,10 @@ class TimeDataCollection:
             The label to detach. Can be specified either as a
             :class:`.Label` object or by its name.
         channel
-            The channel to detach the label from. Can be specified
-            either as a :class:`.Channel` object or by its name.
+            The channel to detach the label from or ``None`` (the default)
+            if the channel should be determined from the label.
+            Can be specified either as a :class:`.Channel` object or
+            by its name.
         reattach_as_global
             If ``True``, the label is reattached as a global label
             after detaching it from the channel. If ``False``, the
@@ -2317,7 +2319,10 @@ class TimeDataCollection:
         """
         if isinstance(label, str):
             label = self.get_label(name=label)
-        if isinstance(channel, str):
+
+        if channel is None:
+            channel = label.anchored_channel
+        elif isinstance(channel, str):
             channel = self.get_channel(name=channel)
 
         channel.detach_label(label)
