@@ -3550,6 +3550,13 @@ class TimeDataCollection:
                                 return
 
                             if partial_interval_data is None:
+                                label_color = active_label.plotstyle.get("color", "limegreen")
+                                current_axes.axvline(
+                                    x=event.xdata,
+                                    color=label_color,
+                                    linestyle="--",
+                                    linewidth=1.5,
+                                )
                                 partial_interval_data = (event.xdata, event.ydata)
                                 fig.canvas._figure_label = (
                                     "Creating interval label, select end point "
