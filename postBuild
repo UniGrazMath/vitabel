@@ -1,4 +1,0 @@
-#!/bin/bash
-
-# installs vitable from the actuable branch as editable version
-python -m pip install -e . 
