@@ -649,6 +649,14 @@ def test_interval_label_creation():
     np.testing.assert_equal(label.intervals / pd.Timedelta("1s"), [(0, 5), (12, 15)])
 
 
+def test_interval_label_creation_with_tuples():
+    label = IntervalLabel(
+        name="test",
+        time_index=[("0s", "1s"), ("10s", "11s"), ("20s", "21s")]
+    )
+    assert len(label) == 3
+
+
 def test_interval_label_creation_errors():
     with pytest.raises(ValueError, match="even number of elements"):
         IntervalLabel(name="test", time_index=[1, 2, 3, 4, 5])
