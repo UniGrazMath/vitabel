@@ -868,10 +868,6 @@ class Vitals:
         This method retrieves all channels that match the given name and
         keyword arguments. If no name is specified, all channels are returned.
 
-        See also
-        --------
-        :meth:`.TimeDataCollection.get_channels`
-
         Parameters
         ----------
         name : str
@@ -889,11 +885,6 @@ class Vitals:
 
     def get_channel(self, name: str | None = None, **kwargs) -> Channel:
         """Returns a single channel based on its name.
-
-        See also
-        --------
-        :meth:`.TimeDataCollection.get_channel`
-
 
         Parameters
         ----------
@@ -919,10 +910,6 @@ class Vitals:
 
     def get_labels(self, name: str | None = None, label_type: type[Label] | None = None, **kwargs) -> list[Label]:
         """Returns a list of labels based on their name.
-
-        See also
-        --------
-        :meth:`.TimeDataCollection.get_labels`
         
         Parameters
         ----------
@@ -947,10 +934,6 @@ class Vitals:
     def get_label(self, name: str | None = None, **kwargs) -> Label:
         """Return a list of labels.
 
-        See also
-        --------
-        :meth:`.TimeDataCollection.get_label`
-
         Parameters
         ----------
         name
@@ -971,10 +954,6 @@ class Vitals:
         This method combines the results of :meth:`.get_channel` and :meth:`.
         get_label` to return both channels and labels that match the given name.
         If a `label_type` is specified, it filters the labels accordingly.
-        
-        See also
-        --------
-        :meth:`.get_channel` and :meth:`.get_label`
 
 
         Parameters
@@ -1003,10 +982,6 @@ class Vitals:
         self, name: str | None = None, label_type: type[Label] | None = None, **kwargs
     ) -> Channel | Label:
         """Returns a single channel or label based on its name.
-
-        See also
-        --------
-        :meth:`.get_channel` and :meth:`.get_label`
 
         Parameters
         ----------
@@ -1160,10 +1135,6 @@ class Vitals:
         """Displays relevant information about the channels and labels
         currently present in the recording in two separate
         ``pandas.DataFrame``s.
-
-        See also
-        --------
-        :meth:`get_channel_infos` and :meth:`get_label_infos`
 
         Parameters
         ----------
