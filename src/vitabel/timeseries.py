@@ -3014,7 +3014,10 @@ class TimeDataCollection:
 
         label_master = sorted(distinct_labels["single"], key=lambda l: l.name) + sorted(distinct_labels["interval"], key=lambda l: l.name)
         label_dict =  dict(enumerate(label_master, start=1))
-        dropdown_options = [(label.name, i) for i, label in label_dict.items()]
+        dropdown_options = [
+            (f"{label.name}   [Interval]", i) if isinstance(label, IntervalLabel) else (label.name, i)
+            for i, label in label_dict.items()
+        ]
 
         label_dropdown = widgets.Dropdown(
             options=dropdown_options,
@@ -3313,6 +3316,7 @@ class TimeDataCollection:
         overview_indicators = []
 
         partial_interval_data = None
+        partial_interval_artist = None
         shifting_reference_time = None
         shifting_reference_axis = None
 
@@ -3347,6 +3351,10 @@ class TimeDataCollection:
                 screen_pixel_width
             data_width = (stop - start).total_seconds()
             resolution = data_width / screen_pixel_width
+
+            partial_interval_artist_ax = None
+            if partial_interval_artist is not None:
+                partial_interval_artist_ax = partial_interval_artist.axes
 
             with plt.ioff():
                 for channel_list, label_list, indicator, subax in zip(
@@ -3409,6 +3417,8 @@ class TimeDataCollection:
                         linestyle="--",
                         linewidth=1.5,
                     )
+                if partial_interval_artist is not None:
+                    partial_interval_artist_ax.add_artist(partial_interval_artist)
             return
 
         def repaint_overview_plot():
@@ -3516,7 +3526,7 @@ class TimeDataCollection:
                 repaint_plot(start, stop)
 
         def mouse_click_listener(event: MouseEvent):
-            nonlocal fig, partial_interval_data, shifting_reference_time, shifting_reference_axis, start, stop
+            nonlocal fig, partial_interval_data, partial_interval_artist, shifting_reference_time, shifting_reference_axis, start, stop
 
             current_mode = InteractionMode(tab.selected_index)
             current_axes = event.inaxes
@@ -3550,6 +3560,13 @@ class TimeDataCollection:
                                 return
 
                             if partial_interval_data is None:
+                                label_color = active_label.plotstyle.get("color", "limegreen")
+                                partial_interval_artist = current_axes.axvline(
+                                    x=event.xdata,
+                                    color=label_color,
+                                    linestyle="--",
+                                    linewidth=1.5,
+                                )
                                 partial_interval_data = (event.xdata, event.ydata)
                                 fig.canvas._figure_label = (
                                     "Creating interval label, select end point "
@@ -3570,8 +3587,9 @@ class TimeDataCollection:
                                 ydata = (y1 + y2) / 2 if add_numeric_check.value else None
                                 text_input = value_text_input.value if add_text_check.value and value_text_input.value and value_text_input.value != "" else None
                                 active_label.add_data((t1, t2), value=ydata, text=text_input) #TODO
-                                repaint_plot(start, stop)
                                 partial_interval_data = None
+                                partial_interval_artist = None
+                                repaint_plot(start, stop)
                                 fig.canvas._figure_label = " "
                         else:
                             time_data = (
