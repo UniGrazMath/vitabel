@@ -1,0 +1,2 @@
+#! /bin/bash
+pip -e . # installs vitable from the actuable branch as editable version
