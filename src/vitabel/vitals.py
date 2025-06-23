@@ -12,6 +12,8 @@ import scipy.signal as sgn
 import logging
 import vitaldb
 from vitaldb.utils import VitalFile, Device
+from datetime import datetime
+from collections  import defaultdict
 
 from typing import Any, Literal
 
@@ -363,15 +365,15 @@ class Vitals:
             trk = vit.find_track(dtname=track_name)
             name = trk.name
             source_name = trk.dname
-            metadata = {
-                "source" : trk.dname,
+            metadata.update({
+                "source_device" : trk.dname,
                 "source_details" : {"source_type" : vit.devs.get(source_name,Device("")).type,
                                     "source_port" : vit.devs.get(source_name,Device("")).port},
                 "units" : trk.unit,
                 "recording_details" : {"sampel_rate" : trk.srate,
                                     "offset" : trk.offset,
                                     "gain" : trk.gain},
-            }
+            })
             plotstyle = _argb_to_plotstyle(trk.col)
 
             if trk.type in {1,2}: # 1: wav, 2: numerical (vitaldb specification)
