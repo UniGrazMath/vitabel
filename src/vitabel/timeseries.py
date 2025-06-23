@@ -559,6 +559,14 @@ class Channel(TimeSeriesBase):
     def detach_label(self, label: Label):
         """Detach a label from this channel.
 
+        .. note::
+
+            This method only removes the reference from the channel
+            to the label, as well as the backreference from the label
+            to the channel. While this does not delete the label
+            object itself, the responsibility to manage the label
+            object is with the user.
+
         Parameters
         ----------
         label
@@ -566,6 +574,7 @@ class Channel(TimeSeriesBase):
         """
         if label not in self.labels:
             raise ValueError(f"The label {label.name} is not attached to this channel")
+        label.anchored_channel = None
         self.labels.remove(label)
 
     def shift_time_index(
@@ -1435,11 +1444,20 @@ class Label(TimeSeriesBase):
         self.anchored_channel = channel
 
     def detach(self):
-        """Detach the label from the channel."""
+        """Detach the label from the channel.
+        
+        .. note::
+
+            This method only removes the reference from the channel
+            to the label, as well as the backreference from the label
+            to the channel. While this does not delete the label
+            object itself, the responsibility to manage the label
+            object is with the user.
+        
+        """
         if self.anchored_channel is None:
             raise ValueError(f"The label {self.name} is not attached to any channel")
         self.anchored_channel.detach_label(self)
-        self.anchored_channel = None
 
     def get_data(
         self,
@@ -1741,6 +1759,11 @@ class IntervalLabel(Label):
         annotation_preset_type: LabelAnnotationPresetType | None = None,
     ):
 
+        if time_index is not None and len(time_index) > 0:
+            time_index = np.array(time_index)
+            if time_index.ndim == 2 and time_index.shape[1] == 2:
+                # time data passed as pairs of interval end points
+                time_index = time_index.reshape(-1)
         super().__init__(
             name=name,
             time_index=time_index,
@@ -2405,6 +2428,44 @@ class TimeDataCollection:
             )
         self.global_labels.append(label)
 
+    def detach_label_from_channel(
+        self,
+        *,
+        label: Label | str,
+        channel: Channel | str | None = None,
+        reattach_as_global: bool = True,
+    ) -> Label:
+        """Detach a label from a channel in the collection.
+        
+        Parameters
+        ----------
+        label
+            The label to detach. Can be specified either as a
+            :class:`.Label` object or by its name.
+        channel
+            The channel to detach the label from or ``None`` (the default)
+            if the channel should be determined from the label.
+            Can be specified either as a :class:`.Channel` object or
+            by its name.
+        reattach_as_global
+            If ``True``, the label is reattached as a global label
+            after detaching it from the channel. If ``False``, the
+            label is removed from the collection.
+        """
+        if isinstance(label, str):
+            label = self.get_label(name=label)
+
+        if channel is None:
+            channel = label.anchored_channel
+        elif isinstance(channel, str):
+            channel = self.get_channel(name=channel)
+
+        channel.detach_label(label)
+        if reattach_as_global:
+            self.add_global_label(label)
+
+        return label
+
     def get_channels(self, name: str | None = None, **kwargs) -> list[Channel]:
         """Return a list of channels.
 
@@ -3004,7 +3065,10 @@ class TimeDataCollection:
 
         label_master = sorted(distinct_labels["single"], key=lambda l: l.name) + sorted(distinct_labels["interval"], key=lambda l: l.name)
         label_dict =  dict(enumerate(label_master, start=1))
-        dropdown_options = [(label.name, i) for i, label in label_dict.items()]
+        dropdown_options = [
+            (f"{label.name}   [Interval]", i) if isinstance(label, IntervalLabel) else (label.name, i)
+            for i, label in label_dict.items()
+        ]
 
         label_dropdown = widgets.Dropdown(
             options=dropdown_options,
@@ -3303,6 +3367,7 @@ class TimeDataCollection:
         overview_indicators = []
 
         partial_interval_data = None
+        partial_interval_artist = None
         shifting_reference_time = None
         shifting_reference_axis = None
 
@@ -3337,6 +3402,10 @@ class TimeDataCollection:
                 screen_pixel_width
             data_width = (stop - start).total_seconds()
             resolution = data_width / screen_pixel_width
+
+            partial_interval_artist_ax = None
+            if partial_interval_artist is not None:
+                partial_interval_artist_ax = partial_interval_artist.axes
 
             with plt.ioff():
                 for channel_list, label_list, indicator, subax in zip(
@@ -3399,6 +3468,8 @@ class TimeDataCollection:
                         linestyle="--",
                         linewidth=1.5,
                     )
+                if partial_interval_artist is not None:
+                    partial_interval_artist_ax.add_artist(partial_interval_artist)
             return
 
         def repaint_overview_plot():
@@ -3506,7 +3577,7 @@ class TimeDataCollection:
                 repaint_plot(start, stop)
 
         def mouse_click_listener(event: MouseEvent):
-            nonlocal fig, partial_interval_data, shifting_reference_time, shifting_reference_axis, start, stop
+            nonlocal fig, partial_interval_data, partial_interval_artist, shifting_reference_time, shifting_reference_axis, start, stop
 
             current_mode = InteractionMode(tab.selected_index)
             current_axes = event.inaxes
@@ -3540,6 +3611,13 @@ class TimeDataCollection:
                                 return
 
                             if partial_interval_data is None:
+                                label_color = active_label.plotstyle.get("color", "limegreen")
+                                partial_interval_artist = current_axes.axvline(
+                                    x=event.xdata,
+                                    color=label_color,
+                                    linestyle="--",
+                                    linewidth=1.5,
+                                )
                                 partial_interval_data = (event.xdata, event.ydata)
                                 fig.canvas._figure_label = (
                                     "Creating interval label, select end point "
@@ -3560,8 +3638,9 @@ class TimeDataCollection:
                                 ydata = (y1 + y2) / 2 if add_numeric_check.value else None
                                 text_input = value_text_input.value if add_text_check.value and value_text_input.value and value_text_input.value != "" else None
                                 active_label.add_data((t1, t2), value=ydata, text=text_input) #TODO
-                                repaint_plot(start, stop)
                                 partial_interval_data = None
+                                partial_interval_artist = None
+                                repaint_plot(start, stop)
                                 fig.canvas._figure_label = " "
                         else:
                             time_data = (

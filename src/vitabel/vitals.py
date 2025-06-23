@@ -1074,7 +1074,38 @@ class Vitals:
 
     def keys(self, **kwargs) -> list[str]:
         """Alias for :meth:`get_channel_or_label_names`."""
+        
         return self.get_channel_or_label_names(**kwargs)
+    
+    def detach_label_from_channel(
+        self,
+        *,
+        label: Label | str,
+        channel: Channel | str | None = None,
+        reattach_as_global: bool = True,
+    ) -> Label:
+        """Detach a label from a channel in the collection.
+        
+        Parameters
+        ----------
+        label
+            The label to detach. Can be specified either as a
+            :class:`.Label` object or by its name.
+        channel
+            The channel to detach the label from or ``None`` (the default)
+            if the channel should be determined from the label.
+            Can be specified either as a :class:`.Channel` object or
+            by its name.
+        reattach_as_global
+            If ``True``, the label is reattached as a global label
+            after detaching it from the channel. If ``False``, the
+            label is removed from the collection.
+        """
+        return self.data.detach_label_from_channel(
+            label=label,
+            channel=channel,
+            reattach_as_global=reattach_as_global
+        )
 
     def rec_start(self) -> pd.Timestamp | None:  # part of register application
         """Returns the first timestamp among all channels in this case or None if no channel exists."""
