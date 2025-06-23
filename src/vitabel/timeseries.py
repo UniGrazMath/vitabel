@@ -2331,16 +2331,6 @@ class TimeDataCollection:
         """All labels in the collection, both global and local ones."""
         return self.global_labels + self.local_labels
 
-    @property
-    def channel_names(self) -> list[str]:
-        """List of channel names."""
-        return [channel.name for channel in self.channels]
-
-    @property
-    def label_names(self) -> list[str]:
-        """List of label names for all labels in the collection."""
-        return [label.name for label in self.labels]
-
     def is_empty(self) -> bool:
         """Return whether the collection is empty."""
         return not self.channels and not self.global_labels

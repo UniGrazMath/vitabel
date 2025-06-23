@@ -760,13 +760,14 @@ def test_add_and_remove_channel(data_time_2ecg):
     collection.add_channel(channel2)
 
     assert len(collection.channels) == 2
-    assert collection.channel_names == ["ECG 1", "ECG 2"]
+    channels = collection.channels
+    assert [channel.name for channel in channels] == ["ECG 1", "ECG 2"]
 
     collection.remove_channel(name="ECG 1")
 
     assert len(collection.channels) == 1
-    assert collection.channel_names == ["ECG 2"]
-
+    channels = collection.channels
+    assert [channel.name for channel in channels] == ["ECG 2"]
 
 def test_collection_incompatible_time_types():
     time = np.arange(0, 1, 0.1)
@@ -809,7 +810,8 @@ def test_collection_with_local_and_global_labels():
     new_label = Label(name="local 2", time_index=[0.1, 0.3, 0.5])
     channel.attach_label(new_label)
     assert len(collection.local_labels) == 2
-    assert collection.label_names == ["global 1", "global 2", "local 1", "local 2"]
+    labels = collection.labels
+    assert [label.name for label in labels] == ["global 1", "global 2", "local 1", "local 2"]
 
     collection.remove_label(name="global 1")
     assert len(collection.global_labels) == 1
@@ -936,13 +938,15 @@ def test_remove_label():
 
     collection = TimeDataCollection(channels=[channel], labels=[label, label2])
     assert len(collection.labels) == 2
-    assert collection.label_names == ["events", "events 2"]
+    labels = collection.labels
+    assert [label.name for label in labels] == ["events", "events 2"]
 
     events_label = collection.remove_label(name="events")
     assert events_label is label
     assert events_label not in collection.labels
     assert len(collection.labels) == 1
-    assert collection.label_names == ["events 2"]
+    labels = collection.labels
+    assert [label.name for label in labels] == ["events 2"]
 
     with pytest.raises(ValueError, match="ambiguous"):
         collection.remove_label(name="nonexistent")
@@ -959,7 +963,8 @@ def test_delete_nonexistent_channel():
     collection.add_channel(Channel(name="test", time_index=time, data=data))
 
     assert len(collection.channels) == 1
-    assert collection.channel_names == ["test"]
+    channels = collection.channels
+    assert [channel.name for channel in channels] == ["test"]
 
     with pytest.raises(ValueError) as exc:
         collection.remove_channel(name="nonexistent")
@@ -1149,7 +1154,9 @@ def test_serialization():
     cloned_collection = TimeDataCollection.from_dict(json.loads(serialized_collection))
 
     assert collection.channel_data_hash() == cloned_collection.channel_data_hash()
-    assert collection.label_names == cloned_collection.label_names
+    collection_labels = collection.labels
+    cloned_collection_labels = cloned_collection.labels
+    assert [label.name for label in collection_labels] == [label.name for label in cloned_collection_labels]
 
 def test_to_csv(tmpdir):
     collection = get_random_collection(
