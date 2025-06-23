@@ -2715,7 +2715,7 @@ class TimeDataCollection:
                     elif isinstance(spec, Label):
                         label_list.append(spec)
                     else:
-                        raise ValueError(f"Invalid label specification: {spec}")
+                        raise ValueError(f"Invalid label specification: {spec}")  
                 label_lists.append(label_list)
         if include_attached_labels:
             for idx in range(num_subplots):
@@ -2730,7 +2730,7 @@ class TimeDataCollection:
         time: Timestamp | Timedelta | float | str | None,
         channel_lists: list[list[Channel]],
         minimum: bool = True,
-    ):
+    ) -> Timestamp | Timedelta | float | None:
         """Get the minimum or maximum time value from the specified channels,
         or return the specified time value if it is not ``None``.
 
@@ -2753,11 +2753,16 @@ class TimeDataCollection:
         if time is None:
             time_list = []
             for channel in it.chain.from_iterable(channel_lists):
+                if channel.is_empty():
+                    continue
                 ex_time = op(channel.time_index)
                 if self.is_time_absolute():
                     ex_time += channel.time_start
                 time_list.append(ex_time)
-            time = op(time_list)
+            if len(time_list) > 0:
+                time = op(time_list)
+            # elsewise None is returned(preset) - NOTE: unsure if this causes issues
+
         return time
 
     def _get_timeunit_from_channels(self, channel_lists: list[list[Channel]]) -> str:
