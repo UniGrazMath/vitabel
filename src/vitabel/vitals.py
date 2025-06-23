@@ -950,8 +950,9 @@ class Vitals:
     ) -> list[Channel | Label]:
         """Returns a list of channels or labels based on their name.
 
-        This method combines the results of :meth:`.get_channels` and :meth:`.
-        get_labels` to return both channels and labels that match the given parameters.
+        This method combines the results of :meth:`.get_channels` 
+        and :meth:`.get_labels` to return both channels and labels
+        that match the given parameters.
         If a ``label_type`` is specified, it filters the labels accordingly.
 
 
