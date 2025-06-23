@@ -2649,8 +2649,16 @@ class TimeDataCollection:
         raise ValueError(f"Time specification {time_spec} could not be parsed")
 
     def _parse_channel_specification(
-        self, channels: list[list[ChannelSpecification | int]] | None
+        self, 
+        channels: list[list[ChannelSpecification | int]] | None
     ) -> list[list[Channel]]:
+        """Parse (nested) channel specifications into nested lists of channels.
+
+        Parameters
+        ----------
+        channels
+            The nested list of channel specifications to parse.
+        """
         channel_lists = []
         if channels is None:
             channel_lists.append(self.channels)
@@ -2668,7 +2676,6 @@ class TimeDataCollection:
                         channel_list.append(spec)
                     else:
                         raise ValueError(f"Invalid channel specification: {spec}")
-
                 channel_lists.append(channel_list)
         return channel_lists
 
@@ -2683,9 +2690,9 @@ class TimeDataCollection:
         Parameters
         ----------
         labels
-            The label specifications to parse.
+            The nested label specifications to parse.
         channel_lists
-            The channel lists that the labels are attached to.
+            The nested channel lists that the labels are attached to.
         include_attached_labels
             Whether to include attached labels in the output.
         """
