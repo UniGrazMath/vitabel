@@ -11,8 +11,6 @@ import pandas as pd
 import scipy.signal as sgn
 import logging
 import vitaldb
-from vitaldb.utils import VitalFile, Device
-from datetime import datetime
 from collections  import defaultdict
 
 from typing import Any, Literal
@@ -320,7 +318,7 @@ class Vitals:
     def add_vital_db_recording(
         self,
         filepath: Path | str,
-        metadata={"source": "VitalDB-Recording"},
+        metadata : dict[str, Any] | None = None,
     ) -> None:
         """Loading channels and labels from a vitalDB recording.
 
@@ -329,59 +327,8 @@ class Vitals:
         filepath
             The path to the recording. Must be a ``*.vit`` file.
         """
-
-        def _track_to_timeseries(vit: VitalFile, track_name: str) -> Channel | Label:
-            """Extracts a track from a vitaldb dataset and returns it as channel or label.
-
-            Parameter
-            ---------
-            vit
-                The vitaldb dataset to extract the track from.
-            track_name
-                The name of the track to extract.   
-            """
-            def _argb_to_plotstyle(color_int: int):
-                '''Converts an ARGB color integer to a plotstyle dictionary with color as rgba.'''
-                if not color_int == 4294967295 and isinstance(color_int, int): #not transparrent white
-                    a = (color_int >> 24) & 0xFF
-                    r = (color_int >> 16) & 0xFF
-                    g = (color_int >> 8) & 0xFF
-                    b = color_int & 0xFF
-                    rgba = (r / 255.0, g / 255.0, b / 255.0, a / 255.0)
-                    return {"color":rgba}
-                else:
-                    return None
-            
-            if not isinstance(vit, VitalFile):
-                raise ValueError("Not a vitals file.")
-            if track_name not in vit.get_track_names():
-                raise ValueError(f"'{track_name}' is not a track in the given vitals file.")
-                
-            (ti, dt), *_ = vit.get_samples(track_names=track_name, interval=1, return_datetime=False, return_timestamp=True)
-            unix_start = vit.dtstart
-            rec_start = datetime.fromtimestamp(unix_start)
-            ti = ti - unix_start
-            
-            trk = vit.find_track(dtname=track_name)
-            name = trk.name
-            source_name = trk.dname
-            metadata.update({
-                "source_device" : trk.dname,
-                "source_details" : {"source_type" : vit.devs.get(source_name,Device("")).type,
-                                    "source_port" : vit.devs.get(source_name,Device("")).port},
-                "units" : trk.unit,
-                "recording_details" : {"sampel_rate" : trk.srate,
-                                    "offset" : trk.offset,
-                                    "gain" : trk.gain},
-            })
-            plotstyle = _argb_to_plotstyle(trk.col)
-
-            if trk.type in {1,2}: # 1: wav, 2: numerical (vitaldb specification)
-                mask = ~pd.isna(dt)
-                return Channel(name=name, time_index=ti[mask], data=dt[mask], time_start=rec_start, time_unit="s", plotstyle=plotstyle, metadata=metadata)
-            elif trk.type == 5: #5: str (vitaldb specification)
-                mask = ~pd.isna(dt)
-                return Label(name=name, time_index=ti[mask], text_data=dt[mask], time_start=rec_start, time_unit="s", plotstyle=plotstyle, metadata=metadata)
+        if metadata is None:
+            metadata = {"source": "VitalDB-Recording"}
 
         if isinstance(filepath, str):
             filepath = Path(filepath)
@@ -389,7 +336,10 @@ class Vitals:
             raise ValueError (f"The path '{filepath}' does not exist.")
         vit = vitaldb.VitalFile(str(filepath))
 
-        timeseries_list = [_track_to_timeseries(vit, track_name=track_name) for track_name in vit.get_track_names()] # convert all tracks in Channel or Label
+        timeseries_list = [  # convert all tracks in Channel or Label
+            loading._track_to_timeseries(vit, track_name=track_name, metadata=metadata)
+            for track_name in vit.get_track_names()
+        ]
         labels = []
         for ts in timeseries_list:
             if isinstance(ts, Channel):
@@ -403,8 +353,8 @@ class Vitals:
         # rule 1: if qualifier was added and as such the trailing label_name matches a channel_name the label will be attached
         # rule 2: for labels not attached by the previous rule, if the trailing label_name string matches several chanel_names substrings it will be attached to each of them
         # rule 3: all remaing will be added as global label
-        split_label_names = {ln: 
-            (ln.rsplit('_', 1)[0] if '_' in ln else ln)
+        split_label_names = {
+            ln: ln.rsplit('_', 1)[0] if '_' in ln else ln
             for ln in [label.name for label in labels]
         }
 
@@ -413,18 +363,18 @@ class Vitals:
             prefix = cn.rsplit('_', 1)[0] if '_' in cn else cn
             split_channel_names[prefix].add(cn)
         
-        for label in labels: # rule 1
+        for label in labels:  # rule 1
             short_ln = split_label_names[label.name]
             if short_ln in self.get_channel_names():
                 label.rename(label.name.rsplit("_",1)[1])
                 for channel in self.get_channels(short_ln):
                     channel.attach_label(label)
-            elif short_ln in split_channel_names: # rule 2
+            elif short_ln in split_channel_names:  # rule 2
                 label.rename(label.name.rsplit("_",1)[1])
                 for channel_name in split_channel_names[short_ln]:
                     for channel in self.get_channels(channel_name):
                         channel.attach_label(label)
-            else: # rule 3
+            else:  # rule 3
                 self.add_global_label(label)
 
         self.metadata["Recording_files_added"].append(str(filepath))
