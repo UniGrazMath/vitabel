@@ -2686,6 +2686,7 @@ class TimeDataCollection:
         include_attached_labels: bool = False,
     ) -> list[list[Label]]:
         """Parse (nested) label specifications into nested lists of labels.
+        Empty labels are excluded.
 
         Parameters
         ----------
