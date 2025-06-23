@@ -1660,7 +1660,7 @@ class Label(TimeSeriesBase):
         return figure
     
     def rename(self, new_name: str):
-        """Change the name of the chalabelnnel.
+        """Change the name of the label.
 
         Parameters
         ----------
