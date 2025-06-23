@@ -952,7 +952,7 @@ class Vitals:
 
         This method combines the results of :meth:`.get_channels` and :meth:`.
         get_labels` to return both channels and labels that match the given parameters.
-        If a `label_type` is specified, it filters the labels accordingly.
+        If a ``label_type`` is specified, it filters the labels accordingly.
 
 
         Parameters
