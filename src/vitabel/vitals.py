@@ -870,7 +870,7 @@ class Vitals:
 
         Parameters
         ----------
-        name : str
+        name
             The name of the channels to retrieve.
         kwargs
             Keyword arguments to filter the channels by.
@@ -888,7 +888,7 @@ class Vitals:
 
         Parameters
         ----------
-        name : str
+        name
             The name of the channel to retrieve.
         kwargs
             Keyword arguments to filter the channels by.
@@ -903,7 +903,6 @@ class Vitals:
         -------
         Channel
             The channel that matches the specification.
-            If no channel matches the specification, an empty list is returned.
         """
 
         return self.data.get_channel(name, **kwargs)
@@ -951,21 +950,22 @@ class Vitals:
     ) -> list[Channel | Label]:
         """Returns a list of channels or labels based on their name.
 
-        This method combines the results of :meth:`.get_channel` and :meth:`.
-        get_label` to return both channels and labels that match the given name.
+        This method combines the results of :meth:`.get_channels` and :meth:`.
+        get_labels` to return both channels and labels that match the given parameters.
         If a `label_type` is specified, it filters the labels accordingly.
 
 
         Parameters
         ----------
-        name : str
+        name
             The name of the channels or labels to retrieve.
-            See :meth:`.get_channel` and :meth:`.get_label` for valid specifications.   
-        label_type : TYPE, optional
-            A specification of the label type (IntervalLabel or Label) to retrieve.
+            See :meth:`.get_channels` and :meth:`.get_labels` for valid specifications.   
+        label_type
+            The class of the labels (e.g., :class:`.IntervalLabel`) to
+            retrieve.
         kwargs  
             Keyword arguments to filter the channels or labels by.
-            See :meth:`.get_channel` and :meth:`.get_label` for valid specifications.
+            See :meth:`.get_channels` and :meth:`.get_labels` for valid specifications.
 
         Returns
         -------
@@ -985,11 +985,12 @@ class Vitals:
 
         Parameters
         ----------
-        name : str
+        name
             The name of the channel or label to retrieve.
             See :meth:`.get_channel` and :meth:`.get_label` for valid specifications.
-        label_type : TYPE, optional
-            A specification of the label type (IntervalLabel or Label) to retrieve.
+        label_type
+            The class of the label (e.g., :class:`.IntervalLabel`) to
+            retrieve.
         kwargs
             Keyword arguments to filter the channels or labels by.
             See :meth:`.get_channel` and :meth:`.get_label` for valid specifications.
@@ -1004,7 +1005,6 @@ class Vitals:
         -------
         Channel | Label
             The channel or label that matches the specification.
-            If no channel or label matches the specification, an empty list is returned.
         """
 
         channels_or_labels = self.get_channels_or_labels(name, label_type=label_type, **kwargs)
@@ -1141,7 +1141,7 @@ class Vitals:
         ----------
         kwargs
             Keyword arguments to filter the channels by.
-            See :meth:`.get_channel` for valid specifications.
+            See :meth:`.get_channels` for valid specifications.
 
         Returns
         -------
@@ -1166,7 +1166,7 @@ class Vitals:
         ----------
         kwargs
             Keyword arguments to filter the labels by.
-            See :meth:`.get_label` for valid specifications.
+            See :meth:`.get_labels` for valid specifications.
 
         Returns
         -------
