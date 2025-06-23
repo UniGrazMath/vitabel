@@ -1658,7 +1658,16 @@ class Label(TimeSeriesBase):
                     vline_text_artist._from_vitals_label = True
 
         return figure
+    
+    def rename(self, new_name: str):
+        """Change the name of the label.
 
+        Parameters
+        ----------
+        new_name
+            The new name of the label.
+        """
+        self.name = str(new_name)
 
 class IntervalLabel(Label):
     """A special type of label that holds time interval data.
