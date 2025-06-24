@@ -2960,35 +2960,26 @@ class TimeDataCollection:
             labels, channel_lists, include_attached_labels=include_attached_labels
         )
 
-        # if neither channel nor label is present, remove corresponding subplots
-        empty_channel_indices = [
-            idx
-            for idx, (channel_list, label_list) in enumerate(
-                zip(channel_lists, label_lists)
-            )
-            if len(channel_list) == 0 and len(label_list) == 0
-        ]
-        channel_lists = [
-            channel_list
-            for idx, channel_list in enumerate(channel_lists)
-            if idx not in empty_channel_indices
-        ]
-        label_lists = [
-            label_list
-            for idx, label_list in enumerate(label_lists)
-            if idx not in empty_channel_indices
-        ]
+        all_data_sources = channel_lists + label_lists
 
         num_subplots = len(channel_lists) + len(channel_overviews)
-        start = self._get_time_extremum(start, channel_lists, minimum=True)
-        stop = self._get_time_extremum(stop, channel_lists, minimum=False)
+        start = self._get_time_extremum(start, all_data_sources, minimum=True)
+        stop = self._get_time_extremum(stop, all_data_sources, minimum=False)
         if start is None and stop is None:
             logger.warning(
-                "Specified channels contain no data, setting start "
+                "Specified channels and labels contain no data, setting start "
                 "to the current time."
             )
             start = pd.Timestamp.now()
-            stop = start + pd.Timedelta(hours=1)
+            stop = start + pd.Timedelta(minutes=1)
+
+        if start == stop:
+            logger.warning(
+                "Start and stop time are equal, setting stop time to "
+                "1 minute after start to allow plotting."
+            )
+            stop = start + pd.Timedelta(minutes=1)
+        
 
         reference_time = start
         shift_span = (stop - start) * 0.25
