@@ -1064,6 +1064,29 @@ class Label(TimeSeriesBase):
         """A string representation of the label."""
         return f"{self.__class__.__name__}({self.name})"
     
+    @classmethod
+    def from_channel(cls, channel: Channel) -> Label:
+        """Create a label from a channel.
+
+        Parameters
+        ----------
+        channel
+            The channel to create the label from. The label will
+            have the same name, time index, data, and text data as the channel.
+        """
+        return Label(
+            name=channel.name,
+            time_index=channel.time_index,
+            data=channel.data,
+            text_data=None,  # channels do not have text data
+            time_start=channel.time_start,
+            time_unit=channel.time_unit,
+            offset=channel.offset,
+            anchored_channel=None,
+            plotstyle=copy(channel.plotstyle),
+            metadata=copy(channel.metadata),
+        )
+    
     @property
     def first_entry(self) -> Timestamp | Timedelta | None:
         """The earliest entry in the time index of this label."""
