@@ -1841,7 +1841,11 @@ class Vitals:
             See https://unipub.uni-graz.at/obvugrhs/content/titleinfo/10138095 for more information.
         """
         if isinstance(accelerometer_channel, str):
-            ACC_channel = self.get_channel(accelerometer_channel)
+            if accelerometer_channel in self.get_channel_names():
+                ACC_channel = self.get_channel(accelerometer_channel)
+            else:
+                raise ValueError("The specified accelerometer channel ('{accelerometer_channel}') " \
+                "does not exist.")
         elif not isinstance(accelerometer_channel, Channel):
             raise ValueError(
                 "No valid accelerometer channel specified. Can not identify CC-periods via acceleration."
