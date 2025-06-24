@@ -2844,6 +2844,13 @@ class TimeDataCollection:
 
         start = self._get_time_extremum(start, channel_lists, minimum=True)
         stop = self._get_time_extremum(stop, channel_lists, minimum=False)
+        if start is None and stop is None:
+            logger.warning(
+                "Specified channels contain no data, setting start "
+                "to the current time."
+            )
+            start = pd.Timestamp.now()
+            stop = start + pd.Timedelta(hours=1)
 
         if time_unit is None:
             time_unit = self._get_timeunit_from_channels(channel_lists)
@@ -2976,8 +2983,16 @@ class TimeDataCollection:
 
         num_subplots = len(channel_lists) + len(channel_overviews)
         start = self._get_time_extremum(start, channel_lists, minimum=True)
-        reference_time = start
         stop = self._get_time_extremum(stop, channel_lists, minimum=False)
+        if start is None and stop is None:
+            logger.warning(
+                "Specified channels contain no data, setting start "
+                "to the current time."
+            )
+            start = pd.Timestamp.now()
+            stop = start + pd.Timedelta(hours=1)
+
+        reference_time = start
         shift_span = (stop - start) * 0.25
 
         if time_unit is None:
