@@ -2762,8 +2762,6 @@ class TimeDataCollection:
                 time_list.append(ex_time)
             if len(time_list) > 0:
                 time = op(time_list)
-            # elsewise None is returned(preset) - NOTE: unsure if this causes issues
-
         return time
 
     def _get_timeunit_from_channels(self, channel_lists: list[list[Channel]]) -> str:
