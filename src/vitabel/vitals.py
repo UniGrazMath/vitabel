@@ -1843,6 +1843,10 @@ class Vitals:
         if isinstance(accelerometer_channel, str):
             if accelerometer_channel in self.get_channel_names():
                 ACC_channel = self.get_channel(accelerometer_channel)
+            elif accelerometer_channel == 'cpr_acceleration':
+                logger.error(
+                "WARNING! The channel 'cpr_acceleration' (default) does not exist in the recording. "
+                "Please specify a channel or a string with the name of the channel.")
             else:
                 raise ValueError("The specified accelerometer channel ('{accelerometer_channel}') " \
                 "does not exist.")
