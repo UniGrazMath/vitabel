@@ -65,8 +65,22 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
                 "Offset": series.offset,
             }
         )
+
+        if hasattr(series, "anchored_channel"):
+            if series.anchored_channel is not None:
+                info_dict[idx]["Attached Channel"] = series.anchored_channel.name
+            else:
+                info_dict[idx]["Attached Channel"] = ""
+        if hasattr(series, "labels"):
+            info_dict[idx]["Attached Labels"] =  ", ".join(
+                [label.name for label in series.labels]
+            )
+
     df = pd.DataFrame(info_dict).transpose()
     df_columns = ['Name', 'Length', 'First Entry', 'Last Entry', 'Offset']
+    for col_name in ["Attached Channel", "Attached Labels"]:
+        if col_name in df.columns:
+            df_columns.append(col_name)
     metadata_columns = [col for col in df.columns.values if col not in df_columns]
     return df.reindex(columns=df_columns + metadata_columns)
 
