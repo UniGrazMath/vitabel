@@ -1841,15 +1841,7 @@ class Vitals:
             See https://unipub.uni-graz.at/obvugrhs/content/titleinfo/10138095 for more information.
         """
         if isinstance(accelerometer_channel, str):
-            if accelerometer_channel in self.get_channel_names():
-                ACC_channel = self.get_channel(accelerometer_channel)
-            elif accelerometer_channel == 'cpr_acceleration':
-                logger.error(
-                "WARNING! The channel 'cpr_acceleration' (default) does not exist in the recording. "
-                "Please specify a channel or a string with the name of the channel.")
-            else:
-                raise ValueError("The specified accelerometer channel ('{accelerometer_channel}') " \
-                "does not exist.")
+            ACC_channel = self.get_channel(accelerometer_channel)
         elif not isinstance(accelerometer_channel, Channel):
             raise ValueError(
                 "No valid accelerometer channel specified. Can not identify CC-periods via acceleration."
