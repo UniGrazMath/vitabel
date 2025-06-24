@@ -2723,8 +2723,16 @@ class TimeDataCollection:
         raise ValueError(f"Time specification {time_spec} could not be parsed")
 
     def _parse_channel_specification(
-        self, channels: list[list[ChannelSpecification | int]] | None
+        self, 
+        channels: list[list[ChannelSpecification | int]] | None
     ) -> list[list[Channel]]:
+        """Parse (nested) channel specifications into nested lists of channels.
+
+        Parameters
+        ----------
+        channels
+            The nested list of channel specifications to parse.
+        """
         channel_lists = []
         if channels is None:
             channel_lists.append(self.channels)
@@ -2742,7 +2750,6 @@ class TimeDataCollection:
                         channel_list.append(spec)
                     else:
                         raise ValueError(f"Invalid channel specification: {spec}")
-
                 channel_lists.append(channel_list)
         return channel_lists
 
@@ -2753,13 +2760,14 @@ class TimeDataCollection:
         include_attached_labels: bool = False,
     ) -> list[list[Label]]:
         """Parse (nested) label specifications into nested lists of labels.
+        Empty labels are excluded.
 
         Parameters
         ----------
         labels
-            The label specifications to parse.
+            The nested label specifications to parse.
         channel_lists
-            The channel lists that the labels are attached to.
+            The nested channel lists that the labels are attached to.
         include_attached_labels
             Whether to include attached labels in the output.
         """
@@ -2782,7 +2790,7 @@ class TimeDataCollection:
                     elif isinstance(spec, Label):
                         label_list.append(spec)
                     else:
-                        raise ValueError(f"Invalid label specification: {spec}")
+                        raise ValueError(f"Invalid label specification: {spec}")  
                 label_lists.append(label_list)
         if include_attached_labels:
             for idx in range(num_subplots):
@@ -2797,7 +2805,7 @@ class TimeDataCollection:
         time: Timestamp | Timedelta | float | str | None,
         channel_lists: list[list[Channel]],
         minimum: bool = True,
-    ):
+    ) -> Timestamp | Timedelta | float | None:
         """Get the minimum or maximum time value from the specified channels,
         or return the specified time value if it is not ``None``.
 
@@ -2820,11 +2828,14 @@ class TimeDataCollection:
         if time is None:
             time_list = []
             for channel in it.chain.from_iterable(channel_lists):
+                if channel.is_empty():
+                    continue
                 ex_time = op(channel.time_index)
                 if self.is_time_absolute():
                     ex_time += channel.time_start
                 time_list.append(ex_time)
-            time = op(time_list)
+            if len(time_list) > 0:
+                time = op(time_list)
         return time
 
     def _get_timeunit_from_channels(self, channel_lists: list[list[Channel]]) -> str:
@@ -2905,6 +2916,13 @@ class TimeDataCollection:
 
         start = self._get_time_extremum(start, channel_lists, minimum=True)
         stop = self._get_time_extremum(stop, channel_lists, minimum=False)
+        if start is None and stop is None:
+            logger.warning(
+                "Specified channels contain no data, setting start "
+                "to the current time."
+            )
+            start = pd.Timestamp.now()
+            stop = start + pd.Timedelta(hours=1)
 
         if time_unit is None:
             time_unit = self._get_timeunit_from_channels(channel_lists)
@@ -3016,29 +3034,28 @@ class TimeDataCollection:
             labels, channel_lists, include_attached_labels=include_attached_labels
         )
 
-        # if neither channel nor label is present, remove corresponding subplots
-        empty_channel_indices = [
-            idx
-            for idx, (channel_list, label_list) in enumerate(
-                zip(channel_lists, label_lists)
-            )
-            if len(channel_list) == 0 and len(label_list) == 0
-        ]
-        channel_lists = [
-            channel_list
-            for idx, channel_list in enumerate(channel_lists)
-            if idx not in empty_channel_indices
-        ]
-        label_lists = [
-            label_list
-            for idx, label_list in enumerate(label_lists)
-            if idx not in empty_channel_indices
-        ]
+        all_data_sources = channel_lists + label_lists
 
         num_subplots = len(channel_lists) + len(channel_overviews)
-        start = self._get_time_extremum(start, channel_lists, minimum=True)
+        start = self._get_time_extremum(start, all_data_sources, minimum=True)
+        stop = self._get_time_extremum(stop, all_data_sources, minimum=False)
+        if start is None and stop is None:
+            logger.warning(
+                "Specified channels and labels contain no data, setting start "
+                "to the current time."
+            )
+            start = pd.Timestamp.now()
+            stop = start + pd.Timedelta(minutes=1)
+
+        if start == stop:
+            logger.warning(
+                "Start and stop time are equal, setting stop time to "
+                "1 minute after start to allow plotting."
+            )
+            stop = start + pd.Timedelta(minutes=1)
+        
+
         reference_time = start
-        stop = self._get_time_extremum(stop, channel_lists, minimum=False)
         shift_span = (stop - start) * 0.25
 
         if time_unit is None:
