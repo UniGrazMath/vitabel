@@ -2508,7 +2508,7 @@ class TimeDataCollection:
             channel for channel in self.channels if match_object(channel, **kwargs)
         ]
 
-    def get_channel(self, name: str | None = None, **kwargs) -> Channel:
+    def get_channel(self, name: str | int | None = None, **kwargs) -> Channel:
         """Return a channel by name.
 
         Raises an error if no unique channel is found.
@@ -2517,11 +2517,15 @@ class TimeDataCollection:
         ----------
         name
             The name of the channel to retrieve. Allowed to be passed
-            either as a positional or a keyword argument.
+            either as a positional or a keyword argument. If an integer
+            is passed, it is interpreted as the index of the channel
+            in the collection.
         kwargs
             Keyword arguments to filter the channels by.
         """
         if name is not None:
+            if isinstance(name, int):
+                return self.channels[name]
             kwargs["name"] = name
         channels = self.get_channels(**kwargs)
         if len(channels) != 1:
@@ -2556,7 +2560,7 @@ class TimeDataCollection:
             kwargs["name"] = name
         return [label for label in self.labels if match_object(label, **kwargs)]
 
-    def get_label(self, name: str | None = None, **kwargs) -> Label:
+    def get_label(self, name: str | int | None = None, **kwargs) -> Label:
         """Return a label by name.
 
         Raises an error if no unique label is found.
@@ -2565,13 +2569,17 @@ class TimeDataCollection:
         ----------
         name
             The name of the label to retrieve. Allowed to be passed
-            either as a positional or a keyword argument.
+            either as a positional or a keyword argument. If an integer
+            is passed, it is interpreted as the index of the label
+            in the collection.
         kwargs
             Keyword arguments to filter the labels by. The
             specified arguments are compared to the attributes
             of the labels.
         """
         if name is not None:
+            if isinstance(name, int):
+                return self.labels[name]
             kwargs["name"] = name
         labels = self.get_labels(**kwargs)
         if len(labels) != 1:
