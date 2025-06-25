@@ -993,20 +993,16 @@ def test_real_evaluation(vitabel_example_data_dir):
 
 def test_analysis_exception_for_missing_data(caplog):
     cardio_recording = Vitals()
-    cardio_recording.compute_etco2_and_ventilations()
+    with pytest.raises(ValueError, match="Channel specification was ambiguous"):
+        cardio_recording.compute_etco2_and_ventilations()
     with pytest.raises(ValueError, match="Channel specification was ambiguous"):
         cardio_recording.find_CC_periods_acc()
     with pytest.raises(ValueError, match="Could not identify channels with single chest compressions."):
         cardio_recording.cycle_duration_analysis()
-    cardio_recording.predict_circulation()
+    with pytest.raises(ValueError, match="Channel specification was ambiguous"):
+        cardio_recording.predict_circulation()
+
     assert len(cardio_recording.labels) == 0
-    assert all(
-        warning in caplog.text
-        for warning in [
-            "No Capnography Signal found.",
-            "No Feedback-Sensor-Acceleration or ECG found.",
-        ]
-    )
 
 
 def test_area_under_threshold_computation():

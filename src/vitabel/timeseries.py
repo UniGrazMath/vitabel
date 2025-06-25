@@ -2531,7 +2531,7 @@ class TimeDataCollection:
         if len(channels) != 1:
             raise ValueError(
                 "Channel specification was ambiguous, no unique channel "
-                f"was identified. Query returned: {channels}"
+                f"was identified. Query for {kwargs} returned: {channels}"
             )
         return channels[0]
 
@@ -2584,8 +2584,8 @@ class TimeDataCollection:
         labels = self.get_labels(**kwargs)
         if len(labels) != 1:
             raise ValueError(
-                "Channel specification was ambiguous, no unique label "
-                f"was identified. Query returned: {labels}"
+                "Label specification was ambiguous, no unique label "
+                f"was identified. Query for {kwargs} returned: {labels}"
             )
         return labels[0]
 

@@ -972,7 +972,7 @@ def test_delete_nonexistent_channel():
         collection.remove_channel(name="nonexistent")
     assert str(exc.value) == (
         "Channel specification was ambiguous, no unique channel was "
-        "identified. Query returned: []"
+        "identified. Query for {'name': 'nonexistent'} returned: []"
     )
 
     other_channel = Channel(name="other", time_index=time, data=2 * data)
