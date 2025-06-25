@@ -1276,7 +1276,21 @@ def _spectral_entropy_welch(x, sf, normalize=False, nperseg=None, axis=-1):
         se /= np.log2(psd_norm.shape[axis])
     return se
 
-
+def _argb_int_to_plotstyle(color_int: int):
+    """Converts an ARGB color integer to a plotstyle dictionary with color as rgba.
+    
+    color_int
+        The ARGB color integer to convert.
+    """
+    if not color_int == 4294967295 and isinstance(color_int, int):
+        # not transparrent white
+        a = (color_int >> 24) & 0xFF
+        r = (color_int >> 16) & 0xFF
+        g = (color_int >> 8) & 0xFF
+        b = color_int & 0xFF
+        rgba = (r / 255.0, g / 255.0, b / 255.0, a / 255.0)
+        return {"color": rgba}
+    return None
 
 def convert_two_alternating_list(df):
     lis = []
