@@ -268,7 +268,7 @@ class Vitals:
             return None
 
         if pat_dat:
-            for key in ["File Name", "File ID", "Serial Nr", "Model"]:
+            for key in ["units", "Serial No", "File Name"]:
                 if key in pat_dat["Main data"].index:
                     metadata[key] = pat_dat["Main data"].loc[key].iloc[0]
             if "Model" in pat_dat["Main data"].index:
