@@ -238,20 +238,20 @@ class TimeSeriesBase:
     
     @property
     def first_entry(self) -> Timestamp | Timedelta | None:
-        '''The time of the earliest entry in time_index, as shown by the info.'''
+        """The first (and earliest) entry in the time index of this series."""
         min_time = None
         if len(self) > 0:
-            min_time = min(self.time_index)
+            min_time = self.time_index[0]
             if self.is_time_absolute():
                 min_time += self.time_start
         return min_time
         
     @property
     def last_entry(self) -> Timestamp | Timedelta | None:
-        '''The time of the latest entry in time_index, as shown by the info.'''       
+        """The last (and latest) entry in the time index of this series."""
         max_time = None
         if len(self) > 0:
-            max_time = max(self.time_index)
+            max_time = self.time_index[-1]
             if self.is_time_absolute():
                 max_time += self.time_start
         return max_time
@@ -1081,6 +1081,49 @@ class Label(TimeSeriesBase):
     def __repr__(self) -> str:
         """A string representation of the label."""
         return f"{self.__class__.__name__}({self.name})"
+    
+    @classmethod
+    def from_channel(cls, channel: Channel) -> Label:
+        """Create a label from a channel.
+
+        Parameters
+        ----------
+        channel
+            The channel to create the label from. The label will
+            have the same name, time index, data, and text data as the channel.
+        """
+        return Label(
+            name=channel.name,
+            time_index=channel.time_index,
+            data=channel.data,
+            text_data=None,  # channels do not have text data
+            time_start=channel.time_start,
+            time_unit=channel.time_unit,
+            offset=channel.offset,
+            anchored_channel=None,
+            plotstyle=copy(channel.plotstyle),
+            metadata=copy(channel.metadata),
+        )
+    
+    @property
+    def first_entry(self) -> Timestamp | Timedelta | None:
+        """The earliest entry in the time index of this label."""
+        min_time = None
+        if len(self) > 0:
+            min_time = self.time_index.min()
+            if self.is_time_absolute():
+                min_time += self.time_start
+        return min_time
+        
+    @property
+    def last_entry(self) -> Timestamp | Timedelta | None:
+        """The latest entry in the time index of this label."""
+        max_time = None
+        if len(self) > 0:
+            max_time = self.time_index.max()
+            if self.is_time_absolute():
+                max_time += self.time_start
+        return max_time
 
     @property
     def plot_type(self) -> LabelPlotType | None:
