@@ -455,6 +455,35 @@ def test_channel_plot_no_data():
     return fig
 
 
+def test_channel_scale_time_index_relative():
+    time = np.arange(0, 1, 0.1)
+    data = np.sin(2 * np.pi * time)
+    channel = Channel(name="test", time_index=time, data=data)
+
+    new_channel = channel.scale_time_index(2.0)
+    np.testing.assert_allclose(new_channel.numeric_time(), time * 2.0)
+
+    new_channel = channel.scale_time_index(0.5)
+    np.testing.assert_allclose(new_channel.numeric_time(), time * 0.5)
+    
+    with pytest.raises(ValueError, match="scale factor must be positive"):
+        channel.scale_time_index(-1.0)
+
+
+def test_channel_scale_time_index_absolute():
+    time = [pd.Timestamp("2020-02-02 12:00:00") + pd.Timedelta(hours=i) for i in range(6)]
+    channel = Channel(name="test", time_index=time)
+    channel.offset = pd.Timedelta("-2h")
+
+    new_channel = channel.scale_time_index(0.5, reference_time=pd.Timestamp("2020-02-02 12:00:00"))
+    assert isinstance(new_channel, Channel)
+    assert new_channel.time_start == channel.time_start
+    assert new_channel.offset == pd.Timedelta(0)
+    assert list(new_channel.get_data().time_index) == [
+        pd.Timestamp("2020-02-02 12:00:00") + pd.Timedelta(hours=i * 0.5) for i in range(-2, 4)
+    ]
+
+
 def test_label_creation():
     label = Label(name="test", time_index=[0, 5, 12])
 
