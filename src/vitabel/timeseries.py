@@ -460,7 +460,8 @@ class TimeSeriesBase:
         scale_factor: float,
         reference_time: Timestamp | Timedelta | None = None,
     ) -> Self:
-        """Scale the time index by a given factor.
+        """Scale the time index by a given factor while keeping
+        a given reference time fixed.
 
         Parameters
         ----------
@@ -471,14 +472,26 @@ class TimeSeriesBase:
             reference time. If not specified, the time index is scaled
             relative to the start of the time index.
         """
+        if scale_factor <= 0:
+            raise ValueError(
+                f"Time scale factor must be positive, but got {scale_factor}"
+            )
+        
         series = copy(self)
+        series._offset = pd.Timedelta(0)  # offset already applied to time_index, remove from copy
 
         if reference_time is None:
-            reference_time = series.time_start
-        if series.is_time_absolute():
-            reference_time = series.convert_time_input(reference_time)
+            if series.is_time_absolute():
+                reference_time = pd.Timedelta(0)
+            else:
+                reference_time = series.time_index[0]
+        
+        if isinstance(reference_time, Timestamp):
+            reference_time = pd.Timestamp(reference_time) - series.time_start
+
         scaled_index = (series.time_index - reference_time) * scale_factor + reference_time
-        series.time_index = scaled_index + series.offset
+        series.time_index = scaled_index
+
         return series
 
 
