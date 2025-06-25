@@ -449,6 +449,32 @@ class TimeSeriesBase:
         bound_cond &= False
         bound_cond[start_index : end_index + 1 : downsampled_stepsize] = True
         return bound_cond
+    
+    def scale_time_index(
+        self,
+        scale_factor: float,
+        reference_time: Timestamp | Timedelta | None = None,
+    ) -> Self:
+        """Scale the time index by a given factor.
+
+        Parameters
+        ----------
+        scale_factor
+            The factor to scale the time index by.
+        reference_time
+            If specified, the time index is scaled with respect to this
+            reference time. If not specified, the time index is scaled
+            relative to the start of the time index.
+        """
+        series = copy(self)
+
+        if reference_time is None:
+            reference_time = series.time_start
+        if series.is_time_absolute():
+            reference_time = series.convert_time_input(reference_time)
+        scaled_index = (series.time_index - reference_time) * scale_factor + reference_time
+        series.time_index = scaled_index + series.offset
+        return series
 
 
 class Channel(TimeSeriesBase):
