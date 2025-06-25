@@ -7,6 +7,11 @@ from typing import Any, Literal
 from matplotlib.text import Text
 from matplotlib.patches import Rectangle
 
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
+
 import itertools as it
 import json
 import logging
