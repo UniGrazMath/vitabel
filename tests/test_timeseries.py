@@ -920,6 +920,8 @@ def test_get_label():
 
     collection = TimeDataCollection(channels=[channel], labels=[label])
     assert collection.get_label(name="events") == label
+    assert collection.get_label(name=0) == label
+    assert collection.get_label(name=1) == label2
 
     with pytest.raises(ValueError, match="ambiguous"):
         assert collection.get_label(name="nonexistent")

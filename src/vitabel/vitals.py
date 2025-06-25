@@ -936,21 +936,23 @@ class Vitals:
         """
         return self.data.get_channels(name, **kwargs)
 
-    def get_channel(self, name: str | None = None, **kwargs) -> Channel:
+    def get_channel(self, name: str | int | None = None, **kwargs) -> Channel:
         """Returns a single channel based on its name.
 
         Parameters
         ----------
         name
-            The name of the channel to retrieve.
+            The name of the channel to retrieve. If an integer is passed,
+            it is interpreted as the index of the channel in the list of
+            all channels.
         kwargs
             Keyword arguments to filter the channels by.
 
         Raises
         ------
         ValueError
-            If the specification is ambiguous, i.e., if more than one channel
-            matches the specification.
+            If the specification is ambiguous, i.e., if more than one or
+            no channel matches the specification.
 
         Returns
         -------
@@ -965,7 +967,7 @@ class Vitals:
         
         Parameters
         ----------
-        name : str
+        name
             The name of the labels to retrieve.
         label_type : TYPE, optional
             A specification of the label type (IntervalLabel or Label) to retrieve
@@ -983,14 +985,15 @@ class Vitals:
             return [label for label in self.get_labels(name) if type(label) is label_type]
         return self.data.get_labels(name, **kwargs)
 
-    def get_label(self, name: str | None = None, **kwargs) -> Label:
+    def get_label(self, name: str | int | None = None, **kwargs) -> Label:
         """Return a list of labels.
 
         Parameters
         ----------
         name
             The name of the label to retrieve. Allowed to be passed
-            either as a positional or a keyword argument.
+            either as a positional or a keyword argument. If ``name`` is an integer,
+            it is interpreted as the index of the label in the list of all labels.
         kwargs
             Keyword arguments to filter the labels by. The
             specified arguments are compared to the attributes
