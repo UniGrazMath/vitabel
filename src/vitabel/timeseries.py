@@ -77,7 +77,11 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
             )
 
     df = pd.DataFrame(info_dict).transpose()
-    df_columns = ['Name', 'Length', 'First Entry', 'Last Entry', 'Offset']
+    df.columns = [col.title() for col in df.columns]  # capitalize column names
+    desired_columns = [
+        "Name", "Units", 'Length', 'First Entry', 'Last Entry', 'Offset', "Source"
+    ]
+    df_columns = [col for col in desired_columns if col in df.columns]
     for col_name in ["Attached Channel", "Attached Labels"]:
         if col_name in df.columns:
             df_columns.append(col_name)

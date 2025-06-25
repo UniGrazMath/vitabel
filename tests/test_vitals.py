@@ -511,17 +511,17 @@ def test_get_label_infos():
     vital_case = Vitals()
     info_df = vital_case.get_label_infos()
     assert len(info_df) == 0
-    assert list(info_df.columns) == ["Name", "Length", "First Entry", "Last Entry", "Offset"]
+    assert list(info_df.columns) == []
 
     lab = Label(
         "exam",
         ["2020-04-04 10:10:00", "2020-04-04 10:30:00", "2020-04-04 10:50:00"],
-        metadata={"lecture": "Discrete Mathematics"},
+        metadata={"Lecture": "Discrete Mathematics"},
     )
     vital_case.add_global_label(lab)
     info_df = vital_case.get_label_infos()
     assert len(info_df) == 1
-    assert "lecture" in info_df.columns
+    assert "Lecture" in info_df.columns
     assert info_df["Length"][0] == 3
     assert repr(info_df["Last Entry"][0]) == "Timestamp('2020-04-04 10:50:00')"
 
@@ -561,7 +561,7 @@ def test_get_channel_info():
             "2020-04-13 02:56:57.449000",
         ],
         np.array([1, 2, 3]),
-        metadata={"test": "1"},
+        metadata={"Test": "1"},
     )
     cha2 = Channel(
         "Channel2",
@@ -578,8 +578,8 @@ def test_get_channel_info():
     info_dict = cardio_object.get_channel_infos()
     assert isinstance(info_dict, pd.DataFrame)
     assert "Channel2" in np.asarray(info_dict["Name"])
-    assert "test" in info_dict.columns
-    assert 1 in info_dict["test"]
+    assert "Test" in info_dict.columns
+    assert 1 in info_dict["Test"]
 
 
 def test_get_label_info():
@@ -591,7 +591,7 @@ def test_get_label_info():
             "2020-04-13 02:56:57.449000",
         ],
         np.array([1, 2, 3]),
-        metadata={"test": "1"},
+        metadata={"Test": "1"},
     )
     cha2 = Label(
         "Label2",
@@ -608,8 +608,8 @@ def test_get_label_info():
     info_dict = cardio_object.get_channel_infos()
     assert isinstance(info_dict, pd.DataFrame)
     assert "Label2" in np.asarray(info_dict["Name"])
-    assert "test" in info_dict.columns
-    assert 1 in info_dict["test"]
+    assert "Test" in info_dict.columns
+    assert 1 in info_dict["Test"]
 
 
 def test_truncate():
