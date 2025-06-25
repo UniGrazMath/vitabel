@@ -2912,7 +2912,7 @@ def _track_to_timeseries(
     if track_name not in vit.get_track_names():
         raise ValueError(f"'{track_name}' is not a track in the given vitals file.")
         
-    (ti, dt), *_ = vit.get_samples(track_names=track_name, interval=1, return_datetime=False, return_timestamp=True)
+    (ti, dt), *_ = vit.get_samples(track_names=track_name, interval=None, return_datetime=False, return_timestamp=True)
     unix_start = vit.dtstart
     rec_start = datetime.fromtimestamp(unix_start)
     ti = ti - unix_start
