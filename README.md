@@ -15,6 +15,13 @@ In a nutshell, the vitabel package enables interactive loading, processing, and 
 
 ![vitabel annotation screenshot](assets/vitabel-demo.png)
 
+### Interactive Demo in the Browser
+
+We have setup an interactive demo illustrating some standard use cases of `vitabel`
+with the help of Binder: [head over to mybinder.org](https://mybinder.org/v2/gh/UniGrazMath/vitabel/main?urlpath=%2Flab%2Ftree%2Fexamples),
+or click the binder badge at the top of this README to access the demo right in
+your browser. 
+
 ### Installation and Usage
 
 The latest stable release of `vitabel` is distributed via PyPI and can be installed via
