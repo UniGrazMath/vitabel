@@ -48,5 +48,6 @@ case.plot_interactive(
 quickstart
 examples
 development
+bibliography
 ```
 

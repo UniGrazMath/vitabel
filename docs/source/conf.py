@@ -17,6 +17,7 @@ extensions = [
     "myst_nb",
     "numpydoc",
     "autoapi.extension",
+    "sphinxcontrib.bibtex",
 ]
 numpydoc_show_class_members = False
 autoapi_dirs = ["../../src"]
@@ -31,6 +32,8 @@ nb_execution_mode = "off"
 
 templates_path = ["_templates", "_autoapi_templates"]
 exclude_patterns = []
+
+bibtex_bibfiles = ["bibliography.bib"]
 
 
 # -- Options for HTML output -------------------------------------------------
