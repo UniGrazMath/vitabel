@@ -1245,6 +1245,15 @@ wheels = [
 ]
 
 [[package]]
+name = "latexcodec"
+version = "3.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/27/dd/4270b2c5e2ee49316c3859e62293bd2ea8e382339d63ab7bbe9f39c0ec3b/latexcodec-3.0.1.tar.gz", hash = "sha256:e78a6911cd72f9dec35031c6ec23584de6842bfbc4610a9678868d14cdfb0357", size = 31222 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b5/40/23569737873cc9637fd488606347e9dd92b9fa37ba4fcda1f98ee5219a97/latexcodec-3.0.1-py3-none-any.whl", hash = "sha256:a9eb8200bff693f0437a69581f7579eb6bca25c4193515c09900ce76451e452e", size = 18532 },
+]
+
+[[package]]
 name = "markdown-it-py"
 version = "3.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1843,6 +1852,32 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/cd/05/0a34433a064256a578f1783a10da6df098ceaa4a57bbeaa96a6c0352786b/pure_eval-0.2.3.tar.gz", hash = "sha256:5f4e983f40564c576c7c8635ae88db5956bb2229d7e9237d03b3c0b0190eaf42", size = 19752 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8e/37/efad0257dc6e593a18957422533ff0f87ede7c9c6ea010a2177d738fb82f/pure_eval-0.2.3-py3-none-any.whl", hash = "sha256:1db8e35b67b3d218d818ae653e27f06c3aa420901fa7b081ca98cbedc874e0d0", size = 11842 },
+]
+
+[[package]]
+name = "pybtex"
+version = "0.25.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "latexcodec" },
+    { name = "pyyaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/05/9b/1c5b913cb9121aac0a2f2990ee002b77efc70d969d5d5b179e19564389fe/pybtex-0.25.0.tar.gz", hash = "sha256:10684ffb05af33b041b06dabe15868078fd75847b24e1dffd8dd91348bbb3a4b", size = 358178 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b6/1d/9979b520b655657cea19523c1340c21f3cbbbe30c1dd03311833fbbad06d/pybtex-0.25.0-py2.py3-none-any.whl", hash = "sha256:bbc211abd458b42c5256d50185ea4f80000f43351959e1d5a3e86cd567a07a6d", size = 127434 },
+]
+
+[[package]]
+name = "pybtex-docutils"
+version = "1.0.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "docutils" },
+    { name = "pybtex" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7e/84/796ea94d26188a853660f81bded39f8de4cfe595130aef0dea1088705a11/pybtex-docutils-1.0.3.tar.gz", hash = "sha256:3a7ebdf92b593e00e8c1c538aa9a20bca5d92d84231124715acc964d51d93c6b", size = 18348 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/11/b1/ce1f4596211efb5410e178a803f08e59b20bedb66837dcf41e21c54f9ec1/pybtex_docutils-1.0.3-py3-none-any.whl", hash = "sha256:8fd290d2ae48e32fcb54d86b0efb8d573198653c7e2447d5bec5847095f430b9", size = 6385 },
 ]
 
 [[package]]
@@ -2492,6 +2527,22 @@ wheels = [
 ]
 
 [[package]]
+name = "sphinxcontrib-bibtex"
+version = "2.6.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "docutils" },
+    { name = "pybtex" },
+    { name = "pybtex-docutils" },
+    { name = "setuptools" },
+    { name = "sphinx" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/96/10/237737925e667e79b18ccd81f4a768306b80847fa24b86786f042484b439/sphinxcontrib_bibtex-2.6.4.tar.gz", hash = "sha256:aad018b730d324201f09777f6c25c4a2ff7ac1d5e66af187f21fc21840768760", size = 118453 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c5/29/9d6fbbd52d7dc6c3cc958187a05cb5d2bf891ee65ac7e8e690b9159103b4/sphinxcontrib_bibtex-2.6.4-py3-none-any.whl", hash = "sha256:bfd34d36322ba0ef0624a1bbee44adcedde86e0fa0ce5b2310304a3e68263f6f", size = 40422 },
+]
+
+[[package]]
 name = "sphinxcontrib-devhelp"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2752,7 +2803,7 @@ wheels = [
 
 [[package]]
 name = "vitabel"
-version = "0.1.0"
+version = "0.0.1"
 source = { editable = "." }
 dependencies = [
     { name = "ipykernel" },
@@ -2761,7 +2812,6 @@ dependencies = [
     { name = "ipywidgets" },
     { name = "joblib" },
     { name = "matplotlib" },
-    { name = "myst-nb" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "pyedflib" },
@@ -2777,6 +2827,7 @@ dev = [
     { name = "jupyterlab" },
     { name = "jupyterlite" },
     { name = "jupyterlite-pyodide-kernel" },
+    { name = "myst-nb" },
     { name = "myst-parser" },
     { name = "numpydoc" },
     { name = "pytest" },
@@ -2785,6 +2836,7 @@ dev = [
     { name = "ruff" },
     { name = "sphinx" },
     { name = "sphinx-autoapi" },
+    { name = "sphinxcontrib-bibtex" },
 ]
 
 [package.metadata]
@@ -2795,7 +2847,6 @@ requires-dist = [
     { name = "ipywidgets", specifier = ">=8.1.5" },
     { name = "joblib", specifier = ">=1.4.0" },
     { name = "matplotlib", specifier = ">=3.9" },
-    { name = "myst-nb", specifier = ">=1.2.0" },
     { name = "numpy", specifier = ">=2.0.0" },
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "pyedflib", specifier = ">=0.1.38" },
@@ -2811,6 +2862,7 @@ dev = [
     { name = "jupyterlab", specifier = ">=4.3.4" },
     { name = "jupyterlite", specifier = ">=0.5.0" },
     { name = "jupyterlite-pyodide-kernel", specifier = ">=0.5.1" },
+    { name = "myst-nb", specifier = ">=1.2.0" },
     { name = "myst-parser", specifier = ">=4.0.0" },
     { name = "numpydoc", specifier = ">=1.8.0" },
     { name = "pytest", specifier = ">=8.3.4" },
@@ -2819,6 +2871,7 @@ dev = [
     { name = "ruff", specifier = ">=0.8.3" },
     { name = "sphinx", specifier = ">=8.1.3" },
     { name = "sphinx-autoapi", specifier = ">=3.4.0" },
+    { name = "sphinxcontrib-bibtex", specifier = ">=2.6.4" },
 ]
 
 [[package]]
