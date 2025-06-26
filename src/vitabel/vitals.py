@@ -1471,28 +1471,26 @@ class Vitals:
         etco2_threshold: float = 3,
         **kwargs,
     ):
-        """
-        Computes end-tidal CO2 (etCO₂) values and timestamps of ventilations from the capnography waveform,
-        and adds them as labels.
+        """Computes end-tidal CO2 (etCO₂) values and timestamps of ventilations from the
+        capnography waveform, and adds them as labels.
 
-        The capnography signal must be present as a channel named 'capnography'. Two detection methods are supported:
+        The capnography signal must be present as a channel named 'capnography'. Two
+        detection methods are supported:
 
-        - 'filter': An unpublished method by Wolfgang Kern (default).
-        - 'threshold': The method described by Aramendi et al., "Feasibility of the capnogram to monitor ventilation rate during cardiopulmonary resuscitation"
-          (Resuscitation, 2016, DOI: `10.1016/j.resuscitation.2016.08.033 <https://doi.org/10.1016/j.resuscitation.2016.08.033>`_).
+        - ``'filter'``: An unpublished method by Wolfgang Kern (default).
+        - ``'threshold'``: The method described by Aramendi et al. in
+          :cite:`aramendi-et-al:capnogram:2017`.
 
         Parameters
         ----------
         mode
             Method to use for detecting ventilations from the CO₂ signal.
-
-            - 'filter': An unpublished method by Kern (default)
-            - 'threshold': The method described by Aramendi et al.
-
         breath_threshold
-            Threshold below which a minimum is identified as a ventilation (default: 2 mmHg). Used by the 'filter' method.
+            Threshold below which a minimum is identified as a ventilation (default: 2 mmHg).
+            Used by the ``'filter'`` method.
         etco2_threshold
-            Threshold above which a maximum is identified as an etCO₂ value of an expiration (default: 3 mmHg). Used by the 'filter' method.
+            Threshold above which a maximum is identified as an etCO₂ value of an expiration
+            (default: 3 mmHg). Used by the ``'filter'`` method.
         """
         # Support legacy parameter name
         if 'breaththresh' in kwargs:
@@ -1730,9 +1728,8 @@ class Vitals:
         Attaches an IntervalLabel withe the name ``cc_periods`` to the channel of single chest compressions.
 
         .. SEEALSO::
-            The method is described in `10.1016/j.resuscitation.2021.12.028 <https://doi.org/10.1016/j.resuscitation.2021.12.028>`_ or in the
-            Thesis 'Towards a data-driven cardiac arrest treatment' by Wolfgang Kern in more detail.
-            See https://unipub.uni-graz.at/obvugrhs/content/titleinfo/10138095 for more information.
+            The method is described in :cite:`orlob-et-al:cc-fraction:2022`, or in the
+            PhD thesis :cite:`kern:phd:2024` of Wolfgang Kern in more detail.
         """
         if cc_events_channel is None:
             available_channels = set(self.get_channel_names()) & {"cc", "cc_depth"}
@@ -1828,8 +1825,11 @@ class Vitals:
         """
         Automatically detects periods of continuous chest compressions.
 
-        The procedure is implemented as described in `10.1016/j.resuscitation.2021.12.028 <https://doi.org/10.1016/j.resuscitation.2021.12.028>` and `10.1016/j.dib.2022.107973 <https://doi.org/10.1016/j.dib.2022.107973>`_.
-        In essence it uses the root mean square of the accelerometer signal of feedback sensor for cardiopulmonary resuscitation to detect the rise in "power" of the signal linked to the alteration by the accelerations of continous chest compressions. 
+        The procedure is implemented as described in :cite:`orlob-et-al:cc-fraction:2022`
+        and :cite:`kern-et-al:sliding-window:2022`. In essence it uses the root mean
+        square of the accelerometer signal of feedback sensor for cardiopulmonary
+        resuscitation to detect the rise in "power" of the signal linked to the
+        alteration by the accelerations of continous chest compressions. 
 
         Parameters
         ----------
@@ -1844,9 +1844,8 @@ class Vitals:
         Every entry in the label describes a single period of chest compressions.
 
         .. SEEALSO::
-            The method is described in `10.1016/j.resuscitation.2021.12.028 <https://doi.org/10.1016/j.resuscitation.2021.12.028>`_ or in the
-            Thesis 'Towards a data-driven cardiac arrest treatment' by Wolfgang Kern in more detail.
-            See https://unipub.uni-graz.at/obvugrhs/content/titleinfo/10138095 for more information.
+            Details are given in :cite:`orlob-et-al:cc-fraction:2022` or in the
+            PhD thesis :cite:`kern:phd:2024` by Wolfgang Kern in more detail.
         """
         if isinstance(accelerometer_channel, str):
             ACC_channel = self.get_channel(accelerometer_channel)
@@ -2045,10 +2044,12 @@ class Vitals:
         ecg_pads_source: Channel | str = "ecg_pads",
     ) -> None:
         """Predicts the circulation of a case by using the channels
-        'cpr_acceleration' channel and the 'ecg_pads' channel.
+        ``'cpr_acceleration'`` channel and the ``'ecg_pads'`` channel.
 
-        The procedure that is used has been published by Kern et al. in `10.1109/TBME.2023.3242717 <https://doi.org/10.1109/TBME.2023.3242717>`_.
-        Here 'rosc_decision_function' is the output of the kernelized SVM used in and trained for the paper.
+        The procedure that is used has been published by Kern et al.
+        in :cite:`kern-et-al:accelerometry:2023`.
+        Here ``'rosc_decision_function'`` is the output of the kernelized
+        SVM used in and trained for the paper.
 
         Parameters
         ----------
@@ -2768,7 +2769,7 @@ class Vitals:
         
         The calculations might be used with a mean arterial pressure to asses for hypotension.
         They are implemented following the proposed metrics by Maheswari et al.
-        `10.1213/ANE.0000000000003482 <https://doi.org/10.1213/ANE.0000000000003482>`_.
+        in :cite:`maheshwari-et-al:noninvasive:2018`.
 
         See also
         --------
