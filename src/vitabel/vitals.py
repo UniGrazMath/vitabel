@@ -1238,15 +1238,15 @@ class Vitals:
         return _timeseries_list_info(self.get_labels(**kwargs))
 
     def info(self, **kwargs) -> None:
-        """Displays relevant information about the channels and labels
+        """Display relevant information about the channels and labels
         currently present in the recording in two separate
-        ``pandas.DataFrame``s.
+        ``pandas.DataFrame`` objects.
 
         Parameters
         ----------
         kwargs
             Keyword arguments to filter the channels and labels by.
-            See :meth:`.get_channel` and :meth:`.get_label` for valid
+            See :meth:`.get_channels` and :meth:`.get_labels` for valid
             specifications.
         
         Returns
