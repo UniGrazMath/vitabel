@@ -15,3 +15,10 @@ uv run pytest
 
 We use [`ruff`](https://docs.astral.sh/ruff/) for linting and formatting the code base,
 and [semantic versioning](https://semver.org/) for the release tags.
+
+
+## Changelog
+
+A detailed changelog summarizing all changes incorporated in vitabel between
+releases can be found at the
+[GitHub Release Overview](https://github.com/UniGrazMath/vitabel/releases).
