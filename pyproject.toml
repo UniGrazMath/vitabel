@@ -23,6 +23,7 @@ dependencies = [
     "ipykernel>=6.9",
     "joblib>=1.4.0",
     "scikit-learn>=1.5.2",
+    "myst-nb>=1.2.0",
 ]
 
 [project.urls]
