@@ -492,14 +492,6 @@ class TimeSeriesBase:
         scaled_index = (series.time_index - reference_time) * scale_factor + reference_time
         series.time_index = scaled_index
 
-        previous_scale_factor = self.metadata.get('scaling_info', {}).get('scale_factor', None)
-        if scale_factor is  None:
-            previous_scale_factor = 1
-
-        series.metadata.update({
-            'scaling_info': {
-                'scale_factor': previous_scale_factor * scale_factor}})                        
-                
         return series
 
 
