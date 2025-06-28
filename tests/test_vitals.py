@@ -1033,6 +1033,24 @@ def test_area_under_threshold_computation():
     assert threshold_metric.duration_under_threshold == pd.Timedelta("01:00:00.000000001")
 
 
-    
+def test_add_eolife_ventilatory_feedback(vitabel_test_data_dir):
+    """Test loading EOlife ventilatory feedback CSV file."""
+    collection = Vitals()
+    eolife_file = vitabel_test_data_dir / "sample_signals" / "eolife_test_file_with_empty_values.csv"
+    collection.add_ventilatory_feedback(eolife_file)
+    # Check that at least one channel is present and not empty
+    assert len(collection.channels) == 9
+    assert all(hasattr(channel, 'data') and len(channel.data) > 0 for channel in collection.channels)
+    # Optionally, check for expected channel names
+    expected_channels = [
+        'Cycle number', 'Ti (ms)', 'Te (ms)', 'Tp (ms)', 'Freq (/min)',
+        'Vi (mL)', 'Vt (mL)', 'Leakage (mL)', 'Leakage ratio'
+    ]
+    actual_channel_names = [channel.name for channel in collection.channels]
+    for name in expected_channels:
+        assert name in actual_channel_names
+
+    assert max([len(Channel) for Channel in collection.channels]) == 47
+   
 
 
