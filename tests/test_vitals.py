@@ -1042,10 +1042,7 @@ def test_add_eolife_ventilatory_feedback(vitabel_test_data_dir):
     assert len(collection.channels) == 9
     assert all(hasattr(channel, 'data') and len(channel.data) > 0 for channel in collection.channels)
     # Optionally, check for expected channel names
-    expected_channels = [
-        'Cycle number', 'Ti (ms)', 'Te (ms)', 'Tp (ms)', 'Freq (/min)',
-        'Vi (mL)', 'Vt (mL)', 'Leakage (mL)', 'Leakage ratio'
-    ]
+    expected_channels = ['Cycle number', 'Ti', 'Te', 'Tp', 'Freq', 'Vi', 'Vt', 'Leakage', 'Leakage ratio']
     actual_channel_names = [channel.name for channel in collection.channels]
     for name in expected_channels:
         assert name in actual_channel_names
