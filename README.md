@@ -8,12 +8,19 @@
   </tr>
 </table>
 
-[![Documentation Status](https://readthedocs.org/projects/vitabel/badge/?version=latest)](https://vitabel.readthedocs.io/en/latest/autoapi/vitabel/vitals/index.html)
+[![Documentation Status](https://readthedocs.org/projects/vitabel/badge/?version=latest)](https://vitabel.readthedocs.io/en/latest/index.html)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/UniGrazMath/vitabel/main?urlpath=%2Flab%2Ftree%2Fexamples)
 
-In a nutshell, the `vitabel` package allows loading, processing, and annotating vital
-data (e.g., medical time-series data e.g. from defibrillators, anesthesia charts or critical care) interactively in a Jupyter notebook.
+In a nutshell, the vitabel package enables interactive loading, processing, and annotation of vital medical time-series data (e.g., from defibrillators, anesthesia records, or critical care monitors) within a Jupyter notebook. By structuring and labeling data efficiently and intuitively, it paves the way for AI-driven analysis.
 
 ![vitabel annotation screenshot](assets/vitabel-demo.png)
+
+### Interactive Demo in the Browser
+
+We have setup an interactive demo illustrating some standard use cases of `vitabel`
+with the help of Binder: [head over to mybinder.org](https://mybinder.org/v2/gh/UniGrazMath/vitabel/main?urlpath=%2Flab%2Ftree%2Fexamples),
+or click the binder badge at the top of this README to access the demo right in
+your browser. 
 
 ### Installation and Usage
 

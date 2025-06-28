@@ -1,12 +1,14 @@
+from __future__ import annotations
+
 import pandas as pd
 import json
 import os
 import numpy as np
-from scipy.stats import mode
 import xml.etree.ElementTree as ET
 import pyedflib
 import sqlite3
 import logging
+import vitabel
 import vitabel.utils as utils
 
 from vitabel.typing import (
@@ -14,7 +16,14 @@ from vitabel.typing import (
 )
 
 from pathlib import Path
+from scipy.stats import mode
+from vitaldb.utils import VitalFile, Device
+from datetime import datetime
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from vitabel.timeseries import Channel, Label
 
 logger = logging.getLogger("vitabel")
 
@@ -225,7 +234,7 @@ def read_zolljson(filepath: Path | str):
 
     nr = str(dev_conf[0]["DeviceSerialNumber"])
     logger.info(f"Device Serial Number: {nr}")
-    pat_dat["Main data"]["Serial Nr"] = nr
+    pat_dat["Main data"]["Serial No"] = nr
     pat_dat["Main data"]["Product Code"] = nr[:2]
     pat_dat["Main data"]["Model"] = zoll_models[nr[:2]][0]
     pat_dat["Main data"]["Defib Category"] = zoll_models[nr[:2]][1]
@@ -1123,7 +1132,7 @@ def read_zollxml(filepath: Path | str):
     pat_dat["Main data"]["File ID"] = filename
 
     nr = str(dev_conf[0].find("DeviceSerialNumber").text)
-    pat_dat["Main data"]["Serial Nr"] = nr
+    pat_dat["Main data"]["Serial No"] = nr
     pat_dat["Main data"]["Product Code"] = nr[:2]
     pat_dat["Main data"]["Model"] = zoll_models[nr[:2]][0]
     pat_dat["Main data"]["Defib Category"] = zoll_models[nr[:2]][1]
@@ -2054,7 +2063,7 @@ def read_zollcsv(filepath: Path | str, filepathxml: Path | str, quick=False):
     ## Get Main Information about this case
 
     nr = str(root[0].find("Defibrillator").find("Serial").text)
-    pat_dat["Main data"]["Serial Nr"] = nr
+    pat_dat["Main data"]["Serial No"] = nr
     pat_dat["Main data"]["Product Code"] = nr[:2]
     pat_dat["Main data"]["Model"] = zoll_models[nr[:2]][0]
     pat_dat["Main data"]["Defib Category"] = zoll_models[nr[:2]][1]
@@ -2138,6 +2147,9 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
                 starttime = pd.Timestamp(event.find("AdjustedTime").text)
         device_container = root.find("Device")
         serial = device_container.find("SerialNumber").text
+        device_description = device_container.find("DeviceDescription").text #should be LP15XXXX
+        model = device_container.find("Model").text #should be LP15
+
     # Make one reading function which loads for fielnames and pcstr, try different pctry via try except
     rec_start = ""
     rec_stop = ""
@@ -2431,14 +2443,14 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
 
     case_info = {
         "File ID": pure_filename,
-        "Serial Nr": serial,
+        "Serial No": serial,
+        "Model": model,
         "Start time": starttime,
         "Recording start": pd.Timestamp(rec_start),
         "Recording end": pd.Timestamp(rec_stop),
         "Recording Length": pd.Timestamp(rec_stop) - pd.Timestamp(rec_start),
     }
-    if serial[:4] == "LP15":
-        case_info["Model"] = "LIFEPAK15"
+
     case_info = pd.DataFrame(case_info, index=[0]).T
     channel_info = pd.DataFrame.from_dict(channel_info, orient="index")
     channel_info.reset_index(inplace=True)
@@ -2494,6 +2506,7 @@ def read_lucas(f_luc: Path, f_cpre: Path):
             rec_stop = pd.Timestamp(event.find("AdjustedTime").text)
     device_container = root.find("Device")
     serial = device_container.find("SerialNumber").text
+    model = device_container.find("DeviceDescription").text.split("-")[0] # should be Lucas3
 
     event_container = root2.find("Events")
     events = event_container.findall("Event")
@@ -2553,7 +2566,8 @@ def read_lucas(f_luc: Path, f_cpre: Path):
 
     case_info = {
         "File ID": pure_filename,
-        "Serial Nr": serial,
+        "Serial No": serial,
+        "Model": model,
         "Start time": starttime,
         "Recording start": pd.Timestamp(rec_start),
         "Recording end": pd.Timestamp(rec_stop),
@@ -2866,7 +2880,7 @@ def read_corpuls(f_corpuls):  # Read Corpuls Data
 
     case_info = {
         "File ID": file[: file.rindex(".")],
-        "Serial Nr": "",
+        "Serial No": "",
         "Start time": power_on_time,
         "Recording start": starttime,
         "Recording end": power_off_time,
@@ -3002,3 +3016,64 @@ def read_eolife_export(f_eolife: Path) -> EOLifeExport:
     return EOLifeExport(df_data, recording_start, metadata, column_metadata)
 
 
+def _track_to_timeseries(
+    vit: VitalFile,
+    track_name: str,
+    metadata: dict,
+) -> Channel | Label | None:
+    """Extracts a track from a vitaldb dataset and returns it as channel or label.
+
+    Parameter
+    ---------
+    vit
+        The vitaldb dataset to extract the track from.
+    track_name
+        The name of the track to extract.   
+    """
+    if not isinstance(vit, VitalFile):
+        raise ValueError("Not a vitals file.")
+    if track_name not in vit.get_track_names():
+        raise ValueError(f"'{track_name}' is not a track in the given vitals file.")
+        
+    (ti, dt), *_ = vit.get_samples(track_names=track_name, interval=None, return_datetime=False, return_timestamp=True)
+    unix_start = vit.dtstart
+    rec_start = datetime.fromtimestamp(unix_start)
+    ti = ti - unix_start
+    
+    trk = vit.find_track(dtname=track_name)
+    name = trk.name
+    source_name = trk.dname
+    metadata.update({
+        "source_device" : trk.dname,
+        "source_details" : {"source_type" : vit.devs.get(source_name,Device("")).type,
+                            "source_port" : vit.devs.get(source_name,Device("")).port},
+        "units" : trk.unit,
+        "recording_details" : {"sampel_rate" : trk.srate,
+                            "offset" : trk.offset,
+                            "gain" : trk.gain},
+    })
+    plotstyle = utils.helpers._argb_int_to_plotstyle(trk.col)
+
+    if trk.type in {1,2}: # 1: wav, 2: numerical (vitaldb specification)
+        mask = ~pd.isna(dt)
+        return vitabel.Channel(
+            name=name,
+            time_index=ti[mask],
+            data=dt[mask],
+            time_start=rec_start,
+            time_unit="s",
+            plotstyle=plotstyle,
+            metadata=metadata
+        )
+    elif trk.type == 5: #5: str (vitaldb specification)
+        mask = ~pd.isna(dt)
+        return vitabel.Label(
+            name=name,
+            time_index=ti[mask],
+            text_data=dt[mask],
+            time_start=rec_start,
+            time_unit="s",
+            plotstyle=plotstyle,
+            metadata=metadata
+        )
+    return None

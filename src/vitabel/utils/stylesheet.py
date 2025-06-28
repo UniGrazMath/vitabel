@@ -7,9 +7,9 @@ DEFAULT_PLOT_STYLE = {
         "alpha": 0.8,
     },
     "cpr_acceleration": {
-        "color": "blue",
+        "color": "teal",
         "label": "Accelerometry",
-        "alpha": 0.6,
+        "alpha": 0.8,
     },
     "ecg_filtered": {
         "color": "darkgreen",
@@ -57,7 +57,7 @@ DEFAULT_PLOT_STYLE = {
     },
     "etco2": {
         "color": "red",
-        "label": "etCO$_2$",
+        "label": "EtCO$_2$",
         "alpha": 0.6,
         "linestyle": "",
         "marker": "s",
@@ -100,21 +100,21 @@ DEFAULT_PLOT_STYLE = {
     },
     "nibp_map": {
         "color": "red",
-        "label": "Non-Invasive Mean Blood Pressure",
+        "label": "NIBP MAP",
         "alpha": 0.6,
         "linestyle": "",
         "marker": "d",
     },
     "nibp_sys": {
         "color": "red",
-        "label": "Non-Invasive Systolic Blood Pressure",
+        "label": "NIBP sys",
         "alpha": 0.6,
         "linestyle": "",
         "marker": "v",
     },
     "nibp_dia": {
         "color": "red",
-        "label": "Non-Invasive Diastolic Blood Pressure",
+        "label": "NIBP dia",
         "alpha": 0.6,
         "linestyle": "",
         "marker": "^",
@@ -188,11 +188,11 @@ DEFAULT_PLOT_STYLE = {
     },
     "etco2_from_capnography": {
         "color": "darkred",
-        "label": "etCO$_2$ from Capnography Data",
         "alpha": 0.8,
         "linestyle": "",
         "marker": "s",
         "ms": 2,
+        "label": "etCO₂"
     },
     "ventilations_from_capnography": {
         "label": "Ventilation (Capnography)",
@@ -200,8 +200,7 @@ DEFAULT_PLOT_STYLE = {
         "linestyle": "",
         "marker": "$V$",
         "ms": 12,
-        "markeredgecolor": "goldenrod",
-        "markerfacecolor": "gold",
+        "markerfacecolor": "steelblue",
     },
     "EKG": {
         "label": "ECG",
@@ -214,4 +213,19 @@ DEFAULT_PLOT_STYLE = {
         'marker' : '',
         'color' : '#FFD700',
     },
+    "cc_period_start": {
+        "label": "CC Period Start",
+        "color": "forestgreen",
+        "alpha": 0.6,
+    },
+    "cc_period_stop": {
+        "label": "CC Period Stop",
+        "color": "firebrick",
+        "alpha": 0.6,
+    },
+    "cc_periods" : {
+        "label" : "CC Periods",
+        "color" : "lightsteelblue",
+        "alpha" : 0.6
+    }
 }

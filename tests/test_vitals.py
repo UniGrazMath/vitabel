@@ -8,7 +8,7 @@ import pytest
 
 from pathlib import Path
 
-from vitabel import Vitals
+from vitabel import Vitals, __version__
 from vitabel import Channel, Label, IntervalLabel
 
 
@@ -312,6 +312,20 @@ def test_add_data_from_incorrect_DataFrame():
         cardio_object.add_data_from_DataFrame(df, datatype="label")
 
 
+def test_add_data_from_DataFrame_relative_time():
+    df = pd.DataFrame(
+        data={
+            "random data 1": np.random.random(100),
+            "random data 2": np.random.random(100),
+        },
+        index=pd.timedelta_range(start="42s", end="1h30m", periods=100),
+    )
+    vitals_case = Vitals()
+    vitals_case.add_data_from_DataFrame(df, datatype="channel")
+    assert len(vitals_case.channels) == 2
+    assert vitals_case.data.is_time_relative()
+
+
 def test_add_label_data_from_DataFrame():
     df = pd.DataFrame.from_dict(
         {
@@ -497,17 +511,17 @@ def test_get_label_infos():
     vital_case = Vitals()
     info_df = vital_case.get_label_infos()
     assert len(info_df) == 0
-    assert list(info_df.columns) == ["Name", "Length", "First Entry", "Last Entry", "Offset"]
+    assert list(info_df.columns) == []
 
     lab = Label(
         "exam",
         ["2020-04-04 10:10:00", "2020-04-04 10:30:00", "2020-04-04 10:50:00"],
-        metadata={"lecture": "Discrete Mathematics"},
+        metadata={"Lecture": "Discrete Mathematics"},
     )
     vital_case.add_global_label(lab)
     info_df = vital_case.get_label_infos()
     assert len(info_df) == 1
-    assert "lecture" in info_df.columns
+    assert "Lecture" in info_df.columns
     assert info_df["Length"][0] == 3
     assert repr(info_df["Last Entry"][0]) == "Timestamp('2020-04-04 10:50:00')"
 
@@ -547,7 +561,7 @@ def test_get_channel_info():
             "2020-04-13 02:56:57.449000",
         ],
         np.array([1, 2, 3]),
-        metadata={"test": "1"},
+        metadata={"Test": "1"},
     )
     cha2 = Channel(
         "Channel2",
@@ -564,8 +578,8 @@ def test_get_channel_info():
     info_dict = cardio_object.get_channel_infos()
     assert isinstance(info_dict, pd.DataFrame)
     assert "Channel2" in np.asarray(info_dict["Name"])
-    assert "test" in info_dict.columns
-    assert 1 in info_dict["test"]
+    assert "Test" in info_dict.columns
+    assert 1 in info_dict["Test"]
 
 
 def test_get_label_info():
@@ -577,7 +591,7 @@ def test_get_label_info():
             "2020-04-13 02:56:57.449000",
         ],
         np.array([1, 2, 3]),
-        metadata={"test": "1"},
+        metadata={"Test": "1"},
     )
     cha2 = Label(
         "Label2",
@@ -594,8 +608,8 @@ def test_get_label_info():
     info_dict = cardio_object.get_channel_infos()
     assert isinstance(info_dict, pd.DataFrame)
     assert "Label2" in np.asarray(info_dict["Name"])
-    assert "test" in info_dict.columns
-    assert 1 in info_dict["test"]
+    assert "Test" in info_dict.columns
+    assert 1 in info_dict["Test"]
 
 
 def test_truncate():
@@ -625,22 +639,22 @@ def test_truncate():
             "2020-04-13 02:56:00",
             "2020-04-13 03:00:00",
         ],
-        data=["one", "two", "three"],
+        text_data=["one", "two", "three"],
     )
     case = Vitals()
     case.add_channel(cha)
     case.add_global_label(lab)
     truncated_case = case.truncate("2020-04-13 02:49:30", "2020-04-13 02:57:00")
     assert len(truncated_case.channels[0]) == 2
-    ch_time, _ = truncated_case.channels[0].get_data()
-    assert np.all(pd.Timestamp("2020-04-13 02:49:30") <= ch_time)
-    assert np.all(pd.Timestamp("2020-04-13 02:57:00") >= ch_time)
+    channel_data = truncated_case.channels[0].get_data()
+    assert np.all(pd.Timestamp("2020-04-13 02:49:30") <= channel_data.time_index)
+    assert np.all(pd.Timestamp("2020-04-13 02:57:00") >= channel_data.time_index)
     assert len(truncated_case.labels) == 2
     local_label = truncated_case.get_label("local label")
     assert len(local_label) == 1
     global_label = truncated_case.get_label("global label")
     assert len(global_label) == 2
-    np.testing.assert_equal(global_label.data, ["two", "three"])
+    np.testing.assert_equal(global_label.text_data, ["two", "three"])
     np.testing.assert_equal(
         global_label.intervals[-1],
         pd.DatetimeIndex(["2020-04-13 02:56:00", "2020-04-13 03:00:00"]),
@@ -676,7 +690,35 @@ def test_saving_and_loading(tmpdir):
     cardio_object2 = Vitals()
     cardio_object2.load_data(filepath)
     assert cardio_object.data == cardio_object2.data
+    assert "vitabel version" in cardio_object2.metadata
+    assert cardio_object2.metadata["vitabel version"] == __version__
 
+def test_saving_and_loading_with_offset(tmpdir):
+    channel = Channel(
+        "Channel1",
+        [
+            "2020-04-13 02:48:00",
+            "2020-04-13 02:50:00",
+            "2020-04-13 02:56:00",
+        ],
+        np.array([1, 2, 3]),
+    )
+    channel.shift_time_index(pd.Timedelta("1 hour"))
+    assert channel.time_start == pd.Timestamp(2020, 4, 13, 2, 48, 0)
+    assert channel.offset == pd.Timedelta("1 hour")
+    assert channel.get_data().time_index[0] == pd.Timestamp(2020, 4, 13, 3, 48, 0)
+    vital_case = Vitals()
+    vital_case.add_channel(channel)
+    filepath = tmpdir / "testdata.json"
+    vital_case.save_data(filepath)
+
+    loaded_case = Vitals()
+    loaded_case.load_data(filepath)
+    loaded_channel = loaded_case.get_channel("Channel1")
+    assert loaded_channel.time_start == pd.Timestamp(2020, 4, 13, 2, 48, 0)
+    assert loaded_channel.offset == pd.Timedelta("1 hour")
+    assert loaded_channel.get_data().time_index[0] == pd.Timestamp(2020, 4, 13, 3, 48, 0)
+    assert vital_case.data == loaded_case.data
 
 def test_create_shock_information_DataFrame():
     shock_energie = Channel(
@@ -720,7 +762,7 @@ def test_etco2_and_ventilation_detection(vitabel_test_data_dir):
         "capnography", t, data, time_start=pd.Timestamp(2024, 1, 1, 0, 0, 0)
     )
     cardio_object.add_channel(co2_channel)
-    cardio_object.compute_etco2_and_ventilations()
+    cardio_object.compute_etco2_and_ventilations(mode="threshold",breath_thresh=4,etco2_thresh=4) #TODO: test might be adapted to new default values in the future
     vent_dict = cardio_object.get_label("ventilations_from_capnography").to_dict()
     etCO2_dict = cardio_object.get_label("etco2_from_capnography").to_dict()
 
@@ -805,15 +847,21 @@ def test_cycle_duration_analysis_absolute(vitabel_test_data_dir):
     cardio_object.channels.append(CC_channel)
     cardio_object.cycle_duration_analysis()
 
-    CC_Start_dict = cardio_object.get_label("cc_period_start").to_dict()
-    CC_Stop_dict = cardio_object.get_label("cc_period_stop").to_dict()
+    cc_periods = cardio_object.get_label("cc_periods").to_dict()["time_index"]
 
     with open(vitabel_test_data_dir / "CC_Start_test_data.json", "r") as fd:
         CC_Start_dict_test = json.load(fd)
     with open(vitabel_test_data_dir / "CC_Stop_test_data.json", "r") as fd:
         CC_Stop_dict_test = json.load(fd)
-    assert (CC_Start_dict["time_index"] == CC_Start_dict_test["time_index"]).all()
-    assert (CC_Stop_dict["time_index"] == CC_Stop_dict_test["time_index"]).all()
+
+    starts = np.array(CC_Start_dict_test["time_index"])
+    stops = np.array(CC_Stop_dict_test["time_index"])
+ 
+    periods_test = np.empty(starts.size + stops.size, dtype=starts.dtype)
+    periods_test[0::2] = starts
+    periods_test[1::2] = stops
+
+    assert (cc_periods == periods_test).all()
 
 
 def test_cycle_duration_analysis_relative():
@@ -831,11 +879,10 @@ def test_cycle_duration_analysis_relative():
 
     cardio_object = Vitals()
     CC_channel = Channel("cc", compressions)
-    cardio_object.channels.append(CC_channel)
+    cardio_object.add_channel(CC_channel)
     cardio_object.cycle_duration_analysis()
     assert cardio_object.labels
-    assert "cc_period_start" in cardio_object.get_label_names()
-    assert "cc_period_stop" in cardio_object.get_label_names()
+    assert "cc_periods" in cardio_object.get_label_names()
 
 
 def test_acceleration_CC_period_dection_absolute(vitabel_test_data_dir):
@@ -849,14 +896,21 @@ def test_acceleration_CC_period_dection_absolute(vitabel_test_data_dir):
     )
     cardio_object.channels.append(acc_channel)
     cardio_object.find_CC_periods_acc()
-    CC_Start_dict = cardio_object.get_label("cc_period_start_acc").to_dict()
-    CC_Stop_dict = cardio_object.get_label("cc_period_stop_acc").to_dict()
+    cc_periods = cardio_object.get_label("cc_periods").to_dict()["time_index"]
+
     with open(vitabel_test_data_dir / "CC_Start_acc_test_data.json", "r") as fd:
         CC_Start_dict_test = json.load(fd)
     with open(vitabel_test_data_dir / "CC_Stop_acc_test_data.json", "r") as fd:
         CC_Stop_dict_test = json.load(fd)
-    assert (CC_Start_dict["time_index"] == CC_Start_dict_test["time_index"]).all()
-    assert (CC_Stop_dict["time_index"] == CC_Stop_dict_test["time_index"]).all()
+
+    starts = np.array(CC_Start_dict_test["time_index"])
+    stops = np.array(CC_Stop_dict_test["time_index"])
+ 
+    periods_test = np.empty(starts.size + stops.size, dtype=starts.dtype)
+    periods_test[0::2] = starts
+    periods_test[1::2] = stops
+        
+    assert (cc_periods == periods_test).all()
 
 
 def test_acceleration_CC_period_dection_relative(vitabel_test_data_dir):
@@ -869,8 +923,7 @@ def test_acceleration_CC_period_dection_relative(vitabel_test_data_dir):
     cardio_object.channels.append(acc_channel)
     cardio_object.find_CC_periods_acc()
     assert cardio_object.labels
-    assert "cc_period_start_acc" in cardio_object.get_label_names()
-    assert "cc_period_start_acc" in cardio_object.get_label_names()
+    assert "cc_periods" in cardio_object.get_label_names()
 
 
 def test_rosc_detection_absolute_time(vitabel_test_data_dir):
@@ -934,24 +987,52 @@ def test_real_evaluation(vitabel_example_data_dir):
     assert "etco2_from_capnography" in cardio_recording.get_label_names()
 
     cardio_recording.cycle_duration_analysis()
-    assert "cc_period_start" in cardio_recording.get_label_names()
-    assert "cc_period_stop" in cardio_recording.get_label_names()
+    assert "cc_periods" in cardio_recording.get_label_names()
     cardio_recording.predict_circulation()
 
 
 def test_analysis_exception_for_missing_data(caplog):
     cardio_recording = Vitals()
-    cardio_recording.compute_etco2_and_ventilations()
-    cardio_recording.find_CC_periods_acc()
-    cardio_recording.cycle_duration_analysis()
-    cardio_recording.predict_circulation()
+    with pytest.raises(ValueError, match="Channel specification was ambiguous"):
+        cardio_recording.compute_etco2_and_ventilations()
+    with pytest.raises(ValueError, match="Channel specification was ambiguous"):
+        cardio_recording.find_CC_periods_acc()
+    with pytest.raises(ValueError, match="Could not identify channels with single chest compressions."):
+        cardio_recording.cycle_duration_analysis()
+    with pytest.raises(ValueError, match="Channel specification was ambiguous"):
+        cardio_recording.predict_circulation()
+
     assert len(cardio_recording.labels) == 0
-    assert all(
-        warning in caplog.text
-        for warning in [
-            "No Capnography Signal found.",
-            "No Acceleration data found.",
-            "Case contains no compression markers.",
-            "No Feedback-Sensor-Acceleration or ECG found.",
-        ]
+
+
+def test_area_under_threshold_computation():
+    vital_case = Vitals()
+
+    vital_case.add_data_from_DataFrame(
+        pd.DataFrame(
+            index=pd.date_range(start="2024-04-04 10:00:00", end="2024-04-04 12:00:00", periods=100),
+            data=np.array([
+                42 * np.ones(100),
+                [(-1)**(k//2) for k in range(100)],  # +1, +1, -1, -1, +1, +1, -1, -1, ...
+            ]).transpose(),
+        )
     )
+    threshold_metric = vital_case.area_under_threshold(source="0", threshold=10)
+    assert threshold_metric.duration_under_threshold == pd.Timedelta(0)
+    assert threshold_metric.time_weighted_average_under_threshold.value == 0
+
+    threshold_metric = vital_case.area_under_threshold(source="0", threshold=100)
+    assert threshold_metric.duration_under_threshold == pd.Timedelta(2, unit="h")
+    assert threshold_metric.time_weighted_average_under_threshold.value == 100 - 42
+    assert threshold_metric.observational_interval_duration == pd.Timedelta(2, unit="h")
+    assert threshold_metric.area_under_threshold.unit == "minutes × value units"
+    assert threshold_metric.area_under_threshold.value == (100 - 42) * 60 * 2
+
+    threshold_metric = vital_case.area_under_threshold(source="1", threshold=0)
+    assert threshold_metric.observational_interval_duration == pd.Timedelta(2, unit="h")
+    assert threshold_metric.duration_under_threshold == pd.Timedelta("01:00:00.000000001")
+
+
+    
+
+
