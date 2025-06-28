@@ -2817,6 +2817,7 @@ dependencies = [
     { name = "pyedflib" },
     { name = "scikit-learn" },
     { name = "scipy" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
     { name = "vitaldb" },
 ]
 
@@ -2852,6 +2853,7 @@ requires-dist = [
     { name = "pyedflib", specifier = ">=0.1.38" },
     { name = "scikit-learn", specifier = ">=1.5.2" },
     { name = "scipy", specifier = ">=1.14.1" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'", specifier = ">=4.12.2" },
     { name = "vitaldb", specifier = ">=1.4.11" },
 ]
 

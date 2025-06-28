@@ -1495,7 +1495,7 @@ class Vitals:
 
         - ``'filter'``: An unpublished method by Wolfgang Kern (default).
         - ``'threshold'``: The method described by Aramendi et al. in
-          :cite:`aramendi-et-al:capnogram:2017`.
+          :cite:`10.1016/j.resuscitation.2016.08.033`.
 
         Parameters
         ----------
@@ -1744,7 +1744,7 @@ class Vitals:
         Attaches an IntervalLabel withe the name ``cc_periods`` to the channel of single chest compressions.
 
         .. SEEALSO::
-            The method is described in :cite:`orlob-et-al:cc-fraction:2022`, or in the
+            The method is described in :cite:`10.1016/j.resuscitation.2021.12.028`, or in the
             PhD thesis :cite:`kern:phd:2024` of Wolfgang Kern in more detail.
         """
         if cc_events_channel is None:
@@ -1841,8 +1841,8 @@ class Vitals:
         """
         Automatically detects periods of continuous chest compressions.
 
-        The procedure is implemented as described in :cite:`orlob-et-al:cc-fraction:2022`
-        and :cite:`kern-et-al:sliding-window:2022`. In essence it uses the root mean
+        The procedure is implemented as described in :cite:`10.1016/j.resuscitation.2021.12.028`
+        and :cite:`10.1016/j.dib.2022.107973`. In essence it uses the root mean
         square of the accelerometer signal of feedback sensor for cardiopulmonary
         resuscitation to detect the rise in "power" of the signal linked to the
         alteration by the accelerations of continous chest compressions. 
@@ -1860,7 +1860,7 @@ class Vitals:
         Every entry in the label describes a single period of chest compressions.
 
         .. SEEALSO::
-            Details are given in :cite:`orlob-et-al:cc-fraction:2022` or in the
+            Details are given in :cite:`10.1016/j.resuscitation.2021.12.028` or in the
             PhD thesis :cite:`kern:phd:2024` by Wolfgang Kern in more detail.
         """
         if isinstance(accelerometer_channel, str):
@@ -2063,7 +2063,7 @@ class Vitals:
         ``'cpr_acceleration'`` channel and the ``'ecg_pads'`` channel.
 
         The procedure that is used has been published by Kern et al.
-        in :cite:`kern-et-al:accelerometry:2023`.
+        in :cite:`10.1109/tbme.2023.3242717`.
         Here ``'rosc_decision_function'`` is the output of the kernelized
         SVM used in and trained for the paper.
 
@@ -2785,7 +2785,7 @@ class Vitals:
         
         The calculations might be used with a mean arterial pressure to asses for hypotension.
         They are implemented following the proposed metrics by Maheswari et al.
-        in :cite:`maheshwari-et-al:noninvasive:2018`.
+        in :cite:`10.1213/ANE.0000000000003482`.
 
         See also
         --------

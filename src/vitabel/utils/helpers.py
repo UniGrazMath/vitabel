@@ -1224,7 +1224,7 @@ def _hjorth_params(x, axis=-1):
     References
     ----------
     - https://en.wikipedia.org/wiki/Hjorth_parameters
-    - https://doi.org/10.1016%2F0013-4694%2870%2990143-4
+    - cite:`10.1016/0013-46947090143-4`
 
     """
     x = np.asarray(x)

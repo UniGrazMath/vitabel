@@ -7,6 +7,11 @@ from typing import Any, Literal
 from matplotlib.text import Text
 from matplotlib.patches import Rectangle
 
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
+
 import itertools as it
 import json
 import logging
@@ -449,6 +454,45 @@ class TimeSeriesBase:
         bound_cond &= False
         bound_cond[start_index : end_index + 1 : downsampled_stepsize] = True
         return bound_cond
+    
+    def scale_time_index(
+        self,
+        scale_factor: float,
+        reference_time: Timestamp | Timedelta | None = None,
+    ) -> Self:
+        """Scale the time index by a given factor while keeping
+        a given reference time fixed.
+
+        Parameters
+        ----------
+        scale_factor
+            The factor to scale the time index by.
+        reference_time
+            If specified, the time index is scaled with respect to this
+            reference time. If not specified, the time index is scaled
+            relative to the start of the time index.
+        """
+        if scale_factor <= 0:
+            raise ValueError(
+                f"Time scale factor must be positive, but got {scale_factor}"
+            )
+        
+        series = copy(self)
+        series._offset = pd.Timedelta(0)  # offset already applied to time_index, remove from copy
+
+        if reference_time is None:
+            if series.is_time_absolute():
+                reference_time = pd.Timedelta(0)
+            else:
+                reference_time = series.time_index[0]
+        
+        if isinstance(reference_time, Timestamp):
+            reference_time = pd.Timestamp(reference_time) - series.time_start
+
+        scaled_index = (series.time_index - reference_time) * scale_factor + reference_time
+        series.time_index = scaled_index
+
+        return series
 
 
 class Channel(TimeSeriesBase):

@@ -23,6 +23,7 @@ dependencies = [
     "ipykernel>=6.9",
     "joblib>=1.4.0",
     "scikit-learn>=1.5.2",
+    "typing-extensions>=4.12.2 ; python_full_version < '3.11'",
 ]
 
 [project.urls]
