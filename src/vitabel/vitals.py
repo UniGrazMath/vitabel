@@ -13,7 +13,7 @@ import logging
 import vitaldb
 from collections  import defaultdict
 
-from typing import Any, Literal, Dict
+from typing import Any, Literal
 
 from IPython.display import display
 from pathlib import Path
@@ -669,7 +669,7 @@ class Vitals:
         time_start: str | None = None,
         time_unit=None,
         datatype: Literal["channel", "label", "interval_label"] = "channel",
-        column_metadata: Dict[str, Dict[str, Any]] = {},
+        column_metadata: dict[str, dict[str, Any]] = {},
         anchored_channel: Channel | None = None,
         metadata: dict[str, Any] | None = None,
     ):
