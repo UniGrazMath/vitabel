@@ -964,10 +964,10 @@ class Label(TimeSeriesBase):
         When plotting label data using vertical lines, this argument
         controls how text labels for the lines are determined. Available options are:
 
-        - ``'text_data'``: Uses strings from :attr:`.text_data` as line labels.
+        - ``'text_data'``: Uses strings from :attr:`text_data` as line labels.
         - ``'data'``: Uses string representations of the numeric :attr:`.data` 
           values as line labels.
-        - ``'combined'``: Uses texts from :attr:`.text_data` where available and
+        - ``'combined'``: Uses texts from :attr:`text_data` where available and
           fills the rest with entries from :attr:`.data`.
         - ``'disabled'``: No text is shown next to the vertical lines.
 
@@ -1310,7 +1310,7 @@ class Label(TimeSeriesBase):
             The value of the data point. If not specified,
             the value is set to ``numpy.nan``.
         text
-            The string to be inserted into :attr:`.text_data`. 
+            The string to be inserted into :attr:`.Label.text_data`. 
         """
         # check corner case first: is label empty and passed time absolute?
         if self.is_empty() and isinstance(time_data, Timestamp):
@@ -2142,7 +2142,7 @@ class IntervalLabel(Label):
             The numeric value of the data point. If not specified,
             the value is set to ``numpy.nan``.
         text
-            The string to be inserted into :attr:`.text_data`.
+            The string to be inserted into :attr:`text_data`.
         """
         interval_start, interval_end = time_data
         if self.is_empty() and isinstance(interval_start, Timestamp):
