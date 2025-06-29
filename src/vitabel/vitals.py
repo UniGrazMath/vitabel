@@ -320,12 +320,14 @@ class Vitals:
         filepath: Path | str,
         metadata: dict[str, Any] | None = None,
     ) -> None:
-        """Add ventilatory feedback from an EOLife export file.
+        """Add ventilatory feedback from a given data source.
+
+        Currently only EOlife export files (exported CSV files) are supported.
         
         Parameters
         ----------
         filepath
-            The path to the EOLife export file. Must be a ``*.csv`` file.
+            The path to the data source file.
         metadata
             Metadata to be added to the imported data. If not provided, an empty
             dictionary is used.
