@@ -8,6 +8,8 @@ import numpy as np
 from dataclasses import dataclass
 from typing import Any, Union, TypeAlias, Literal, Iterator, TYPE_CHECKING
 
+from dataclasses import dataclass
+
 if TYPE_CHECKING:
     from vitabel import Channel, Label
     from pandas._libs.tslibs.timedeltas import UnitChoices as TimeUnitChoices
@@ -31,6 +33,15 @@ IntervalLabelPlotType: TypeAlias = Literal["box", "hline", "combined"]
 # IntervalLabelPlotVLineTextSource: TypeAlias = Literal["data", "text_data", "combined", "disabled"] #TODO: yet not implemented
 
 LabelAnnotationPresetType: TypeAlias = Literal["timestamp", "numerical", "textual", "combined"]
+
+
+@dataclass
+class EOLifeRecord:
+    data: pd.DataFrame
+    recording_start: pd.Timestamp
+    metadata: dict[str, Any]
+    column_metadata: dict[str, dict[str, str]]
+
 
 @dataclass
 class Metric:

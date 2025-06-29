@@ -314,6 +314,34 @@ class Vitals:
                     self.data.add_channel(chan)
 
         self.metadata["Recording_files_added"].append(str(filepath))
+    
+    def add_ventilatory_feedback(
+        self,
+        filepath: Path | str,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Add ventilatory feedback from a given data source.
+
+        Currently only EOlife export files (exported CSV files) are supported.
+        
+        Parameters
+        ----------
+        filepath
+            The path to the data source file.
+        metadata
+            Metadata to be added to the imported data. If not provided, an empty
+            dictionary is used.
+        """
+        if metadata is None:
+            metadata = {}
+        eolife_export=loading.read_eolife_export(filepath)
+        self.add_data_from_DataFrame(
+            source = eolife_export.data, 
+            time_start = eolife_export.recording_start, 
+            datatype = "channel",
+            metadata = metadata | eolife_export.metadata,
+            column_metadata = eolife_export.column_metadata
+        )
 
     def add_vital_db_recording(
         self,
@@ -493,6 +521,7 @@ class Vitals:
         self,
         source: dict[str, Any],
         name: str,
+    
         time_start=None,
         datatype: Literal["channel", "label", "interval_label"] = "channel",
         anchored_channel: Channel | None = None,
@@ -579,6 +608,7 @@ class Vitals:
     def add_data_from_dict(
         self,
         source: dict[str, dict] | Path,
+        
         time_start=None,
         datatype: Literal["channel", "label", "interval_label"] = "channel",
         anchored_channel: Channel | None = None,
@@ -643,6 +673,7 @@ class Vitals:
         datatype: Literal["channel", "label", "interval_label"] = "channel",
         anchored_channel: Channel | None = None,
         metadata: dict[str, Any] | None = None,
+        column_metadata: dict[str, dict[str, Any]] | None = None,
     ):
         """Adds Data from a ``pandas.DataFrame``.
 
@@ -650,12 +681,12 @@ class Vitals:
         ----------
         source
             The DataFrame containing the data. The index of the DataFrame contains the
-            time (either as DatetimeIndex or numeric Index),
+            time (either as DatetimeIndex, TimedeltaIndex or numeric Index),
             and the columns contain the channels. NaN-Values in the columns are
             not taken into account an ignored.
         time_start
             A starting time for the data. Must be accepted by pd.Timestamp(time_start)
-            In case the index is numeric. The times will be interpreted as relative
+            In case the index is timedelta or numeric. The times will be interpreted as relative
             to this value. The default is 0 and means no information is given.
         time_unit   
             The time unit of the data. Must be accepted by pd.Timestamp(time_unit). 
@@ -667,12 +698,22 @@ class Vitals:
             is anchored. Irrelevant if ``datatype`` is ``'channel'``.
         metadata
             A dictionary containing all the metadata for the channels / labels.
+        column_metadata
+            A dictionary containing metadata for individual columns in the
+            dataframe. The keys are the column names, the values are dictionaries.
+            When storing the data, the metadata from this dictionary is merged
+            with the global metadata (and overriding it in case of conflicts).
 
         Raises
         ------
         ValueError
             The DataFrame does not contain a DateTime or Numeric Index.
         """
+
+        if metadata is None:
+            metadata = {}
+        if column_metadata is None:
+            column_metadata = {}
 
         if not (
             isinstance(source.index, (pd.DatetimeIndex, pd.TimedeltaIndex))
@@ -698,7 +739,7 @@ class Vitals:
                     data=data,
                     time_start=time_start,
                     time_unit=time_unit,
-                    metadata=metadata,
+                    metadata=metadata | column_metadata.get(col, {}),
                 )
                 self.data.add_channel(channel)
             elif datatype == "label":
@@ -708,7 +749,7 @@ class Vitals:
                     data=data,
                     time_start=time_start,
                     time_unit=time_unit,
-                    metadata=metadata,
+                    metadata=metadata | column_metadata.get(col, {}),
                     anchored_channel=anchored_channel,
                 )
                 if anchored_channel is None:
