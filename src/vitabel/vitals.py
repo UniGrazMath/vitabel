@@ -48,7 +48,6 @@ from vitabel.typing import (
     Timestamp,
     ChannelSpecification,
     LabelSpecification,
-    EOLifeExport,
     ThresholdMetrics
 )
 
@@ -316,7 +315,23 @@ class Vitals:
 
         self.metadata["Recording_files_added"].append(str(filepath))
     
-    def add_ventilatory_feedback(self, filepath: Path | str, metadata={}) -> None:
+    def add_ventilatory_feedback(
+        self,
+        filepath: Path | str,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Add ventilatory feedback from an EOLife export file.
+        
+        Parameters
+        ----------
+        filepath
+            The path to the EOLife export file. Must be a ``*.csv`` file.
+        metadata
+            Metadata to be added to the imported data. If not provided, an empty
+            dictionary is used.
+        """
+        if metadata is None:
+            metadata = {}
         eolife_export=loading.read_eolife_export(filepath)
         self.add_data_from_DataFrame(
             source = eolife_export.data, 

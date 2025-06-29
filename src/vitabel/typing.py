@@ -26,12 +26,6 @@ ChannelSpecification: TypeAlias = Union[str, dict[str, Any], "Channel"]
 LabelSpecification: TypeAlias = Union[str, dict[str, Any], "Label"]
 """Type alias for different ways to specify a Label."""
 
-@dataclass
-class EOLifeExport:
-    data: pd.DataFrame
-    recording_start: pd.Timestamp
-    metadata: Dict[str, Any]
-    column_metadata: Dict[str, Dict[str, str]]
 LabelPlotType: TypeAlias = Literal["scatter", "vline", "combined"]
 LabelPlotVLineTextSource: TypeAlias = Literal["data", "text_data", "combined", "disabled"]
 
@@ -39,6 +33,15 @@ IntervalLabelPlotType: TypeAlias = Literal["box", "hline", "combined"]
 # IntervalLabelPlotVLineTextSource: TypeAlias = Literal["data", "text_data", "combined", "disabled"] #TODO: yet not implemented
 
 LabelAnnotationPresetType: TypeAlias = Literal["timestamp", "numerical", "textual", "combined"]
+
+
+@dataclass
+class EOLifeRecord:
+    data: pd.DataFrame
+    recording_start: pd.Timestamp
+    metadata: dict[str, Any]
+    column_metadata: dict[str, dict[str, str]]
+
 
 @dataclass
 class Metric:
