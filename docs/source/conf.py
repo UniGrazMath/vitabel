@@ -14,9 +14,10 @@ author = "Benjamin Hackl, Wolfgang Kern, Simon Orlob"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    "myst_parser",
+    "myst_nb",
     "numpydoc",
     "autoapi.extension",
+    "sphinxcontrib.bibtex",
 ]
 numpydoc_show_class_members = False
 autoapi_dirs = ["../../src"]
@@ -27,9 +28,12 @@ autoapi_options = [
     "show-inheritance",
     "show-module-summary",
 ]
+nb_execution_mode = "off"
 
 templates_path = ["_templates", "_autoapi_templates"]
 exclude_patterns = []
+
+bibtex_bibfiles = ["bibliography.bib"]
 
 
 # -- Options for HTML output -------------------------------------------------

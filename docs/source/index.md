@@ -3,16 +3,12 @@
 This package provides a toolbox for interactively annotating
 and labeling vital data.
 
-```{toctree}
-:maxdepth: 3
-quickstart
-development
-```
-
 The main feature of `vitabel`, interactive plots that can be used to annotate data,
 is designed to work in Jupyter notebooks. Start a new server by running `jupyter notebook`
 (or create a new notebook in an existing server), then import the central `Vitals` class
-that acts as a container for the vital data. A set of data can be added using, for example,
+that acts as a container for the vital data.
+
+A set of data can be added using, for example,
 the `Vitals.add_defibrillator_recording` method, or `Vitals.add_vital_db_recording`;
 various output formats of defibrillators
 and VitalDB are supported.  
@@ -47,6 +43,11 @@ case.plot_interactive(
 )
 ```
 
-
-
+```{toctree}
+:maxdepth: 3
+quickstart
+examples
+development
+bibliography
+```
 
