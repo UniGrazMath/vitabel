@@ -669,9 +669,9 @@ class Vitals:
         time_start: str | None = None,
         time_unit=None,
         datatype: Literal["channel", "label", "interval_label"] = "channel",
-        column_metadata: dict[str, dict[str, Any]] = {},
         anchored_channel: Channel | None = None,
         metadata: dict[str, Any] | None = None,
+        column_metadata: dict[str, dict[str, Any]] | None = None,
     ):
         """Adds Data from a ``pandas.DataFrame``.
 
@@ -682,8 +682,6 @@ class Vitals:
             time (either as DatetimeIndex, TimedeltaIndex or numeric Index),
             and the columns contain the channels. NaN-Values in the columns are
             not taken into account an ignored.
-            Imformation are applied to channels and labels equally, for additional channel/label specific metadata use 'column_metadata'.
-            'metadata' and channel/labe specific metadata from 'column_metadata will be merged, channel/labe specific metadata overriding global metadata. 
         time_start
             A starting time for the data. Must be accepted by pd.Timestamp(time_start)
             In case the index is timedelta or numeric. The times will be interpreted as relative
@@ -698,12 +696,22 @@ class Vitals:
             is anchored. Irrelevant if ``datatype`` is ``'channel'``.
         metadata
             A dictionary containing all the metadata for the channels / labels.
+        column_metadata
+            A dictionary containing metadata for individual columns in the
+            dataframe. The keys are the column names, the values are dictionaries.
+            When storing the data, the metadata from this dictionary is merged
+            with the global metadata (and overriding it in case of conflicts).
 
         Raises
         ------
         ValueError
             The DataFrame does not contain a DateTime or Numeric Index.
         """
+
+        if metadata is None:
+            metadata = {}
+        if column_metadata is None:
+            column_metadata = {}
 
         if not (
             isinstance(source.index, (pd.DatetimeIndex, pd.TimedeltaIndex))
@@ -729,7 +737,7 @@ class Vitals:
                     data=data,
                     time_start=time_start,
                     time_unit=time_unit,
-                    metadata=metadata,
+                    metadata=metadata | column_metadata.get(col, {}),
                 )
                 self.data.add_channel(channel)
             elif datatype == "label":
@@ -739,7 +747,7 @@ class Vitals:
                     data=data,
                     time_start=time_start,
                     time_unit=time_unit,
-                    metadata=metadata,
+                    metadata=metadata | column_metadata.get(col, {}),
                     anchored_channel=anchored_channel,
                 )
                 if anchored_channel is None:
