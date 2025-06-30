@@ -3540,6 +3540,7 @@ class TimeDataCollection:
                 overview_indicators, \
                 screen_pixel_width
             data_width = (stop - start).total_seconds()
+            screen_pixel_width, _ = fig.canvas.get_width_height()
             resolution = data_width / screen_pixel_width
 
             partial_interval_artist_ax = None
