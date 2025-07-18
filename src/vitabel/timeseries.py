@@ -3029,6 +3029,7 @@ class TimeDataCollection:
 
         start = self._get_time_extremum(start, channel_lists, minimum=True)
         stop = self._get_time_extremum(stop, channel_lists, minimum=False)
+        
         if start is None and stop is None:
             logger.warning(
                 "Specified channels contain no data, setting start "
@@ -3061,7 +3062,12 @@ class TimeDataCollection:
                 )
 
             for label in label_list:
-                label.plot(plot_axes=subax, start=start, stop=stop, time_unit=time_unit)
+                label.plot(
+                    plot_axes=subax, 
+                    start=start, 
+                    stop=stop, 
+                    time_unit=time_unit,
+                    reference_time=start)
 
             plot_duration = (stop - start) / pd.to_timedelta(1, unit=time_unit)
             subax.set_xlim((0, plot_duration))
