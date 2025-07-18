@@ -1676,7 +1676,8 @@ class Label(TimeSeriesBase):
         )
 
         if self.is_time_absolute():
-            reference_time = reference_time or self.time_start
+            if reference_time is None:
+                reference_time = self.time_start
             time_index = time_index - reference_time
 
         if time_unit is None:
@@ -3059,6 +3060,7 @@ class TimeDataCollection:
                     stop=stop,
                     resolution=resolution,
                     time_unit=time_unit,
+                    reference_time=start,
                 )
 
             for label in label_list:
