@@ -1322,10 +1322,7 @@ def resample_to_common_index(
             text_data=None,
         )
     
-    ch1_interpolated = _interpolate(ch1_index, ch1_data)
-    ch2_interpolated = _interpolate(ch2_index, ch2_data)
-
-    return (ch1_interpolated, ch2_interpolated)
+    return (_interpolate(ch1_index, ch1_data), _interpolate(ch2_index, ch2_data))
 
 
 def _hjorth_params(x, axis=-1):
