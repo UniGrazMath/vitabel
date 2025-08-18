@@ -227,5 +227,40 @@ DEFAULT_PLOT_STYLE = {
         "label" : "CC Periods",
         "color" : "lightsteelblue",
         "alpha" : 0.6
-    }
+    },
+    "Inspiration": {
+        "color": "lightgree",
+        "label": "Inspiration Phase",
+        "alpha": 0.1,
+    },
+    "Inspiration Begin": {
+        "color": "green",
+        "label": "Inspiration Start",
+        "alpha": 0.6,
+    },
+    "Expiration Begin": {
+        "color": "red",
+        "label": "Expiration Start",
+        "alpha": 0.6,
+    },
+    "Flow Interpolated": {
+        "color": "darkblue",
+        "label": "Flow Interpolated",
+        "alpha": 1,
+    },
+    "Pressure Interpolated": {
+        "color": "mediumseagreen",
+        "label": "Pressure Interpolated",
+        "alpha": 1,
+    },
+    "Product Flow Pressure": {
+        "color": "teal",
+        "label": "Product Flow Pressure",
+        "alpha": 1,
+    },
+    "Product Flow Pressures Slope": {
+        "color": "orange",
+        "label": "Product Flow Pressures Slope",
+        "alpha": 1,
+    },
 }
