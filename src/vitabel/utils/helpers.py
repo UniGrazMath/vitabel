@@ -6,7 +6,6 @@ from __future__ import annotations
 import base64
 import datetime
 import io
-from re import S
 import joblib
 import json
 import warnings
@@ -43,6 +42,7 @@ __all__ = [
     "NumpyEncoder",
     "determine_gaps_in_recording",
     "linear_interpolate_gaps_in_recording",
+    "resample_to_common_index",
     "gaussian_kernel_regression_point",
     "CCF_minute",
     "find_ROSC_2",
