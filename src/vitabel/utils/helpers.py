@@ -6,6 +6,7 @@ from __future__ import annotations
 import base64
 import datetime
 import io
+from re import S
 import joblib
 import json
 import warnings
@@ -25,6 +26,7 @@ from vitabel.typing import (
     Timestamp,
     ThresholdMetrics,
     Metric,
+    DataSlice
 )
 
 if TYPE_CHECKING:
@@ -1214,6 +1216,116 @@ def linear_interpolate_gaps_in_recording(
         time = np.insert(time, start_index, time_in_gap)
         data = np.insert(data, start_index, data_in_gap)
     return time, data
+    
+
+def resample_to_common_index(
+    ch1: Channel,
+    ch2: Channel)-> DataSlice:
+    """
+    Aligns two Channel objects by their time indices, ensuring both are sampled at the same time points,
+    including zero-crossings. Data are interpolated to a common time base within their overlapping range.
+    Parameters
+    ----------
+    ch1 : Channel
+        The first channel object.
+    ch2 : Channel
+        The second channel object.
+    Returns
+    -------
+    ch1_interpolated :class:`.DataSlice`
+        The first channel's data, interpolated to the common time index.
+    ch2_interpolated :class:`.DataSlice`
+        The second channel's data, interpolated to the common time index.
+    Raises
+    ------
+    ValueError
+        If there is no overlapping time range between the two channels.
+    Notes
+    -----
+    - Zero-crossings are inserted to improve alignment, especially for oscillatory signals.
+
+    """
+
+    ch1_index = ch1.get_data().time_index
+    ch1_data = ch1.get_data().data.flatten()
+
+    ch2_index = ch2.get_data().time_index
+    ch2_data = ch2.get_data().data.flatten()
+
+
+    # 0) find zero crossings
+    def _insert_zero_crossings(
+        ti: pd.DatetimeIndex,
+        y: np.ndarray):
+
+        if len(y) < 2:
+            return ti.copy(), y.copy()
+        
+        # sign change
+        i0 = np.where(y[:-1] * y[1:] < 0)[0]
+        if len(i0) == 0:
+            return ti.copy(), y.copy()
+
+        i1 = i0 + 1
+        y0, y1 = y[i0], y[i1]
+
+        # fraction of crossing
+        alpha = -y0 / (y1 - y0)
+
+        # calculate timepoint of crossing
+        t = ti.view("int64")
+        t_cross = (t[i0] + (t[i1] - t[i0]) * alpha).astype("int64")
+        cross_times = (pd.to_datetime(t_cross) if ti.tz is None else pd.to_datetime(t_cross, utc=True).tz_convert(ti.tz))
+
+        # data values for crossings
+        y_cross = np.zeros(len(cross_times), dtype=float)
+
+        # append and sort
+        ti = ti.append(cross_times)
+        y = np.concatenate([y, y_cross])
+        order = ti.argsort()
+        ti = ti[order]
+        y = y[order]
+
+        return ti.copy(), y.copy()
+    
+    # 1) insert zero crossings
+    ch1_index, ch1_data = _insert_zero_crossings(ch1_index, ch1_data)
+    ch2_index, ch2_data = _insert_zero_crossings(ch2_index, ch2_data)
+
+    # 2) Determine overlap range
+    start = max(ch1_index.min(), ch2_index.min())
+    end = min(ch1_index.max(), ch2_index.max())
+    if start >= end:
+        raise ValueError("No overlapping time range between channels.")
+
+    # 3) union index
+    union_index = ch1_index.union(ch2_index).sort_values()
+    union_index = union_index[(union_index >= start) & (union_index <= end)]
+
+    # 4) interpolate
+    def _interpolate(ti, data, start=start, end=end, union_index=union_index) -> DataSlice:
+
+        # assures the series starts and ends with an actual measurement before interpolation
+        t_add = []
+        if start not in ti and ( ti < start).any():
+            t_add.append(ti[ti < start].max()) 
+        if end not in ti and (ti > end).any():
+            t_add.append(ti[ti > end].min()) 
+        workindex = union_index.union(pd.DatetimeIndex(t_add, tz=ti.tz)).sort_values()
+        s = pd.Series(data, index=ti).reindex(workindex)
+        s.interpolate(method="time", limit_area="inside")[union_index]
+
+        return DataSlice(
+            time_index=s.index,
+            data=s.values,
+            text_data=None,
+        )
+    
+    ch1_interpolated = _interpolate(ch1_index, ch1_data)
+    ch2_interpolated = _interpolate(ch2_index, ch2_data)
+
+    return (ch1_interpolated, ch2_interpolated)
 
 
 def _hjorth_params(x, axis=-1):
