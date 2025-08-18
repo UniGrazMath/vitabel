@@ -1314,11 +1314,11 @@ def resample_to_common_index(
             t_add.append(ti[ti > end].min()) 
         workindex = union_index.union(pd.DatetimeIndex(t_add, tz=ti.tz)).sort_values()
         s = pd.Series(data, index=ti).reindex(workindex)
-        s.interpolate(method="time", limit_area="inside")[union_index]
+        s = s.interpolate(method="time", limit_area="inside")[union_index]
 
         return DataSlice(
             time_index=s.index,
-            data=s.values,
+            data=np.asarray(s.values),
             text_data=None,
         )
     
