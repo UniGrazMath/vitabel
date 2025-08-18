@@ -811,9 +811,15 @@ class Vitals:
         )
 
     def add_channel(self, Channel):
+        plotstyle = DEFAULT_PLOT_STYLE.get(Channel.name, {})
+        plotstyle.update(Channel.plotstyle or {})
+        Channel.plotstyle = plotstyle
         self.data.add_channel(Channel)
 
     def add_global_label(self, Label):
+        plotstyle = DEFAULT_PLOT_STYLE.get(Label.name, {})
+        plotstyle.update(Label.plotstyle or {})
+        Label.plotstyle = plotstyle
         self.data.add_global_label(Label)
 
     # # Add loading iterable of Frame or Series to add more channels at once
