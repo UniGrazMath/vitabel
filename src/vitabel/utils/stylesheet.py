@@ -229,19 +229,19 @@ DEFAULT_PLOT_STYLE = {
         "alpha" : 0.6
     },
     "Inspiration": {
-        "color": "lightgree",
+        "color": "lightgreen",
         "label": "Inspiration Phase",
         "alpha": 0.1,
     },
     "Inspiration Begin": {
         "color": "green",
         "label": "Inspiration Start",
-        "alpha": 0.6,
+        "alpha": 0.4,
     },
     "Expiration Begin": {
         "color": "red",
         "label": "Expiration Start",
-        "alpha": 0.6,
+        "alpha": 0.4,
     },
     "Flow Interpolated": {
         "color": "darkblue",
@@ -259,7 +259,7 @@ DEFAULT_PLOT_STYLE = {
         "alpha": 1,
     },
     "Product Flow Pressures Slope": {
-        "color": "orange",
+        "color": "darkorange",
         "label": "Product Flow Pressures Slope",
         "alpha": 1,
     },
