@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import os
 
-
 import numpy as np
 import pandas as pd
 import scipy.signal as sgn
@@ -34,6 +33,7 @@ from vitabel.utils import (
     construct_snippets,
     deriv,
     av_mean,
+    resample_to_common_index,
     NumpyEncoder,
     determine_gaps_in_recording,
     linear_interpolate_gaps_in_recording,
@@ -2866,3 +2866,272 @@ class Vitals:
             stop_time=stop_time,
             threshold=threshold
         )
+
+
+def _get_inspiration_start(
+    product: DataSlice
+    ) -> np.ndarray:
+    """
+    Derives the indices of the start of inspirations from the product of flow and pressure.
+    
+    This function identifies segments of the product that are above a certain threshold
+    and finds the last zero crossing before each segment. Preceding segments
+    of less than 20ms of a non-positive product are filtered out to ensure that chest
+    compressions do not fragment the product in the early phase of the inspiration.
+    Potential candidates are further filtered by the duration of the following
+    duration of zeros, which must be greater than 400ms (more than half the duty cycle of CC with 80 BPM)
+    to be considered a valid inspiration. This avoids false positives due to chest compressions fragmenting the product.
+
+    Parameters
+    ----------
+    product:class:`.DataSlice`
+        A DataSlice object containing the time index and data of the product of flow and pressure.  
+    
+    Returns
+    -------
+    np.ndarray
+        An array of indices for the time index of the given product where the inspirations start.
+    """
+    index = product.time_index.copy()
+    product = product.data.copy() 
+
+    product[product < 0] = 0  # Remove negative values
+    # Find indices where product is above a threshold
+    above_idxs = np.where(product > 500)[0]
+
+    # Find breaks between contiguous segments
+    breaks = np.diff(above_idxs) > 1
+    
+    # Always include the first index, then the first index after each break
+    start_above_idxs = np.r_[above_idxs[0], above_idxs[1:][breaks]]
+    
+    #get idxs of zero crossings
+    zero = (product == 0)
+    d = np.diff(zero.view(np.int8), prepend=0, append=0)
+    starts = np.flatnonzero(d == 1)
+    ends   = np.flatnonzero(d == -1) - 1
+    zero_idxs  = np.sort(np.concatenate([starts, ends]))
+    
+    # Find the last zero before each start_above_idx and after
+    last_zero_left_idxs = zero_idxs[np.searchsorted(zero_idxs, start_above_idxs,side='right')-1]
+    next_zero_right_idxs = zero_idxs[np.searchsorted(zero_idxs, start_above_idxs, side='left')]
+    
+    # determine length of previous episode of zeroes and remove if shorter than 40ms
+    prev_zero_right_idxs = zero_idxs[np.searchsorted(zero_idxs, start_above_idxs, side='right')-2]
+    drop_mask=index[last_zero_left_idxs]- index[prev_zero_right_idxs] < np.timedelta64(40,"ms")
+    zero_idxs = np.setdiff1d(zero_idxs, last_zero_left_idxs[drop_mask])
+    zero_idxs = np.setdiff1d(zero_idxs, prev_zero_right_idxs[drop_mask])
+    
+    # Find the last zero before each start_above_idx in the zero_idxs without the short ones
+    last_zero_left_idxs = zero_idxs[np.searchsorted(zero_idxs, start_above_idxs,side='right')-1]
+    
+    # Filter the potentila candidates by the duration of the following duration of zeros
+    # >400ms (more than half the duty cycle of CC with 80 BPM) is considered a valid inspiration
+    # Therefore, avoiding that a chest compression can fragement the product leasing to false positive inspiration.
+    t_zero = index[last_zero_left_idxs[1:]] - index[next_zero_right_idxs[:-1]] 
+    valid_insp_idxs = last_zero_left_idxs[1:][t_zero > np.timedelta64(400,"ms")]
+    
+    return np.append(last_zero_left_idxs[0], valid_insp_idxs)
+
+
+def _get_expiration_start(
+    product: DataSlice, 
+    insp_idxs: np.ndarray) -> np.ndarray:
+    """
+    Derives the indices of the start of expirations from the product of flow and slope of pressure.
+
+    This function identifies segments of the product that are above a certain threshold
+    and finds the preceding zero crossing before each segment as potenital expiration start.
+    It returns the first candidate between two inspritation starts as the expiration start.
+    
+    Parameters
+    ----------
+    product:class:`.DataSlice`
+        A DataSlice object containing the time index and data of the product of flow and slope of pressure.
+
+    insp_idxs: np.ndarray
+        An array of indices for the time index of the given product where the inspirations start, based function `_get_inspiration_start`.
+    
+    Returns
+    -------
+    np.ndarray
+        An array of indices for the time index of the given product where the expirations start.
+    """
+
+    product[product < 0] = 0  # Remove negative values
+    # Find indices where product is above a threshold
+    above_idxs = np.where(product > 700)[0]
+    
+    # Find breaks between contiguous segments
+    breaks = np.diff(above_idxs) > 1
+    # Always include the first index, then the first index after each break
+    start_above_idxs = np.r_[above_idxs[0], above_idxs[1:][breaks]]
+    
+    # Find the last zero before each start_above_idx
+    zero_idxs = np.where(product == 0)[0]
+    potential_exp_idxs = zero_idxs[np.searchsorted(zero_idxs,start_above_idxs,side='right')-1]
+
+    # For each stop, find index of the start immediately to its left
+    left = np.searchsorted(insp_idxs, potential_exp_idxs, side='right') - 1
+
+    # Valid intervals are 0..len(insp_idx)-2
+    in_interval = (left >= 0) & (left < len(insp_idxs))
+
+    if max(insp_idxs) < max(potential_exp_idxs):
+        # If the last inspiration is before the last stop, add it
+        insp_idxs = np.append(insp_idxs, max(potential_exp_idxs))
+
+    # Strictly between the two inspirations
+    between = (potential_exp_idxs > insp_idxs[left]) & (potential_exp_idxs <= insp_idxs[left + 1])
+    valid = in_interval & between
+
+    # For valid stops, keep the first one per interval (per 'left')
+    bins = left[valid]      # which interval each stop belongs to
+    vals = potential_exp_idxs[valid]     # their stop values
+    _, first_pos = np.unique(bins, return_index=True)
+
+    return vals[first_pos]
+
+
+def compute_respiratory_phases(
+    self,
+    flow: Channel,
+    pressure: Channel,
+    add_intermediate_channels: bool = False
+    ) -> None:
+    """
+    Derives the respiratory phases from air flow and airway pressure channels and adds them as global labels.
+
+    This function derices the begin of inspiration based on the product of flow and pressure see :func:`_get_inspiration_start`.
+    The begin of expiration is derived from the product of flow and slope of pressure see :func:`_get_expiration_start`.
+    The begin of inspiration and expiration are added as global labels to the Vitals object.
+    Additionally, an interval label for the inspiration phase is created.
+
+    Parameters
+    ----------
+    self: :class:`.Vitals`
+        The Vitals object to which the respiratory phases will be added.
+    flow: :class:`.Channel`
+        The air flow channel.
+    pressure: :class:`.Channel`
+        The airway pressure channel.
+    add_intermediate_channels: bool
+        Whether to add intermediate channels to the Vitals object. If True, the following channels are added:
+            - interpolated flow and pressure
+            - product of flow and pressure
+            - slope of pressure
+            - product of flow and slope of pressure
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    This functions and its thresholds are developed and tested on data from the following sensors:
+        - Flow: Sensirion SFM3000, recording at ~195Hz in slm
+        - Pressure: Amphenol All Sensors DLVR-L60D, recording at ~480Hz in cmH₂O
+    """
+
+    # Interpolate Flow and Pressure to have a common index and crosses of y=0
+    #f_interpolated, p_interpolated = _resample_to_common_index(flow, pressure)
+    f_interpolated, p_interpolated = resample_to_common_index(flow, pressure)
+
+    # Calculate the product of flow and pressure
+    product_flow_pressure = DataSlice(f_interpolated.time_index, f_interpolated.data * p_interpolated.data)
+
+    # derive idx for inspiration start
+    insp_idxs = _get_inspiration_start(product_flow_pressure)
+
+    # get slope of pressure
+    if len(p_interpolated) > 2:
+        ti = p_interpolated.time_index
+        y = p_interpolated.data
+        # convert time to seconds (float64) from ns
+        t_ns = ti.view("int64")   
+        t_rel_sec = (t_ns - t_ns[0]).astype(np.float64) * 1e-9  
+        # Calculate the slope using central differences for interior points, forward/backward for edges
+        slope_p = np.gradient(y, t_rel_sec, edge_order=1)
+    else:
+        slope_p = np.zeros_like(y, dtype=float)
+
+    # Calculate the product of flow and slope of pressure
+    neg_flow = f_interpolated.data.copy()
+    neg_flow [neg_flow > 0] = 0
+    product_flow_pslope = neg_flow * slope_p
+
+    # derive idx for expiration start
+    exp_idx = _get_expiration_start(product_flow_pslope, insp_idxs)
+
+    # Add inspiration and expiration labels to the Vitals object
+    insp_begin = f_interpolated.time_index[insp_idxs]
+    exp_begin = f_interpolated.time_index[exp_idx]
+
+
+    self.add_global_label(
+        Label(
+            name="Inspiration Begin",
+            time_index=insp_begin,
+        )
+    )
+    self.add_global_label(
+        Label(
+            name="Expiration Begin",
+            time_index=exp_begin,
+        )
+    )
+
+    i_first = insp_begin[0]
+    e_last = exp_begin[-1] 
+    i = insp_begin[insp_begin<e_last]
+    e = exp_begin[exp_begin>i_first]
+    intervals = list(zip(i, e))
+    self.add_global_label(
+        IntervalLabel(
+            name="Inspiration",
+            time_index=intervals,
+        )
+    )
+
+    if add_intermediate_channels:
+        
+        self.add_channel(
+            Channel(
+                name="Flow Interpolated",
+                time_index=f_interpolated.time_index, 
+                data=f_interpolated.data,
+            )
+        )
+        self.add_channel(
+            Channel(
+                name="Pressure Interpolated",
+                time_index=p_interpolated.time_index,
+                data=p_interpolated.data,
+            )
+        )
+        self.add_channel(
+            Channel(
+                name="Product Flow Pressure",
+                time_index=product_flow_pressure.time_index,
+                data=product_flow_pressure.data,
+            )
+        )
+        self.add_channel(
+            Channel(
+                name="Slope Pressure",
+                time_index=p_interpolated.time_index,       
+                data=slope_p,
+            )
+        )
+        self.add_channel(
+            Channel(
+                name="Product Flow Pressures Slope",
+                time_index=p_interpolated.time_index,
+                data=product_flow_pslope.data,
+            )
+        )
+
+    return
+    
+
+    
+
