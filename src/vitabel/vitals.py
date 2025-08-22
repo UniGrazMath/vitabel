@@ -811,17 +811,11 @@ class Vitals:
             metadata=metadata,
         )
 
-    def add_channel(self, Channel):
-        plotstyle = DEFAULT_PLOT_STYLE.get(Channel.name, {})
-        plotstyle.update(Channel.plotstyle or {})
-        Channel.plotstyle = plotstyle
-        self.data.add_channel(Channel)
+    def add_channel(self, channel: Channel):
+        self.data.add_channel(channel)
 
-    def add_global_label(self, Label):
-        plotstyle = DEFAULT_PLOT_STYLE.get(Label.name, {})
-        plotstyle.update(Label.plotstyle or {})
-        Label.plotstyle = plotstyle
-        self.data.add_global_label(Label)
+    def add_global_label(self, label: Label):
+        self.data.add_global_label(label)
 
     # # Add loading iterable of Frame or Series to add more channels at once
     # time_unit = time_unit,
@@ -3094,46 +3088,42 @@ class Vitals:
                 IntervalLabel(
                     name="Inspiration",
                     time_index=intervals,
+                    plotstyle=DEFAULT_PLOT_STYLE.get("Inspiration"),
                 )
             )
-
         if add_intermediate_channels:
-            
-            self.add_channel(
+            intermediate_channels = [
                 Channel(
                     name="Flow Interpolated",
                     time_index=f_interpolated.time_index, 
                     data=f_interpolated.data,
-                )
-            )
-            self.add_channel(
+                ),
                 Channel(
                     name="Pressure Interpolated",
                     time_index=p_interpolated.time_index,
                     data=p_interpolated.data,
-                )
-            )
-            self.add_channel(
+                ),
                 Channel(
                     name="Product Flow Pressure",
                     time_index=product_flow_pressure.time_index,
                     data=product_flow_pressure.data,
-                )
-            )
-            self.add_channel(
+                ),
                 Channel(
                     name="Slope Pressure",
                     time_index=p_interpolated.time_index,       
                     data=slope_p,
-                )
-            )
-            self.add_channel(
+                ),
                 Channel(
                     name="Product Flow Pressures Slope",
                     time_index=p_interpolated.time_index,
                     data=product_flow_pslope.data,
                 )
-            )
+            ]
+            for channel in intermediate_channels:
+                channel.plotstyle = channel.plotstyle.update(
+                    DEFAULT_PLOT_STYLE.get(channel.name, {})
+                )
+                self.add_channel(channel)
 
         return
         
