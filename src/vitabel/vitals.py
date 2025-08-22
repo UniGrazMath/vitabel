@@ -2974,23 +2974,24 @@ class Vitals:
         zero_idxs = np.where(product == 0)[0]
         potential_exp_idxs = zero_idxs[np.searchsorted(zero_idxs,start_above_idxs,side='right')-1]
 
+        # right-bound sentinel guarantees insp_bounds[left+1] exists
+        insp_bounds = np.r_[insp_idxs, np.inf]
+
         # For each stop, find index of the start immediately to its left
-        left = np.searchsorted(insp_idxs, potential_exp_idxs, side='right') - 1
+        left = np.searchsorted(insp_bounds, potential_exp_idxs, side='right') - 1
 
-        # Valid intervals are 0..len(insp_idx)-2
-        in_interval = (left >= 0) & (left < len(insp_idxs))
+        # valid when between 0 and last real interval
+        valid_left = (left >= 0) & (left < len(insp_bounds) - 1)
 
-        if max(insp_idxs) < max(potential_exp_idxs):
-            # If the last inspiration is before the last stop, add it
-            insp_idxs = np.append(insp_idxs, max(potential_exp_idxs))
-
-        # Strictly between the two inspirations
-        between = (potential_exp_idxs > insp_idxs[left]) & (potential_exp_idxs <= insp_idxs[left + 1])
-        valid = in_interval & between
+        between = np.zeros_like(potential_exp_idxs, dtype=bool)
+        between[valid_left] = (
+            (potential_exp_idxs[valid_left] > insp_bounds[left[valid_left]]) &
+            (potential_exp_idxs[valid_left] <= insp_bounds[left[valid_left] + 1])
+        )
 
         # For valid stops, keep the first one per interval (per 'left')
-        bins = left[valid]      # which interval each stop belongs to
-        vals = potential_exp_idxs[valid]     # their stop values
+        bins = left[between]      # which interval each stop belongs to
+        vals = potential_exp_idxs[between]     # their stop values
         _, first_pos = np.unique(bins, return_index=True)
 
         return vals[first_pos]
@@ -3039,12 +3040,6 @@ class Vitals:
         #f_interpolated, p_interpolated = _resample_to_common_index(flow, pressure)
         f_interpolated, p_interpolated = resample_to_common_index(flow, pressure)
 
-        # Calculate the product of flow and pressure
-        product_flow_pressure = DataSlice(f_interpolated.time_index, f_interpolated.data * p_interpolated.data)
-
-        # derive idx for inspiration start
-        insp_idxs = self._get_inspiration_start(product=product_flow_pressure)
-
         # get slope of pressure
         if len(p_interpolated) > 2:
             ti = p_interpolated.time_index
@@ -3056,6 +3051,12 @@ class Vitals:
             slope_p = np.gradient(y, t_rel_sec, edge_order=1)
         else:
             slope_p = np.zeros_like(y, dtype=float)
+
+        # Calculate the product of flow and pressure
+        product_flow_pressure = DataSlice(f_interpolated.time_index, f_interpolated.data * p_interpolated.data)
+
+        # derive idx for inspiration start
+        insp_idxs = self._get_inspiration_start(product=product_flow_pressure)
 
         # Calculate the product of flow and slope of pressure
         neg_flow = f_interpolated.data.copy()
@@ -3083,17 +3084,18 @@ class Vitals:
             )
         )
 
-        i_first = insp_begin[0]
-        e_last = exp_begin[-1] 
-        i = insp_begin[insp_begin<e_last]
-        e = exp_begin[exp_begin>i_first]
-        intervals = list(zip(i, e))
-        self.add_global_label(
-            IntervalLabel(
-                name="Inspiration",
-                time_index=intervals,
+        if len(insp_begin) > 0 and len(exp_begin) > 0:
+            i_first = insp_begin[0]
+            e_last = exp_begin[-1] 
+            i = insp_begin[insp_begin<e_last]
+            e = exp_begin[exp_begin>i_first]
+            intervals = list(zip(i, e))
+            self.add_global_label(
+                IntervalLabel(
+                    name="Inspiration",
+                    time_index=intervals,
+                )
             )
-        )
 
         if add_intermediate_channels:
             
