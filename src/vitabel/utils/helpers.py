@@ -1268,7 +1268,7 @@ def resample_to_common_index(
         zero_crossings = _find_zero_crossings(series)
         extended = pd.concat([series, zero_crossings]).sort_index()
         extended = extended[~extended.index.duplicated(keep="first")]
-        extended_series_dict[f"ch{idx}"] = extended
+        extended_series_dict[series.name] = extended
 
     df = pd.DataFrame(extended_series_dict)
 
