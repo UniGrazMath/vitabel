@@ -877,7 +877,7 @@ class Channel(TimeSeriesBase):
         else:
             figure = plot_axes.get_figure()
 
-        base_plotstyle = self.plotstyle.copy()
+        base_plotstyle = self.plotstyle.copy() if self.plotstyle is not None else {}
         base_plotstyle.update(plotstyle if plotstyle is not None else {})
 
         (line,) = plot_axes.plot(time_index, data, **base_plotstyle)
