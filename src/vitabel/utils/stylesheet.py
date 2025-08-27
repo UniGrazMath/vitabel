@@ -258,9 +258,14 @@ DEFAULT_PLOT_STYLE = {
         "label": "Product Flow Pressure",
         "alpha": 1,
     },
-    "Product Flow Pressures Slope": {
+    "Product negative Flow Pressures Slope": {
         "color": "darkorange",
-        "label": "Product Flow Pressures Slope",
+        "label": "Product negative Flow Pressures Slope",
+        "alpha": 1,
+    },
+    "Product positive Flow Pressures Slope": {
+        "color": "lightseagreen",
+        "label": "Product positive Flow Pressures Slope",
         "alpha": 1,
     },
 }
