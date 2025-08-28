@@ -2923,8 +2923,6 @@ class Vitals:
         
         # Always include the first index, then the first index after each break
         start_above_idxs = np.r_[above_idxs[0], above_idxs[1:][breaks]]
-        #slope_at_starts = slope_p[start_above_idxs]
-        #valid_start_idxs = start_above_idxs[slope_at_starts > 0] # is redundant due to filtering alternating phases
         valid_start_idxs = start_above_idxs
 
         #find short segments of non-positive product 
@@ -2933,7 +2931,7 @@ class Vitals:
         breaks = np.where(np.diff(flow_zeros) > 1)[0]
         flow_zeros_interval_starts = np.r_[flow_zeros[0], flow_zeros[breaks + 1]]
         flow_zeros_interval_ends = np.r_[flow_zeros[breaks], flow_zeros[-1]]
-        invalid_zero_durations = index[flow_zeros_interval_ends] - index[flow_zeros_interval_starts] <= np.timedelta64(20, 'ms')
+        invalid_zero_durations = index[flow_zeros_interval_ends] - index[flow_zeros_interval_starts] <= np.timedelta64(70, 'ms')
 
         # filter those segments of non-positive product by the slope of the pressure signal to identify non-positive segments due to chest compressions causing reverse flow (but pressure rise)
         sel = np.flatnonzero(invalid_zero_durations)
@@ -3026,7 +3024,7 @@ class Vitals:
             An array of indices for the time index of the given product where the filtered phases (inspiration or expiration) start.
 
         """
-        # Filter secondary inspiration starts between two expiration starts
+        # Filter second events starts between two fencing events
         # right-bound sentinel guarantees insp_bounds[left+1] exists
         fencing_bounds = np.r_[fencing_phase_idxs, np.inf]
         # For each stop, find index of the start immediately to its left
@@ -3038,9 +3036,13 @@ class Vitals:
             (potential_phase_idxs[valid_left] > fencing_bounds[left[valid_left]]) &
             (potential_phase_idxs[valid_left] <= fencing_bounds[left[valid_left] + 1])
         )
+        # Mark first event start before first fencing event
+        if potential_phase_idxs[0] < fencing_bounds[0]:
+            between[0] = True
         # For valid stops, keep the first one per interval (per 'left')
         bins = left[between]      # which interval each stop belongs to
         vals = potential_phase_idxs[between]     # their stop values
+    
         _, first_pos = np.unique(bins, return_index=True)
 
         return vals[first_pos]
