@@ -2606,7 +2606,7 @@ def read_corpuls(f_corpuls):  # Read Corpuls Data
 
     for k, channel in enumerate(all_channels):  # iterate htrough all channels
         key = channel["label"]
-        sample_rate = channel["sample_rate"]
+        sample_rate = next(channel[k] for k in ("sample_rate", "sample_frequency") if k in channel)
         dt = 1 / sample_rate
         unit = channel["dimension"]
         data = f.readSignal(k)
