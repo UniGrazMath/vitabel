@@ -2863,11 +2863,46 @@ class Vitals:
         )
 
 
+    def _find_onsets_above_threshold(
+        self,
+        product: DataSlice,
+        threshold: float,
+        ) -> np.ndarray:
+        """
+        Finds the onset indices of segments where the product is above a certain threshold.
+
+        Parameters
+        ----------
+        product:class:`.DataSlice`
+            A DataSlice object containing the time index and data of the product of two signals.
+        threshold: float
+            The threshold value above which the onsets are detected.
+
+        Returns
+        -------
+        np.ndarray
+            An array of indices for the time index of the given product where the onsets of segments above the threshold occur.
+        """
+        data = product.data.copy()
+        #index = product.time_index.copy()
+
+        # Find indices where product is above a threshold
+        above_idxs = np.where(data > threshold)[0]
+        # Find breaks between contiguous segments
+        breaks = np.diff(above_idxs) > 1
+        # Always include the first index, then the first index after each break
+        onsets_above_threshold = np.r_[above_idxs[0], above_idxs[1:][breaks]]
+
+        return onsets_above_threshold
+
+
     def _get_inspiration_start(
         self,
         product: DataSlice,
         interpolated_flow: DataSlice,
-        slope_p: DataSlice
+        interpolated_pressure: DataSlice,
+        slope_pressure: DataSlice,
+        threshold: float=500
         ) -> np.ndarray:
         """
         Derives the indices of the start of inspirations from the product of flow and pressure.
@@ -2888,79 +2923,90 @@ class Vitals:
         interpolated_flow:class:`.DataSlice`
             A DataSlice object containing the time index and data of the interpolated flow signal.
             Must have the same time index as the product.
-        
-        slope_p:class:`.DataSlice`
+
+        interpolated_pressure:class:`.DataSlice`
+            A DataSlice object containing the time index and data of the interpolated pressure signal.
+            Must have the same time index as the product.
+
+        slope_pressure:class:`.DataSlice`
             A DataSlice object containing the time index and data of the slope of the pressure signal.
             Must have the same time index as the product.
-        
+
+        threshold: float
+            The threshold value above which the inspiration segments are detected.
+
         Returns
         -------
         np.ndarray
             An array of indices for the time index of the given product where the inspirations start.
         """
 
+        max_dur_short_exp = np.timedelta64(70, 'ms')
+
         if not product.time_index.equals(interpolated_flow.time_index):
             raise ValueError("The time indices of product and interpolated_flow must match.")
         
-        if not product.time_index.equals(slope_p.time_index):
-            raise ValueError("The time indices of product and slope_p must match.")
+        if not product.time_index.equals(interpolated_pressure.time_index):
+            raise ValueError("The time indices of product and interpolated_pressure must match.")
+
+        if not product.time_index.equals(slope_pressure.time_index):
+            raise ValueError("The time indices of product and slope_pressure must match.")
 
         index = product.time_index.copy()
-        product = product.data.copy() 
+        data = product.data.copy() 
 
-        product[product < 0] = 0  # Remove negative values
         # Find indices where product is above a threshold
-        above_idxs = np.where(product > 500)[0]
+        onsets_above_threshold = self._find_onsets_above_threshold(product=product, threshold=threshold)
 
-        # Remove indices that are less than 60ms apart to supress fast oscillations 
-        t_above_idxs = index[above_idxs]
-        time_diffs = np.diff(t_above_idxs)
-        valid_time_diffs = time_diffs > np.timedelta64(60, 'ms')
-        above_idxs = above_idxs[np.r_[True, valid_time_diffs]]  # Always include the first index
-
-        # Find breaks between contiguous segments
-        breaks = np.diff(above_idxs) > 1
-        
-        # Always include the first index, then the first index after each break
-        start_above_idxs = np.r_[above_idxs[0], above_idxs[1:][breaks]]
-        valid_start_idxs = start_above_idxs
-
-        #find short segments of non-positive product 
+        #find short segments of expiratory flow 
         flow = interpolated_flow.data
-        flow_zeros = np.where(flow <= 0)[0]
-        breaks = np.where(np.diff(flow_zeros) > 1)[0]
-        flow_zeros_interval_starts = np.r_[flow_zeros[0], flow_zeros[breaks + 1]]
-        flow_zeros_interval_ends = np.r_[flow_zeros[breaks], flow_zeros[-1]]
-        invalid_zero_durations = index[flow_zeros_interval_ends] - index[flow_zeros_interval_starts] <= np.timedelta64(70, 'ms')
-
+        segments_exp_flow = np.where(flow <= 0)[0]
+        breaks = np.where(np.diff(segments_exp_flow) > 1)[0]
+        exp_flow_starts = np.r_[segments_exp_flow[0], segments_exp_flow[breaks + 1]]
+        exp_flow_ends = np.r_[segments_exp_flow[breaks], segments_exp_flow[-1]]
+        duration_filter = (index[exp_flow_ends] - index[exp_flow_starts]) <= max_dur_short_exp
+        
+        # identify inspiratory reverse airflow
         # filter those segments of non-positive product by the slope of the pressure signal to identify non-positive segments due to chest compressions causing reverse flow (but pressure rise)
-        sel = np.flatnonzero(invalid_zero_durations)
-        starts = flow_zeros_interval_starts[sel]
-        ends   = flow_zeros_interval_ends[sel]
-        compression = np.fromiter(
-            (np.all(slope_p.data[s:e+1] > 0) for s, e in zip(starts, ends)),
+        short_exp_segments = np.flatnonzero(duration_filter)
+        starts = exp_flow_starts[short_exp_segments]
+        ends   = exp_flow_ends[short_exp_segments]
+        # assuring that for the entire segment the pressure is positive
+        positive_pressure = np.fromiter(
+            (np.all(interpolated_pressure.data[s:e+1] > 0) for s, e in zip(starts, ends)),
             dtype=bool,
-            count=len(sel)
+            count=len(short_exp_segments)
+        )
+        pressure_filter = np.zeros_like(duration_filter, dtype=bool)
+        pressure_filter[short_exp_segments] = positive_pressure
+        # assuring that for the entire segment the slope is positive
+        positive_slope = np.fromiter(
+            (np.all(slope_pressure.data[s:e+1] > 0) for s, e in zip(starts, ends)),
+            dtype=bool,
+            count=len(short_exp_segments)
         ) 
-        mask_compression = np.zeros_like(invalid_zero_durations, dtype=bool)
-        mask_compression[sel] = compression
-        true_invalid_zero_durations = invalid_zero_durations & mask_compression
+        slope_filter = np.zeros_like(duration_filter, dtype=bool)
+        slope_filter[short_exp_segments] = positive_slope
+        # exp flow due to chest compression, defined by length, positive pressure, and increasing pressure (positive slope)
+        compression_exp_flow = duration_filter & pressure_filter & slope_filter
 
-        # Find last zero crossing in the product before positive segments
-        zeros = np.where(~(product > 0))[0]
-        breaks = np.where(np.diff(zeros) > 1)[0]
-        zero_interval_ends = np.r_[zeros[breaks], zeros[-1]]
-        mask = ~np.isin(zero_interval_ends, flow_zeros_interval_ends[true_invalid_zero_durations])
-        valid_zero_interval_ends = zero_interval_ends[mask]
+        # Find zero crossing of product before positive segments
+        non_pos_product = np.where(data <= 0)[0]
+        breaks = np.where(np.diff(non_pos_product) > 1)[0]
+        zero_crossings = np.r_[non_pos_product[breaks], non_pos_product[-1]]
+        mask = ~np.isin(zero_crossings, exp_flow_ends[compression_exp_flow]) # removes inspiratory reverse airflow
+        valid_zero_crossings = zero_crossings[mask]
 
         # Find the last zero before each start_above_idx in the zero_idxs without the short ones
-        last_zero_left_idxs = valid_zero_interval_ends[np.searchsorted(valid_zero_interval_ends, valid_start_idxs,side='right')-1]
+        inspiration_starts = valid_zero_crossings[np.searchsorted(valid_zero_crossings, onsets_above_threshold,side='right')-1]
 
-        return np.unique(last_zero_left_idxs)
+        return np.unique(inspiration_starts)
+    
 
     def _get_expiration_start(
         self,
         product: DataSlice, 
+        threshold: float=700
         ) -> np.ndarray:
         """
         Derives the indices of the start of expirations from the product of flow and slope of pressure.
@@ -2973,31 +3019,33 @@ class Vitals:
         ----------
         product:class:`.DataSlice`
             A DataSlice object containing the time index and data of the product of flow and slope of pressure.
-        
+
+        threshold: float
+            The threshold value above which the expiration segments are detected.
+
         Returns
         -------
         np.ndarray
             An array of indices for the time index of the given product where the expirations start.
         """
 
-        index = product.time_index.copy()
-        product = product.data.copy() 
-
-        product[product < 0] = 0  # Remove negative values
         # Find indices where product is above a threshold
-        above_idxs = np.where(product > 700)[0]
+        onsets_above_threshold = self._find_onsets_above_threshold(product=product, threshold=threshold)
 
-        # determine lngth of segment above threshold and remove if shorter than 20ms
+        index = product.time_index.copy()
+        data = product.data.copy() 
+
         # fast oscillations are removed by only considering segments that are at least 12ms apart
-        breaks = np.where(np.diff(index[above_idxs]) > np.timedelta64(12, 'ms'))[0]
-        starts = np.r_[above_idxs[0], above_idxs[breaks + 1]]
-        ends = np.r_[above_idxs[breaks], above_idxs[-1]]
+        # determine lngth of segment above threshold and remove if shorter than 10ms
+        distance_filter = np.where(np.diff(index[onsets_above_threshold]) > np.timedelta64(12, 'ms'))[0]
+        starts = np.r_[onsets_above_threshold[0], onsets_above_threshold[distance_filter]]
+        ends = np.r_[onsets_above_threshold[distance_filter], onsets_above_threshold[-1]]
         durations = index[ends] - index[starts]
         valid_durations = durations > np.timedelta64(10, 'ms')
         start_above_idxs = starts[valid_durations]
 
         # Find the last zero before each start_above_idx
-        zero_idxs = np.where(product == 0)[0]
+        zero_idxs = np.where(data == 0)[0]
         potential_exp_idxs = zero_idxs[np.searchsorted(zero_idxs,start_above_idxs,side='right')-1]
 
         return potential_exp_idxs
@@ -3106,7 +3154,11 @@ class Vitals:
         product_flow_pressure = DataSlice(f_interpolated.time_index, f_interpolated.data * p_interpolated.data)
 
         # derive idx for inspiration start
-        potential_insp_idxs = self._get_inspiration_start(product=product_flow_pressure, interpolated_flow=f_interpolated, slope_p=slope_p)
+        potential_insp_idxs = self._get_inspiration_start(
+            product=product_flow_pressure, 
+            interpolated_flow=f_interpolated, 
+            interpolated_pressure=p_interpolated, 
+            slope_pressure=slope_p)
 
         # Calculate the product of flow and slope of pressure
         neg_flow = f_interpolated.data.copy()
@@ -3185,7 +3237,7 @@ class Vitals:
                 channel.plotstyle = DEFAULT_PLOT_STYLE.get(channel.name)
                 self.add_channel(channel)
 
-        return
+        return 
         
 
         
