@@ -53,7 +53,8 @@ from vitabel.typing import (
     LabelSpecification,
     ThresholdMetrics,
     DataSlice,
-    RespPhases
+    RespPhases,
+    PhaseData,
 )
 
 logger: logging.Logger = logging.getLogger("vitabel")
@@ -2975,8 +2976,7 @@ class Vitals:
         # Find the last zero before each start_above_idx in the zero_idxs without the short ones
         inspiration_starts = valid_zero_crossings[np.searchsorted(valid_zero_crossings, filtered_onsets,side='right')-1]
 
-        return np.unique(inspiration_starts)
-    
+        return np.unique(inspiration_starts), onsets_above_threshold, filtered_onsets
 
     def _get_expiration_start(
         self,
@@ -3030,7 +3030,8 @@ class Vitals:
 
         # Find the last zero before each start_above_idx in the zero_idxs without the short ones
         potential_exp_starts = valid_zero_crossings[np.searchsorted(valid_zero_crossings, filtered_onsets, side='right')-1]
-        return np.unique(potential_exp_starts)
+
+        return np.unique(potential_exp_starts), onsets_above_threshold, filtered_onsets
 
     def _filter_alternating_phases(
         self,
@@ -3123,8 +3124,8 @@ class Vitals:
 
         Returns
         -------
-        dict or None
-            A dictionary containing the computed respiratory phases if only_return_values is True, otherwise None.
+        None or :class:`.RespPhases`
+            A RespPhases object containing the timestamps of cmputed sentinels to derive the respiratory phases if only_return_values is True, otherwise None.
 
         Notes
         -----
@@ -3153,7 +3154,7 @@ class Vitals:
         product_flow_pressure = DataSlice(time_index=index, data=f_interpolated.data * p_interpolated.data)
 
         # derive idx for inspiration start
-        potential_insp_idxs = self._get_inspiration_start(
+        potential_insp_idxs, insp_onsets_above_threshold, insp_filtered_onsets = self._get_inspiration_start(
             product=product_flow_pressure, 
             interpolated_flow=f_interpolated, 
             interpolated_pressure=p_interpolated, 
@@ -3166,7 +3167,7 @@ class Vitals:
         product_flow_pslope = DataSlice(index, neg_flow * slope_p.data)
 
         # derive idx for expiration start
-        potential_exp_idxs = self._get_expiration_start(
+        potential_exp_idxs, exp_onsets_above_threshold, exp_filtered_onsets = self._get_expiration_start(
             product=product_flow_pslope, 
             threshold=expiratory_threshold)
 
@@ -3195,16 +3196,24 @@ class Vitals:
 
         if only_return_values:
             return RespPhases(
-                inspiration_candidates=index[potential_insp_idxs],
-                expiration_candidates=index[potential_exp_idxs],
-                inspiration_begins=insp_begin,
-                expiration_begins=exp_begin,
-                inspiration_intervals=insp_intervals,
-                expiration_intervals=exp_intervals,
-                inspiratory_threshold=inspiratory_threshold,
-                expiratory_threshold=expiratory_threshold
+                inspiration = PhaseData(
+                    onsets_above_threshold= index[insp_onsets_above_threshold],
+                    filtered_onsets_above_threshold= index[insp_filtered_onsets],
+                    candidates= index[potential_insp_idxs],
+                    begins= insp_begin,
+                    intervals= insp_intervals,
+                    threshold= inspiratory_threshold
+                ),
+                expiration= PhaseData(
+                    onsets_above_threshold= index[exp_onsets_above_threshold],
+                    filtered_onsets_above_threshold= index[exp_filtered_onsets],
+                    candidates= index[potential_exp_idxs],
+                    begins= exp_begin,
+                    intervals= exp_intervals,
+                    threshold= expiratory_threshold
+                )
             )
-        
+
         self.add_global_label(
             Label(
                 name="Inspiration Begin",

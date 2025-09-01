@@ -1,6 +1,7 @@
 """Common type aliases used in the package."""
 
 from __future__ import annotations
+from math import e, exp
 
 import pandas as pd
 import numpy as np
@@ -108,33 +109,51 @@ class DataSlice:
         return iter((self.time_index, self.data, self.text_data))
 
 @dataclass
+class PhaseData:
+    """Data for a single respiratory phase (inspiration or expiration).
+    
+    Parameters
+    ----------
+    onsets_above_threshold
+        Array of timestamps marking onsets above threshold.
+        Solely fulfilling the condition of being above the threshold. No further filtering.
+
+    filtered_onsets_above_threshold
+        Array of timestamps marking onsets above threshold.
+        Filtered by alternating expiration phases.
+
+    candidates
+        Array of candidate timestamps for the start of inspiration phases.
+        Yet, not filtered as alternating phases.
+
+    begins
+        Array of timestamps marking the beginning of inspiration phases.
+        Filtered by alternating expiration phases.
+
+    intervals
+        Array of intervals marking the intervals of inspiration phases.
+
+    threshold
+        The threshold value used to detect inspiration phases.
+
+    """
+    onsets_above_threshold: np.typing.NDArray
+    filtered_onsets_above_threshold: np.typing.NDArray
+    candidates: np.typing.NDArray
+    begins: np.typing.NDArray
+    intervals: list[tuple[pd.Timestamp, pd.Timestamp]]
+    threshold: float
+
+@dataclass
 class RespPhases:
     """Auxiliary dataclass used to represent respiratory phases information.
 
     Parameters
     ----------
-    inspiration_candidates
-        Array of candidate timestamps for the start of inspiration phases.
-    expiration_candidates
-        Array of candidate timestamps for the start of expiration phases.
-    inspiration_begins
-        Array of timestamps marking the beginning of inspiration phases.
-    expiration_begins
-        Array of timestamps marking the beginning of expiration phases.
-    inspiration_intervals
-        Array of intervals marking the intervals of inspiration phases.
-    expiration_intervals
-        Array of intervals marking the intervals of expiration phases.
-    inspiratory_threshold
-        The threshold value used to detect inspiration phases.
-    expiratory_threshold
-        The threshold value used to detect expiration phases.
+    inspiration
+        All inspiration-related phase data.
+    expiration
+        All expiration-related phase data.
     """
-    inspiration_candidates: np.typing.NDArray
-    expiration_candidates: np.typing.NDArray
-    inspiration_begins: np.typing.NDArray
-    expiration_begins: np.typing.NDArray
-    inspiration_intervals: list[tuple[pd.Timestamp, pd.Timestamp]]
-    expiration_intervals: list[tuple[pd.Timestamp, pd.Timestamp]]
-    inspiratory_threshold: float
-    expiratory_threshold: float
+    inspiration: PhaseData
+    expiration: PhaseData
