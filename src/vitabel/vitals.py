@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from math import e, exp
 import os
 
 import numpy as np
@@ -2870,7 +2871,7 @@ class Vitals:
         interpolated_flow: DataSlice,
         interpolated_pressure: DataSlice,
         slope_pressure: DataSlice,
-        threshold: float=500
+        threshold: float
         ) -> np.ndarray:
         """
         Derives the indices of the start of inspirations from the product of flow and pressure.
@@ -2978,8 +2979,7 @@ class Vitals:
     def _get_expiration_start(
         self,
         product: DataSlice, 
-        threshold: float=700
-        ) -> np.ndarray:
+        threshold: float        ) -> np.ndarray:
         """
         Derives the indices of the start of expirations from the product of flow and slope of pressure.
 
@@ -3079,7 +3079,9 @@ class Vitals:
         self,
         flow: Channel,
         pressure: Channel,
-        add_intermediate_channels: bool = False
+        add_intermediate_channels: bool = False,
+        inspiratory_threshold: float = 500,
+        expiratory_threshold: float = 700,
         ) -> None:
         """
         Derives the respiratory phases from air flow and airway pressure channels and adds them as global labels.
@@ -3138,7 +3140,8 @@ class Vitals:
             product=product_flow_pressure, 
             interpolated_flow=f_interpolated, 
             interpolated_pressure=p_interpolated, 
-            slope_pressure=slope_p)
+            slope_pressure=slope_p,
+            threshold=inspiratory_threshold)
 
         # Calculate the product of flow and slope of pressure
         neg_flow = f_interpolated.data.copy()
@@ -3146,7 +3149,9 @@ class Vitals:
         product_flow_pslope = DataSlice(f_interpolated.time_index, neg_flow * slope_p.data)
 
         # derive idx for expiration start
-        potential_exp_idxs = self._get_expiration_start(product=product_flow_pslope, threshold=700)
+        potential_exp_idxs = self._get_expiration_start(
+            product=product_flow_pslope, 
+            threshold=expiratory_threshold)
 
         # Filter secondary expiration starts between two inspiration starts
         exp_idxs = self._filter_alternating_phases(potential_phase_idxs=potential_exp_idxs, fencing_phase_idxs=potential_insp_idxs)
