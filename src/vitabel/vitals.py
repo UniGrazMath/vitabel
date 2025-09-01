@@ -3082,10 +3082,10 @@ class Vitals:
         self,
         flow: Channel,
         pressure: Channel,
-        add_intermediate_channels: bool = False,
-        only_return_values: bool = False,
         inspiratory_threshold: float = 500,
         expiratory_threshold: float = 700,
+        add_intermediate_channels: bool = False,
+        return_landmarks: bool = False,
         ) -> None:
         """
         Derives the respiratory phases from air flow and airway pressure channels and adds them as global labels.
@@ -3106,6 +3106,12 @@ class Vitals:
         pressure: :class:`.Channel`
             The airway pressure channel.
         
+        inspiratory_threshold: float
+            The threshold for detecting the start of inspiration.   
+
+        expiratory_threshold: float
+            The threshold for detecting the start of expiration.
+        
         add_intermediate_channels: bool
             Whether to add intermediate channels to the Vitals object. If True, the following channels are added:
             - interpolated flow and pressure
@@ -3113,19 +3119,13 @@ class Vitals:
             - slope of pressure
             - product of flow and slope of pressure
 
-        only_return_values: bool
-            Whether to only return the computed values without modifying the Vitals object.
-
-        inspiratory_threshold: float
-            The threshold for detecting the start of inspiration.   
-
-        expiratory_threshold: float
-            The threshold for detecting the start of expiration.
+        return_landmarks: bool
+            Whether to return the computed landmarks.
 
         Returns
         -------
         None or :class:`.RespPhases`
-            A RespPhases object containing the timestamps of cmputed sentinels to derive the respiratory phases if only_return_values is True, otherwise None.
+            A RespPhases object containing the timestamps of computed landmarks to derive the respiratory phases if return_landmarks is True, otherwise None.
 
         Notes
         -----
@@ -3194,26 +3194,6 @@ class Vitals:
 
        # Add inspiration and expiration labels to the Vitals object
 
-        if only_return_values:
-            return RespPhases(
-                inspiration = PhaseData(
-                    onsets_above_threshold= index[insp_onsets_above_threshold],
-                    filtered_onsets_above_threshold= index[insp_filtered_onsets],
-                    candidates= index[potential_insp_idxs],
-                    begins= insp_begin,
-                    intervals= insp_intervals,
-                    threshold= inspiratory_threshold
-                ),
-                expiration= PhaseData(
-                    onsets_above_threshold= index[exp_onsets_above_threshold],
-                    filtered_onsets_above_threshold= index[exp_filtered_onsets],
-                    candidates= index[potential_exp_idxs],
-                    begins= exp_begin,
-                    intervals= exp_intervals,
-                    threshold= expiratory_threshold
-                )
-            )
-
         self.add_global_label(
             Label(
                 name="Inspiration Begin",
@@ -3279,7 +3259,27 @@ class Vitals:
                 channel.plotstyle = DEFAULT_PLOT_STYLE.get(channel.name)
                 self.add_channel(channel)
 
-        return 
+        if return_landmarks:
+            return RespPhases(
+                inspiration = PhaseData(
+                    onsets_above_threshold= index[insp_onsets_above_threshold],
+                    filtered_onsets_above_threshold= index[insp_filtered_onsets],
+                    candidates= index[potential_insp_idxs],
+                    begins= insp_begin,
+                    intervals= insp_intervals,
+                    threshold= inspiratory_threshold
+                ),
+                expiration= PhaseData(
+                    onsets_above_threshold= index[exp_onsets_above_threshold],
+                    filtered_onsets_above_threshold= index[exp_filtered_onsets],
+                    candidates= index[potential_exp_idxs],
+                    begins= exp_begin,
+                    intervals= exp_intervals,
+                    threshold= expiratory_threshold
+                )
+            )
+        else:
+            return 
         
 
         
