@@ -3084,6 +3084,7 @@ class Vitals:
         pressure: Channel,
         inspiratory_threshold: float = 500,
         expiratory_threshold: float = 700,
+        add_labels: bool = True,
         add_intermediate_channels: bool = False,
         return_landmarks: bool = False,
         ) -> None:
@@ -3092,7 +3093,7 @@ class Vitals:
 
         This function derives the begin of inspiration based on the product of flow and pressure see :meth:`_get_inspiration_start`.
         The begin of expiration is derived from the product of flow and slope of pressure see :meth:`_get_expiration_start`.
-        The begin of inspiration and expiration are added as global labels to the Vitals object.
+        The begin of inspiration and expiration as well as the inspiration and expiration intervals are added as global labels to the Vitals object.
         Additionally, an interval label for the inspiration phase is created.
 
         Parameters
@@ -3111,7 +3112,15 @@ class Vitals:
 
         expiratory_threshold: float
             The threshold for detecting the start of expiration.
-        
+
+        add_labels: bool
+            Whether to add the derived respiratory phases as labels to the Vitals object.
+            If True, the following labels are added:
+            - Inspiration Begin as :class:`.Label`
+            - Expiration Begin as :class:`.Label`
+            - Inspiration as :class:`.IntervalLabel`
+            - Expiration as :class:`.IntervalLabel`
+
         add_intermediate_channels: bool
             Whether to add intermediate channels to the Vitals object. If True, the following channels are added:
             - interpolated flow and pressure
@@ -3193,39 +3202,39 @@ class Vitals:
         exp_intervals = list(zip(e, i))
 
        # Add inspiration and expiration labels to the Vitals object
-
-        self.add_global_label(
-            Label(
-                name="Inspiration Begin",
-                time_index=insp_begin,
-                plotstyle=DEFAULT_PLOT_STYLE.get("Inspiration Begin")   
-            )
-        )
-        self.add_global_label(
-            Label(
-                name="Expiration Begin",
-                time_index=exp_begin,
-                plotstyle=DEFAULT_PLOT_STYLE.get("Expiration Begin")    
-            )
-        )
-
-        if len(insp_begin) > 0 and len(exp_begin) > 0:
-            # Inspiration Intervval
+        if add_labels:
             self.add_global_label(
-                IntervalLabel(
-                    name="Inspiration",
-                    time_index=insp_intervals,
-                    plotstyle=DEFAULT_PLOT_STYLE.get("Inspiration"),
+                Label(
+                    name="Inspiration Begin",
+                    time_index=insp_begin,
+                    plotstyle=DEFAULT_PLOT_STYLE.get("Inspiration Begin")   
                 )
             )
-            # Expiration Interval
             self.add_global_label(
-                IntervalLabel(
-                    name="Expiration",
-                    time_index=exp_intervals,
-                    plotstyle=DEFAULT_PLOT_STYLE.get("Expiration"),
+                Label(
+                    name="Expiration Begin",
+                    time_index=exp_begin,
+                    plotstyle=DEFAULT_PLOT_STYLE.get("Expiration Begin")    
                 )
             )
+
+            if len(insp_begin) > 0 and len(exp_begin) > 0:
+                # Inspiration Intervval
+                self.add_global_label(
+                    IntervalLabel(
+                        name="Inspiration",
+                        time_index=insp_intervals,
+                        plotstyle=DEFAULT_PLOT_STYLE.get("Inspiration"),
+                    )
+                )
+                # Expiration Interval
+                self.add_global_label(
+                    IntervalLabel(
+                        name="Expiration",
+                        time_index=exp_intervals,
+                        plotstyle=DEFAULT_PLOT_STYLE.get("Expiration"),
+                    )
+                )
 
         if add_intermediate_channels:
             intermediate_channels = [
