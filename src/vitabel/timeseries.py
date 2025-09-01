@@ -1741,7 +1741,7 @@ class Label(TimeSeriesBase):
                     raise ValueError(f"Invalid choice for vline_text_source: '{vline_text_source}'")
             
             if plotstyle is None:  # TODO: think about direction
-                base_plotstyle.update({"linestyle": "solid", "marker": None})
+                base_plotstyle.update({"marker": None})
             base_plotstyle.setdefault("label", self.name)
             
             ymin, ymax = plot_axes.get_ylim()

@@ -6,6 +6,7 @@ import json
 from math import e, exp
 import os
 
+from matplotlib.cbook import is_scalar_or_string
 import numpy as np
 import pandas as pd
 import scipy.signal as sgn
@@ -51,7 +52,8 @@ from vitabel.typing import (
     ChannelSpecification,
     LabelSpecification,
     ThresholdMetrics,
-    DataSlice
+    DataSlice,
+    RespPhases
 )
 
 logger: logging.Logger = logging.getLogger("vitabel")
@@ -3080,13 +3082,14 @@ class Vitals:
         flow: Channel,
         pressure: Channel,
         add_intermediate_channels: bool = False,
+        only_return_values: bool = False,
         inspiratory_threshold: float = 500,
         expiratory_threshold: float = 700,
         ) -> None:
         """
         Derives the respiratory phases from air flow and airway pressure channels and adds them as global labels.
 
-        This function derices the begin of inspiration based on the product of flow and pressure see :meth:`_get_inspiration_start`.
+        This function derives the begin of inspiration based on the product of flow and pressure see :meth:`_get_inspiration_start`.
         The begin of expiration is derived from the product of flow and slope of pressure see :meth:`_get_expiration_start`.
         The begin of inspiration and expiration are added as global labels to the Vitals object.
         Additionally, an interval label for the inspiration phase is created.
@@ -3095,23 +3098,37 @@ class Vitals:
         ----------
         self: :class:`.Vitals`
             The Vitals object to which the respiratory phases will be added.
+        
         flow: :class:`.Channel`
             The air flow channel.
+        
         pressure: :class:`.Channel`
             The airway pressure channel.
+        
         add_intermediate_channels: bool
             Whether to add intermediate channels to the Vitals object. If True, the following channels are added:
-                - interpolated flow and pressure
-                - product of flow and pressure
-                - slope of pressure
-                - product of flow and slope of pressure
+            - interpolated flow and pressure
+            - product of flow and pressure
+            - slope of pressure
+            - product of flow and slope of pressure
+
+        only_return_values: bool
+            Whether to only return the computed values without modifying the Vitals object.
+
+        inspiratory_threshold: float
+            The threshold for detecting the start of inspiration.   
+
+        expiratory_threshold: float
+            The threshold for detecting the start of expiration.
+
         Returns
         -------
-        None
+        dict or None
+            A dictionary containing the computed respiratory phases if only_return_values is True, otherwise None.
 
         Notes
         -----
-        This functions and its thresholds are developed and tested on data from the following sensors:
+        This function and its thresholds are developed and tested on data from the following sensors:
             - Flow: Sensirion SFM3000, recording at ~195Hz in slm
             - Pressure: Amphenol All Sensors DLVR-L60D, recording at ~480Hz in cmH₂O
         """
@@ -3119,21 +3136,21 @@ class Vitals:
         # Interpolate Flow and Pressure to have a common index and crosses of y=0
         #f_interpolated, p_interpolated = _resample_to_common_index(flow, pressure)
         f_interpolated, p_interpolated = resample_to_common_index(flow, pressure)
+        index = f_interpolated.time_index
 
         # get slope of pressure
         if len(p_interpolated) > 2:
-            ti = p_interpolated.time_index
             y = p_interpolated.data
             # convert time to seconds (float64) from ns
-            t_ns = ti.view("int64")   
+            t_ns = index.view("int64")   
             t_rel_sec = (t_ns - t_ns[0]).astype(np.float64) * 1e-9  
             # Calculate the slope using central differences for interior points, forward/backward for edges
-            slope_p = DataSlice(time_index=ti, data=np.gradient(y, t_rel_sec, edge_order=1))
+            slope_p = DataSlice(time_index=index, data=np.gradient(y, t_rel_sec, edge_order=1))
         else:
-            slope_p = DataSlice(time_index=ti, data=np.zeros_like(y, dtype=float))
+            slope_p = DataSlice(time_index=index, data=np.zeros_like(y, dtype=float))
 
         # Calculate the product of flow and pressure
-        product_flow_pressure = DataSlice(f_interpolated.time_index, f_interpolated.data * p_interpolated.data)
+        product_flow_pressure = DataSlice(time_index=index, data=f_interpolated.data * p_interpolated.data)
 
         # derive idx for inspiration start
         potential_insp_idxs = self._get_inspiration_start(
@@ -3146,7 +3163,7 @@ class Vitals:
         # Calculate the product of flow and slope of pressure
         neg_flow = f_interpolated.data.copy()
         neg_flow [neg_flow > 0] = 0
-        product_flow_pslope = DataSlice(f_interpolated.time_index, neg_flow * slope_p.data)
+        product_flow_pslope = DataSlice(index, neg_flow * slope_p.data)
 
         # derive idx for expiration start
         potential_exp_idxs = self._get_expiration_start(
@@ -3157,11 +3174,37 @@ class Vitals:
         exp_idxs = self._filter_alternating_phases(potential_phase_idxs=potential_exp_idxs, fencing_phase_idxs=potential_insp_idxs)
         insp_idxs = self._filter_alternating_phases(potential_phase_idxs=potential_insp_idxs, fencing_phase_idxs=exp_idxs)
 
-        # Add inspiration and expiration labels to the Vitals object
-        insp_begin = f_interpolated.time_index[insp_idxs]
-        exp_begin = f_interpolated.time_index[exp_idxs]
+        # Generating Results
+        # Onsets of Phases
+        insp_begin = index[insp_idxs]
+        exp_begin = index[exp_idxs]
+        # Inspiration Interval
+        i_first = insp_begin[0]
+        e_last = exp_begin[-1]
+        i = insp_begin[insp_begin < e_last]
+        e = exp_begin[exp_begin > i_first]
+        insp_intervals = list(zip(i, e))
+        # Expiration Interval
+        i_last = insp_begin[-1]
+        e_first = exp_begin[0]
+        e = exp_begin[exp_begin < i_last]
+        i = insp_begin[insp_begin > e_first]
+        exp_intervals = list(zip(e, i))
 
+       # Add inspiration and expiration labels to the Vitals object
 
+        if only_return_values:
+            return RespPhases(
+                inspiration_candidates=index[potential_insp_idxs],
+                expiration_candidates=index[potential_exp_idxs],
+                inspiration_begins=insp_begin,
+                expiration_begins=exp_begin,
+                inspiration_intervals=insp_intervals,
+                expiration_intervals=exp_intervals,
+                inspiratory_threshold=inspiratory_threshold,
+                expiratory_threshold=expiratory_threshold
+            )
+        
         self.add_global_label(
             Label(
                 name="Inspiration Begin",
@@ -3178,18 +3221,23 @@ class Vitals:
         )
 
         if len(insp_begin) > 0 and len(exp_begin) > 0:
-            i_first = insp_begin[0]
-            e_last = exp_begin[-1] 
-            i = insp_begin[insp_begin<e_last]
-            e = exp_begin[exp_begin>i_first]
-            intervals = list(zip(i, e))
+            # Inspiration Intervval
             self.add_global_label(
                 IntervalLabel(
                     name="Inspiration",
-                    time_index=intervals,
+                    time_index=insp_intervals,
                     plotstyle=DEFAULT_PLOT_STYLE.get("Inspiration"),
                 )
             )
+            # Expiration Interval
+            self.add_global_label(
+                IntervalLabel(
+                    name="Expiration",
+                    time_index=exp_intervals,
+                    plotstyle=DEFAULT_PLOT_STYLE.get("Expiration"),
+                )
+            )
+
         if add_intermediate_channels:
             intermediate_channels = [
                 Channel(

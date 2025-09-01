@@ -106,3 +106,35 @@ class DataSlice:
     
     def __iter__(self) -> Iterator:
         return iter((self.time_index, self.data, self.text_data))
+
+@dataclass
+class RespPhases:
+    """Auxiliary dataclass used to represent respiratory phases information.
+
+    Parameters
+    ----------
+    inspiration_candidates
+        Array of candidate timestamps for the start of inspiration phases.
+    expiration_candidates
+        Array of candidate timestamps for the start of expiration phases.
+    inspiration_begins
+        Array of timestamps marking the beginning of inspiration phases.
+    expiration_begins
+        Array of timestamps marking the beginning of expiration phases.
+    inspiration_intervals
+        Array of intervals marking the intervals of inspiration phases.
+    expiration_intervals
+        Array of intervals marking the intervals of expiration phases.
+    inspiratory_threshold
+        The threshold value used to detect inspiration phases.
+    expiratory_threshold
+        The threshold value used to detect expiration phases.
+    """
+    inspiration_candidates: np.typing.NDArray
+    expiration_candidates: np.typing.NDArray
+    inspiration_begins: np.typing.NDArray
+    expiration_begins: np.typing.NDArray
+    inspiration_intervals: list[tuple[pd.Timestamp, pd.Timestamp]]
+    expiration_intervals: list[tuple[pd.Timestamp, pd.Timestamp]]
+    inspiratory_threshold: float
+    expiratory_threshold: float
