@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import scipy.signal as sgn
 import logging
+
 import vitaldb
 from collections  import defaultdict
 
@@ -2863,39 +2864,6 @@ class Vitals:
         )
 
 
-    def _find_onsets_above_threshold(
-        self,
-        product: DataSlice,
-        threshold: float,
-        ) -> np.ndarray:
-        """
-        Finds the onset indices of segments where the product is above a certain threshold.
-
-        Parameters
-        ----------
-        product:class:`.DataSlice`
-            A DataSlice object containing the time index and data of the product of two signals.
-        threshold: float
-            The threshold value above which the onsets are detected.
-
-        Returns
-        -------
-        np.ndarray
-            An array of indices for the time index of the given product where the onsets of segments above the threshold occur.
-        """
-        data = product.data.copy()
-        #index = product.time_index.copy()
-
-        # Find indices where product is above a threshold
-        above_idxs = np.where(data > threshold)[0]
-        # Find breaks between contiguous segments
-        breaks = np.diff(above_idxs) > 1
-        # Always include the first index, then the first index after each break
-        onsets_above_threshold = np.r_[above_idxs[0], above_idxs[1:][breaks]]
-
-        return onsets_above_threshold
-
-
     def _get_inspiration_start(
         self,
         product: DataSlice,
@@ -2956,7 +2924,11 @@ class Vitals:
         data = product.data.copy() 
 
         # Find indices where product is above a threshold
-        onsets_above_threshold = self._find_onsets_above_threshold(product=product, threshold=threshold)
+        above_idxs = np.where(data > threshold)[0]
+        breaks = np.diff(above_idxs) > 1
+        onsets_above_threshold = np.r_[above_idxs[0], above_idxs[1:][breaks]]
+        slope_filter =  slope_pressure.data[onsets_above_threshold]
+        filtered_onsets = onsets_above_threshold[slope_filter > 0]
 
         #find short segments of expiratory flow 
         flow = interpolated_flow.data
@@ -2998,7 +2970,7 @@ class Vitals:
         valid_zero_crossings = zero_crossings[mask]
 
         # Find the last zero before each start_above_idx in the zero_idxs without the short ones
-        inspiration_starts = valid_zero_crossings[np.searchsorted(valid_zero_crossings, onsets_above_threshold,side='right')-1]
+        inspiration_starts = valid_zero_crossings[np.searchsorted(valid_zero_crossings, filtered_onsets,side='right')-1]
 
         return np.unique(inspiration_starts)
     
@@ -3028,28 +3000,36 @@ class Vitals:
         np.ndarray
             An array of indices for the time index of the given product where the expirations start.
         """
-
-        # Find indices where product is above a threshold
-        onsets_above_threshold = self._find_onsets_above_threshold(product=product, threshold=threshold)
+        max_dur_short_breaks = np.timedelta64(10, 'ms')
 
         index = product.time_index.copy()
         data = product.data.copy() 
 
-        # fast oscillations are removed by only considering segments that are at least 12ms apart
-        # determine lngth of segment above threshold and remove if shorter than 10ms
-        distance_filter = np.where(np.diff(index[onsets_above_threshold]) > np.timedelta64(12, 'ms'))[0]
-        starts = np.r_[onsets_above_threshold[0], onsets_above_threshold[distance_filter]]
-        ends = np.r_[onsets_above_threshold[distance_filter], onsets_above_threshold[-1]]
-        durations = index[ends] - index[starts]
-        valid_durations = durations > np.timedelta64(10, 'ms')
-        start_above_idxs = starts[valid_durations]
+        # Find indices where product is above a threshold
+        onsets_above_threshold = np.where(data > threshold)[0]
 
-        # Find the last zero before each start_above_idx
-        zero_idxs = np.where(data == 0)[0]
-        potential_exp_idxs = zero_idxs[np.searchsorted(zero_idxs,start_above_idxs,side='right')-1]
+        # Filter markers of expirations
+        # determine length of segment above threshold and remove if shorter than 10ms
+        breaks = np.where(np.diff(index[onsets_above_threshold]) > np.timedelta64(12, 'ms'))[0]
+        starts = np.r_[onsets_above_threshold[0], onsets_above_threshold[breaks + 1]]
+        ends = np.r_[onsets_above_threshold[breaks], onsets_above_threshold[-1]]
+        segment_width = index[ends] - index[starts]
+        filter_segment_width = segment_width > np.timedelta64(10, 'ms')
+        filtered_onsets = starts[filter_segment_width]
 
-        return potential_exp_idxs
-    
+        # Find zero crossings before the filtered onsets and filter for short segments of oscillations
+        non_pos_product = np.where(data <= 0)[0] #condition must include negative values as not all zerocrossings in the array as seperate datapoint
+        breaks = np.where(np.diff(non_pos_product) > 1)[0]
+        starts = np.r_[non_pos_product[0], non_pos_product[breaks + 1]]
+        ends = np.r_[non_pos_product[breaks], non_pos_product[-1]]
+        duration_filter = (index[ends] - index[starts]) <= max_dur_short_breaks
+        mask = ~np.isin(ends, ends[duration_filter])
+        valid_zero_crossings = ends[mask]
+
+        # Find the last zero before each start_above_idx in the zero_idxs without the short ones
+        potential_exp_starts = valid_zero_crossings[np.searchsorted(valid_zero_crossings, filtered_onsets, side='right')-1]
+        return np.unique(potential_exp_starts)
+
     def _filter_alternating_phases(
         self,
         potential_phase_idxs: np.ndarray,
@@ -3166,7 +3146,7 @@ class Vitals:
         product_flow_pslope = DataSlice(f_interpolated.time_index, neg_flow * slope_p.data)
 
         # derive idx for expiration start
-        potential_exp_idxs = self._get_expiration_start(product=product_flow_pslope)
+        potential_exp_idxs = self._get_expiration_start(product=product_flow_pslope, threshold=700)
 
         # Filter secondary expiration starts between two inspiration starts
         exp_idxs = self._filter_alternating_phases(potential_phase_idxs=potential_exp_idxs, fencing_phase_idxs=potential_insp_idxs)
