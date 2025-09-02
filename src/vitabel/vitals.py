@@ -2931,8 +2931,14 @@ class Vitals:
         above_idxs = np.where(data > threshold)[0]
         breaks = np.diff(above_idxs) > 1
         onsets_above_threshold = np.r_[above_idxs[0], above_idxs[1:][breaks]]
-        slope_filter =  slope_pressure.data[onsets_above_threshold]
-        filtered_onsets = onsets_above_threshold[slope_filter > 0]
+        # filtering by slope of pressure to suppress secondary peaks (by chest compressions)
+        slope_filter =  slope_pressure.data[onsets_above_threshold] > 0
+        pressure_filter = interpolated_pressure.data[onsets_above_threshold] > 100
+        filtered_onsets = onsets_above_threshold[slope_filter | pressure_filter]
+        # filter oscillations
+        oscillation_filter = np.r_[True, np.diff(index[filtered_onsets]) > np.timedelta64(375, 'ms')]
+        filtered_onsets = filtered_onsets[oscillation_filter]
+
 
         #find short segments of expiratory flow 
         flow = interpolated_flow.data
@@ -3002,7 +3008,10 @@ class Vitals:
         np.ndarray
             An array of indices for the time index of the given product where the expirations start.
         """
+        min_distance_landmarks = np.timedelta64(12, 'ms')
+        min_dur_landmark_segment = np.timedelta64(20, 'ms')
         max_dur_short_breaks = np.timedelta64(10, 'ms')
+        
 
         index = product.time_index.copy()
         data = product.data.copy() 
@@ -3012,11 +3021,11 @@ class Vitals:
 
         # Filter markers of expirations
         # determine length of segment above threshold and remove if shorter than 10ms
-        breaks = np.where(np.diff(index[onsets_above_threshold]) > np.timedelta64(12, 'ms'))[0]
+        breaks = np.where(np.diff(index[onsets_above_threshold]) > min_distance_landmarks)[0]
         starts = np.r_[onsets_above_threshold[0], onsets_above_threshold[breaks + 1]]
         ends = np.r_[onsets_above_threshold[breaks], onsets_above_threshold[-1]]
         segment_width = index[ends] - index[starts]
-        filter_segment_width = segment_width > np.timedelta64(10, 'ms')
+        filter_segment_width = segment_width > min_dur_landmark_segment
         filtered_onsets = starts[filter_segment_width]
 
         # Find zero crossings before the filtered onsets and filter for short segments of oscillations
