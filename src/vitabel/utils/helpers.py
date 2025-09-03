@@ -25,6 +25,7 @@ from vitabel.typing import (
     Timestamp,
     ThresholdMetrics,
     Metric,
+    DataSlice
 )
 
 if TYPE_CHECKING:
@@ -41,6 +42,7 @@ __all__ = [
     "NumpyEncoder",
     "determine_gaps_in_recording",
     "linear_interpolate_gaps_in_recording",
+    "resample_to_common_index",
     "gaussian_kernel_regression_point",
     "CCF_minute",
     "find_ROSC_2",
@@ -1214,6 +1216,95 @@ def linear_interpolate_gaps_in_recording(
         time = np.insert(time, start_index, time_in_gap)
         data = np.insert(data, start_index, data_in_gap)
     return time, data
+    
+
+def resample_to_common_index(
+    *channels: Channel,
+) -> tuple[DataSlice, ...]:
+    """Aligns two or more Channel objects by their time indices, ensuring
+    all are sampled at the same time points, including zero-crossings.
+    Data are interpolated to a common time base within their overlapping range.
+
+    Parameters
+    ----------
+    *channels
+        Two or more :class:`.Channel` objects to be aligned and interpolated.
+
+    Returns
+    -------
+    tuple[DataSlice, ...]
+        A tuple of :class:`.DataSlice` objects representing the aligned
+        channels.
+
+    Raises
+    ------
+    ValueError
+        If there is no overlapping time range between the two channels.
+
+    Notes
+    -----
+    Zero-crossings are inserted to improve alignment, especially for
+    oscillatory signals.
+
+    """
+    series_list = []
+    for idx, channel in enumerate(channels, start=1):
+        channel_data = channel.get_data()
+        series = pd.Series(
+            index=channel_data.time_index,
+            data=channel_data.data.flatten(),
+            name=f"ch{idx}",
+        )
+        series_list.append(series)
+
+    start = max([series.index.min() for series in series_list])
+    end = min([series.index.max() for series in series_list])
+    if start >= end:
+        raise ValueError("No overlapping time range between channels.")
+
+    # find and add zero crossings
+    extended_series_dict = {}
+    for series in series_list:
+        zero_crossings = _find_zero_crossings(series)
+        extended = pd.concat([series, zero_crossings]).sort_index()
+        extended = extended[~extended.index.duplicated(keep="first")]
+        extended_series_dict[series.name] = extended
+
+    df = pd.DataFrame(extended_series_dict)
+
+    common_index = df.index.unique().sort_values()
+    common_index = common_index[(start <= common_index) & (common_index <= end)]
+    df_common = df.interpolate(method="time", limit_area="inside").loc[common_index]
+
+    data_slices = tuple(
+        DataSlice(
+            time_index=df_common.index,
+            data=df_common[col].to_numpy(),
+            text_data=None,
+        )
+        for col in df_common
+    )
+    return data_slices
+
+
+def _find_zero_crossings(s: pd.Series) -> pd.Series:
+    """Finds zero-crossings in a Series via linear interpolation."""
+    y = s.values
+    time = s.index
+
+    if len(y) < 2:
+        return pd.Series(index=pd.DatetimeIndex([]), data=[], dtype=float)
+
+    cross_indices = np.where(y[:-1] * y[1:] < 0)[0]
+    if len(cross_indices) == 0:
+        return pd.Series(index=pd.DatetimeIndex([]), data=[], dtype=float)
+
+    y0, y1 = y[cross_indices], y[cross_indices + 1]
+    alpha = -y0 / (y1 - y0)
+    t0, t1 = time[cross_indices], time[cross_indices + 1]
+    cross_times = t0 + (t1 - t0) * alpha
+
+    return pd.Series(data=0.0, index=cross_times)
 
 
 def _hjorth_params(x, axis=-1):

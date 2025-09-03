@@ -1,6 +1,7 @@
 """Common type aliases used in the package."""
 
 from __future__ import annotations
+from math import e, exp
 
 import pandas as pd
 import numpy as np
@@ -106,3 +107,53 @@ class DataSlice:
     
     def __iter__(self) -> Iterator:
         return iter((self.time_index, self.data, self.text_data))
+
+@dataclass
+class PhaseData:
+    """Data for a single respiratory phase (inspiration or expiration).
+    
+    Parameters
+    ----------
+    onsets_above_threshold
+        Array of timestamps marking onsets above threshold.
+        Solely fulfilling the condition of being above the threshold. No further filtering.
+
+    filtered_onsets_above_threshold
+        Array of timestamps marking onsets above threshold.
+        Filtered by alternating expiration phases.
+
+    candidates
+        Array of candidate timestamps for the start of inspiration phases.
+        Yet, not filtered as alternating phases.
+
+    begins
+        Array of timestamps marking the beginning of inspiration phases.
+        Filtered by alternating expiration phases.
+
+    intervals
+        Array of intervals marking the intervals of inspiration phases.
+
+    threshold
+        The threshold value used to detect inspiration phases.
+
+    """
+    onsets_above_threshold: np.typing.NDArray
+    filtered_onsets_above_threshold: np.typing.NDArray
+    candidates: np.typing.NDArray
+    begins: np.typing.NDArray
+    intervals: list[tuple[pd.Timestamp, pd.Timestamp]]
+    threshold: float
+
+@dataclass
+class RespPhases:
+    """Auxiliary dataclass used to represent respiratory phases information.
+
+    Parameters
+    ----------
+    inspiration
+        All inspiration-related phase data.
+    expiration
+        All expiration-related phase data.
+    """
+    inspiration: PhaseData
+    expiration: PhaseData
