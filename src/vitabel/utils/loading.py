@@ -2606,7 +2606,7 @@ def read_corpuls(f_corpuls):  # Read Corpuls Data
 
     for k, channel in enumerate(all_channels):  # iterate htrough all channels
         key = channel["label"]
-        sample_rate = channel["sample_rate"]
+        sample_rate = next(channel[k] for k in ("sample_rate", "sample_frequency") if k in channel)
         dt = 1 / sample_rate
         unit = channel["dimension"]
         data = f.readSignal(k)
@@ -2914,7 +2914,7 @@ def read_eolife_export(eolife_filepath: Path) -> EOLifeRecord:
         header=0,
         nrows=1,
         encoding="latin1",
-        na_values="NA",
+        na_values=["Na", "NA"],
         usecols=[
             "Date",
             "Time",
@@ -2961,7 +2961,7 @@ def read_eolife_export(eolife_filepath: Path) -> EOLifeRecord:
         skiprows=3, 
         header=0,
         encoding="latin1",
-        na_values="Na",
+        na_values=["Na", "NA"],
         usecols=[
             "Cycle number",
             "Time (hh:mm:ss:SS)",
@@ -2986,7 +2986,7 @@ def read_eolife_export(eolife_filepath: Path) -> EOLifeRecord:
             "Leakage (mL)": "Int64",
         },
         converters={
-            "Leakage ratio (%)": lambda x: float(x) / 100 if x != "NA" else None
+            "Leakage ratio (%)": lambda x: float(x) / 100 if x not in ["Na", "NA"] else None
         },
     )
 
