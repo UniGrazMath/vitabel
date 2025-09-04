@@ -1507,7 +1507,7 @@ class Vitals:
     def compute_etco2_and_ventilations(
         self,
         source: Channel | str = "capnography",
-        mode: Literal["filter", "filter_extended", "threshold"] = "filter",
+        mode: Literal["filter", "filter_onset", "threshold"] = "filter",
         breath_threshold: float = 2,
         etco2_threshold: float = 3,
         **kwargs,
@@ -1516,7 +1516,7 @@ class Vitals:
         Computes etCO₂ values and timestamps of ventilations from capnography waveform.
         Supports three methods:
         - 'filter': Wolfgang Kern (unpublished)
-        - 'filter_extended': like 'filter' + detects exhalation onset (1st derivative)
+        - 'filter_onset': like 'filter' + detects exhalation onset
         - 'threshold': Aramendi et al., 2016
         """
     
@@ -1615,21 +1615,24 @@ class Vitals:
                 resptime = np.delete(resptime, i)
             return resptime, etco2time, etco2
 
-        # Mode 2: FILTER (KERN) EXTENDED
-        def _run_filter_extended():
+        # Mode 2: FILTER (KERN) INCL. DETECTION OF EXP ONSET
+        def _run_filter_onset():
             """
-            Extended ventilation detection based on KERN filter.
-            For each detected respiration (resptime), it locates the 
-            believed start of exhalation in the time-based CO2 waveform.
-            
+            Enhanced ventilation detection using the KERN filter:
+            for each detected breath, the exhalation onset is identified
+            by tracing backward from the etCO₂ peak to the baseline threshold,
+            constrained between the detected respiration time and the etCO₂ peak.
+            This corresponds to the physiologically plausible start of expiration
+            in noisy time-resolved capnogram.
+
             Returns:
-                resptime   : original respiration times (from KERN filter)
-                etco2time  : times of etCO2 peaks
-                etco2      : etCO2 peak values
-                exptime    : computed exhalation onset times (based on breath_threshold of KERN)
+                resptime   : original respiration times
+                etco2time  : original times of etCO2 peaks
+                etco2      : original etCO2 peak values
+                exptime    : computed exhalation onset times (based on breath_threshold)
             """
         
-            # Step 1: Run original KERN filter to get candidate breath times
+            # Step 1: Run original filter-mode to get candidate breath times
             resptime, etco2time, etco2 = _run_filter() 
         
             # List to store the detected exhalation start times
@@ -1715,8 +1718,8 @@ class Vitals:
         if mode == "filter":
             resptime, etco2time, etco2 = _run_filter()
             exptime = None
-        elif mode == "filter_extended":
-            resptime, etco2time, etco2, exptime = _run_filter_extended()
+        elif mode == "filter_onset":
+            resptime, etco2time, etco2, exptime = _run_filter_onset()
         elif mode == "threshold":
             resptime, etco2time, etco2 = _run_threshold()
             exptime = None
