@@ -1554,7 +1554,7 @@ class Vitals:
             resptime = cotime[resp_index]
             resp_height = co[resp_index]
     
-            # --- same correction logic as before ---
+            # --- original correction logic as before ---
             k = 0
             del_resp = []
             more_resp_flag = False
@@ -1614,9 +1614,59 @@ class Vitals:
             for i in del_resp[::-1]:
                 resptime = np.delete(resptime, i)
             return resptime, etco2time, etco2
+
+        # Mode 2: FILTER (KERN) EXTENDED
+        def _run_filter_extended():
+            """
+            Extended ventilation detection based on KERN filter.
+            For each detected respiration (resptime), it locates the 
+            believed start of exhalation in the time-based CO2 waveform.
+            
+            Returns:
+                resptime   : original respiration times (from KERN filter)
+                etco2time  : times of etCO2 peaks
+                etco2      : etCO2 peak values
+                exptime    : computed exhalation onset times (based on breath_threshold of KERN)
+            """
+        
+            # Step 1: Run original KERN filter to get candidate breath times
+            resptime, etco2time, etco2 = _run_filter() 
+        
+            # List to store the detected exhalation start times
+            exptime = []
+            
+            # Step 2: Loop over each detected respiration
+            for r in resptime:
+                # Find the next etCO2 peak that occurs after the current respiration
+                future_ets = etco2time[etco2time > r]
+                if len(future_ets) == 0:
+                    # No future peak found (edge case) -> skip this respiration
+                    continue
+                next_et = future_ets[0]
+            
+                # Step 3: Convert times to indices in the raw CO2 waveform
+                i_et = np.searchsorted(cotime, next_et)  # index of etCO2 peak
+                i_r  = np.searchsorted(cotime, r)        # index of respiration start
+        
+                # Step 4: Search backwards from the etCO2 peak to find the breath_threshold
+                # (the point just after the CO2 began to rise)
+                exp_found = False
+                for i in range(i_et, i_r, -1):
+                    if co[i] <= breath_threshold:
+                        # breath_threshold of waveform found -> mark as exhalation start
+                        exptime.append(cotime[i])
+                        exp_found = True
+                        break
+                
+                # Step 5: Fallback: if no baseline found, use original respiration time
+                if not exp_found:
+                    exptime.append(r)
+                        
+            # Step 6: Return results
+            return resptime, etco2time, etco2, exptime
+
     
-            '''        
-            # Mode 2: FILTER EXTENDED
+            '''
         def _run_filter_extended():
             resptime, etco2time, etco2 = _run_filter()
             dco = np.gradient(co)
@@ -1681,38 +1731,54 @@ class Vitals:
                             exptime.append(cotime[co2_rise_start])
                             break  # Found valid first rise; co2 zero again before etco2 
             return resptime, etco2time, etco2, exptime
-        '''
 
+        from scipy.signal import peak_prominences
         def _run_filter_extended():
+            """
+            Extended filter: determine exhalation onset using
+            peak prominences (left base of each etCO2 peak).
+            """
+            # run your baseline filter (already provides peak times & values)
             resptime, etco2time, etco2 = _run_filter()
-            exptime = []
-            
-            for r in resptime:
-                future_ets = etco2time[etco2time > r]
-                if len(future_ets) == 0:
-                    continue
-                next_et = future_ets[0]
-            
-                i_et = np.searchsorted(cotime, next_et)
-                i_r = np.searchsorted(cotime, r)
-            
-                # Search backwards from etCO2 peak to find baseline
-                exp_found = False
-                for i in range(i_et, i_r, -1):
-                    if co[i] == 0:
-                        exptime.append(cotime[i])
-                        exp_found = True
-                        break
-            
-                if not exp_found:
-                    exptime.append(r)  # fallback if no valid base found
-
         
-            return resptime, etco2time, etco2, exptime
-
-
-
-    
+            # guard against empty input
+            if len(etco2) == 0:
+                return resptime, etco2time, etco2, np.array([])
+        
+            # compute prominences -> gives left base index for each peak
+            peak_indices = np.arange(len(etco2))
+            _, left_bases, _ = peak_prominences(etco2, peak_indices)
+        
+            # map left base indices to etco2time
+            lb_times = np.array([
+                etco2time[int(lb)] if 0 <= int(lb) < len(etco2time) else np.nan
+                for lb in left_bases
+            ])
+        
+            exptime = []
+            for r in resptime:
+                # find the next etCO2 peak after resp_time
+                fut = etco2time[etco2time > r]
+                if len(fut) == 0:
+                    exptime.append(r)  # fallback if no peak found
+                    continue
+                next_et = fut[0]
+        
+                # get the index of this etco2 peak
+                idx = np.searchsorted(etco2time, next_et)
+                if idx < len(lb_times) and not np.isnan(lb_times[idx]):
+                    lb_t = lb_times[idx]
+                    # ensure onset is within [resp_time, etco2]
+                    if r <= lb_t <= next_et:
+                        exptime.append(lb_t)
+                    else:
+                        exptime.append(r)  # fallback
+                else:
+                    exptime.append(r)  # fallback
+        
+            return resptime, etco2time, etco2, np.array(exptime)
+        '''
+        
         # Mode 3: THRESHOLD (Aramendi)
         def _run_threshold():
             but = sgn.butter(4, 10 * 2 / freq, btype="lowpass", output="sos")
