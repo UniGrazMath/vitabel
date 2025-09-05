@@ -2936,7 +2936,8 @@ class Vitals:
         pressure_filter = interpolated_pressure.data[onsets_above_threshold] > 100
         filtered_onsets = onsets_above_threshold[slope_filter | pressure_filter]
         # filter oscillations by supressing immediate neighbours
-        oscillation_filter = np.r_[True, np.diff(index[filtered_onsets]) > np.timedelta64(375, 'ms')]
+        distance = np.diff(index[filtered_onsets])
+        oscillation_filter = np.r_[True, distance > np.timedelta64(375, 'ms')] if len(filtered_onsets) > 0 else np.array([])
         filtered_onsets = filtered_onsets[oscillation_filter]
 
 
