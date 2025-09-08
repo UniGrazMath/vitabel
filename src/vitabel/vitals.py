@@ -2937,7 +2937,7 @@ class Vitals:
         filtered_onsets = onsets_above_threshold[slope_filter | pressure_filter]
         # filter oscillations by supressing immediate neighbours
         distance = np.diff(index[filtered_onsets])
-        oscillation_filter = np.r_[True, distance > np.timedelta64(375, 'ms')] if len(filtered_onsets) > 0 else np.array([])
+        oscillation_filter = np.r_[True, distance > np.timedelta64(375, 'ms')] if len(filtered_onsets) > 0 else np.array([], dtype=bool)
         filtered_onsets = filtered_onsets[oscillation_filter]
 
 
@@ -3065,6 +3065,10 @@ class Vitals:
             An array of indices for the time index of the given product where the filtered phases (inspiration or expiration) start.
 
         """
+
+        if potential_phase_idxs.size == 0 or fencing_phase_idxs.size == 0:
+            return potential_phase_idxs
+        
         # Filter second events starts between two fencing events
         # right-bound sentinel guarantees insp_bounds[left+1] exists
         fencing_bounds = np.r_[fencing_phase_idxs, np.inf]
