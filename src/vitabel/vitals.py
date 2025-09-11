@@ -2909,8 +2909,12 @@ class Vitals:
 
         Returns
         -------
-        np.ndarray
-            An array of indices for the time index of the given product where the inspirations start.
+        inspiration_starts : np.ndarray
+            An array of indices for the time index of the given product where the inspirations start (filtered zero crossings).
+        onsets_above_threshold : np.ndarray
+            An array of indices where the product first exceeds the threshold for each detected segment.
+        filtered_onsets : np.ndarray
+            An array of indices for the onsets above threshold after additional filtering (e.g., slope and pressure criteria).
         """
 
         max_dur_short_exp = np.timedelta64(70, 'ms')
@@ -2928,56 +2932,91 @@ class Vitals:
         data = product.data.copy() 
 
         # Find indices where product is above a threshold
-        above_idxs = np.where(data > threshold)[0]
-        breaks = np.diff(above_idxs) > 1
-        onsets_above_threshold = np.r_[above_idxs[0], above_idxs[1:][breaks]]
-        # filtering by slope of pressure to suppress secondary peaks (by chest compressions)
-        slope_filter =  slope_pressure.data[onsets_above_threshold] > 0
-        pressure_filter = interpolated_pressure.data[onsets_above_threshold] > 100
-        filtered_onsets = onsets_above_threshold[slope_filter | pressure_filter]
+        above_idxs = np.flatnonzero(data > threshold).astype(int)
+        
+        # Early exit: nothing above threshold
+        if above_idxs.size == 0:
+            onsets_above_threshold = np.empty(0, dtype=int)
+            filtered_onsets        = onsets_above_threshold
+        else:
+            breaks = np.diff(above_idxs) > 1
+            segment_starts_pos = np.r_[0,1 + np.nonzero(breaks)[0]]
+            onsets_above_threshold = above_idxs[segment_starts_pos]
+
+            # filtering by slope of pressure to suppress secondary peaks (by chest compressions)
+            if onsets_above_threshold.size == 0:
+                filtered_onsets = onsets_above_threshold
+            else:
+                sp_vals = slope_pressure.data[onsets_above_threshold]
+                p_vals  = interpolated_pressure.data[onsets_above_threshold]
+
+                # booleans must match shape of onsets_above_threshold
+                slope_filter    = sp_vals > 0
+                pressure_filter = p_vals > 100  # consider making 100 a parameter
+                filtered_onsets = onsets_above_threshold[slope_filter | pressure_filter]
+
         # filter oscillations by supressing immediate neighbours
-        distance = np.diff(index[filtered_onsets])
-        oscillation_filter = np.r_[True, distance > np.timedelta64(375, 'ms')] if len(filtered_onsets) > 0 else np.array([], dtype=bool)
-        filtered_onsets = filtered_onsets[oscillation_filter]
+        # keep the first; drop neighbors closer than 375 ms
+        if filtered_onsets.size <= 1:
+            # size 0 → empty; size 1 → keep it
+            pass
+        else:
+            dt = np.diff(index.take(filtered_onsets))  # timedeltas between consecutive kept onsets
+            # keep first always, and any onset whose gap from previous is > 375 ms
+            spacing_ok = np.r_[True, dt > np.timedelta64(375, "ms")]
+            filtered_onsets = filtered_onsets[spacing_ok]
 
 
         #find short segments of expiratory flow 
         flow = interpolated_flow.data
         segments_exp_flow = np.where(flow <= 0)[0]
-        breaks = np.where(np.diff(segments_exp_flow) > 1)[0]
-        exp_flow_starts = np.r_[segments_exp_flow[0], segments_exp_flow[breaks + 1]]
-        exp_flow_ends = np.r_[segments_exp_flow[breaks], segments_exp_flow[-1]]
-        duration_filter = (index[exp_flow_ends] - index[exp_flow_starts]) <= max_dur_short_exp
-        
+        if segments_exp_flow.size == 0:
+            exp_flow_starts = np.array([], dtype=int)
+            exp_flow_ends = np.array([], dtype=int)
+            duration_filter = np.array([], dtype=bool)
+        else:
+            breaks = np.where(np.diff(segments_exp_flow) > 1)[0]
+            exp_flow_starts = np.r_[segments_exp_flow[0], segments_exp_flow[breaks + 1]]
+            exp_flow_ends = np.r_[segments_exp_flow[breaks], segments_exp_flow[-1]]
+            duration_filter = (index[exp_flow_ends] - index[exp_flow_starts]) <= max_dur_short_exp
+
         # identify inspiratory reverse airflow
         # filter those segments of non-positive product by the slope of the pressure signal to identify non-positive segments due to chest compressions causing reverse flow (but pressure rise)
         short_exp_segments = np.flatnonzero(duration_filter)
         starts = exp_flow_starts[short_exp_segments]
         ends   = exp_flow_ends[short_exp_segments]
         # assuring that for the entire segment the pressure is positive
-        positive_pressure = np.fromiter(
-            (np.all(interpolated_pressure.data[s:e+1] > 0) for s, e in zip(starts, ends)),
-            dtype=bool,
-            count=len(short_exp_segments)
-        )
-        pressure_filter = np.zeros_like(duration_filter, dtype=bool)
-        pressure_filter[short_exp_segments] = positive_pressure
+        positive_pressure = np.array([
+            np.all(interpolated_pressure.data[s:e+1] > 0)
+            for s, e in zip(starts, ends)
+        ], dtype=bool)
+        segment_pressure_filter = np.zeros_like(duration_filter, dtype=bool)
+        segment_pressure_filter[short_exp_segments] = positive_pressure
         # assuring that for the entire segment the slope is positive
-        positive_slope = np.fromiter(
-            (np.all(slope_pressure.data[s:e+1] > 0) for s, e in zip(starts, ends)),
-            dtype=bool,
-            count=len(short_exp_segments)
-        ) 
-        slope_filter = np.zeros_like(duration_filter, dtype=bool)
-        slope_filter[short_exp_segments] = positive_slope
-        # exp flow due to chest compression, defined by length, positive pressure, and increasing pressure (positive slope)
-        compression_exp_flow = duration_filter & pressure_filter & slope_filter
+        # count=len(short_exp_segments) ensures the output array has the correct length,
+        # matching the number of short expiratory segments for proper filtering.
+        positive_slope = np.array(
+            [np.all(slope_pressure.data[s:e+1] > 0) for s, e in zip(starts, ends)],
+            dtype=bool
+        )
+        segment_slope_filter = np.zeros_like(duration_filter, dtype=bool)
+        segment_slope_filter[short_exp_segments] = positive_slope
+        # Identify segments of expiratory flow that are likely caused by chest compressions rather than true expiration.
+        # These segments are characterized by being short in duration, having positive airway pressure throughout,
+        # and a consistently increasing pressure slope. Physiologically, during chest compressions, transient reverse airflow
+        # can occur due to the mechanical force, but the airway pressure remains positive and rising, distinguishing these
+        # events from normal expiratory phases. Filtering out these segments helps prevent misclassification of chest compression
+        # artifacts as respiratory events.
+        compression_exp_flow = duration_filter & segment_pressure_filter & segment_slope_filter
 
         # Find zero crossing of product before positive segments
         non_pos_product = np.where(data <= 0)[0]
         breaks = np.where(np.diff(non_pos_product) > 1)[0]
         zero_crossings = np.r_[non_pos_product[breaks], non_pos_product[-1]]
-        mask = ~np.isin(zero_crossings, exp_flow_ends[compression_exp_flow]) # removes inspiratory reverse airflow
+        if exp_flow_ends[compression_exp_flow].size > 0:
+            mask = ~np.isin(zero_crossings, exp_flow_ends[compression_exp_flow]) # removes inspiratory reverse airflow
+        else:
+            mask = np.ones_like(zero_crossings, dtype=bool)  # keep all zero crossings if nothing to filter
         valid_zero_crossings = zero_crossings[mask]
 
         # Find the last zero before each start_above_idx in the zero_idxs without the short ones
@@ -3018,30 +3057,55 @@ class Vitals:
         data = product.data.copy() 
 
         # Find indices where product is above a threshold
-        onsets_above_threshold = np.where(data > threshold)[0]
+        above_idxs = np.flatnonzero(data > threshold).astype(int)
+
+        # Early exit: nothing above threshold
+        if above_idxs.size == 0:
+            onsets_above_threshold = np.empty(0, dtype=int)
+            filtered_onsets        = onsets_above_threshold
+            return filtered_onsets, onsets_above_threshold, filtered_onsets
 
         # Filter markers of expirations
         # determine length of segment above threshold and remove if shorter than 10ms
-        breaks = np.where(np.diff(index[onsets_above_threshold]) > min_distance_landmarks)[0]
-        starts = np.r_[onsets_above_threshold[0], onsets_above_threshold[breaks + 1]]
-        ends = np.r_[onsets_above_threshold[breaks], onsets_above_threshold[-1]]
+        breaks = np.flatnonzero(np.diff(index[above_idxs]) > min_distance_landmarks)
+        starts = np.r_[above_idxs[0], above_idxs[breaks + 1]]
+        ends = np.r_[above_idxs[breaks], above_idxs[-1]]
         segment_width = index[ends] - index[starts]
         filter_segment_width = segment_width > min_dur_landmark_segment
+        onsets_above_threshold = starts # keep unfiltered for return
         filtered_onsets = starts[filter_segment_width]
 
+        # If nothing survives filtering, early return
+        if filtered_onsets.size == 0:
+            return np.empty(0, dtype=int), onsets_above_threshold, filtered_onsets
+
         # Find zero crossings before the filtered onsets and filter for short segments of oscillations
-        non_pos_product = np.where(data <= 0)[0] #condition must include negative values as not all zerocrossings in the array as seperate datapoint
-        breaks = np.where(np.diff(non_pos_product) > 1)[0]
+        non_pos_product = np.flatnonzero(data <= 0) #condition must include negative values as not all zerocrossings in the array as seperate datapoint
+        if non_pos_product.size == 0:
+            # No zero/non-positive → no valid "zero before onset"
+            return np.empty(0, dtype=int), onsets_above_threshold, filtered_onsets
+        breaks = np.flatnonzero(np.diff(non_pos_product) > 1)
         starts = np.r_[non_pos_product[0], non_pos_product[breaks + 1]]
         ends = np.r_[non_pos_product[breaks], non_pos_product[-1]]
-        duration_filter = (index[ends] - index[starts]) <= max_dur_short_breaks
-        mask = ~np.isin(ends, ends[duration_filter])
-        valid_zero_crossings = ends[mask]
+        short = (index[ends] - index[starts]) <= max_dur_short_breaks
+        if short.any():
+            keep_mask = ~np.isin(ends, ends[short])
+            zero_candidates = ends[keep_mask]
+        else:
+            zero_candidates = ends
 
-        # Find the last zero before each start_above_idx in the zero_idxs without the short ones
-        potential_exp_starts = valid_zero_crossings[np.searchsorted(valid_zero_crossings, filtered_onsets, side='right')-1]
+        # If none remain, no zeros to reference
+        if zero_candidates.size == 0:
+            return np.empty(0, dtype=int), onsets_above_threshold, filtered_onsets
+
+        # For each filtered onset, pick the last zero <= onset
+        pos = np.searchsorted(zero_candidates, filtered_onsets, side='right') - 1
+        valid = pos >= 0  # drop onsets with no preceding zero
+        potential_exp_starts = zero_candidates[pos[valid]]
 
         return np.unique(potential_exp_starts), onsets_above_threshold, filtered_onsets
+
+
 
     def _filter_alternating_phases(
         self,
@@ -3199,21 +3263,35 @@ class Vitals:
         insp_idxs = self._filter_alternating_phases(potential_phase_idxs=potential_insp_idxs, fencing_phase_idxs=exp_idxs)
 
         # Generating Results
-        # Onsets of Phases
-        insp_begin = index[insp_idxs]
-        exp_begin = index[exp_idxs]
-        # Inspiration Interval
-        i_first = insp_begin[0]
-        e_last = exp_begin[-1]
-        i = insp_begin[insp_begin < e_last]
-        e = exp_begin[exp_begin > i_first]
-        insp_intervals = list(zip(i, e))
-        # Expiration Interval
-        i_last = insp_begin[-1]
-        e_first = exp_begin[0]
-        e = exp_begin[exp_begin < i_last]
-        i = insp_begin[insp_begin > e_first]
-        exp_intervals = list(zip(e, i))
+        # If either side is empty, you can't form intervals
+        if insp_idxs.size == 0 or exp_idxs.size == 0:
+            insp_begin = index[:0]  # empty, same type as index
+            exp_begin  = index[:0]
+            insp_intervals = []
+            exp_intervals  = []
+        else:
+            # Onsets of phases (DatetimeIndex or Index)
+            insp_begin = index.take(insp_idxs)
+            exp_begin  = index.take(exp_idxs)
+            # If after selection one is empty, bail gracefully
+            if len(insp_begin) == 0 or len(exp_begin) == 0:
+                insp_intervals = []
+                exp_intervals  = []
+            else:
+                # --- Inspiration intervals: [insp_start, next exp_start) ---
+                i_first = insp_begin[0]
+                e_last  = exp_begin[-1]
+                i_for_insp = insp_begin[insp_begin < e_last]
+                e_for_insp = exp_begin[exp_begin > i_first]
+                insp_intervals = list(zip(i_for_insp, e_for_insp))
+                # --- Expiration intervals: [exp_start, next insp_start) ---
+                i_last  = insp_begin[-1]
+                e_first = exp_begin[0]
+                e_for_exp = exp_begin[exp_begin < i_last]
+                i_for_exp = insp_begin[insp_begin > e_first]
+                exp_intervals = list(zip(e_for_exp, i_for_exp))
+
+
 
        # Add inspiration and expiration labels to the Vitals object
         if add_labels:
@@ -3285,17 +3363,17 @@ class Vitals:
         if return_landmarks:
             return RespPhases(
                 inspiration = PhaseData(
-                    onsets_above_threshold= index[insp_onsets_above_threshold],
-                    filtered_onsets_above_threshold= index[insp_filtered_onsets],
-                    candidates= index[potential_insp_idxs],
+                    onsets_above_threshold= index.take(insp_onsets_above_threshold),
+                    filtered_onsets_above_threshold= index.take(insp_filtered_onsets),
+                    candidates= index.take(potential_insp_idxs),
                     begins= insp_begin,
                     intervals= insp_intervals,
                     threshold= inspiratory_threshold
                 ),
                 expiration= PhaseData(
-                    onsets_above_threshold= index[exp_onsets_above_threshold],
-                    filtered_onsets_above_threshold= index[exp_filtered_onsets],
-                    candidates= index[potential_exp_idxs],
+                    onsets_above_threshold= index.take(exp_onsets_above_threshold),
+                    filtered_onsets_above_threshold= index.take(exp_filtered_onsets),
+                    candidates= index.take(potential_exp_idxs),
                     begins= exp_begin,
                     intervals= exp_intervals,
                     threshold= expiratory_threshold
