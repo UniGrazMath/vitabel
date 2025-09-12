@@ -2918,6 +2918,7 @@ class Vitals:
         """
 
         max_dur_short_exp = np.timedelta64(70, 'ms')
+        min_dur_landmark_segment = np.timedelta64(20, 'ms')
 
         if not product.time_index.equals(interpolated_flow.time_index):
             raise ValueError("The time indices of product and interpolated_flow must match.")
@@ -2940,20 +2941,34 @@ class Vitals:
             filtered_onsets        = onsets_above_threshold
         else:
             breaks = np.diff(above_idxs) > 1
-            segment_starts_pos = np.r_[0,1 + np.nonzero(breaks)[0]]
+            segment_starts_pos = np.r_[0, breaks.nonzero()[0] + 1]
+            segment_stops_pos = np.r_[breaks.nonzero()[0], above_idxs.size - 1]
             onsets_above_threshold = above_idxs[segment_starts_pos]
 
-            # filtering by slope of pressure to suppress secondary peaks (by chest compressions)
             if onsets_above_threshold.size == 0:
                 filtered_onsets = onsets_above_threshold
             else:
-                sp_vals = slope_pressure.data[onsets_above_threshold]
-                p_vals  = interpolated_pressure.data[onsets_above_threshold]
+                # Filter segments that are shorter than min_dur_landmark_segment
+                starts = index.take(above_idxs[segment_starts_pos])
+                stops  = index.take(above_idxs[segment_stops_pos])
+                segment_width = stops - starts
+                segments_width_filter = segment_width >= min_dur_landmark_segment
+                filtered_onsets = onsets_above_threshold[segments_width_filter]
 
+
+                #### EXperimental to filter by slope 
+                ## filtering by slope of pressure to suppress secondary peaks (by chest compressions)
+                #sp_vals = slope_pressure.data[onsets_above_threshold]
+                #p_vals  = interpolated_pressure.data[onsets_above_threshold]
                 # booleans must match shape of onsets_above_threshold
-                slope_filter    = sp_vals > 0
-                pressure_filter = p_vals > 100  # consider making 100 a parameter
-                filtered_onsets = onsets_above_threshold[slope_filter | pressure_filter]
+                #slope_filter    = sp_vals > 0
+                #slope_filter = np.ones_like(sp_vals, dtype=bool)
+                #pressure_filter = p_vals > 100  # consider making 100 a parameter
+                #filtered_onsets = onsets_above_threshold[slope_filter | pressure_filter]
+                #### End experimental
+                
+
+
 
         # filter oscillations by supressing immediate neighbours
         # keep the first; drop neighbors closer than 375 ms
@@ -3048,10 +3063,9 @@ class Vitals:
         np.ndarray
             An array of indices for the time index of the given product where the expirations start.
         """
-        min_distance_landmarks = np.timedelta64(12, 'ms')
+        #min_distance_landmarks = np.timedelta64(12, 'ms')
         min_dur_landmark_segment = np.timedelta64(20, 'ms')
         max_dur_short_breaks = np.timedelta64(10, 'ms')
-        
 
         index = product.time_index.copy()
         data = product.data.copy() 
@@ -3066,14 +3080,28 @@ class Vitals:
             return filtered_onsets, onsets_above_threshold, filtered_onsets
 
         # Filter markers of expirations
-        # determine length of segment above threshold and remove if shorter than 10ms
-        breaks = np.flatnonzero(np.diff(index[above_idxs]) > min_distance_landmarks)
-        starts = np.r_[above_idxs[0], above_idxs[breaks + 1]]
-        ends = np.r_[above_idxs[breaks], above_idxs[-1]]
-        segment_width = index[ends] - index[starts]
-        filter_segment_width = segment_width > min_dur_landmark_segment
-        onsets_above_threshold = starts # keep unfiltered for return
-        filtered_onsets = starts[filter_segment_width]
+        # determine length of segment above threshold and remove if shorter than 20ms
+        breaks = np.diff(above_idxs) > 1
+        segment_starts_pos = np.r_[0, breaks.nonzero()[0] + 1]
+        segment_stops_pos = np.r_[breaks.nonzero()[0], above_idxs.size - 1]
+        onsets_above_threshold = above_idxs[segment_starts_pos]
+
+        # Filter segments that are shorter than min_dur_landmark_segment
+        starts = index.take(above_idxs[segment_starts_pos])
+        stops  = index.take(above_idxs[segment_stops_pos])
+        segment_width = stops - starts
+        segments_width_filter = segment_width >= min_dur_landmark_segment
+        filtered_onsets = onsets_above_threshold[segments_width_filter]
+        
+        ##### Experimental to filter by distance of landmark segements
+        #breaks = np.flatnonzero(np.diff(index[above_idxs]) > min_distance_landmarks)
+        #starts = np.r_[above_idxs[0], above_idxs[breaks + 1]]
+        #ends = np.r_[above_idxs[breaks], above_idxs[-1]]
+        #segment_width = index[ends] - index[starts]
+        #filter_segment_width = segment_width > min_dur_landmark_segment
+        #onsets_above_threshold = starts # keep unfiltered for return
+        #filtered_onsets = starts[filter_segment_width]
+        ##### End experimental
 
         # If nothing survives filtering, early return
         if filtered_onsets.size == 0:
