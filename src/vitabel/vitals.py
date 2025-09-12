@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from math import e, exp
 import os
+from turtle import shapetransform
 
 from matplotlib.cbook import is_scalar_or_string
 import numpy as np
@@ -2918,6 +2919,7 @@ class Vitals:
         """
 
         max_dur_short_exp = np.timedelta64(70, 'ms')
+        max_dur_short_breaks = np.timedelta64(15, 'ms')
         min_dur_landmark_segment = np.timedelta64(20, 'ms')
         max_oscillation_interval = np.timedelta64(375, 'ms')
 
@@ -2941,7 +2943,9 @@ class Vitals:
             onsets_above_threshold = np.empty(0, dtype=int)
             filtered_onsets        = onsets_above_threshold
         else:
-            breaks = np.diff(above_idxs) > 1
+            # Identify segments above threshold separated by breaks longer than max_dur_short_breaks
+            # therefore filter breaks likely caused by oscillations
+            breaks = np.diff(index.take(above_idxs)) > max_dur_short_breaks
             segment_starts_pos = np.r_[0, breaks.nonzero()[0] + 1]
             segment_stops_pos = np.r_[breaks.nonzero()[0], above_idxs.size - 1]
             onsets_above_threshold = above_idxs[segment_starts_pos]
@@ -3054,7 +3058,7 @@ class Vitals:
             An array of indices for the time index of the given product where the expirations start.
         """
         #min_distance_landmarks = np.timedelta64(12, 'ms')
-        min_dur_landmark_segment = np.timedelta64(20, 'ms')
+        min_dur_landmark_segment = np.timedelta64(12, 'ms')
         max_dur_short_breaks = np.timedelta64(10, 'ms')
 
         index = product.time_index.copy()
@@ -3068,13 +3072,14 @@ class Vitals:
             onsets_above_threshold = np.empty(0, dtype=int)
             filtered_onsets        = onsets_above_threshold
         else:
-            # Filter landmarks of expirations
-            # determine length of segment above threshold and remove if shorter than 20ms
-            breaks = np.diff(above_idxs) > 1
+            # identify breaks (segments below threshold) greater than max_dur_short_breaks
+            #thereby filtering out short breaks that are likely due to oscillations
+            breaks = np.diff(index.take(above_idxs)) > max_dur_short_breaks
+
+            # determine length of segment above threshold and remove if shorter than min_dur_landmark_segment
             segment_starts_pos = np.r_[0, breaks.nonzero()[0] + 1]
             segment_stops_pos = np.r_[breaks.nonzero()[0], above_idxs.size - 1]
             onsets_above_threshold = above_idxs[segment_starts_pos]
-
             # Filter segments that are shorter than min_dur_landmark_segment
             starts = index.take(above_idxs[segment_starts_pos])
             stops  = index.take(above_idxs[segment_stops_pos])
