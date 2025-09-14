@@ -2981,7 +2981,7 @@ class Vitals:
         
         # 1. find short segments of expiratory flow 
         flow = interpolated_flow.data
-        segments_exp_flow = np.where(flow <= 0)[0]
+        segments_exp_flow = np.where(flow <= 0)[0] 
         if segments_exp_flow.size == 0:
             exp_flow_starts = np.array([], dtype=int)
             exp_flow_ends = np.array([], dtype=int)
@@ -3019,7 +3019,7 @@ class Vitals:
         compression_exp_flow = duration_filter & segment_pressure_filter & segment_slope_filter
 
         # Find zero crossing of product before positive segments
-        non_pos_product = np.where(data <= 0)[0]
+        non_pos_product = np.where(data <= 0)[0] 
         breaks = np.where(np.diff(non_pos_product) > 1)[0]
         zero_crossings = np.r_[non_pos_product[breaks], non_pos_product[-1]]
         if exp_flow_ends[compression_exp_flow].size > 0:
@@ -3092,7 +3092,7 @@ class Vitals:
             return np.empty(0, dtype=int), onsets_above_threshold, filtered_onsets
 
         # Find zero crossings before the filtered onsets and filter for short segments of oscillations
-        non_pos_product = np.flatnonzero(data <= 0) #condition must include negative values as not all zerocrossings in the array as seperate datapoint
+        non_pos_product = np.flatnonzero(data <= 0 + 30) #condition must include negative values as not all zerocrossings in the array are separate datapoint // additoonally, filter out small positive values close to zero
         if non_pos_product.size == 0:
             # No zero/non-positive → no valid "zero before onset"
             return np.empty(0, dtype=int), onsets_above_threshold, filtered_onsets
