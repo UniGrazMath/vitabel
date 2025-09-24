@@ -2918,10 +2918,14 @@ class Vitals:
             An array of indices for the onsets above threshold after additional filtering (e.g., slope and pressure criteria).
         """
 
-        max_dur_short_exp = np.timedelta64(70, 'ms')
+        # Filterparameters
         max_dur_short_breaks = np.timedelta64(15, 'ms')
-        min_dur_landmark_segment = np.timedelta64(20, 'ms')
+        min_dur_landmark_segment = np.timedelta64(20, 'ms')        
         max_oscillation_interval = np.timedelta64(375, 'ms')
+        
+        max_dur_short_exp = np.timedelta64(70, 'ms')
+        
+        
 
         if not product.time_index.equals(interpolated_flow.time_index):
             raise ValueError("The time indices of product and interpolated_flow must match.")
@@ -2961,14 +2965,14 @@ class Vitals:
                 filtered_onsets = onsets_above_threshold[segments_width_filter]
 
         # If nothing survives filtering, early return
-        # Else filter oscillations by supressing immediate neighbours
+        # Else filter oscillations by suppressing immediate neighbours
         if filtered_onsets.size == 0:
             return np.empty(0, dtype=int), onsets_above_threshold, filtered_onsets
         elif filtered_onsets.size == 1:
             #size 1 → keep it
             pass
         else:
-            # keep the first; drop neighbors closer than 375 ms
+            # keep the first; drop neighbours closer than 375 ms
             dt = np.diff(index.take(filtered_onsets))  # timedeltas between consecutive kept onsets
             spacing_ok = np.r_[True, dt > max_oscillation_interval]
             filtered_onsets = filtered_onsets[spacing_ok]
@@ -3058,9 +3062,12 @@ class Vitals:
             An array of indices for the time index of the given product where the expirations start.
         """
         #min_distance_landmarks = np.timedelta64(12, 'ms')
+        min_dur_short_breaks = np.timedelta64(10, 'ms')
         min_dur_landmark_segment = np.timedelta64(12, 'ms')
         max_dur_short_breaks = np.timedelta64(10, 'ms')
 
+        oscillation_threshold = 30
+        
         index = product.time_index.copy()
         data = product.data.copy() 
 
@@ -3072,9 +3079,9 @@ class Vitals:
             onsets_above_threshold = np.empty(0, dtype=int)
             filtered_onsets        = onsets_above_threshold
         else:
-            # identify breaks (segments below threshold) greater than max_dur_short_breaks
+            # identify breaks (segments below threshold) greater than min_dur_short_breaks
             #thereby filtering out short breaks that are likely due to oscillations
-            breaks = np.diff(index.take(above_idxs)) > max_dur_short_breaks
+            breaks = np.diff(index.take(above_idxs)) > min_dur_short_breaks
 
             # determine length of segment above threshold and remove if shorter than min_dur_landmark_segment
             segment_starts_pos = np.r_[0, breaks.nonzero()[0] + 1]
@@ -3092,7 +3099,7 @@ class Vitals:
             return np.empty(0, dtype=int), onsets_above_threshold, filtered_onsets
 
         # Find zero crossings before the filtered onsets and filter for short segments of oscillations
-        non_pos_product = np.flatnonzero(data <= 0 + 30) #condition must include negative values as not all zerocrossings in the array are separate datapoint // additoonally, filter out small positive values close to zero
+        non_pos_product = np.flatnonzero(data <= 0 + oscillation_threshold) #condition must include negative values as not all zerocrossings in the array are separate datapoints//additionally, filter out small positive values close to zero
         if non_pos_product.size == 0:
             # No zero/non-positive → no valid "zero before onset"
             return np.empty(0, dtype=int), onsets_above_threshold, filtered_onsets
