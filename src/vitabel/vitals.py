@@ -3459,9 +3459,15 @@ class Vitals:
         
         # Get timestamps and the data of the channel or label
         channel_or_label_to_filter = deepcopy(channel_or_label_to_filter)
+
+        #early return for empty
+        if len(channel_or_label_to_filter) == 0: 
+            return channel_or_label_to_filter
+        
         time_index = channel_or_label_to_filter.get_data().time_index
         data = channel_or_label_to_filter.get_data().data.copy() if channel_or_label_to_filter.get_data().data is not None else np.array([])
         text_data = channel_or_label_to_filter.get_data().text_data if channel_or_label_to_filter.get_data().text_data is not None else np.array([])
+
         
         
         # build a mask for filtering
@@ -3486,6 +3492,8 @@ class Vitals:
         
             if invert:
                 mask = ~mask
+            
+            masked_index = time_index[mask]
         
         else: # IntervalLabel
             intervals_to_filter = time_index
@@ -3518,9 +3526,16 @@ class Vitals:
         
             if invert:
                 mask = ~mask
+
+            masked_index = time_index[mask]
+            masked_index = masked_index.ravel()
+
+            
+
         
         # Filter the given Channel or Label
-        TS = TimeSeriesBase(time_index[mask]-channel_or_label_to_filter.offset)
+        
+        TS = TimeSeriesBase(masked_index-channel_or_label_to_filter.offset)
         new_index = TS.time_index
         new_start = TS.time_start
         channel_or_label_to_filter.time_index = new_index
