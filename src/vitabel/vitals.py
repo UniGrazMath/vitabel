@@ -2945,7 +2945,9 @@ class Vitals:
         
             if invert:
                 mask = ~mask
-        
+
+            masked_index = time_index[mask]
+
         else: # IntervalLabel
             intervals_to_filter = time_index
         
@@ -2977,9 +2979,12 @@ class Vitals:
         
             if invert:
                 mask = ~mask
+                
+            masked_index = time_index[mask]
+            masked_index = masked_index.ravel()
         
         # Filter the given Channel or Label
-        TS = TimeSeriesBase(time_index[mask]-channel_or_label_to_filter.offset)
+        TS = TimeSeriesBase(masked_index-channel_or_label_to_filter.offset)
         new_index = TS.time_index
         new_start = TS.time_start
         channel_or_label_to_filter.time_index = new_index
