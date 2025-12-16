@@ -10,7 +10,6 @@
 
 [![Documentation Status](https://readthedocs.org/projects/vitabel/badge/?version=latest)](https://vitabel.readthedocs.io/en/latest/index.html)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/UniGrazMath/vitabel/main?urlpath=%2Flab%2Ftree%2Fexamples)
-
 ![PyPI](https://img.shields.io/pypi/v/vitabel)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/vitabel/badges/version.svg)](https://anaconda.org/conda-forge/vitabel)
 
