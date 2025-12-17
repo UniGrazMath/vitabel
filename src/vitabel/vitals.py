@@ -3,11 +3,8 @@
 from __future__ import annotations
 
 import json
-from math import e, exp
 import os
-from turtle import shapetransform
 
-from matplotlib.cbook import is_scalar_or_string
 import numpy as np
 import pandas as pd
 import scipy.signal as sgn
@@ -2743,7 +2740,9 @@ class Vitals:
         zrosc = cprdat_analysis["registry_time_points"]["ZROSC1"]
         zhdm = cprdat_analysis["registry_time_points"]["ZHDM"]
         ztod = cprdat_analysis["registry_time_points"]["ZTOD"]
-        starttime = pd.Timestamp(cprdat_analysis["recording_info"]["startdatetime"])
+
+        # TODO: investigate unused variable
+        # starttime = pd.Timestamp(cprdat_analysis["recording_info"]["startdatetime"])
 
         if zrosc:
             z_end = zrosc

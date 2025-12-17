@@ -2145,9 +2145,11 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
                 starttime = pd.Timestamp(event.find("AdjustedTime").text)
         device_container = root.find("Device")
         serial = device_container.find("SerialNumber").text
-        device_description = device_container.find(
-            "DeviceDescription"
-        ).text  # should be LP15XXXX
+
+        # TODO: investigate unused variable
+        # device_description = device_container.find(
+        #     "DeviceDescription"
+        # ).text  # should be LP15XXXX
         model = device_container.find("Model").text  # should be LP15
 
     # Make one reading function which loads for fielnames and pcstr, try different pctry via try except

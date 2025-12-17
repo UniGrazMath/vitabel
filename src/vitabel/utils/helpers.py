@@ -24,6 +24,7 @@ from vitabel.typing import Timedelta, Timestamp, ThresholdMetrics, Metric, DataS
 
 if TYPE_CHECKING:
     from vitabel.typing import TimeUnitChoices
+    from vitabel.timeseries import Channel
 
 __all__ = [
     "deriv",

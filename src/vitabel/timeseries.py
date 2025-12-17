@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import copy
-from typing import Any, Literal
+from typing import Any
 from matplotlib.text import Text
 from matplotlib.patches import Rectangle
 
@@ -1055,7 +1055,8 @@ class Label(TimeSeriesBase):
             elif len(data) == 0:
                 data = None
             else:
-                data = np.where(data == None, np.nan, data).astype(float)
+                # replace None with np.nan and convert to float
+                data = np.where(data is None, np.nan, data).astype(float)
 
         if text_data is not None and len(text_data) > 0:
             text_data = np.asarray(text_data, dtype=object)
@@ -1716,7 +1717,8 @@ class Label(TimeSeriesBase):
                     # no marker style set, override to make single value visible
                     base_plotstyle.update({"marker": "X"})
 
-                scatterplot_artist = plot_axes.plot(
+                # can be assigned to variable, scatterplot_artist, if needed
+                _ = plot_axes.plot(
                     time_index[~nan_mask],
                     data[~nan_mask],
                     **base_plotstyle,
@@ -3208,9 +3210,9 @@ class TimeDataCollection:
                 elif label not in distinct_labels["single"]:
                     distinct_labels["single"].append(label)
 
-        label_master = sorted(distinct_labels["single"], key=lambda l: l.name) + sorted(
-            distinct_labels["interval"], key=lambda l: l.name
-        )
+        label_master = sorted(
+            distinct_labels["single"], key=lambda label: label.name
+        ) + sorted(distinct_labels["interval"], key=lambda label: label.name)
         label_dict = dict(enumerate(label_master, start=1))
         dropdown_options = [
             (f"{label.name}   [Interval]", i)

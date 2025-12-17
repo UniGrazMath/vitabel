@@ -693,6 +693,7 @@ def test_saving_and_loading(tmpdir):
     assert "vitabel version" in cardio_object2.metadata
     assert cardio_object2.metadata["vitabel version"] == __version__
 
+
 def test_saving_and_loading_with_offset(tmpdir):
     channel = Channel(
         "Channel1",
@@ -717,8 +718,11 @@ def test_saving_and_loading_with_offset(tmpdir):
     loaded_channel = loaded_case.get_channel("Channel1")
     assert loaded_channel.time_start == pd.Timestamp(2020, 4, 13, 2, 48, 0)
     assert loaded_channel.offset == pd.Timedelta("1 hour")
-    assert loaded_channel.get_data().time_index[0] == pd.Timestamp(2020, 4, 13, 3, 48, 0)
+    assert loaded_channel.get_data().time_index[0] == pd.Timestamp(
+        2020, 4, 13, 3, 48, 0
+    )
     assert vital_case.data == loaded_case.data
+
 
 def test_create_shock_information_DataFrame():
     shock_energie = Channel(
@@ -762,7 +766,9 @@ def test_etco2_and_ventilation_detection(vitabel_test_data_dir):
         "capnography", t, data, time_start=pd.Timestamp(2024, 1, 1, 0, 0, 0)
     )
     cardio_object.add_channel(co2_channel)
-    cardio_object.compute_etco2_and_ventilations(mode="threshold",breath_thresh=4,etco2_thresh=4) #TODO: test might be adapted to new default values in the future
+    cardio_object.compute_etco2_and_ventilations(
+        mode="threshold", breath_thresh=4, etco2_thresh=4
+    )  # TODO: test might be adapted to new default values in the future
     vent_dict = cardio_object.get_label("ventilations_from_capnography").to_dict()
     etCO2_dict = cardio_object.get_label("etco2_from_capnography").to_dict()
 
@@ -856,7 +862,7 @@ def test_cycle_duration_analysis_absolute(vitabel_test_data_dir):
 
     starts = np.array(CC_Start_dict_test["time_index"])
     stops = np.array(CC_Stop_dict_test["time_index"])
- 
+
     periods_test = np.empty(starts.size + stops.size, dtype=starts.dtype)
     periods_test[0::2] = starts
     periods_test[1::2] = stops
@@ -905,11 +911,11 @@ def test_acceleration_CC_period_dection_absolute(vitabel_test_data_dir):
 
     starts = np.array(CC_Start_dict_test["time_index"])
     stops = np.array(CC_Stop_dict_test["time_index"])
- 
+
     periods_test = np.empty(starts.size + stops.size, dtype=starts.dtype)
     periods_test[0::2] = starts
     periods_test[1::2] = stops
-        
+
     assert (cc_periods == periods_test).all()
 
 
@@ -997,7 +1003,9 @@ def test_analysis_exception_for_missing_data(caplog):
         cardio_recording.compute_etco2_and_ventilations()
     with pytest.raises(ValueError, match="Channel specification was ambiguous"):
         cardio_recording.find_CC_periods_acc()
-    with pytest.raises(ValueError, match="Could not identify channels with single chest compressions."):
+    with pytest.raises(
+        ValueError, match="Could not identify channels with single chest compressions."
+    ):
         cardio_recording.cycle_duration_analysis()
     with pytest.raises(ValueError, match="Channel specification was ambiguous"):
         cardio_recording.predict_circulation()
@@ -1010,11 +1018,17 @@ def test_area_under_threshold_computation():
 
     vital_case.add_data_from_DataFrame(
         pd.DataFrame(
-            index=pd.date_range(start="2024-04-04 10:00:00", end="2024-04-04 12:00:00", periods=100),
-            data=np.array([
-                42 * np.ones(100),
-                [(-1)**(k//2) for k in range(100)],  # +1, +1, -1, -1, +1, +1, -1, -1, ...
-            ]).transpose(),
+            index=pd.date_range(
+                start="2024-04-04 10:00:00", end="2024-04-04 12:00:00", periods=100
+            ),
+            data=np.array(
+                [
+                    42 * np.ones(100),
+                    [
+                        (-1) ** (k // 2) for k in range(100)
+                    ],  # +1, +1, -1, -1, +1, +1, -1, -1, ...
+                ]
+            ).transpose(),
         )
     )
     threshold_metric = vital_case.area_under_threshold(source="0", threshold=10)
@@ -1030,26 +1044,39 @@ def test_area_under_threshold_computation():
 
     threshold_metric = vital_case.area_under_threshold(source="1", threshold=0)
     assert threshold_metric.observational_interval_duration == pd.Timedelta(2, unit="h")
-    assert threshold_metric.duration_under_threshold == pd.Timedelta("01:00:00.000000001")
+    assert threshold_metric.duration_under_threshold == pd.Timedelta(
+        "01:00:00.000000001"
+    )
 
 
 def test_add_eolife_ventilatory_feedback(vitabel_test_data_dir):
     """Test loading EOlife ventilatory feedback CSV file."""
     collection = Vitals()
-    eolife_file = vitabel_test_data_dir / "sample_signals" / "eolife_test_file_with_empty_values.csv"
+    eolife_file = (
+        vitabel_test_data_dir
+        / "sample_signals"
+        / "eolife_test_file_with_empty_values.csv"
+    )
     collection.add_ventilatory_feedback(eolife_file)
     # Check that at least one channel is present and not empty
     assert len(collection.channels) == 9
     assert all(
-        hasattr(channel, 'data') and len(channel.data) > 0
+        hasattr(channel, "data") and len(channel.data) > 0
         for channel in collection.channels
     )
 
     # Furthermore, check for expected channel names
-    expected_channels = ['Cycle number', 'Ti', 'Te', 'Tp', 'Freq', 'Vi', 'Vt', 'Leakage', 'Leakage ratio']
+    expected_channels = [
+        "Cycle number",
+        "Ti",
+        "Te",
+        "Tp",
+        "Freq",
+        "Vi",
+        "Vt",
+        "Leakage",
+        "Leakage ratio",
+    ]
     actual_channel_names = [channel.name for channel in collection.channels]
     assert all(name in actual_channel_names for name in expected_channels)
     assert max([len(Channel) for Channel in collection.channels]) == 47
-   
-
-

@@ -465,22 +465,27 @@ def test_channel_scale_time_index_relative():
 
     new_channel = channel.scale_time_index(0.5)
     np.testing.assert_allclose(new_channel.numeric_time(), time * 0.5)
-    
+
     with pytest.raises(ValueError, match="scale factor must be positive"):
         channel.scale_time_index(-1.0)
 
 
 def test_channel_scale_time_index_absolute():
-    time = [pd.Timestamp("2020-02-02 12:00:00") + pd.Timedelta(hours=i) for i in range(6)]
+    time = [
+        pd.Timestamp("2020-02-02 12:00:00") + pd.Timedelta(hours=i) for i in range(6)
+    ]
     channel = Channel(name="test", time_index=time)
     channel.offset = pd.Timedelta("-2h")
 
-    new_channel = channel.scale_time_index(0.5, reference_time=pd.Timestamp("2020-02-02 12:00:00"))
+    new_channel = channel.scale_time_index(
+        0.5, reference_time=pd.Timestamp("2020-02-02 12:00:00")
+    )
     assert isinstance(new_channel, Channel)
     assert new_channel.time_start == channel.time_start
     assert new_channel.offset == pd.Timedelta(0)
     assert list(new_channel.get_data().time_index) == [
-        pd.Timestamp("2020-02-02 12:00:00") + pd.Timedelta(hours=i * 0.5) for i in range(-2, 4)
+        pd.Timestamp("2020-02-02 12:00:00") + pd.Timedelta(hours=i * 0.5)
+        for i in range(-2, 4)
     ]
 
 
@@ -493,20 +498,21 @@ def test_label_creation():
     assert label.time_start is None
     assert label.offset.total_seconds() == 0
 
+
 def test_label_creation_with_empty_data():
     label = Label(
-        name="Anesthesia", 
-        time_index=[], 
-        data=[], 
-        plotstyle={"linestyle": "--", "marker": None, "color": "teal"}
+        name="Anesthesia",
+        time_index=[],
+        data=[],
+        plotstyle={"linestyle": "--", "marker": None, "color": "teal"},
     )
     assert label.name == "Anesthesia"
-    assert len(label) == 0 
+    assert len(label) == 0
     label_dict = label.to_dict()
     expected_dict = {
         "name": "Anesthesia",
-        "time_index": np.array([]),   
-        "time_unit": "s",   
+        "time_index": np.array([]),
+        "time_unit": "s",
         "time_start": None,
         "offset": 0,
         "is_interval": False,
@@ -514,15 +520,15 @@ def test_label_creation_with_empty_data():
         "data": None,
         "plotstyle": {
             "linestyle": "--",
-            "marker": None, 
-            "color": "teal",    
-        },  
+            "marker": None,
+            "color": "teal",
+        },
         "plot_type": "combined",
         "vline_text_source": "text_data",
         "metadata": {},
     }
     np.testing.assert_equal(label_dict, expected_dict)
-    
+
 
 def test_label_creation_errors():
     with pytest.raises(
@@ -680,8 +686,7 @@ def test_interval_label_creation():
 
 def test_interval_label_creation_with_tuples():
     label = IntervalLabel(
-        name="test",
-        time_index=[("0s", "1s"), ("10s", "11s"), ("20s", "21s")]
+        name="test", time_index=[("0s", "1s"), ("10s", "11s"), ("20s", "21s")]
     )
     assert len(label) == 3
 
@@ -723,25 +728,28 @@ def test_interval_label_get_data():
         pd.Timestamp(stmp) for stmp in ["2020-02-03 14:42:00", "2020-02-03 18:00:00"]
     )
 
+
 def test_interval_label_to_dict_and_from_dict():
     # Create an IntervalLabel instance
     label = IntervalLabel(
         name="Test Interval",
-        time_index=np.array([
-            pd.Timestamp("2020-02-02 12:00:00"),
-            pd.Timestamp("2020-02-02 12:45:00"),
-            pd.Timestamp("2020-02-03 14:42:00"),
-            pd.Timestamp("2020-02-03 18:00:00"),
-            pd.Timestamp("2020-02-03 18:42:00"),
-            pd.Timestamp("2020-02-03 19:00:57"),                             
-        ]),
+        time_index=np.array(
+            [
+                pd.Timestamp("2020-02-02 12:00:00"),
+                pd.Timestamp("2020-02-02 12:45:00"),
+                pd.Timestamp("2020-02-03 14:42:00"),
+                pd.Timestamp("2020-02-03 18:00:00"),
+                pd.Timestamp("2020-02-03 18:42:00"),
+                pd.Timestamp("2020-02-03 19:00:57"),
+            ]
+        ),
         data=np.array([10, 20, 30]),
-        text_data=[None,"a", None],
+        text_data=[None, "a", None],
         time_unit="s",
         offset=0,
         plotstyle={"color": "red"},
         metadata={"foo": "bar"},
-        plot_type="box"
+        plot_type="box",
     )
 
     # Serialize to dict
@@ -798,6 +806,7 @@ def test_add_and_remove_channel(data_time_2ecg):
     channels = collection.channels
     assert [channel.name for channel in channels] == ["ECG 2"]
 
+
 def test_collection_incompatible_time_types():
     time = np.arange(0, 1, 0.1)
     channel1 = Channel(name="ECG 1", time_index=time, data=np.sin(2 * np.pi * time))
@@ -840,7 +849,12 @@ def test_collection_with_local_and_global_labels():
     channel.attach_label(new_label)
     assert len(collection.local_labels) == 2
     labels = collection.labels
-    assert [label.name for label in labels] == ["global 1", "global 2", "local 1", "local 2"]
+    assert [label.name for label in labels] == [
+        "global 1",
+        "global 2",
+        "local 1",
+        "local 2",
+    ]
 
     collection.remove_label(name="global 1")
     assert len(collection.global_labels) == 1
@@ -908,7 +922,9 @@ def test_collection_detach_label_from_channel():
     assert label1.anchored_channel is None
     assert label1 in collection.global_labels
 
-    collection.detach_label_from_channel(label=label2, channel=channel, reattach_as_global=False)
+    collection.detach_label_from_channel(
+        label=label2, channel=channel, reattach_as_global=False
+    )
     assert label2 not in channel.labels
     assert len(collection.local_labels) == 1
     assert label2.anchored_channel is None
@@ -1187,7 +1203,10 @@ def test_serialization():
     assert collection.channel_data_hash() == cloned_collection.channel_data_hash()
     collection_labels = collection.labels
     cloned_collection_labels = cloned_collection.labels
-    assert [label.name for label in collection_labels] == [label.name for label in cloned_collection_labels]
+    assert [label.name for label in collection_labels] == [
+        label.name for label in cloned_collection_labels
+    ]
+
 
 def test_to_csv(tmpdir):
     collection = get_random_collection(
@@ -1213,11 +1232,11 @@ def test_to_csv(tmpdir):
     assert len(files_labels) == num_labels
 
     for export_chan in Path(tmpdir).glob("*_channel.csv"):
-        df=pd.read_csv(export_chan, index_col=0)
+        df = pd.read_csv(export_chan, index_col=0)
         chan_name = export_chan.stem.split("_channel")[0]
-        assert df.shape[0] == len(collection.get_channel(chan_name).time_index)  
+        assert df.shape[0] == len(collection.get_channel(chan_name).time_index)
 
     for export_label in Path(tmpdir).glob("*_label.csv"):
-        df=pd.read_csv(export_label, index_col=0)
+        df = pd.read_csv(export_label, index_col=0)
         lab_name = export_label.stem.split("_label")[0]
         assert df.shape[0] == len(collection.get_label(lab_name).time_index)

@@ -1,7 +1,6 @@
 """Common type aliases used in the package."""
 
 from __future__ import annotations
-from math import e, exp
 
 import pandas as pd
 import numpy as np
@@ -9,11 +8,9 @@ import numpy as np
 from dataclasses import dataclass
 from typing import Any, Union, TypeAlias, Literal, Iterator, TYPE_CHECKING
 
-from dataclasses import dataclass
 
 if TYPE_CHECKING:
     from vitabel import Channel, Label
-    from pandas._libs.tslibs.timedeltas import UnitChoices as TimeUnitChoices
 
 Timedelta: TypeAlias = pd.Timedelta | np.timedelta64
 """Type alias of a time difference / duration."""
