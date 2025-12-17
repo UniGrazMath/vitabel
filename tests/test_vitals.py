@@ -661,6 +661,117 @@ def test_truncate():
     )
 
 
+def test_filter_by_intervallabel_channel():
+    cha = Channel(
+        "Channel1",
+        [
+            "2020-04-13 02:48:00",
+            "2020-04-13 02:50:00",
+            "2020-04-13 02:56:00",
+            "2020-04-13 02:58:00",
+        ],
+        np.array([1, 2, 3, 4]),
+    )
+    lab = IntervalLabel(
+        name="filter label",
+        time_index=[
+            "2020-04-13 02:49:00",
+            "2020-04-13 02:55:00",
+            "2020-04-13 02:57:00",
+            "2020-04-13 03:00:00",
+        ],
+        text_data=["one", "two"],
+        anchored_channel=cha,
+    )
+    case = Vitals()
+    case.add_channel(cha)
+    filtered_channel = case.filter_by_intervallabel(cha, filter_by=lab)
+    data = filtered_channel.get_data()
+    assert len(data.time_index) == 2
+    assert np.all(pd.Timestamp("2020-04-13 02:49:00") <= data.time_index)
+    assert np.all(pd.Timestamp("2020-04-13 03:00:00") >= data.time_index)
+
+
+def test_filter_by_intervallabel_intervals():
+    case_intervals = IntervalLabel(
+        name="case intervals",
+        time_index=[
+            "2020-04-13 02:48:00",
+            "2020-04-13 02:50:00",
+            "2020-04-13 02:56:00",
+            "2020-04-13 02:58:00",
+            "2020-04-13 03:00:00",
+            "2020-04-13 03:02:00",
+        ],
+        data=[10, 20, 30],
+        text_data=["a", "b", "c"],
+    )
+    filter_intervals = IntervalLabel(
+        name="filter intervals",
+        time_index=[
+            "2020-04-13 02:49:00",
+            "2020-04-13 02:55:00",
+            "2020-04-13 03:00:00",
+            "2020-04-13 03:03:00",
+        ],
+    )
+    case = Vitals()
+    case.add_global_label(case_intervals)
+    filtered_intervals_overlap = case.filter_by_intervallabel(
+        case_intervals, filter_by=filter_intervals
+    )
+    assert len(filtered_intervals_overlap) == 2
+    data = filtered_intervals_overlap.get_data()
+    np.testing.assert_equal(
+        data.time_index,
+        pd.DatetimeIndex(
+            [
+                "2020-04-13 02:48:00",
+                "2020-04-13 02:50:00",
+                "2020-04-13 03:00:00",
+                "2020-04-13 03:02:00",
+            ]
+        )
+        .to_numpy()
+        .reshape(-1, 2),
+    )
+    assert list(data.data) == [10, 30]
+    assert list(data.text_data) == ["a", "c"]
+
+    filtered_intervals_covered = case.filter_by_intervallabel(
+        case_intervals,
+        filter_by=filter_intervals,
+        full_cover=True,
+    )
+    assert len(filtered_intervals_covered) == 1
+    data = filtered_intervals_covered.get_data()
+    np.testing.assert_equal(
+        data.time_index,
+        pd.DatetimeIndex(
+            [
+                "2020-04-13 03:00:00",
+                "2020-04-13 03:02:00",
+            ]
+        )
+        .to_numpy()
+        .reshape(-1, 2),
+    )
+    assert list(data.data) == [30]
+    assert list(data.text_data) == ["c"]
+
+    filtered_intervals_empty = case.filter_by_intervallabel(
+        case_intervals,
+        filter_by=filter_intervals,
+        full_cover=True,
+        start_inclusive=False,
+    )
+    assert len(filtered_intervals_empty) == 0
+    data = filtered_intervals_empty.get_data()
+    assert len(data.time_index) == 0
+    assert len(data.data) == 0
+    assert len(data.text_data) == 0
+
+
 def test_saving_and_loading(tmpdir):
     cha = Channel(
         "Channel1",

@@ -2318,6 +2318,7 @@ class IntervalLabel(Label):
                 time_data_end, include_start=include_start, include_end=include_end
             )
 
+        contained_mask = np.full(time_data.shape, False, dtype=bool)
         for start, end in self.intervals:
             contained_mask |= start_cmp(time_data, start) & end_cmp(time_data, end)
         return contained_mask

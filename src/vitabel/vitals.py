@@ -3584,10 +3584,8 @@ class Vitals:
         if invert:
             filter_mask = ~filter_mask
 
-        if isinstance(channel_or_label_to_filter, IntervalLabel):
-            filtered_time_index = object_data.time_index[np.repeat(filter_mask, 2)]
-        else:
-            filtered_time_index = object_data.time_index[filter_mask]
+        filtered_time_index = object_data.time_index[filter_mask]
+        filtered_time_index = filtered_time_index.ravel()
 
         # Filter the given Channel or Label
         TS = TimeSeriesBase(filtered_time_index - channel_or_label_to_filter.offset)
