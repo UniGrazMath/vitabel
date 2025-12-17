@@ -1251,7 +1251,7 @@ def resample_to_common_index(
     Notes
     -----
     Zero-crossings are inserted to improve alignment, especially for
-    oscillatory signals.
+    strongly oscillating signals.
 
     """
     series_list = []
@@ -1435,8 +1435,6 @@ def find_ROSC_2(rosctime, roscdata, CC_starts, CC_stops):
                 ]
             )
 
-        # print(D1.rec_start() + pd.Timedelta(analysis_interval[0], unit = 'ms'),D1.rec_start() + pd.Timedelta(analysis_interval[1], unit = 'ms'))
-        # print(i, final_flag,D1.rec_start() + pd.Timedelta(CC_stops[i], unit = 'ms'),prob)
         if prob > 0.4:
             roscs.append(CC_stops[i])
             i += 1
