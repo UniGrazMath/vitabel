@@ -2258,6 +2258,70 @@ class IntervalLabel(Label):
 
         return
 
+    def contains_time(
+        self,
+        time_data: npt.ArrayLike | Timestamp | Timedelta,
+        include_start: bool = True,
+        include_end: bool = True,
+        interval_require_full_containment: bool = False,
+    ) -> npt.NDArray[np.bool_]:
+        """Check which of the specified timestamps or timedeltas are
+        contained in any of the intervals of the label.
+
+        If the specified time data is provided in a array of shape ``(n, 2)``,
+        each row is interpreted as a start and end point of a time interval,
+        and the containment check is performed for the entire interval.
+
+        Parameters
+        ----------
+        time_data
+            A list of timestamps or timedeltas, or an array with time interval
+            endpoints to be checked.
+        include_start
+            If ``True``, the start point of each interval is considered
+            to be contained in the interval. Defaults to ``True``.
+        include_end
+            If ``True``, the end point of each interval is considered
+            to be contained in the interval. Defaults to ``True``.
+        interval_require_full_containment
+            If ``True``, the specified time intervals are only considered
+            to be contained in the label if they are fully contained
+            in any of the label's intervals. Defaults to ``False``.
+            Only has an effect if interval data is provided to ``time_data``.
+
+        Returns
+        -------
+        A boolean array indicating for each of the specified time points
+        whether it is contained in any of the intervals of the label.
+        """
+
+        time_data = np.array(time_data)
+        start_cmp = np.greater_equal if include_start else np.greater
+        end_cmp = np.less_equal if include_end else np.less
+
+        if time_data.ndim == 2 and time_data.shape[1] == 2:
+            # time interval data provided
+            time_data_start = time_data[:, 0]
+            time_data_end = time_data[:, 1]
+            contained_mask = np.full(time_data_start.shape, False, dtype=bool)
+
+            if interval_require_full_containment:
+                for start, end in self.intervals:
+                    contained_mask |= start_cmp(time_data_start, start) & end_cmp(
+                        time_data_end, end
+                    )
+                return contained_mask
+
+            return self.contains_time(
+                time_data_start, include_start=include_start, include_end=include_end
+            ) | self.contains_time(
+                time_data_end, include_start=include_start, include_end=include_end
+            )
+
+        for start, end in self.intervals:
+            contained_mask |= start_cmp(time_data, start) & end_cmp(time_data, end)
+        return contained_mask
+
     def plot(
         self,
         plot_axes: plt.Axes | None = None,

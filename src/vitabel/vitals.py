@@ -3518,6 +3518,9 @@ class Vitals:
     ) -> Channel | Label:
         """Filters a channel or label by a given interval label.
 
+        This creates a new channel or label containing only the data points
+        that fall within the intervals specified in the given interval label.
+
         Parameters
         ----------
         channel_or_label_to_filter
@@ -3556,11 +3559,6 @@ class Vitals:
                 f"The specified filter_by {filter_by} is not an IntervalLabel"
             )
 
-        # Determine whether we are filtering timestamps (Channel or Label)
-        # or intervals (IntervalLabel)
-        timestamps_to_filter = not isinstance(channel_or_label_to_filter, IntervalLabel)
-        is_label = isinstance(channel_or_label_to_filter, Label)
-
         # Get timestamps and the data of the channel or label
         channel_or_label_to_filter = deepcopy(channel_or_label_to_filter)
 
@@ -3568,107 +3566,40 @@ class Vitals:
         if len(channel_or_label_to_filter) == 0:
             return channel_or_label_to_filter
 
-        time_index = channel_or_label_to_filter.get_data().time_index
-        data = (
-            channel_or_label_to_filter.get_data().data.copy()
-            if channel_or_label_to_filter.get_data().data is not None
-            else np.array([])
-        )
-        text_data = (
-            channel_or_label_to_filter.get_data().text_data
-            if channel_or_label_to_filter.get_data().text_data is not None
-            else np.array([])
-        )
+        object_data = channel_or_label_to_filter.get_data()
+        if isinstance(channel_or_label_to_filter, IntervalLabel):
+            filter_mask = filter_by.contains_time(
+                channel_or_label_to_filter.intervals,
+                include_start=start_inclusive,
+                include_end=end_inclusive,
+                interval_require_full_containment=full_cover,
+            )
+        else:
+            filter_mask = filter_by.contains_time(
+                object_data.time_index.to_numpy(),
+                include_start=start_inclusive,
+                include_end=end_inclusive,
+            )
 
-        # build a mask for filtering
-        intervals = filter_by.get_data().time_index
-        start = intervals[:, 0]
-        stop = intervals[:, 1]
+        if invert:
+            filter_mask = ~filter_mask
 
-        if timestamps_to_filter:  # Channel or Label
-            timestamps_to_filter = time_index.to_numpy()
-
-            if start_inclusive:
-                condition_start = timestamps_to_filter[:, None] >= start
-            else:
-                condition_start = timestamps_to_filter[:, None] > start
-
-            if end_inclusive:
-                condition_end = timestamps_to_filter[:, None] <= stop
-            else:
-                condition_end = timestamps_to_filter[:, None] < stop
-
-            mask = (condition_start & condition_end).any(axis=1)
-
-            if invert:
-                mask = ~mask
-
-            masked_index = time_index[mask]
-
-        else:  # IntervalLabel
-            intervals_to_filter = time_index
-
-            intervals_to_filter_start = intervals_to_filter[:, 0]
-            intervals_to_filter_end = intervals_to_filter[:, 1]
-
-            # A is the Interval to filter by B
-            if full_cover:
-                if start_inclusive and end_inclusive:
-                    # require full containment of A in some B, including touching borders
-                    mask = (
-                        (intervals_to_filter_start[:, None] >= start)
-                        & (intervals_to_filter_end[:, None] <= stop)
-                    ).any(axis=1)
-                elif start_inclusive and not end_inclusive:
-                    # require full containment of A in some B, including touching start border
-                    mask = (
-                        (intervals_to_filter_start[:, None] >= start)
-                        & (intervals_to_filter_end[:, None] < stop)
-                    ).any(axis=1)
-                elif not start_inclusive and end_inclusive:
-                    # require full containment of A in some B, including touching end border
-                    mask = (
-                        (intervals_to_filter_start[:, None] > start)
-                        & (intervals_to_filter_end[:, None] <= stop)
-                    ).any(axis=1)
-
-            else:  # any overlap
-                if start_inclusive and end_inclusive:
-                    # require any overlap between A and some B, including touching borders
-                    mask = (
-                        (intervals_to_filter_start[:, None] <= stop)
-                        & (intervals_to_filter_end[:, None] >= start)
-                    ).any(axis=1)
-                elif start_inclusive and not end_inclusive:
-                    # require any overlap between A and some B, including touching start border
-                    mask = (
-                        (intervals_to_filter_start[:, None] < stop)
-                        & (intervals_to_filter_end[:, None] >= start)
-                    ).any(axis=1)
-                elif not start_inclusive and end_inclusive:
-                    # require any overlap between A and some B, including touching end border
-                    mask = (
-                        (intervals_to_filter_start[:, None] <= stop)
-                        & (intervals_to_filter_end[:, None] > start)
-                    ).any(axis=1)
-
-            if invert:
-                mask = ~mask
-
-            masked_index = time_index[mask]
-            masked_index = masked_index.ravel()
+        if isinstance(channel_or_label_to_filter, IntervalLabel):
+            filtered_time_index = object_data.time_index[np.repeat(filter_mask, 2)]
+        else:
+            filtered_time_index = object_data.time_index[filter_mask]
 
         # Filter the given Channel or Label
-
-        TS = TimeSeriesBase(masked_index - channel_or_label_to_filter.offset)
+        TS = TimeSeriesBase(filtered_time_index - channel_or_label_to_filter.offset)
         new_index = TS.time_index
         new_start = TS.time_start
         channel_or_label_to_filter.time_index = new_index
         channel_or_label_to_filter.time_start = new_start
-        channel_or_label_to_filter.data = data[mask] if len(data) > 0 else None
-        if is_label:
-            channel_or_label_to_filter.text_data = (
-                text_data[mask] if len(text_data) > 0 else None
-            )
+
+        if object_data.data is not None and len(object_data.data) > 0:
+            channel_or_label_to_filter.data = object_data.data[filter_mask]
+
+        if object_data.text_data is not None and len(object_data.text_data) > 0:
+            channel_or_label_to_filter.text_data = object_data.text_data[filter_mask]
 
         return channel_or_label_to_filter
