@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pandas as pd
 import numpy as np
+import numpy.typing as npt
 
 from dataclasses import dataclass
 from typing import Any, Union, TypeAlias, Literal, Iterator, TYPE_CHECKING
@@ -92,15 +93,15 @@ class DataSlice:
     Primarily used in the various ``get_data`` methods.
     """
 
-    time_index: pd.DatetimeIndex | pd.TimedeltaIndex | np.typing.NDArray
+    time_index: pd.DatetimeIndex | pd.TimedeltaIndex | npt.NDArray
     """The time index of the selected data range."""
 
-    data: np.typing.NDArray | None = None
+    data: npt.NDArray | None = None
     """The data of the selected data range, or ``None`` if no data
     is available.
     """
 
-    text_data: np.typing.NDArray | None = None
+    text_data: npt.NDArray | None = None
     """The text data of the selected data range, or ``None`` if no text data
     is available.
     """
@@ -142,10 +143,10 @@ class PhaseData:
 
     """
 
-    onsets_above_threshold: np.typing.NDArray
-    filtered_onsets_above_threshold: np.typing.NDArray
-    candidates: np.typing.NDArray
-    begins: np.typing.NDArray
+    onsets_above_threshold: npt.NDArray
+    filtered_onsets_above_threshold: npt.NDArray
+    candidates: npt.NDArray
+    begins: npt.NDArray
     intervals: list[tuple[pd.Timestamp, pd.Timestamp]]
     threshold: float
 
