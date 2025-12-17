@@ -28,12 +28,16 @@ LabelSpecification: TypeAlias = Union[str, dict[str, Any], "Label"]
 """Type alias for different ways to specify a Label."""
 
 LabelPlotType: TypeAlias = Literal["scatter", "vline", "combined"]
-LabelPlotVLineTextSource: TypeAlias = Literal["data", "text_data", "combined", "disabled"]
+LabelPlotVLineTextSource: TypeAlias = Literal[
+    "data", "text_data", "combined", "disabled"
+]
 
 IntervalLabelPlotType: TypeAlias = Literal["box", "hline", "combined"]
 # IntervalLabelPlotVLineTextSource: TypeAlias = Literal["data", "text_data", "combined", "disabled"] #TODO: yet not implemented
 
-LabelAnnotationPresetType: TypeAlias = Literal["timestamp", "numerical", "textual", "combined"]
+LabelAnnotationPresetType: TypeAlias = Literal[
+    "timestamp", "numerical", "textual", "combined"
+]
 
 
 @dataclass
@@ -47,7 +51,7 @@ class EOLifeRecord:
 @dataclass
 class Metric:
     """Auxiliary dataclass used to store (numeric) values and their unit.
-    
+
     Parameters
     ----------
     value
@@ -55,6 +59,7 @@ class Metric:
     unit
         String representation of the unit of the stored value.
     """
+
     value: float
     unit: str
 
@@ -76,6 +81,7 @@ class ThresholdMetrics:
     observational_interval_duration
         Time interval length from first last recording.
     """
+
     area_under_threshold: Metric
     duration_under_threshold: pd.Timedelta
     time_weighted_average_under_threshold: Metric
@@ -85,7 +91,7 @@ class ThresholdMetrics:
 @dataclass
 class DataSlice:
     """Auxiliary dataclass holding a slice of data from a label or channel.
-    
+
     Primarily used in the various ``get_data`` methods.
     """
 
@@ -101,17 +107,18 @@ class DataSlice:
     """The text data of the selected data range, or ``None`` if no text data
     is available.
     """
-    
+
     def __len__(self) -> int:
         return len(self.time_index)
-    
+
     def __iter__(self) -> Iterator:
         return iter((self.time_index, self.data, self.text_data))
+
 
 @dataclass
 class PhaseData:
     """Data for a single respiratory phase (inspiration or expiration).
-    
+
     Parameters
     ----------
     onsets_above_threshold
@@ -137,12 +144,14 @@ class PhaseData:
         The threshold value used to detect inspiration phases.
 
     """
+
     onsets_above_threshold: np.typing.NDArray
     filtered_onsets_above_threshold: np.typing.NDArray
     candidates: np.typing.NDArray
     begins: np.typing.NDArray
     intervals: list[tuple[pd.Timestamp, pd.Timestamp]]
     threshold: float
+
 
 @dataclass
 class RespPhases:
@@ -155,5 +164,6 @@ class RespPhases:
     expiration
         All expiration-related phase data.
     """
+
     inspiration: PhaseData
     expiration: PhaseData

@@ -11,9 +11,7 @@ import logging
 import vitabel
 import vitabel.utils as utils
 
-from vitabel.typing import (
-    EOLifeRecord
-)
+from vitabel.typing import EOLifeRecord
 
 from pathlib import Path
 from scipy.stats import mode
@@ -2147,8 +2145,10 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
                 starttime = pd.Timestamp(event.find("AdjustedTime").text)
         device_container = root.find("Device")
         serial = device_container.find("SerialNumber").text
-        device_description = device_container.find("DeviceDescription").text #should be LP15XXXX
-        model = device_container.find("Model").text #should be LP15
+        device_description = device_container.find(
+            "DeviceDescription"
+        ).text  # should be LP15XXXX
+        model = device_container.find("Model").text  # should be LP15
 
     # Make one reading function which loads for fielnames and pcstr, try different pctry via try except
     rec_start = ""
@@ -2506,7 +2506,9 @@ def read_lucas(f_luc: Path, f_cpre: Path):
             rec_stop = pd.Timestamp(event.find("AdjustedTime").text)
     device_container = root.find("Device")
     serial = device_container.find("SerialNumber").text
-    model = device_container.find("DeviceDescription").text.split("-")[0] # should be Lucas3
+    model = device_container.find("DeviceDescription").text.split("-")[
+        0
+    ]  # should be Lucas3
 
     event_container = root2.find("Events")
     events = event_container.findall("Event")
@@ -2606,7 +2608,9 @@ def read_corpuls(f_corpuls):  # Read Corpuls Data
 
     for k, channel in enumerate(all_channels):  # iterate htrough all channels
         key = channel["label"]
-        sample_rate = next(channel[k] for k in ("sample_rate", "sample_frequency") if k in channel)
+        sample_rate = next(
+            channel[k] for k in ("sample_rate", "sample_frequency") if k in channel
+        )
         dt = 1 / sample_rate
         unit = channel["dimension"]
         data = f.readSignal(k)
@@ -2914,7 +2918,7 @@ def read_eolife_export(eolife_filepath: Path) -> EOLifeRecord:
         header=0,
         nrows=1,
         encoding="latin1",
-        na_values=["NA","Na"],
+        na_values=["NA", "Na"],
         usecols=[
             "Date",
             "Time",
@@ -2924,14 +2928,13 @@ def read_eolife_export(eolife_filepath: Path) -> EOLifeRecord:
             "Training",
             "FrequencyMode",
             "Leakage alarm",
-            "EOlife"
+            "EOlife",
         ],
         dtype=str,
     )
 
     header_info["recording_start"] = pd.to_datetime(
-        header_info["Date"] + " " + header_info["Time"],
-        format="%d/%m/%y %H:%M:%S"
+        header_info["Date"] + " " + header_info["Time"], format="%d/%m/%y %H:%M:%S"
     )
 
     header_info.drop(columns=["Date", "Time"], inplace=True)
@@ -2939,29 +2942,33 @@ def read_eolife_export(eolife_filepath: Path) -> EOLifeRecord:
         columns={
             "EOlife": "serial_number",
         },
-        inplace=True
+        inplace=True,
     )
 
     recording_start = header_info["recording_start"].iloc[0]
-    metadata = header_info[
-        [
-            "Patient Type",
-            "Patient Size",
-            "Mode",
-            "Training",
-            "FrequencyMode",
-            "Leakage alarm",
+    metadata = (
+        header_info[
+            [
+                "Patient Type",
+                "Patient Size",
+                "Mode",
+                "Training",
+                "FrequencyMode",
+                "Leakage alarm",
+            ]
         ]
-    ].iloc[0].to_dict()
-    
+        .iloc[0]
+        .to_dict()
+    )
+
     df_data = pd.read_csv(
-        eolife_filepath, 
-        sep=";", 
-        decimal=",", 
-        skiprows=3, 
+        eolife_filepath,
+        sep=";",
+        decimal=",",
+        skiprows=3,
         header=0,
         encoding="latin1",
-        na_values=["NA","Na"],
+        na_values=["NA", "Na"],
         usecols=[
             "Cycle number",
             "Time (hh:mm:ss:SS)",
@@ -2972,7 +2979,7 @@ def read_eolife_export(eolife_filepath: Path) -> EOLifeRecord:
             "Vi (mL)",
             "Vt (mL)",
             "Leakage (mL)",
-            "Leakage ratio (%)"
+            "Leakage ratio (%)",
         ],
         dtype={
             "Cycle number": int,
@@ -2986,7 +2993,9 @@ def read_eolife_export(eolife_filepath: Path) -> EOLifeRecord:
             "Leakage (mL)": "Int64",
         },
         converters={
-            "Leakage ratio (%)": lambda x: float(x) / 100 if x not in ["Na", "NA"] else None
+            "Leakage ratio (%)": lambda x: float(x) / 100
+            if x not in ["Na", "NA"]
+            else None
         },
     )
 
@@ -3011,7 +3020,7 @@ def read_eolife_export(eolife_filepath: Path) -> EOLifeRecord:
 
     for col in df_data.columns:
         if "(" in col and ")" in col:
-            name_part = col[:col.find("(")].strip()
+            name_part = col[: col.find("(")].strip()
             unit_part = col[col.find("(") + 1 : col.find(")")].strip()
             rename_dict[col] = name_part
             units_dict[name_part] = unit_part
@@ -3042,33 +3051,44 @@ def _track_to_timeseries(
     vit
         The vitaldb dataset to extract the track from.
     track_name
-        The name of the track to extract.   
+        The name of the track to extract.
     """
     if not isinstance(vit, VitalFile):
         raise ValueError("Not a vitals file.")
     if track_name not in vit.get_track_names():
         raise ValueError(f"'{track_name}' is not a track in the given vitals file.")
-        
-    (ti, dt), *_ = vit.get_samples(track_names=track_name, interval=None, return_datetime=False, return_timestamp=True)
+
+    (ti, dt), *_ = vit.get_samples(
+        track_names=track_name,
+        interval=None,
+        return_datetime=False,
+        return_timestamp=True,
+    )
     unix_start = vit.dtstart
     rec_start = datetime.fromtimestamp(unix_start)
     ti = ti - unix_start
-    
+
     trk = vit.find_track(dtname=track_name)
     name = trk.name
     source_name = trk.dname
-    metadata.update({
-        "source_device" : trk.dname,
-        "source_details" : {"source_type" : vit.devs.get(source_name,Device("")).type,
-                            "source_port" : vit.devs.get(source_name,Device("")).port},
-        "units" : trk.unit,
-        "recording_details" : {"sampel_rate" : trk.srate,
-                            "offset" : trk.offset,
-                            "gain" : trk.gain},
-    })
+    metadata.update(
+        {
+            "source_device": trk.dname,
+            "source_details": {
+                "source_type": vit.devs.get(source_name, Device("")).type,
+                "source_port": vit.devs.get(source_name, Device("")).port,
+            },
+            "units": trk.unit,
+            "recording_details": {
+                "sampel_rate": trk.srate,
+                "offset": trk.offset,
+                "gain": trk.gain,
+            },
+        }
+    )
     plotstyle = utils.helpers._argb_int_to_plotstyle(trk.col)
 
-    if trk.type in {1,2}: # 1: wav, 2: numerical (vitaldb specification)
+    if trk.type in {1, 2}:  # 1: wav, 2: numerical (vitaldb specification)
         mask = ~pd.isna(dt)
         return vitabel.Channel(
             name=name,
@@ -3077,9 +3097,9 @@ def _track_to_timeseries(
             time_start=rec_start,
             time_unit="s",
             plotstyle=plotstyle,
-            metadata=metadata
+            metadata=metadata,
         )
-    elif trk.type == 5: #5: str (vitaldb specification)
+    elif trk.type == 5:  # 5: str (vitaldb specification)
         mask = ~pd.isna(dt)
         return vitabel.Label(
             name=name,
@@ -3088,7 +3108,6 @@ def _track_to_timeseries(
             time_start=rec_start,
             time_unit="s",
             plotstyle=plotstyle,
-            metadata=metadata
+            metadata=metadata,
         )
     return None
-

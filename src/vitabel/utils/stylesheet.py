@@ -192,7 +192,7 @@ DEFAULT_PLOT_STYLE = {
         "linestyle": "",
         "marker": "s",
         "ms": 2,
-        "label": "etCO₂"
+        "label": "etCO₂",
     },
     "ventilations_from_capnography": {
         "label": "Ventilation (Capnography)",
@@ -207,11 +207,11 @@ DEFAULT_PLOT_STYLE = {
         "color": "green",
         "alpha": 0.6,
     },
-    "PAP" : {
-        "label" : "Pulmonary Artery",
-        'linestyle' : '-' ,
-        'marker' : '',
-        'color' : '#FFD700',
+    "PAP": {
+        "label": "Pulmonary Artery",
+        "linestyle": "-",
+        "marker": "",
+        "color": "#FFD700",
     },
     "cc_period_start": {
         "label": "CC Period Start",
@@ -223,17 +223,13 @@ DEFAULT_PLOT_STYLE = {
         "color": "firebrick",
         "alpha": 0.6,
     },
-    "cc_periods" : {
-        "label" : "CC Periods",
-        "color" : "lightsteelblue",
-        "alpha" : 0.6
-    },
+    "cc_periods": {"label": "CC Periods", "color": "lightsteelblue", "alpha": 0.6},
     "Inspiration": {
         "color": "cyan",
         "label": "Inspiratory Phase",
         "alpha": 0.1,
     },
-        "Expiration": {
+    "Expiration": {
         "color": "darkorange",
         "label": "Expiratory Phase",
         "alpha": 0.1,
@@ -243,14 +239,14 @@ DEFAULT_PLOT_STYLE = {
         "label": "Inspiration Start",
         "alpha": 0.6,
         "linewidth": 1,
-        "linestyle": (0, (3, 1, 1, 1))
+        "linestyle": (0, (3, 1, 1, 1)),
     },
     "Expiration Begin": {
         "color": "darkorange",
         "label": "Expiration Start",
         "alpha": 0.6,
         "linewidth": 1,
-        "linestyle": (0, (3, 1, 1, 1))
+        "linestyle": (0, (3, 1, 1, 1)),
     },
     "Flow Interpolated": {
         "color": "darkblue",

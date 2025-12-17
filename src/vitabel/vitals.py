@@ -14,7 +14,7 @@ import scipy.signal as sgn
 import logging
 
 import vitaldb
-from collections  import defaultdict
+from collections import defaultdict
 from copy import deepcopy
 from typing import Any, Literal
 
@@ -45,7 +45,7 @@ from vitabel.utils import (
     gaussian_kernel_regression_point,
     CCF_minute,
     find_ROSC_2,
-    convert_two_alternating_list
+    convert_two_alternating_list,
 )
 from vitabel.utils import DEFAULT_PLOT_STYLE
 from vitabel.typing import (
@@ -322,7 +322,7 @@ class Vitals:
                     self.data.add_channel(chan)
 
         self.metadata["Recording_files_added"].append(str(filepath))
-    
+
     def add_ventilatory_feedback(
         self,
         filepath: Path | str,
@@ -331,7 +331,7 @@ class Vitals:
         """Add ventilatory feedback from a given data source.
 
         Currently only EOlife export files (exported CSV files) are supported.
-        
+
         Parameters
         ----------
         filepath
@@ -342,19 +342,19 @@ class Vitals:
         """
         if metadata is None:
             metadata = {}
-        eolife_export=loading.read_eolife_export(filepath)
+        eolife_export = loading.read_eolife_export(filepath)
         self.add_data_from_DataFrame(
-            source = eolife_export.data, 
-            time_start = eolife_export.recording_start, 
-            datatype = "channel",
-            metadata = metadata | eolife_export.metadata,
-            column_metadata = eolife_export.column_metadata
+            source=eolife_export.data,
+            time_start=eolife_export.recording_start,
+            datatype="channel",
+            metadata=metadata | eolife_export.metadata,
+            column_metadata=eolife_export.column_metadata,
         )
 
     def add_vital_db_recording(
         self,
         filepath: Path | str,
-        metadata : dict[str, Any] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """Loading channels and labels from a vitalDB recording.
 
@@ -369,7 +369,7 @@ class Vitals:
         if isinstance(filepath, str):
             filepath = Path(filepath)
         if not filepath.exists():
-            raise ValueError (f"The path '{filepath}' does not exist.")
+            raise ValueError(f"The path '{filepath}' does not exist.")
         vit = vitaldb.VitalFile(str(filepath))
 
         timeseries_list = [  # convert all tracks in Channel or Label
@@ -390,23 +390,23 @@ class Vitals:
         # rule 2: for labels not attached by the previous rule, if the trailing label_name string matches several chanel_names substrings it will be attached to each of them
         # rule 3: all remaing will be added as global label
         split_label_names = {
-            ln: ln.rsplit('_', 1)[0] if '_' in ln else ln
+            ln: ln.rsplit("_", 1)[0] if "_" in ln else ln
             for ln in [label.name for label in labels]
         }
 
         split_channel_names = defaultdict(set)
         for cn in self.get_channel_names():
-            prefix = cn.rsplit('_', 1)[0] if '_' in cn else cn
+            prefix = cn.rsplit("_", 1)[0] if "_" in cn else cn
             split_channel_names[prefix].add(cn)
-        
+
         for label in labels:  # rule 1
             short_ln = split_label_names[label.name]
             if short_ln in self.get_channel_names():
-                label.rename(label.name.rsplit("_",1)[1])
+                label.rename(label.name.rsplit("_", 1)[1])
                 for channel in self.get_channels(short_ln):
                     channel.attach_label(label)
             elif short_ln in split_channel_names:  # rule 2
-                label.rename(label.name.rsplit("_",1)[1])
+                label.rename(label.name.rsplit("_", 1)[1])
                 for channel_name in split_channel_names[short_ln]:
                     for channel in self.get_channels(channel_name):
                         channel.attach_label(label)
@@ -414,7 +414,6 @@ class Vitals:
                 self.add_global_label(label)
 
         self.metadata["Recording_files_added"].append(str(filepath))
-
 
     def add_old_cardio_label(self, filepath: Path | str) -> None:
         """Add labels from legacy version of this package.
@@ -441,10 +440,11 @@ class Vitals:
                         "data": None,
                     }
             for label in ann_dict["One-Annotator"]:
-                if label != "ZOLL CCF": 
+                if label != "ZOLL CCF":
                     if label in label_dict:
                         label_dict[label]["timestamp"] = np.append(
-                            label_dict[label]["timestamp"], ann_dict["One-Annotator"][label]
+                            label_dict[label]["timestamp"],
+                            ann_dict["One-Annotator"][label],
                         )
                     else:
                         label_dict[label] = {
@@ -470,7 +470,7 @@ class Vitals:
                     compression_channel = self.data.get_channel("cc")
                 elif "cc_depth" in self.data.channel_names:
                     compression_channel = self.data.get_channel("cc_depth")
-                else: 
+                else:
                     compression_channel = None
                 self.add_data_from_dict(
                     compression_dict[annotator],
@@ -529,7 +529,6 @@ class Vitals:
         self,
         source: dict[str, Any],
         name: str,
-    
         time_start=None,
         datatype: Literal["channel", "label", "interval_label"] = "channel",
         anchored_channel: Channel | None = None,
@@ -571,7 +570,7 @@ class Vitals:
                 "The dictionary must contain a 'timestamp' and a 'data' key which contain timestamps and data for this channel. \n \
                              In case of time_only or 'time_interval' channel_types choose 'data' to be an empty list."
             )
-    
+
         if time_start:
             time_start = pd.Timestamp(time_start)
 
@@ -616,7 +615,6 @@ class Vitals:
     def add_data_from_dict(
         self,
         source: dict[str, dict] | Path,
-        
         time_start=None,
         datatype: Literal["channel", "label", "interval_label"] = "channel",
         anchored_channel: Channel | None = None,
@@ -624,7 +622,7 @@ class Vitals:
     ):
         """Add multiple channels from a dictionary.
 
-        Each value must be a dictionary accepted by  
+        Each value must be a dictionary accepted by
         :meth:`._add_single_dict`.
 
         Parameters
@@ -696,8 +694,8 @@ class Vitals:
             A starting time for the data. Must be accepted by pd.Timestamp(time_start)
             In case the index is timedelta or numeric. The times will be interpreted as relative
             to this value. The default is 0 and means no information is given.
-        time_unit   
-            The time unit of the data. Must be accepted by pd.Timestamp(time_unit). 
+        time_unit
+            The time unit of the data. Must be accepted by pd.Timestamp(time_unit).
         datatype
             Either ``'channel'`` or ``'label'`` or ``'interval_label'``, depending
             on which kind of container to construct. The default is ``'channel'``.
@@ -731,7 +729,7 @@ class Vitals:
                 "The DataFrame needs to have a datetime or a numeric index, "
                 "which describes the time of the timeseries."
             )
-        
+
         for col in source.columns:
             series = source[col]
             series = series[series.notna()]
@@ -763,7 +761,9 @@ class Vitals:
                 if anchored_channel is None:
                     self.data.add_global_label(label)
             elif datatype == "interval_label":
-                raise NotImplementedError("Interval labels can currently not be added from DataFrames.")
+                raise NotImplementedError(
+                    "Interval labels can currently not be added from DataFrames."
+                )
 
     def add_data_from_csv(
         self,
@@ -771,18 +771,18 @@ class Vitals:
         time_start=None,
         time_unit=None,
         datatype: Literal["channel", "label", "interval_label"] = "channel",
-        anchored_channel: Channel | None = None,    
+        anchored_channel: Channel | None = None,
         metadata: dict[str, Any] | None = None,
         **kwargs,
     ):
         """Adds data from a CSV file.
 
-        The CSV file must contain a header with the channel names and a 
+        The CSV file must contain a header with the channel names and a
         timestamp column. The data is loaded into a pandas DataFrame and
         passed to the :meth:`add_data_from_DataFrame` method.
 
         Parameters
-        ----------      
+        ----------
         file_path
             The path to the CSV file. The file must contain a header with the channel names
             and a timestamp column.
@@ -790,7 +790,7 @@ class Vitals:
             A starting time for the data. Must be accepted by pd.Timestamp(time_start)
             In case the index is numeric. The times will be interpreted as relative
             to this value. The default is 0 and means no information is given.
-        time_unit   
+        time_unit
             The time unit of the data. Must be accepted by pd.Timestamp(time_unit).
         datatype
             Either ``'channel'`` or ``'label'`` or ``'interval_label'``, depending
@@ -828,7 +828,7 @@ class Vitals:
     # time_unit = time_unit,
     def remove_channel(self, *, channel: Channel | None = None, **kwargs) -> Channel:
         """Remove a channel from the data collection.
-        
+
         Parameters
         ----------
         channel
@@ -839,7 +839,7 @@ class Vitals:
             Keyword arguments to filter the channels by. Passed
             to :meth:`.TimeDataCollection.get_channel`, resulting
             channel needs to be uniquely identified.
-        
+
         Returns
         -------
         Channel
@@ -849,7 +849,7 @@ class Vitals:
 
     def remove_label(self, *, label: Label | None = None, **kwargs) -> Label:
         """Remove a label from the data collection.
-        
+
         Parameters
         ----------
         label
@@ -860,7 +860,7 @@ class Vitals:
             Keyword arguments to filter the channels by. Passed
             to :meth:`.TimeDataCollection.get_label`, resulting
             label needs to be uniquely identified.
-        
+
         Returns
         -------
         Label
@@ -1011,9 +1011,11 @@ class Vitals:
 
         return self.data.get_channel(name, **kwargs)
 
-    def get_labels(self, name: str | None = None, label_type: type[Label] | None = None, **kwargs) -> list[Label]:
+    def get_labels(
+        self, name: str | None = None, label_type: type[Label] | None = None, **kwargs
+    ) -> list[Label]:
         """Returns a list of labels based on their name.
-        
+
         Parameters
         ----------
         name
@@ -1021,7 +1023,7 @@ class Vitals:
         label_type : TYPE, optional
             A specification of the label type (IntervalLabel or Label) to retrieve
         kwargs
-            Keyword arguments to filter the labels by. 
+            Keyword arguments to filter the labels by.
 
         Returns
         -------
@@ -1031,7 +1033,9 @@ class Vitals:
         """
 
         if label_type is not None:
-            return [label for label in self.get_labels(name) if type(label) is label_type]
+            return [
+                label for label in self.get_labels(name) if type(label) is label_type
+            ]
         return self.data.get_labels(name, **kwargs)
 
     def get_label(self, name: str | int | None = None, **kwargs) -> Label:
@@ -1051,11 +1055,11 @@ class Vitals:
         return self.data.get_label(name, **kwargs)
 
     def get_channels_or_labels(
-        self, name: str | None = None, label_type: type[Label] | None = None,  **kwargs
+        self, name: str | None = None, label_type: type[Label] | None = None, **kwargs
     ) -> list[Channel | Label]:
         """Returns a list of channels or labels based on their name.
 
-        This method combines the results of :meth:`.get_channels` 
+        This method combines the results of :meth:`.get_channels`
         and :meth:`.get_labels` to return both channels and labels
         that match the given parameters.
         If a ``label_type`` is specified, it filters the labels accordingly.
@@ -1065,11 +1069,11 @@ class Vitals:
         ----------
         name
             The name of the channels or labels to retrieve.
-            See :meth:`.get_channels` and :meth:`.get_labels` for valid specifications.   
+            See :meth:`.get_channels` and :meth:`.get_labels` for valid specifications.
         label_type
             The class of the labels (e.g., :class:`.IntervalLabel`) to
             retrieve.
-        kwargs  
+        kwargs
             Keyword arguments to filter the channels or labels by.
             See :meth:`.get_channels` and :meth:`.get_labels` for valid specifications.
 
@@ -1101,7 +1105,7 @@ class Vitals:
             Keyword arguments to filter the channels or labels by.
             See :meth:`.get_channel` and :meth:`.get_label` for valid specifications.
 
-        Raises  
+        Raises
         ------
         ValueError
             If the specification is ambiguous, i.e., if more than one channel or label
@@ -1113,7 +1117,9 @@ class Vitals:
             The channel or label that matches the specification.
         """
 
-        channels_or_labels = self.get_channels_or_labels(name, label_type=label_type, **kwargs)
+        channels_or_labels = self.get_channels_or_labels(
+            name, label_type=label_type, **kwargs
+        )
         if len(channels_or_labels) != 1:
             raise ValueError(
                 "Channel or Label specification was ambiguous, no unique channel or Label "
@@ -1123,12 +1129,12 @@ class Vitals:
 
     def get_channel_names(self, **kwargs) -> list[str]:  # part of register application
         """Return a list with the names of all channels in the recording.
-        
+
         Parameters
         ----------
         kwargs
             Keyword arguments to filter the channels by.
-        
+
         Returns
         -------
         list[str]
@@ -1137,7 +1143,7 @@ class Vitals:
         """
 
         channels = self.data.get_channels(**kwargs)
-        
+
         return [channel.name for channel in channels]
 
     def get_label_names(self, **kwargs) -> list[str]:  # part of register application
@@ -1154,16 +1160,16 @@ class Vitals:
         list[str]
             A list with the names of all labels in the recording.
             If no label matches the specification, an empty list is returned.
-        
+
         """
 
         labels = self.data.get_labels(**kwargs)
-        
+
         return [label.name for label in labels]
 
     def get_channel_or_label_names(self, **kwargs) -> list[str]:
         """Returns a list with all names from either channels or labels.
-        
+
         Parameters
         ----------
         kwargs
@@ -1180,9 +1186,9 @@ class Vitals:
 
     def keys(self, **kwargs) -> list[str]:
         """Alias for :meth:`get_channel_or_label_names`."""
-        
+
         return self.get_channel_or_label_names(**kwargs)
-    
+
     def detach_label_from_channel(
         self,
         *,
@@ -1191,7 +1197,7 @@ class Vitals:
         reattach_as_global: bool = True,
     ) -> Label:
         """Detach a label from a channel in the collection.
-        
+
         Parameters
         ----------
         label
@@ -1208,9 +1214,7 @@ class Vitals:
             label is removed from the collection.
         """
         return self.data.detach_label_from_channel(
-            label=label,
-            channel=channel,
-            reattach_as_global=reattach_as_global
+            label=label, channel=channel, reattach_as_global=reattach_as_global
         )
 
     def rec_start(self) -> pd.Timestamp:  # part of register application
@@ -1238,7 +1242,7 @@ class Vitals:
 
     def get_channel_infos(self, **kwargs) -> pd.DataFrame:
         """Returns information about all channels in a nicely formatted
-        ``pandas.DataFrame``.   
+        ``pandas.DataFrame``.
         This includes the channel name, number of datapoints, first entry, last entry, offset, auxiliary metadata.
 
         Parameters
@@ -1297,7 +1301,7 @@ class Vitals:
             Keyword arguments to filter the channels and labels by.
             See :meth:`.get_channels` and :meth:`.get_labels` for valid
             specifications.
-        
+
         Returns
         -------
         None
@@ -1311,7 +1315,7 @@ class Vitals:
         self,
         start_time: Timestamp | Timedelta | None = None,
         stop_time: Timestamp | Timedelta | None = None,
-        **kwargs
+        **kwargs,
     ) -> Vitals:
         """Return a new object where time data has been truncated to a specified interval.
 
@@ -1515,7 +1519,7 @@ class Vitals:
     def compute_etco2_and_ventilations(
         self,
         source: Channel | str = "capnography",
-        mode: Literal['threshold', 'filter'] = 'filter',
+        mode: Literal["threshold", "filter"] = "filter",
         breath_threshold: float = 2,
         etco2_threshold: float = 3,
         **kwargs,
@@ -1542,10 +1546,12 @@ class Vitals:
             (default: 3 mmHg). Used by the ``'filter'`` method.
         """
         # Support legacy parameter name
-        if 'breaththresh' in kwargs:
+        if "breaththresh" in kwargs:
             if breath_threshold is not None:
-                raise TypeError("Cannot specify both 'breath_threshold' and legacy 'breaththresh'")
-            breath_threshold = kwargs.pop('breaththresh')
+                raise TypeError(
+                    "Cannot specify both 'breath_threshold' and legacy 'breaththresh'"
+                )
+            breath_threshold = kwargs.pop("breaththresh")
             logger.warning(
                 "The keyword argument breaththresh is deprecated, "
                 "use breath_threshold instead"
@@ -1618,9 +1624,7 @@ class Vitals:
             for i, resp in enumerate(resptime[:-1]):
                 next_resp = resptime[i + 1]
                 # check maxima until next respiration same as bevfore
-                co2_maxtime = etco2time[
-                    (etco2time >= resp) & (etco2time < next_resp)
-                ]
+                co2_maxtime = etco2time[(etco2time >= resp) & (etco2time < next_resp)]
                 co2_max = etco2[(etco2time >= resp) & (etco2time < next_resp)]
                 netco2 = len(co2_maxtime)
                 if netco2 > 1:  # take largest one
@@ -1661,7 +1665,7 @@ class Vitals:
             for i in del_resp[::-1]:
                 resptime = np.delete(resptime, i)
 
-        elif mode == "threshold":   # Aramendi et al., 2016
+        elif mode == "threshold":  # Aramendi et al., 2016
             but = sgn.butter(4, 10 * 2 / freq, btype="lowpass", output="sos")
             co2 = sgn.sosfiltfilt(but, co)  # Filter forwarsd and backward
             d = freq * (co2[1:] - co2[:-1])
@@ -1704,9 +1708,7 @@ class Vitals:
                 A_r = (A_exp - A_ins) / A_exp
                 S = 1 / freq * np.sum(co2[i_exp : i_exp + int(freq)])
                 if len(resptime) > 0:
-                    t_ref = pd.Timedelta(
-                        (cotime[i_exp] - resptime[-1])
-                    ).total_seconds()
+                    t_ref = pd.Timedelta((cotime[i_exp] - resptime[-1])).total_seconds()
                 else:
                     t_ref = 2  # if t_ref >1.5 then it is ok, so 2 does the job
                 if D > 0.3:
@@ -1746,9 +1748,7 @@ class Vitals:
                 time_index=resptime,
                 data=None,
                 metadata=metadata,
-                plotstyle=DEFAULT_PLOT_STYLE.get(
-                    "ventilations_from_capnography", None
-                ),
+                plotstyle=DEFAULT_PLOT_STYLE.get("ventilations_from_capnography", None),
             )
             source.attach_label(vent_lab)
         else:
@@ -1757,9 +1757,8 @@ class Vitals:
             )
 
     def cycle_duration_analysis(
-            self,
-            cc_events_channel: Channel | str | None = None
-            ) -> None:
+        self, cc_events_channel: Channel | str | None = None
+    ) -> None:
         """
         Determines periods of continuous chest compressions
         based on single chest compression events.
@@ -1767,13 +1766,13 @@ class Vitals:
         Parameters
         ----------
         cc_events_channel
-            The channel containing the data of single chest compression events, such that every timepoint in the timeindex represents a chest compression. 
+            The channel containing the data of single chest compression events, such that every timepoint in the timeindex represents a chest compression.
             Defaults to 'cc' or 'cc_depth' depending on the availability.
 
         Returns
         -------
         None
-        
+
         Attaches an IntervalLabel withe the name ``cc_periods`` to the channel of single chest compressions.
 
         .. SEEALSO::
@@ -1784,7 +1783,7 @@ class Vitals:
             available_channels = set(self.get_channel_names()) & {"cc", "cc_depth"}
             if available_channels:
                 cc_events_channel = self.get_channel(next(iter(available_channels)))
-            else:            
+            else:
                 raise ValueError(
                     "Could not identify channels with single chest compressions. "
                     "Please specify a channel or a string with the name of the channel."
@@ -1797,9 +1796,7 @@ class Vitals:
                 "Please specify a channel or a string with the name of the channel."
             )
 
-
-            
-        comp = cc_events_channel.get_data().time_index # get data
+        comp = cc_events_channel.get_data().time_index  # get data
 
         t_ref = cc_events_channel.time_start
 
@@ -1807,7 +1804,9 @@ class Vitals:
             comp = comp.total_seconds().to_numpy()
         else:
             comp = np.sort(comp)
-            comp = np.array([pd.Timedelta(t - t_ref).total_seconds() for t in comp]) #TODO: check if times have ti be coerced
+            comp = np.array(
+                [pd.Timedelta(t - t_ref).total_seconds() for t in comp]
+            )  # TODO: check if times have ti be coerced
 
         compression_counter = 1  # number of compressions in cc period
         last_c = comp[0]  # initilaize last compression
@@ -1857,20 +1856,20 @@ class Vitals:
         periods[1::2] = sto
 
         cc_periods = IntervalLabel(
-            name = "cc_periods",
-            time_index = periods, 
-            time_start = t_ref, 
-            metadata = metadata,
-            plot_type = "box",
-            plotstyle = DEFAULT_PLOT_STYLE.get("cc_periods", None)
+            name="cc_periods",
+            time_index=periods,
+            time_start=t_ref,
+            metadata=metadata,
+            plot_type="box",
+            plotstyle=DEFAULT_PLOT_STYLE.get("cc_periods", None),
         )
 
         cc_events_channel.attach_label(cc_periods)
 
     def find_CC_periods_acc(
-            self, 
-            accelerometer_channel: Channel | str = 'cpr_acceleration',
-        ) -> None:  # part of register application
+        self,
+        accelerometer_channel: Channel | str = "cpr_acceleration",
+    ) -> None:  # part of register application
         """
         Automatically detects periods of continuous chest compressions.
 
@@ -1878,12 +1877,12 @@ class Vitals:
         and :cite:`10.1016/j.dib.2022.107973`. In essence it uses the root mean
         square of the accelerometer signal of feedback sensor for cardiopulmonary
         resuscitation to detect the rise in "power" of the signal linked to the
-        alteration by the accelerations of continous chest compressions. 
+        alteration by the accelerations of continous chest compressions.
 
         Parameters
         ----------
         accelerometer_channel
-            The channel containing the accelerometer signal. Defaults to 'cpr_acceleration'. 
+            The channel containing the accelerometer signal. Defaults to 'cpr_acceleration'.
 
         Returns
         -------
@@ -2065,7 +2064,7 @@ class Vitals:
 
         starts = np.sort(starts)
         stops = np.sort(stops)
-        #NOTE: unsure if we have to maintain starts and stops, we might even just go wit append and sort
+        # NOTE: unsure if we have to maintain starts and stops, we might even just go wit append and sort
         periods = np.empty(starts.size + stops.size, dtype=starts.dtype)
         periods[0::2] = starts
         periods[1::2] = stops
@@ -2077,12 +2076,12 @@ class Vitals:
         }
 
         cc_periods = IntervalLabel(
-            name = "cc_periods",
-            time_index = periods, 
-            time_start = t_ref, 
-            metadata = metadata,
-            plot_type = "box",
-            plotstyle = DEFAULT_PLOT_STYLE.get("cc_periods", None)
+            name="cc_periods",
+            time_index=periods,
+            time_start=t_ref,
+            metadata=metadata,
+            plot_type="box",
+            plotstyle=DEFAULT_PLOT_STYLE.get("cc_periods", None),
         )
 
         ACC_channel.attach_label(cc_periods)
@@ -2126,7 +2125,7 @@ class Vitals:
                 "No valid accelerometer channel specified. Can not predict circulation. "
                 "Please specify a suitable channel directly or by name."
             )
-        
+
         if isinstance(ecg_pads_source, str):
             ecg_pads_source = self.get_channel(ecg_pads_source)
 
@@ -2147,15 +2146,17 @@ class Vitals:
 
         label_cc_periods = self.data.get_label("cc_periods")
         cc_periods = label_cc_periods.get_data().time_index
-        cc_periods =  np.asarray([t for pair in cc_periods for t in pair])
+        cc_periods = np.asarray([t for pair in cc_periods for t in pair])
 
         t_ref = cpr_acceleration_source.time_start
-        
+
         if label_cc_periods.is_time_relative():
-            cc_periods = pd.Series(pd.to_timedelta(cc_periods)).dt.total_seconds().to_numpy()
+            cc_periods = (
+                pd.Series(pd.to_timedelta(cc_periods)).dt.total_seconds().to_numpy()
+            )
         else:
             cc_periods = np.array([(t - t_ref).total_seconds() for t in cc_periods])
-        
+
         if cpr_acceleration_source.is_time_relative():
             acctime = acctime.dt.total_seconds().to_numpy()
         else:
@@ -2166,13 +2167,11 @@ class Vitals:
             ecgtime = ecgtime.dt.total_seconds().to_numpy()
         else:
             ecgtime = np.array([(t - t_ref).total_seconds() for t in ecgtime])
-        
+
         CC_starts = cc_periods[0::2]
         CC_stops = cc_periods[1::2]
 
-        snippets = construct_snippets(
-            acctime, acc, ecgtime, ecg, CC_starts, CC_stops
-        )
+        snippets = construct_snippets(acctime, acc, ecgtime, ecg, CC_starts, CC_stops)
         case_pred = predict_circulation(snippets)
 
         metadata = {
@@ -2180,7 +2179,6 @@ class Vitals:
             "creation_date": pd.Timestamp.now(),
             "method": "Period_dection",
         }
-
 
         pred_lab = Label(
             "rosc_prediction",
@@ -2209,499 +2207,574 @@ class Vitals:
         for lab in [pred_lab, prob_lab, dec_lab]:
             self.data.add_global_label(lab)
 
-
-    def make_cprdat_analysis(self,model='') -> dict:
+    def make_cprdat_analysis(self, model="") -> dict:
         """Automatically analyses a defibrillator recording and and returns a dictionary with all derived information.
         This functions is used in the German Resuscitation Registry to generate a case timeline as interactive visualisation.
         """
 
-        gaussian_kernel_regression = np.vectorize(gaussian_kernel_regression_point,excluded={1,2,3})
+        gaussian_kernel_regression = np.vectorize(
+            gaussian_kernel_regression_point, excluded={1, 2, 3}
+        )
 
         CC_min_length = 10000
-        
-        
-        cprdat_analysis={}
+
+        cprdat_analysis = {}
         # ---------------RECORDING INFO --------------------------------------------------------------------
-        
+
         metadata = self.channels[0].metadata
-        recording_info={}
-        recording_info['filename'] = [metadata['File ID']]
-        recording_info['serial_number'] = metadata['Serial Nr']
-        recording_info['startdatetime'] = str(self.rec_start().isoformat())
-        recording_info['endtime'] = (self.rec_stop()-self.rec_start()).total_seconds()*1000
+        recording_info = {}
+        recording_info["filename"] = [metadata["File ID"]]
+        recording_info["serial_number"] = metadata["Serial Nr"]
+        recording_info["startdatetime"] = str(self.rec_start().isoformat())
+        recording_info["endtime"] = (
+            self.rec_stop() - self.rec_start()
+        ).total_seconds() * 1000
         try:
-            model = metadata['Model']
+            model = metadata["Model"]
         except KeyError:
             model = model
-    
-        if 'ZOLL' in model or 'Zoll' in model:
-            recording_info['DACTYP'] = '06'
-            if 'X Series' in model:
-                recording_info['DACTYP2'] = '08'
-            elif 'E Series' in model:
-                recording_info['DACTYP2'] = '07'
-            elif 'R Series' in model:
-                recording_info['DACTYP2'] = '09'
-            elif 'AED Pro' in model:
-                recording_info['DACTYP2'] = '06'
-        elif 'LIFEPAK15' in model:
-            recording_info['DACTYP'] = '04'
-            recording_info['DACTYP2'] = '10'
-    
-        elif 'Corpuls' in model:
-            recording_info['DACTYP'] = '03'
-            recording_info['DACTYP2'] = None
+
+        if "ZOLL" in model or "Zoll" in model:
+            recording_info["DACTYP"] = "06"
+            if "X Series" in model:
+                recording_info["DACTYP2"] = "08"
+            elif "E Series" in model:
+                recording_info["DACTYP2"] = "07"
+            elif "R Series" in model:
+                recording_info["DACTYP2"] = "09"
+            elif "AED Pro" in model:
+                recording_info["DACTYP2"] = "06"
+        elif "LIFEPAK15" in model:
+            recording_info["DACTYP"] = "04"
+            recording_info["DACTYP2"] = "10"
+
+        elif "Corpuls" in model:
+            recording_info["DACTYP"] = "03"
+            recording_info["DACTYP2"] = None
         else:
-            recording_info['DACTYP'] = '00'
-        cprdat_analysis['recording_info'] = recording_info
-    
+            recording_info["DACTYP"] = "00"
+        cprdat_analysis["recording_info"] = recording_info
+
         # ---------------CHEST COMPRESSION ANALYSIS -----------------------------------------
-    
-                
+
         chest_compression_analysis = []
-        if 'cc_depth' in self.get_channel_names():
-            CC,CC_depth = (self.get_channel('cc_depth')).get_data()
-        elif 'CC' in self.get_channel_names():
-            CC,CC_depth = (self.get_channel('cc')).get_data()
+        if "cc_depth" in self.get_channel_names():
+            CC, CC_depth = (self.get_channel("cc_depth")).get_data()
+        elif "CC" in self.get_channel_names():
+            CC, CC_depth = (self.get_channel("cc")).get_data()
         else:
-            CC=np.array([])
-            CC_depth=np.array([])
-        
-        if 'mech_cpr_depth' in self.get_channel_names():
-            mech_CC_time, mech_CC_depth = (self.get_channel('mech_cpr_depth')).get_data()
-            CC = np.append(CC,mech_CC_time)
-            CC_depth = np.append(CC_depth,mech_CC_depth)
-        
-        CC = np.array([(c-self.rec_start()).total_seconds()*1000 for c in CC])
-        
-        CC_final = np.asarray([],dtype = CC.dtype)
+            CC = np.array([])
+            CC_depth = np.array([])
+
+        if "mech_cpr_depth" in self.get_channel_names():
+            mech_CC_time, mech_CC_depth = (
+                self.get_channel("mech_cpr_depth")
+            ).get_data()
+            CC = np.append(CC, mech_CC_time)
+            CC_depth = np.append(CC_depth, mech_CC_depth)
+
+        CC = np.array([(c - self.rec_start()).total_seconds() * 1000 for c in CC])
+
+        CC_final = np.asarray([], dtype=CC.dtype)
         CC_depth_final = np.asarray([])
-        if 'cpr_acceleration' in self.get_channel_names():
+        if "cpr_acceleration" in self.get_channel_names():
             if "cc_period_start_acc" not in self.labels:
                 self.find_CC_periods_acc()
-            CC_starts,x = (self.get_label('cc_period_start_acc')).get_data()
-            CC_stops,x = (self.get_label('cc_period_stop_acc')).get_data()
-            CC_starts = np.array([(c-self.rec_start()).total_seconds()*1000 for c in CC_starts])
-            CC_stops = np.array([(c-self.rec_start()).total_seconds()*1000 for c in CC_stops])
-        
-            for sta,sto in zip(CC_starts,CC_stops):
-                CC_period_analyis={'CC_start':sta , 'CC_stop':sto}
-                cond=(CC>=sta) & (CC<sto)
-                CC_period=CC[cond]
-                CC_final = np.append(CC_final,CC_period)
-                if len(CC_period)>1:
-                    freq=1/np.median(CC_period[1:]-CC_period[:-1])
-                    CC_period_analyis['CC_rate']=freq*1000*60
+            CC_starts, x = (self.get_label("cc_period_start_acc")).get_data()
+            CC_stops, x = (self.get_label("cc_period_stop_acc")).get_data()
+            CC_starts = np.array(
+                [(c - self.rec_start()).total_seconds() * 1000 for c in CC_starts]
+            )
+            CC_stops = np.array(
+                [(c - self.rec_start()).total_seconds() * 1000 for c in CC_stops]
+            )
+
+            for sta, sto in zip(CC_starts, CC_stops):
+                CC_period_analyis = {"CC_start": sta, "CC_stop": sto}
+                cond = (CC >= sta) & (CC < sto)
+                CC_period = CC[cond]
+                CC_final = np.append(CC_final, CC_period)
+                if len(CC_period) > 1:
+                    freq = 1 / np.median(CC_period[1:] - CC_period[:-1])
+                    CC_period_analyis["CC_rate"] = freq * 1000 * 60
                 else:
-                    CC_period_analyis['CC_rate']=0
-                if len(CC_depth)>0:
-                    CC_depth_period=CC_depth[cond]
-                    if len(CC_depth_period)>0:
-                        CC_period_analyis['CC_depth']=np.median(CC_depth_period)
-                        CC_depth_final = np.append(CC_depth_final , CC_depth_period)
+                    CC_period_analyis["CC_rate"] = 0
+                if len(CC_depth) > 0:
+                    CC_depth_period = CC_depth[cond]
+                    if len(CC_depth_period) > 0:
+                        CC_period_analyis["CC_depth"] = np.median(CC_depth_period)
+                        CC_depth_final = np.append(CC_depth_final, CC_depth_period)
                     else:
-                        CC_period_analyis['CC_depth']=0
-        
+                        CC_period_analyis["CC_depth"] = 0
+
                 else:
-                    CC_period_analyis['CC_depth']=None
-                    
-                chest_compression_analysis.append(CC_period_analyis)    
-        
+                    CC_period_analyis["CC_depth"] = None
+
+                chest_compression_analysis.append(CC_period_analyis)
+
         else:
-        
-            if len(CC)>0:
+            if len(CC) > 0:
                 self.cycle_duration_analysis()
-                CC_starts,x = (self.get_label('cc_period_start')).get_data()
-                CC_stops,x = (self.get_label('cc_period_stop')).get_data()  
-                CC_starts = np.array([(c-self.rec_start()).total_seconds()*1000 for c in CC_starts])
-                CC_stops = np.array([(c-self.rec_start()).total_seconds()*1000 for c in CC_stops])      
-                for sta,sto in zip(CC_starts,CC_stops):
-                    CC_period_analyis={'CC_start':sta , 'CC_stop':sto}
-                    cond=(CC>=sta) & (CC<sto)
-                    CC_period=CC[cond]
-                    CC_final = np.append(CC_final,CC_period)
-                    if len(CC_period)>1:
-                        freq=1/np.median(CC_period[1:]-CC_period[:-1])
-                        CC_period_analyis['CC_rate']=freq*60*1000
+                CC_starts, x = (self.get_label("cc_period_start")).get_data()
+                CC_stops, x = (self.get_label("cc_period_stop")).get_data()
+                CC_starts = np.array(
+                    [(c - self.rec_start()).total_seconds() * 1000 for c in CC_starts]
+                )
+                CC_stops = np.array(
+                    [(c - self.rec_start()).total_seconds() * 1000 for c in CC_stops]
+                )
+                for sta, sto in zip(CC_starts, CC_stops):
+                    CC_period_analyis = {"CC_start": sta, "CC_stop": sto}
+                    cond = (CC >= sta) & (CC < sto)
+                    CC_period = CC[cond]
+                    CC_final = np.append(CC_final, CC_period)
+                    if len(CC_period) > 1:
+                        freq = 1 / np.median(CC_period[1:] - CC_period[:-1])
+                        CC_period_analyis["CC_rate"] = freq * 60 * 1000
                     else:
-                        CC_period_analyis['CC_rate']=0
-                    if len(CC_depth)>0:
-                        CC_depth_period=CC_depth[cond]
-                        if len(CC_depth_period)>0:
-                            CC_period_analyis['CC_depth']=np.median(CC_depth_period)
-                            CC_depth_final = np.append(CC_depth_final , CC_depth_period)
+                        CC_period_analyis["CC_rate"] = 0
+                    if len(CC_depth) > 0:
+                        CC_depth_period = CC_depth[cond]
+                        if len(CC_depth_period) > 0:
+                            CC_period_analyis["CC_depth"] = np.median(CC_depth_period)
+                            CC_depth_final = np.append(CC_depth_final, CC_depth_period)
                         else:
-                            CC_period_analyis['CC_depth']=0
-        
+                            CC_period_analyis["CC_depth"] = 0
+
                     else:
-                        CC_period_analyis['CC_depth']=None
-                        
+                        CC_period_analyis["CC_depth"] = None
+
                     chest_compression_analysis.append(CC_period_analyis)
             else:
                 CC_starts = np.array([])
                 CC_stops = np.array([])
-        
-        
-        cprdat_analysis['chest_compression_analysis'] = chest_compression_analysis
-        
+
+        cprdat_analysis["chest_compression_analysis"] = chest_compression_analysis
+
         self.compute_etco2_and_ventilations()
-        if 'ventilations_from_capnography' in self.get_label_names():
-            ventilations,x = (self.get_label('ventilations_from_capnography')).get_data()
-            ventilations = np.array([(c-self.rec_start()).total_seconds()*1000 for c in ventilations])
-    
-    
-     # ---------------MINUTE ANALYSIS --------------------------------------------------------------------
-    
-        cpr_per_minute_analysis=[]
-        t_stop=0
-        while t_stop < (self.rec_stop()-self.rec_start()).total_seconds()*1000:
+        if "ventilations_from_capnography" in self.get_label_names():
+            ventilations, x = (
+                self.get_label("ventilations_from_capnography")
+            ).get_data()
+            ventilations = np.array(
+                [(c - self.rec_start()).total_seconds() * 1000 for c in ventilations]
+            )
+
+        # ---------------MINUTE ANALYSIS --------------------------------------------------------------------
+
+        cpr_per_minute_analysis = []
+        t_stop = 0
+        while t_stop < (self.rec_stop() - self.rec_start()).total_seconds() * 1000:
             t_start = t_stop
             t_stop += 60000
-            minute_analysis = {'starttime' : t_start}
+            minute_analysis = {"starttime": t_start}
             CC_cond = (CC_final >= t_start) & (CC_final < t_stop)
             CC_min = CC_final[CC_cond]
             if len(CC_min) > 5:
-                minute_analysis['CC_rate'] = 60/np.median((CC_min[1:]-CC_min[:-1]))*1000
+                minute_analysis["CC_rate"] = (
+                    60 / np.median((CC_min[1:] - CC_min[:-1])) * 1000
+                )
             else:
-                minute_analysis['CC_rate'] = None
+                minute_analysis["CC_rate"] = None
             if len(CC_depth_final) > 0:
                 CC_depth_min = CC_depth_final[CC_cond]
                 if len(CC_min) > 5:
-                    minute_analysis['CC_depth'] = np.median(CC_depth_min)
+                    minute_analysis["CC_depth"] = np.median(CC_depth_min)
                 else:
-                    minute_analysis['CC_depth'] = None
+                    minute_analysis["CC_depth"] = None
             else:
-                minute_analysis['CC_depth'] = None
-                
-            
-            minute_analysis['CCF'] = CCF_minute(t_start,t_stop,CC_starts,CC_stops)
-        
-            
-            if 'ventilations_from_capnography' in self.get_label_names():
+                minute_analysis["CC_depth"] = None
+
+            minute_analysis["CCF"] = CCF_minute(t_start, t_stop, CC_starts, CC_stops)
+
+            if "ventilations_from_capnography" in self.get_label_names():
                 ventilations_cond = (ventilations >= t_start) & (ventilations < t_stop)
                 ventilations_min = np.array(ventilations[ventilations_cond])
                 if len(ventilations_min) > 3:
-                    minute_analysis['Ventilation_rate'] = np.median(60000/(ventilations_min[1:]-ventilations_min[:-1]))
+                    minute_analysis["Ventilation_rate"] = np.median(
+                        60000 / (ventilations_min[1:] - ventilations_min[:-1])
+                    )
                 else:
-                    minute_analysis['Ventilation_rate'] = None
+                    minute_analysis["Ventilation_rate"] = None
             else:
-                minute_analysis['Ventilation_rate'] = None        
+                minute_analysis["Ventilation_rate"] = None
             cpr_per_minute_analysis.append(minute_analysis)
-        
-        cprdat_analysis['CPR_per_minute_analysis'] = cpr_per_minute_analysis
-    
+
+        cprdat_analysis["CPR_per_minute_analysis"] = cpr_per_minute_analysis
+
         # ---------------DEFIBRILLATIONS --------------------------------------------------------------------
-    
-        defibrillations=[]
-        
+
+        defibrillations = []
+
         for i in range(len(self.shocks())):
-            shock=self.shocks().iloc[i]
-            shocktime = (self.shocks().index[i]-self.rec_start()).total_seconds()*1000
-            defib={'time' : shocktime}
-            for register_key,cprdat_key in zip(["energy_delivered","energy_planned","impedance"],["DeliveredEnergy","DefaultEnergy","Impedance"]) :
+            shock = self.shocks().iloc[i]
+            shocktime = (
+                self.shocks().index[i] - self.rec_start()
+            ).total_seconds() * 1000
+            defib = {"time": shocktime}
+            for register_key, cprdat_key in zip(
+                ["energy_delivered", "energy_planned", "impedance"],
+                ["DeliveredEnergy", "DefaultEnergy", "Impedance"],
+            ):
                 if cprdat_key in shock:
                     defib[register_key] = shock[cprdat_key]
                 else:
                     defib[register_key] = None
-    
-            CC_stops_before = CC_stops[CC_stops<shocktime+1000]
-            CC_starts_after = CC_starts[CC_starts>shocktime-1000]
-    
-            if len(CC_stops_before)>0:
-                if (defib['time'] - CC_stops_before[-1])<60000:
-                    defib["pre_shock_pause"] = np.max([defib['time'] - CC_stops_before[-1],0])
+
+            CC_stops_before = CC_stops[CC_stops < shocktime + 1000]
+            CC_starts_after = CC_starts[CC_starts > shocktime - 1000]
+
+            if len(CC_stops_before) > 0:
+                if (defib["time"] - CC_stops_before[-1]) < 60000:
+                    defib["pre_shock_pause"] = np.max(
+                        [defib["time"] - CC_stops_before[-1], 0]
+                    )
                 else:
                     defib["pre_shock_pause"] = None
             else:
                 defib["pre_shock_pause"] = None
-            
-            if len(CC_starts_after)>0:
-                if -defib['time'] + CC_starts_after[0]<60000:
-                    defib["post_shock_pause"] = np.max([-defib['time'] + CC_starts_after[0],0])
+
+            if len(CC_starts_after) > 0:
+                if -defib["time"] + CC_starts_after[0] < 60000:
+                    defib["post_shock_pause"] = np.max(
+                        [-defib["time"] + CC_starts_after[0], 0]
+                    )
                 else:
-                    defib["post_shock_pause"] = None   
+                    defib["post_shock_pause"] = None
             else:
-                defib["post_shock_pause"] = None   
+                defib["post_shock_pause"] = None
             defibrillations.append(defib)
-            
-        cprdat_analysis['defibrillations'] = defibrillations
-    
+
+        cprdat_analysis["defibrillations"] = defibrillations
+
         # ---------------REGISTRY TIMEPOINTS --------------------------------------------------------------------
-        
+
         registry_time_points = {}
-    
-        if len(CC_starts)>0:
-            registry_time_points['ZHDM'] = CC_starts[0]
+
+        if len(CC_starts) > 0:
+            registry_time_points["ZHDM"] = CC_starts[0]
         else:
-            registry_time_points['ZHDM'] = None
-        registry_time_points['ZDEFIAN'] = 0
+            registry_time_points["ZHDM"] = None
+        registry_time_points["ZDEFIAN"] = 0
         if defibrillations:
-            registry_time_points['ZDEFI1'] = defibrillations[0]['time']
+            registry_time_points["ZDEFI1"] = defibrillations[0]["time"]
         else:
-            registry_time_points['ZDEFI1'] = None
-        intub_time = None    
-        if 'CO2' in self.get_channel_names():
-            co_channel = self.get_channel('CO2')
-            cotime,co = co_channel.get_data()
-            for time,value in zip( cotime,co  ):
-                if value!=0:
+            registry_time_points["ZDEFI1"] = None
+        intub_time = None
+        if "CO2" in self.get_channel_names():
+            co_channel = self.get_channel("CO2")
+            cotime, co = co_channel.get_data()
+            for time, value in zip(cotime, co):
+                if value != 0:
                     intub_time = time
                     break
-            registry_time_points['ZINTUB'] = (intub_time-self.rec_start()).total_seconds()*1000
+            registry_time_points["ZINTUB"] = (
+                intub_time - self.rec_start()
+            ).total_seconds() * 1000
         else:
-            registry_time_points['ZINTUB'] = None
-    
+            registry_time_points["ZINTUB"] = None
+
         self.predict_circulation()
-        
-        
-        if len(CC_starts)>0:
+
+        if len(CC_starts) > 0:
             if "rosc_probability" in self.get_label_names():
-                rosctime, roscdata = self.get_label('rosc_probability').get_data()
-                pred_time =  np.array([(c-self.rec_start()).total_seconds()*1000 for c in rosctime])
-        
-                roscs,arrests = find_ROSC_2(pred_time,roscdata,CC_starts, CC_stops)
+                rosctime, roscdata = self.get_label("rosc_probability").get_data()
+                pred_time = np.array(
+                    [(c - self.rec_start()).total_seconds() * 1000 for c in rosctime]
+                )
+
+                roscs, arrests = find_ROSC_2(pred_time, roscdata, CC_starts, CC_stops)
                 if len(roscs) > 0:
-                    registry_time_points['ZROSC1'] = roscs[0]
-                    registry_time_points['ZTOD'] = None
+                    registry_time_points["ZROSC1"] = roscs[0]
+                    registry_time_points["ZTOD"] = None
                 else:
-                    ii=-1
-                    while (CC_stops[ii]-CC_starts[ii])<CC_min_length:
-                        ii-=1
-                    registry_time_points['ZTOD'] = CC_stops[ii]
-                    registry_time_points['ZROSC1'] = None
+                    ii = -1
+                    while (CC_stops[ii] - CC_starts[ii]) < CC_min_length:
+                        ii -= 1
+                    registry_time_points["ZTOD"] = CC_stops[ii]
+                    registry_time_points["ZROSC1"] = None
             else:
-                pauses=np.asarray([sta-sto for sta,sto in zip(CC_starts[1:],CC_stops[:-1])])
-                if len(pauses)>0:        
-                    if np.max(pauses)<60000:
-                        if (recording_info['endtime'] - CC_stops[-1])<1200000:
-                            ii=-1
-                            while (CC_stops[ii]-CC_starts[ii])<CC_min_length:
-                                ii-=1
-                            registry_time_points['ZTOD'] = CC_stops[ii]
-                            registry_time_points['ZROSC1'] = None    
+                pauses = np.asarray(
+                    [sta - sto for sta, sto in zip(CC_starts[1:], CC_stops[:-1])]
+                )
+                if len(pauses) > 0:
+                    if np.max(pauses) < 60000:
+                        if (recording_info["endtime"] - CC_stops[-1]) < 1200000:
+                            ii = -1
+                            while (CC_stops[ii] - CC_starts[ii]) < CC_min_length:
+                                ii -= 1
+                            registry_time_points["ZTOD"] = CC_stops[ii]
+                            registry_time_points["ZROSC1"] = None
                         else:
-                            ii=-1
-                            while (CC_stops[ii]-CC_starts[ii])<CC_min_length:
-                                ii-=1
-                            registry_time_points['ZROSC1'] = CC_stops[ii]
-                            registry_time_points['ZTOD'] = None   
+                            ii = -1
+                            while (CC_stops[ii] - CC_starts[ii]) < CC_min_length:
+                                ii -= 1
+                            registry_time_points["ZROSC1"] = CC_stops[ii]
+                            registry_time_points["ZTOD"] = None
                     else:
-                        all_i = np.argwhere(pauses>60000)
-                        min_i=np.min(all_i)
-                        registry_time_points['ZROSC1'] = CC_stops[min_i]
-                        registry_time_points['ZTOD'] = None     
+                        all_i = np.argwhere(pauses > 60000)
+                        min_i = np.min(all_i)
+                        registry_time_points["ZROSC1"] = CC_stops[min_i]
+                        registry_time_points["ZTOD"] = None
                 else:
-                    if len(CC_stops)>0:
-                        if (recording_info['endtime'] - CC_stops[-1])<1200000:
-                            registry_time_points['ZTOD'] = CC_stops[-1]
-                            registry_time_points['ZROSC1'] = None    
+                    if len(CC_stops) > 0:
+                        if (recording_info["endtime"] - CC_stops[-1]) < 1200000:
+                            registry_time_points["ZTOD"] = CC_stops[-1]
+                            registry_time_points["ZROSC1"] = None
                         else:
-                            registry_time_points['ZROSC1'] = CC_stops[-1]
-                            registry_time_points['ZTOD'] = None      
+                            registry_time_points["ZROSC1"] = CC_stops[-1]
+                            registry_time_points["ZTOD"] = None
                     else:
-                        registry_time_points['ZTOD'] = recording_info['endtime']
-                        registry_time_points['ZROSC1'] = None   
+                        registry_time_points["ZTOD"] = recording_info["endtime"]
+                        registry_time_points["ZROSC1"] = None
         else:
-            registry_time_points['ZTOD'] = None
-            registry_time_points['ZROSC1'] = None   
-    
-        
-        cprdat_analysis['registry_time_points'] = registry_time_points
-    
+            registry_time_points["ZTOD"] = None
+            registry_time_points["ZROSC1"] = None
+
+        cprdat_analysis["registry_time_points"] = registry_time_points
+
         # ---------------REGISTRY DETAILS --------------------------------------------------------------------
-    
-    
-        registry_info={}
-        if 'cpr_acceleration' in self.get_channel_or_label_names():
-            registry_info['FBSYSTEM'] = '05'
-            registry_info['TYPFBSYS'] = '02'
-        elif 'cc_depth' in self.get_channel_or_label_names():
-            if 'Corpuls' in model:
-                registry_info['FBSYSTEM'] = '05'
-                registry_info['TYPFBSYS'] = '06'           
+
+        registry_info = {}
+        if "cpr_acceleration" in self.get_channel_or_label_names():
+            registry_info["FBSYSTEM"] = "05"
+            registry_info["TYPFBSYS"] = "02"
+        elif "cc_depth" in self.get_channel_or_label_names():
+            if "Corpuls" in model:
+                registry_info["FBSYSTEM"] = "05"
+                registry_info["TYPFBSYS"] = "06"
             else:
-                registry_info['FBSYSTEM'] = '98'
-                registry_info['TYPFBSYS'] = '98'           
-        
+                registry_info["FBSYSTEM"] = "98"
+                registry_info["TYPFBSYS"] = "98"
+
         else:
-            registry_info['FBSYSTEM'] = '06'
-            registry_info['TYPFBSYS'] = None
-            
-        if 'autopulse_load' in self.get_channel_or_label_names():
-            registry_info['AUTOCPR'] = '05'
-            registry_info['TYPAUCPR'] = '01'
-        elif 'mech_cpr_depth' in self.get_channel_or_label_names():
-            registry_info['AUTOCPR'] = '05'
-            registry_info['TYPAUCPR'] = '05'    
+            registry_info["FBSYSTEM"] = "06"
+            registry_info["TYPFBSYS"] = None
+
+        if "autopulse_load" in self.get_channel_or_label_names():
+            registry_info["AUTOCPR"] = "05"
+            registry_info["TYPAUCPR"] = "01"
+        elif "mech_cpr_depth" in self.get_channel_or_label_names():
+            registry_info["AUTOCPR"] = "05"
+            registry_info["TYPAUCPR"] = "05"
         else:
-            registry_info['AUTOCPR'] = '06'
-            registry_info['TYPAUCPR'] = None
-        
+            registry_info["AUTOCPR"] = "06"
+            registry_info["TYPAUCPR"] = None
+
         n_defi = len(defibrillations)
         if n_defi == 0:
-            registry_info['ANZDEFI'] ='00'
+            registry_info["ANZDEFI"] = "00"
         elif n_defi == 1:
-            registry_info['ANZDEFI'] ='01'
+            registry_info["ANZDEFI"] = "01"
         elif n_defi <= 3:
-            registry_info['ANZDEFI'] ='02'
+            registry_info["ANZDEFI"] = "02"
         elif n_defi <= 6:
-            registry_info['ANZDEFI'] ='03'
+            registry_info["ANZDEFI"] = "03"
         elif n_defi <= 9:
-            registry_info['ANZDEFI'] ='04'   
+            registry_info["ANZDEFI"] = "04"
         elif n_defi >= 10:
-            registry_info['ANZDEFI'] ='05'
-        
-        if registry_time_points['ZROSC1'] is None:
-            registry_info['ROSC'] = '01'
+            registry_info["ANZDEFI"] = "05"
+
+        if registry_time_points["ZROSC1"] is None:
+            registry_info["ROSC"] = "01"
         else:
-            registry_info['ROSC'] = '02'
-            registry_info['TECHSCHO'] = None
+            registry_info["ROSC"] = "02"
+            registry_info["TECHSCHO"] = None
             shocks = self.shocks()
-            if len(shocks)>0:
+            if len(shocks) > 0:
                 try:
-                    shocktime = (self.shocks().index-self.rec_start()).total_seconds()*1000
-                    i_last_shock_before_rosc = np.argmax(shocktime[shocktime<registry_time_points['ZROSC1']])
-                    if 'DeliveredEnergy' in shocks.columns:
-                            registry_info['ENERGIESCHO'] = int(shocks.iloc[i_last_shock_before_rosc]['DeliveredEnergy'])
-                    elif 'DefaultEnergy' in shocks.columns:
-                        registry_info['ENERGIESCHO'] = int(shocks.iloc[i_last_shock_before_rosc]['DefaultEnergy'])
+                    shocktime = (
+                        self.shocks().index - self.rec_start()
+                    ).total_seconds() * 1000
+                    i_last_shock_before_rosc = np.argmax(
+                        shocktime[shocktime < registry_time_points["ZROSC1"]]
+                    )
+                    if "DeliveredEnergy" in shocks.columns:
+                        registry_info["ENERGIESCHO"] = int(
+                            shocks.iloc[i_last_shock_before_rosc]["DeliveredEnergy"]
+                        )
+                    elif "DefaultEnergy" in shocks.columns:
+                        registry_info["ENERGIESCHO"] = int(
+                            shocks.iloc[i_last_shock_before_rosc]["DefaultEnergy"]
+                        )
                     else:
-                        registry_info['ENERGIESCHO'] = None
+                        registry_info["ENERGIESCHO"] = None
                 except ValueError:
-                    registry_info['ENERGIESCHO'] = None
+                    registry_info["ENERGIESCHO"] = None
             else:
-                registry_info['ENERGIESCHO'] = None
-               
-    
-        cprdat_analysis['registry_info'] = registry_info  
-    
+                registry_info["ENERGIESCHO"] = None
+
+        cprdat_analysis["registry_info"] = registry_info
+
         # ---------------CHANNELS --------------------------------------------------------------------
-        
-        channels=[]
-        time_only_keys = ['cc','ventilations_from_capnography', 'time_12_lead_ecg']
-        sample_keys = ['cc_depth','etco2_from_capnography', 'ibp_1_sys' , 'ibp_1_dia' ,'ibp_1_map', 'nibp_sys', 'nibp_dia', 'nibp_map']
-        
+
+        channels = []
+        time_only_keys = ["cc", "ventilations_from_capnography", "time_12_lead_ecg"]
+        sample_keys = [
+            "cc_depth",
+            "etco2_from_capnography",
+            "ibp_1_sys",
+            "ibp_1_dia",
+            "ibp_1_map",
+            "nibp_sys",
+            "nibp_dia",
+            "nibp_map",
+        ]
+
         for key in self.get_channel_or_label_names():
             keychannel = self.get_channel_or_label(key)
-            keytime,keydata = keychannel.get_data()            
+            keytime, keydata = keychannel.get_data()
             if key in time_only_keys:
-                chan={"name":key,
-                      "type":"timeonly",
-                      "data": [(c-self.rec_start()).total_seconds()*1000 for c in keytime]}
+                chan = {
+                    "name": key,
+                    "type": "timeonly",
+                    "data": [
+                        (c - self.rec_start()).total_seconds() * 1000 for c in keytime
+                    ],
+                }
                 channels.append(chan)
             elif key in sample_keys:
-                keydata =  list(map(int,keydata))
-                if key == 'cc_depth':
+                keydata = list(map(int, keydata))
+                if key == "cc_depth":
                     df = pd.DataFrame(CC_depth_final)
-                    df.set_index(CC_final,inplace=True)
-                    chan={"name":key,
-                          "type":"sample",
-                          "unit" : 'cm',
-                          "data":convert_two_alternating_list(df)}
-                    channels.append(chan)   
-                elif  key == 'etco2_from_capnography':
-                    keytime = [(c-self.rec_start()).total_seconds()*1000 for c in keytime]
-    
-                    df=pd.DataFrame(keydata,index = keytime)
-                    chan={"name":key,
-                          "type":"sample",
-                          "unit" :'mmHg',#keychannel.metadata['Unit'],
-                          "data":convert_two_alternating_list(df)}
-                    channels.append(chan)    
-                else:        # Blood - Pressure keys          
-                    keytime = [(c-self.rec_start()).total_seconds()*1000 for c in keytime]
-                    df=pd.DataFrame(keydata,index = keytime)
-                    chan={"name":key,
-                          "type":"sample",
-                          "unit" :'mmHg',#keychannel.metadata['Unit'],
-                          "data":convert_two_alternating_list(df)}
-                    channels.append(chan)    
-                    
-            elif key not in np.append(time_only_keys,sample_keys):
-                chan={"name":key,
-                      "type":"startendtime",
-                      "starttime":(keytime[0]-self.rec_start()).total_seconds()*1000,
-                     "endtime":(keytime[-1]-self.rec_start()).total_seconds()*1000,}
+                    df.set_index(CC_final, inplace=True)
+                    chan = {
+                        "name": key,
+                        "type": "sample",
+                        "unit": "cm",
+                        "data": convert_two_alternating_list(df),
+                    }
+                    channels.append(chan)
+                elif key == "etco2_from_capnography":
+                    keytime = [
+                        (c - self.rec_start()).total_seconds() * 1000 for c in keytime
+                    ]
+
+                    df = pd.DataFrame(keydata, index=keytime)
+                    chan = {
+                        "name": key,
+                        "type": "sample",
+                        "unit": "mmHg",  # keychannel.metadata['Unit'],
+                        "data": convert_two_alternating_list(df),
+                    }
+                    channels.append(chan)
+                else:  # Blood - Pressure keys
+                    keytime = [
+                        (c - self.rec_start()).total_seconds() * 1000 for c in keytime
+                    ]
+                    df = pd.DataFrame(keydata, index=keytime)
+                    chan = {
+                        "name": key,
+                        "type": "sample",
+                        "unit": "mmHg",  # keychannel.metadata['Unit'],
+                        "data": convert_two_alternating_list(df),
+                    }
+                    channels.append(chan)
+
+            elif key not in np.append(time_only_keys, sample_keys):
+                chan = {
+                    "name": key,
+                    "type": "startendtime",
+                    "starttime": (keytime[0] - self.rec_start()).total_seconds() * 1000,
+                    "endtime": (keytime[-1] - self.rec_start()).total_seconds() * 1000,
+                }
                 channels.append(chan)
-                
-                
+
         # compute necessary rates for plotting
         all_channel_names = [chan["name"] for chan in channels]
         if "ventilations_from_capnography" in all_channel_names:
             ventchannel = self.get_channel_or_label("ventilations_from_capnography")
-            venttime,ventdata = ventchannel.get_data()
-            venttime = [(c-self.rec_start()).total_seconds()*1000 for c in venttime]
-            vent_rate = [60000/(b-a) for a,b in zip(venttime[:-1], venttime[1:])]
-            df=pd.DataFrame(vent_rate,index = venttime[1:])
-            chan={"name": "ventilation_rate_for_plotting",
-                  "type": "sample",
-                  "unit" : '1/min',#keychannel.metadata['Unit'],
-                  "data":convert_two_alternating_list(df)}
-            channels.append(chan)  
-            
-        if 'etco2_from_capnography' in all_channel_names:
+            venttime, ventdata = ventchannel.get_data()
+            venttime = [(c - self.rec_start()).total_seconds() * 1000 for c in venttime]
+            vent_rate = [60000 / (b - a) for a, b in zip(venttime[:-1], venttime[1:])]
+            df = pd.DataFrame(vent_rate, index=venttime[1:])
+            chan = {
+                "name": "ventilation_rate_for_plotting",
+                "type": "sample",
+                "unit": "1/min",  # keychannel.metadata['Unit'],
+                "data": convert_two_alternating_list(df),
+            }
+            channels.append(chan)
+
+        if "etco2_from_capnography" in all_channel_names:
             etco2_channel = self.get_channel_or_label("etco2_from_capnography")
             etco2_time, etco2_data = etco2_channel.get_data()
-            etco2_time = [(c-self.rec_start()).total_seconds()*1000 for c in etco2_time]
-            filtered_etco2 = gaussian_kernel_regression(np.asarray(etco2_time), np.asarray(etco2_time), np.asarray(etco2_data), 10000)
-            df=pd.DataFrame(filtered_etco2,index = etco2_time)
-            chan={"name": "gaussian_filtered_etco2",
-                  "type": "sample",
-                  "unit" : 'mmHg',#keychannel.metadata['Unit'],
-                  "data":convert_two_alternating_list(df)}
-            channels.append(chan)  
-        
-        if 'cc' in all_channel_names:
+            etco2_time = [
+                (c - self.rec_start()).total_seconds() * 1000 for c in etco2_time
+            ]
+            filtered_etco2 = gaussian_kernel_regression(
+                np.asarray(etco2_time),
+                np.asarray(etco2_time),
+                np.asarray(etco2_data),
+                10000,
+            )
+            df = pd.DataFrame(filtered_etco2, index=etco2_time)
+            chan = {
+                "name": "gaussian_filtered_etco2",
+                "type": "sample",
+                "unit": "mmHg",  # keychannel.metadata['Unit'],
+                "data": convert_two_alternating_list(df),
+            }
+            channels.append(chan)
+
+        if "cc" in all_channel_names:
             CC_channel = self.get_channel_or_label("cc")
-            CCtime,CCdata = CC_channel.get_data()
+            CCtime, CCdata = CC_channel.get_data()
         elif "cc_depth" in all_channel_names:
             CC_channel = self.get_channel_or_label("cc_depth")
-            CCtime,CCdata = CC_channel.get_data() 
+            CCtime, CCdata = CC_channel.get_data()
         else:
             CCtime = []
-        if len(CCtime)>0:
-            CCtime = [(c-self.rec_start()).total_seconds()*1000 for c in CCtime]
-            CC_rate = [60000/(b-a) for a,b in zip(CCtime[:-1], CCtime[1:])]
-            df=pd.DataFrame(CC_rate,index = CCtime[1:])
-            chan={"name": "cc_rate_for_plotting",
-                  "type": "sample",
-                  "unit" : '1/min',#keychannel.metadata['Unit'],
-                  "data":convert_two_alternating_list(df)}
-            channels.append(chan)  
-        
-        cprdat_analysis['channels'] = channels
-        
-        
+        if len(CCtime) > 0:
+            CCtime = [(c - self.rec_start()).total_seconds() * 1000 for c in CCtime]
+            CC_rate = [60000 / (b - a) for a, b in zip(CCtime[:-1], CCtime[1:])]
+            df = pd.DataFrame(CC_rate, index=CCtime[1:])
+            chan = {
+                "name": "cc_rate_for_plotting",
+                "type": "sample",
+                "unit": "1/min",  # keychannel.metadata['Unit'],
+                "data": convert_two_alternating_list(df),
+            }
+            channels.append(chan)
+
+        cprdat_analysis["channels"] = channels
+
         # ---------------CPR QUALITY ANALYSIS --------------------------------------------------------------------
         zrosc = cprdat_analysis["registry_time_points"]["ZROSC1"]
         zhdm = cprdat_analysis["registry_time_points"]["ZHDM"]
         ztod = cprdat_analysis["registry_time_points"]["ZTOD"]
         starttime = pd.Timestamp(cprdat_analysis["recording_info"]["startdatetime"])
-        
+
         if zrosc:
-            z_end=zrosc
+            z_end = zrosc
         else:
-            z_end=ztod
-        
-        
+            z_end = ztod
+
         CC_starts = []
         CC_stops = []
         for elem in cprdat_analysis["chest_compression_analysis"]:
             CC_starts.append(elem["CC_start"])
             CC_stops.append(elem["CC_stop"])
-        CC_start_analyze = [C for C in CC_starts if (C<=z_end) and (C>=zhdm)] # CC-intervals in first resuscitation episode
-        CC_stops_analyze = [C for C in CC_stops if (C<=z_end) and (C>=zhdm)]
-        if len(CC_start_analyze)>0:
-            if CC_start_analyze[0]>CC_stops_analyze[0]:
-                CC_start_analyze.insert(0,zhdm)
-            if CC_stops_analyze[-1]>CC_stops_analyze[-1]:
+        CC_start_analyze = [
+            C for C in CC_starts if (C <= z_end) and (C >= zhdm)
+        ]  # CC-intervals in first resuscitation episode
+        CC_stops_analyze = [C for C in CC_stops if (C <= z_end) and (C >= zhdm)]
+        if len(CC_start_analyze) > 0:
+            if CC_start_analyze[0] > CC_stops_analyze[0]:
+                CC_start_analyze.insert(0, zhdm)
+            if CC_stops_analyze[-1] > CC_stops_analyze[-1]:
                 CC_stops_analyze.append(z_end)
-            CCF_glob = (np.sum(CC_stops_analyze)-np.sum(CC_start_analyze))/(z_end-zhdm)    
-            pauses=[sta-sto for sta,sto in zip(CC_start_analyze[1:],CC_stops_analyze[:-1])]    
+            CCF_glob = (np.sum(CC_stops_analyze) - np.sum(CC_start_analyze)) / (
+                z_end - zhdm
+            )
+            pauses = [
+                sta - sto
+                for sta, sto in zip(CC_start_analyze[1:], CC_stops_analyze[:-1])
+            ]
         else:
             CCF_glob = None
             pauses = []
-            
+
         pre_shock = []
         post_shock = []
         for shock in cprdat_analysis["defibrillations"]:
@@ -2709,113 +2782,122 @@ class Vitals:
                 pre_shock.append(shock["pre_shock_pause"])
             if shock["post_shock_pause"]:
                 post_shock.append(shock["post_shock_pause"])
-                
-                
+
         cpr_quality_analysis = {}
-        cpr_quality_analysis['global_ccf'] = CCF_glob
+        cpr_quality_analysis["global_ccf"] = CCF_glob
         if pauses:
-            cpr_quality_analysis['pauses_median'] = np.median(pauses)
-            cpr_quality_analysis['pauses_maximum'] = np.max(pauses)
+            cpr_quality_analysis["pauses_median"] = np.median(pauses)
+            cpr_quality_analysis["pauses_maximum"] = np.max(pauses)
         else:
-            cpr_quality_analysis['pauses_median'] = None
-            cpr_quality_analysis['pauses_maximum'] = None
+            cpr_quality_analysis["pauses_median"] = None
+            cpr_quality_analysis["pauses_maximum"] = None
         if pre_shock:
-            cpr_quality_analysis['preshock_median'] = np.median(pre_shock)
-            cpr_quality_analysis['preshock_maximum'] = np.max(pre_shock)
+            cpr_quality_analysis["preshock_median"] = np.median(pre_shock)
+            cpr_quality_analysis["preshock_maximum"] = np.max(pre_shock)
         else:
-            cpr_quality_analysis['preshock_median'] = None
-            cpr_quality_analysis['preshock_maximum'] = None
+            cpr_quality_analysis["preshock_median"] = None
+            cpr_quality_analysis["preshock_maximum"] = None
         if post_shock:
-            cpr_quality_analysis['postshock_median'] = np.median(post_shock)
-            cpr_quality_analysis['postshock_maximum'] = np.max(post_shock)    
+            cpr_quality_analysis["postshock_median"] = np.median(post_shock)
+            cpr_quality_analysis["postshock_maximum"] = np.max(post_shock)
         else:
-            cpr_quality_analysis['postshock_median'] = None
-            cpr_quality_analysis['postshock_maximum'] = None
-            
+            cpr_quality_analysis["postshock_median"] = None
+            cpr_quality_analysis["postshock_maximum"] = None
+
         cprdat_analysis["cpr_quality_analysis"] = cpr_quality_analysis
         return cprdat_analysis
-        
-        #-------------- CIRCULATORY STATE --------------------------------
-        arrest_episodes = {'arrests' : [],
-                           'roscs' : []}
+
+        # -------------- CIRCULATORY STATE --------------------------------
+        arrest_episodes = {"arrests": [], "roscs": []}
         CC_starts = []
         CC_stops = []
         for elem in cprdat_analysis["chest_compression_analysis"]:
             CC_starts.append(elem["CC_start"])
             CC_stops.append(elem["CC_stop"])
-        if "rosc_probability" in self.get_label_names(): # USE Accelerometry-Algorithm for ROSC detection
-            rosctime, roscdata = self.get_label('rosc_probability').get_data()
-            pred_time =  np.array([(c-self.rec_start()).total_seconds()*1000 for c in rosctime])
-    
-            roscs,arrests = find_ROSC_2(pred_time,roscdata,CC_starts, CC_stops)
-            
+        if (
+            "rosc_probability" in self.get_label_names()
+        ):  # USE Accelerometry-Algorithm for ROSC detection
+            rosctime, roscdata = self.get_label("rosc_probability").get_data()
+            pred_time = np.array(
+                [(c - self.rec_start()).total_seconds() * 1000 for c in rosctime]
+            )
+
+            roscs, arrests = find_ROSC_2(pred_time, roscdata, CC_starts, CC_stops)
+
             for ro in roscs:
-                arrest_episodes['roscs'].append(ro)
-            for ar in arrests: 
-              arrest_episodes['arrests'].append(ar)
+                arrest_episodes["roscs"].append(ro)
+            for ar in arrests:
+                arrest_episodes["arrests"].append(ar)
             if len(arrests) > len(roscs):
-                i = len(CC_stops)-1
-                while CC_stops[i] - CC_starts[i] <CC_min_length:
-                    i-=1
-                arrest_episodes['termination'] = CC_stops[i]
+                i = len(CC_stops) - 1
+                while CC_stops[i] - CC_starts[i] < CC_min_length:
+                    i -= 1
+                arrest_episodes["termination"] = CC_stops[i]
             else:
-                 arrest_episodes['termination'] = None
-    
-        else:        
-            arrest_episodes['arrests'] . append(CC_starts[0]) # Detect ROSCS and arrests directly on length of CC interruptions
-            pauses=[sta-sto for sta,sto in zip(CC_starts[1:],CC_stops[:-1])]
-            CC_lengths = [sto - sta for sta,sto in zip(CC_starts,CC_stops)]
-            i=0
-            while i<len(pauses):
+                arrest_episodes["termination"] = None
+
+        else:
+            arrest_episodes["arrests"].append(
+                CC_starts[0]
+            )  # Detect ROSCS and arrests directly on length of CC interruptions
+            pauses = [sta - sto for sta, sto in zip(CC_starts[1:], CC_stops[:-1])]
+            CC_lengths = [sto - sta for sta, sto in zip(CC_starts, CC_stops)]
+            i = 0
+            while i < len(pauses):
                 pause = pauses[i]
                 if pause < 120000:
-                    i+=1
+                    i += 1
                 else:
-                    arrest_episodes['roscs'].append(CC_stops[i])
-                    j=1
-                    while CC_lengths[i+j]<CC_min_length and i+j< len(CC_lengths)-1:
-                        j+=1
-                    if i+j < len(CC_lengths)-1:
-                        arrest_episodes['arrests'] . append(CC_starts[i+j])
-                        
+                    arrest_episodes["roscs"].append(CC_stops[i])
+                    j = 1
+                    while (
+                        CC_lengths[i + j] < CC_min_length
+                        and i + j < len(CC_lengths) - 1
+                    ):
+                        j += 1
+                    if i + j < len(CC_lengths) - 1:
+                        arrest_episodes["arrests"].append(CC_starts[i + j])
+
                     else:
-                        i = i+j
-            if arrest_episodes['roscs'][-1]>arrest_episodes['arrests'][-1]: # Create Termination marker i nthe end, if necessary
-                arrest_episodes['termination'] = arrest_episodes['roscs'][-1]
-                arrest_episodes['roscs'].pop(-1)
+                        i = i + j
+            if (
+                arrest_episodes["roscs"][-1] > arrest_episodes["arrests"][-1]
+            ):  # Create Termination marker i nthe end, if necessary
+                arrest_episodes["termination"] = arrest_episodes["roscs"][-1]
+                arrest_episodes["roscs"].pop(-1)
             else:
-                i = len(CC_stops)-1
-                while CC_stops[i] - CC_starts[i] <CC_min_length:
-                    i-=1
-                arrest_episodes['termination'] = CC_stops[i]
+                i = len(CC_stops) - 1
+                while CC_stops[i] - CC_starts[i] < CC_min_length:
+                    i -= 1
+                arrest_episodes["termination"] = CC_stops[i]
                 # DECIDE whether ROSC or Arrest
-        
-        
+
         cprdat_analysis["arrest_episodes"] = arrest_episodes
-    
-        
-        version = '1.5.2'
-        schema_version = '0.6.1'
+
+        version = "1.5.2"
+        schema_version = "0.6.1"
         # --------------- TOTAL --------------------------------------------------------------------
-    
-        result_dict={"cprdat_analysis":cprdat_analysis,
-                     "analyzationtime":pd.Timestamp.now().isoformat(),
-                    "schemaversion" : schema_version,
-                    "cprdatversion" : version,
-                    "result_code":'00'}
-        
-        
+
+        result_dict = {
+            "cprdat_analysis": cprdat_analysis,
+            "analyzationtime": pd.Timestamp.now().isoformat(),
+            "schemaversion": schema_version,
+            "cprdatversion": version,
+            "result_code": "00",
+        }
+
         return result_dict
+
     def area_under_threshold(
         self,
         source: Channel | Label | str,
         start_time: Timestamp | Timedelta | None = None,
         stop_time: Timestamp | Timedelta | None = None,
-        threshold: int = 0
+        threshold: int = 0,
     ) -> ThresholdMetrics:
         """Calculates the area and duration where the signal falls
         below a specified threshold.
-        
+
         The calculations might be used with a mean arterial pressure to asses for hypotension.
         They are implemented following the proposed metrics by Maheswari et al.
         in :cite:`10.1213/ANE.0000000000003482`.
@@ -2858,7 +2940,7 @@ class Vitals:
                 "Channel or Label, nor the name of a contained "
                 "Channel or Label"
             )
-        
+
         source_data = source.get_data()
         timeseries = pd.Series(source_data.data, index=source_data.time_index)
 
@@ -2866,7 +2948,7 @@ class Vitals:
             timeseries=timeseries,
             start_time=start_time,
             stop_time=stop_time,
-            threshold=threshold
+            threshold=threshold,
         )
 
     def _get_inspiration_start(
@@ -2875,11 +2957,11 @@ class Vitals:
         interpolated_flow: DataSlice,
         interpolated_pressure: DataSlice,
         slope_pressure: DataSlice,
-        threshold: float
-        ) -> np.ndarray:
+        threshold: float,
+    ) -> np.ndarray:
         """
         Derives the indices of the start of inspirations from the product of flow and pressure.
-        
+
         This function identifies segments of the product that are above a certain threshold
         and finds the last zero crossing before each segment. Preceding segments
         of less than 20ms of a non-positive product are filtered out to ensure that chest
@@ -2891,7 +2973,7 @@ class Vitals:
         Parameters
         ----------
         product:class:`.DataSlice`
-            A DataSlice object containing the time index and data of the product of flow and pressure.  
+            A DataSlice object containing the time index and data of the product of flow and pressure.
 
         interpolated_flow:class:`.DataSlice`
             A DataSlice object containing the time index and data of the interpolated flow signal.
@@ -2919,33 +3001,37 @@ class Vitals:
         """
 
         # Filterparameters
-        max_dur_short_breaks = np.timedelta64(15, 'ms')
-        min_dur_landmark_segment = np.timedelta64(20, 'ms')        
-        max_oscillation_interval = np.timedelta64(375, 'ms')
-        
-        max_dur_short_exp = np.timedelta64(70, 'ms')
-        
-        
+        max_dur_short_breaks = np.timedelta64(15, "ms")
+        min_dur_landmark_segment = np.timedelta64(20, "ms")
+        max_oscillation_interval = np.timedelta64(375, "ms")
+
+        max_dur_short_exp = np.timedelta64(70, "ms")
 
         if not product.time_index.equals(interpolated_flow.time_index):
-            raise ValueError("The time indices of product and interpolated_flow must match.")
-        
+            raise ValueError(
+                "The time indices of product and interpolated_flow must match."
+            )
+
         if not product.time_index.equals(interpolated_pressure.time_index):
-            raise ValueError("The time indices of product and interpolated_pressure must match.")
+            raise ValueError(
+                "The time indices of product and interpolated_pressure must match."
+            )
 
         if not product.time_index.equals(slope_pressure.time_index):
-            raise ValueError("The time indices of product and slope_pressure must match.")
+            raise ValueError(
+                "The time indices of product and slope_pressure must match."
+            )
 
         index = product.time_index.copy()
-        data = product.data.copy() 
+        data = product.data.copy()
 
         # Find indices where product is above a threshold
         above_idxs = np.flatnonzero(data > threshold).astype(int)
-        
+
         # Early exit: nothing above threshold
         if above_idxs.size == 0:
             onsets_above_threshold = np.empty(0, dtype=int)
-            filtered_onsets        = onsets_above_threshold
+            filtered_onsets = onsets_above_threshold
         else:
             # Identify segments above threshold separated by breaks longer than max_dur_short_breaks
             # therefore filter breaks likely caused by oscillations
@@ -2959,7 +3045,7 @@ class Vitals:
             else:
                 # Filter segments that are shorter than min_dur_landmark_segment
                 starts = index.take(above_idxs[segment_starts_pos])
-                stops  = index.take(above_idxs[segment_stops_pos])
+                stops = index.take(above_idxs[segment_stops_pos])
                 segment_width = stops - starts
                 segments_width_filter = segment_width >= min_dur_landmark_segment
                 filtered_onsets = onsets_above_threshold[segments_width_filter]
@@ -2969,23 +3055,25 @@ class Vitals:
         if filtered_onsets.size == 0:
             return np.empty(0, dtype=int), onsets_above_threshold, filtered_onsets
         elif filtered_onsets.size == 1:
-            #size 1 → keep it
+            # size 1 → keep it
             pass
         else:
             # keep the first; drop neighbours closer than 375 ms
-            dt = np.diff(index.take(filtered_onsets))  # timedeltas between consecutive kept onsets
+            dt = np.diff(
+                index.take(filtered_onsets)
+            )  # timedeltas between consecutive kept onsets
             spacing_ok = np.r_[True, dt > max_oscillation_interval]
             filtered_onsets = filtered_onsets[spacing_ok]
 
         # identify inspiratory reverse airflow
         # A segment of expiratory flow is considered to be caused by chest compressions if it meets the following criteria:
-            # 1. It is short in duration (less than or equal to 70 ms
-            # 2. The airway pressure is positive throughout the segment.
-            # 3. The slope of the airway pressure is positive throughout the segment.
-        
-        # 1. find short segments of expiratory flow 
+        # 1. It is short in duration (less than or equal to 70 ms
+        # 2. The airway pressure is positive throughout the segment.
+        # 3. The slope of the airway pressure is positive throughout the segment.
+
+        # 1. find short segments of expiratory flow
         flow = interpolated_flow.data
-        segments_exp_flow = np.where(flow <= 0)[0] 
+        segments_exp_flow = np.where(flow <= 0)[0]
         if segments_exp_flow.size == 0:
             exp_flow_starts = np.array([], dtype=int)
             exp_flow_ends = np.array([], dtype=int)
@@ -2994,60 +3082,70 @@ class Vitals:
             breaks = np.where(np.diff(segments_exp_flow) > 1)[0]
             exp_flow_starts = np.r_[segments_exp_flow[0], segments_exp_flow[breaks + 1]]
             exp_flow_ends = np.r_[segments_exp_flow[breaks], segments_exp_flow[-1]]
-            duration_filter = (index[exp_flow_ends] - index[exp_flow_starts]) <= max_dur_short_exp
-        
+            duration_filter = (
+                index[exp_flow_ends] - index[exp_flow_starts]
+            ) <= max_dur_short_exp
+
         short_exp_segments = np.flatnonzero(duration_filter)
         starts = exp_flow_starts[short_exp_segments]
-        ends   = exp_flow_ends[short_exp_segments]
-        
+        ends = exp_flow_ends[short_exp_segments]
+
         # 2. assuring that for the entire segment the pressure is positive
-        positive_pressure = np.array([
-            np.all(interpolated_pressure.data[s:e+1] > 0)
-            for s, e in zip(starts, ends)
-        ], dtype=bool)
+        positive_pressure = np.array(
+            [
+                np.all(interpolated_pressure.data[s : e + 1] > 0)
+                for s, e in zip(starts, ends)
+            ],
+            dtype=bool,
+        )
         segment_pressure_filter = np.zeros_like(duration_filter, dtype=bool)
         segment_pressure_filter[short_exp_segments] = positive_pressure
 
         # 3. assuring that for the entire segment the slope is positive
         positive_slope = np.array(
-            [np.all(slope_pressure.data[s:e+1] > 0) for s, e in zip(starts, ends)],
-            dtype=bool
+            [np.all(slope_pressure.data[s : e + 1] > 0) for s, e in zip(starts, ends)],
+            dtype=bool,
         )
         segment_slope_filter = np.zeros_like(duration_filter, dtype=bool)
         segment_slope_filter[short_exp_segments] = positive_slope
 
         # Identify segments of expiratory flow that are likely caused by chest compressions rather than true expiration.
-        # Transient reverse airflow can occur due to the mechanical force, but the airway pressure remains positive and rising, 
-        # distinguishing these events from normal expiratory phases. 
+        # Transient reverse airflow can occur due to the mechanical force, but the airway pressure remains positive and rising,
+        # distinguishing these events from normal expiratory phases.
         # #Filtering out these segments helps prevent misclassification of chest compression artifacts as respiratory events.
-        compression_exp_flow = duration_filter & segment_pressure_filter & segment_slope_filter
+        compression_exp_flow = (
+            duration_filter & segment_pressure_filter & segment_slope_filter
+        )
 
         # Find zero crossing of product before positive segments
-        non_pos_product = np.where(data <= 0)[0] 
+        non_pos_product = np.where(data <= 0)[0]
         breaks = np.where(np.diff(non_pos_product) > 1)[0]
         zero_crossings = np.r_[non_pos_product[breaks], non_pos_product[-1]]
         if exp_flow_ends[compression_exp_flow].size > 0:
-            mask = ~np.isin(zero_crossings, exp_flow_ends[compression_exp_flow]) # removes inspiratory reverse airflow
+            mask = ~np.isin(
+                zero_crossings, exp_flow_ends[compression_exp_flow]
+            )  # removes inspiratory reverse airflow
         else:
-            mask = np.ones_like(zero_crossings, dtype=bool)  # keep all zero crossings if nothing to filter
+            mask = np.ones_like(
+                zero_crossings, dtype=bool
+            )  # keep all zero crossings if nothing to filter
         valid_zero_crossings = zero_crossings[mask]
 
         # Find the last zero before each start_above_idx in the zero_idxs without the short ones
-        inspiration_starts = valid_zero_crossings[np.searchsorted(valid_zero_crossings, filtered_onsets,side='right')-1]
+        inspiration_starts = valid_zero_crossings[
+            np.searchsorted(valid_zero_crossings, filtered_onsets, side="right") - 1
+        ]
 
         return np.unique(inspiration_starts), onsets_above_threshold, filtered_onsets
 
-    def _get_expiration_start(
-        self,
-        product: DataSlice, 
-        threshold: float        ) -> np.ndarray:
+    def _get_expiration_start(self, product: DataSlice, threshold: float) -> np.ndarray:
         """
         Derives the indices of the start of expirations from the product of flow and slope of pressure.
 
         This function identifies segments of the product that are above a certain threshold
         and finds the preceding zero crossing before each segment as potenital expiration start.
         It returns the first candidate between two inspritation starts as the expiration start.
-        
+
         Parameters
         ----------
         product:class:`.DataSlice`
@@ -3061,15 +3159,15 @@ class Vitals:
         np.ndarray
             An array of indices for the time index of the given product where the expirations start.
         """
-        #min_distance_landmarks = np.timedelta64(12, 'ms')
-        min_dur_short_breaks = np.timedelta64(10, 'ms')
-        min_dur_landmark_segment = np.timedelta64(12, 'ms')
-        max_dur_short_breaks = np.timedelta64(10, 'ms')
+        # min_distance_landmarks = np.timedelta64(12, 'ms')
+        min_dur_short_breaks = np.timedelta64(10, "ms")
+        min_dur_landmark_segment = np.timedelta64(12, "ms")
+        max_dur_short_breaks = np.timedelta64(10, "ms")
 
         oscillation_threshold = 30
-        
+
         index = product.time_index.copy()
-        data = product.data.copy() 
+        data = product.data.copy()
 
         # Find indices where product is above a threshold
         above_idxs = np.flatnonzero(data > threshold).astype(int)
@@ -3077,10 +3175,10 @@ class Vitals:
         # Early exit: nothing above threshold
         if above_idxs.size == 0:
             onsets_above_threshold = np.empty(0, dtype=int)
-            filtered_onsets        = onsets_above_threshold
+            filtered_onsets = onsets_above_threshold
         else:
             # identify breaks (segments below threshold) greater than min_dur_short_breaks
-            #thereby filtering out short breaks that are likely due to oscillations
+            # thereby filtering out short breaks that are likely due to oscillations
             breaks = np.diff(index.take(above_idxs)) > min_dur_short_breaks
 
             # determine length of segment above threshold and remove if shorter than min_dur_landmark_segment
@@ -3089,7 +3187,7 @@ class Vitals:
             onsets_above_threshold = above_idxs[segment_starts_pos]
             # Filter segments that are shorter than min_dur_landmark_segment
             starts = index.take(above_idxs[segment_starts_pos])
-            stops  = index.take(above_idxs[segment_stops_pos])
+            stops = index.take(above_idxs[segment_stops_pos])
             segment_width = stops - starts
             segments_width_filter = segment_width >= min_dur_landmark_segment
             filtered_onsets = onsets_above_threshold[segments_width_filter]
@@ -3099,7 +3197,9 @@ class Vitals:
             return np.empty(0, dtype=int), onsets_above_threshold, filtered_onsets
 
         # Find zero crossings before the filtered onsets and filter for short segments of oscillations
-        non_pos_product = np.flatnonzero(data <= 0 + oscillation_threshold) #condition must include negative values as not all zerocrossings in the array are separate datapoints//additionally, filter out small positive values close to zero
+        non_pos_product = np.flatnonzero(
+            data <= 0 + oscillation_threshold
+        )  # condition must include negative values as not all zerocrossings in the array are separate datapoints//additionally, filter out small positive values close to zero
         if non_pos_product.size == 0:
             # No zero/non-positive → no valid "zero before onset"
             return np.empty(0, dtype=int), onsets_above_threshold, filtered_onsets
@@ -3118,23 +3218,19 @@ class Vitals:
             return np.empty(0, dtype=int), onsets_above_threshold, filtered_onsets
 
         # For each filtered onset, pick the last zero <= onset
-        pos = np.searchsorted(zero_candidates, filtered_onsets, side='right') - 1
+        pos = np.searchsorted(zero_candidates, filtered_onsets, side="right") - 1
         valid = pos >= 0  # drop onsets with no preceding zero
         potential_exp_starts = zero_candidates[pos[valid]]
 
         return np.unique(potential_exp_starts), onsets_above_threshold, filtered_onsets
 
-
-
     def _filter_alternating_phases(
-        self,
-        potential_phase_idxs: np.ndarray,
-        fencing_phase_idxs: np.ndarray
-        ) -> np.ndarray:
+        self, potential_phase_idxs: np.ndarray, fencing_phase_idxs: np.ndarray
+    ) -> np.ndarray:
         """
         Assures phases in respiratory cycle alternatingly
         This function filters the potential phase starts (inspiration or expiration) to ensure that they alternate with the given fencing phase starts (expiration or inspiration).
-        
+
         Parameters
         ----------
         potential_phase_idxs: np.ndarray
@@ -3151,26 +3247,25 @@ class Vitals:
 
         if potential_phase_idxs.size == 0 or fencing_phase_idxs.size == 0:
             return potential_phase_idxs
-        
+
         # Filter second events starts between two fencing events
         # right-bound sentinel guarantees insp_bounds[left+1] exists
         fencing_bounds = np.r_[fencing_phase_idxs, np.inf]
         # For each stop, find index of the start immediately to its left
-        left = np.searchsorted(fencing_bounds, potential_phase_idxs, side='right') - 1
+        left = np.searchsorted(fencing_bounds, potential_phase_idxs, side="right") - 1
         # valid when between 0 and last real interval
         valid_left = (left >= 0) & (left < len(fencing_bounds) - 1)
         between = np.zeros_like(potential_phase_idxs, dtype=bool)
         between[valid_left] = (
-            (potential_phase_idxs[valid_left] > fencing_bounds[left[valid_left]]) &
-            (potential_phase_idxs[valid_left] <= fencing_bounds[left[valid_left] + 1])
-        )
+            potential_phase_idxs[valid_left] > fencing_bounds[left[valid_left]]
+        ) & (potential_phase_idxs[valid_left] <= fencing_bounds[left[valid_left] + 1])
         # Mark first event start before first fencing event
         if potential_phase_idxs[0] < fencing_bounds[0]:
             between[0] = True
         # For valid stops, keep the first one per interval (per 'left')
-        bins = left[between]      # which interval each stop belongs to
-        vals = potential_phase_idxs[between]     # their stop values
-    
+        bins = left[between]  # which interval each stop belongs to
+        vals = potential_phase_idxs[between]  # their stop values
+
         _, first_pos = np.unique(bins, return_index=True)
 
         return vals[first_pos]
@@ -3184,7 +3279,7 @@ class Vitals:
         add_labels: bool = True,
         add_intermediate_channels: bool = False,
         return_landmarks: bool = False,
-        ) -> None:
+    ) -> None:
         """
         Derives the respiratory phases from air flow and airway pressure channels and adds them as global labels.
 
@@ -3197,15 +3292,15 @@ class Vitals:
         ----------
         self: :class:`.Vitals`
             The Vitals object to which the respiratory phases will be added.
-        
+
         flow: :class:`.Channel`
             The air flow channel.
-        
+
         pressure: :class:`.Channel`
             The airway pressure channel.
-        
+
         inspiratory_threshold: float
-            The threshold for detecting the start of inspiration.   
+            The threshold for detecting the start of inspiration.
 
         expiratory_threshold: float
             The threshold for detecting the start of expiration.
@@ -3241,7 +3336,7 @@ class Vitals:
         """
 
         # Interpolate Flow and Pressure to have a common index and crosses of y=0
-        #f_interpolated, p_interpolated = _resample_to_common_index(flow, pressure)
+        # f_interpolated, p_interpolated = _resample_to_common_index(flow, pressure)
         f_interpolated, p_interpolated = resample_to_common_index(flow, pressure)
         index = f_interpolated.time_index
 
@@ -3249,83 +3344,95 @@ class Vitals:
         if len(p_interpolated) > 2:
             y = p_interpolated.data
             # convert time to seconds (float64) from ns
-            t_ns = index.view("int64")   
-            t_rel_sec = (t_ns - t_ns[0]).astype(np.float64) * 1e-9  
+            t_ns = index.view("int64")
+            t_rel_sec = (t_ns - t_ns[0]).astype(np.float64) * 1e-9
             # Calculate the slope using central differences for interior points, forward/backward for edges
-            slope_p = DataSlice(time_index=index, data=np.gradient(y, t_rel_sec, edge_order=1))
+            slope_p = DataSlice(
+                time_index=index, data=np.gradient(y, t_rel_sec, edge_order=1)
+            )
         else:
             slope_p = DataSlice(time_index=index, data=np.zeros_like(y, dtype=float))
 
         # Calculate the product of flow and pressure
-        product_flow_pressure = DataSlice(time_index=index, data=f_interpolated.data * p_interpolated.data)
+        product_flow_pressure = DataSlice(
+            time_index=index, data=f_interpolated.data * p_interpolated.data
+        )
 
         # derive idx for inspiration start
-        potential_insp_idxs, insp_onsets_above_threshold, insp_filtered_onsets = self._get_inspiration_start(
-            product=product_flow_pressure, 
-            interpolated_flow=f_interpolated, 
-            interpolated_pressure=p_interpolated, 
-            slope_pressure=slope_p,
-            threshold=inspiratory_threshold)
+        potential_insp_idxs, insp_onsets_above_threshold, insp_filtered_onsets = (
+            self._get_inspiration_start(
+                product=product_flow_pressure,
+                interpolated_flow=f_interpolated,
+                interpolated_pressure=p_interpolated,
+                slope_pressure=slope_p,
+                threshold=inspiratory_threshold,
+            )
+        )
 
         # Calculate the product of flow and slope of pressure
         neg_flow = f_interpolated.data.copy()
-        neg_flow [neg_flow > 0] = 0
+        neg_flow[neg_flow > 0] = 0
         product_flow_pslope = DataSlice(index, neg_flow * slope_p.data)
 
         # derive idx for expiration start
-        potential_exp_idxs, exp_onsets_above_threshold, exp_filtered_onsets = self._get_expiration_start(
-            product=product_flow_pslope, 
-            threshold=expiratory_threshold)
+        potential_exp_idxs, exp_onsets_above_threshold, exp_filtered_onsets = (
+            self._get_expiration_start(
+                product=product_flow_pslope, threshold=expiratory_threshold
+            )
+        )
 
         # Filter secondary expiration starts between two inspiration starts
-        exp_idxs = self._filter_alternating_phases(potential_phase_idxs=potential_exp_idxs, fencing_phase_idxs=potential_insp_idxs)
-        insp_idxs = self._filter_alternating_phases(potential_phase_idxs=potential_insp_idxs, fencing_phase_idxs=exp_idxs)
+        exp_idxs = self._filter_alternating_phases(
+            potential_phase_idxs=potential_exp_idxs,
+            fencing_phase_idxs=potential_insp_idxs,
+        )
+        insp_idxs = self._filter_alternating_phases(
+            potential_phase_idxs=potential_insp_idxs, fencing_phase_idxs=exp_idxs
+        )
 
         # Generating Results
         # If either side is empty, you can't form intervals
         if insp_idxs.size == 0 or exp_idxs.size == 0:
             insp_begin = index[:0]  # empty, same type as index
-            exp_begin  = index[:0]
+            exp_begin = index[:0]
             insp_intervals = []
-            exp_intervals  = []
+            exp_intervals = []
         else:
             # Onsets of phases (DatetimeIndex or Index)
             insp_begin = index.take(insp_idxs)
-            exp_begin  = index.take(exp_idxs)
+            exp_begin = index.take(exp_idxs)
             # If after selection one is empty, bail gracefully
             if len(insp_begin) == 0 or len(exp_begin) == 0:
                 insp_intervals = []
-                exp_intervals  = []
+                exp_intervals = []
             else:
                 # --- Inspiration intervals: [insp_start, next exp_start) ---
                 i_first = insp_begin[0]
-                e_last  = exp_begin[-1]
+                e_last = exp_begin[-1]
                 i_for_insp = insp_begin[insp_begin < e_last]
                 e_for_insp = exp_begin[exp_begin > i_first]
                 insp_intervals = list(zip(i_for_insp, e_for_insp))
                 # --- Expiration intervals: [exp_start, next insp_start) ---
-                i_last  = insp_begin[-1]
+                i_last = insp_begin[-1]
                 e_first = exp_begin[0]
                 e_for_exp = exp_begin[exp_begin < i_last]
                 i_for_exp = insp_begin[insp_begin > e_first]
                 exp_intervals = list(zip(e_for_exp, i_for_exp))
 
-
-
-       # Add inspiration and expiration labels to the Vitals object
+        # Add inspiration and expiration labels to the Vitals object
         if add_labels:
             self.add_global_label(
                 Label(
                     name="Inspiration Begin",
                     time_index=insp_begin,
-                    plotstyle=DEFAULT_PLOT_STYLE.get("Inspiration Begin")   
+                    plotstyle=DEFAULT_PLOT_STYLE.get("Inspiration Begin"),
                 )
             )
             self.add_global_label(
                 Label(
                     name="Expiration Begin",
                     time_index=exp_begin,
-                    plotstyle=DEFAULT_PLOT_STYLE.get("Expiration Begin")    
+                    plotstyle=DEFAULT_PLOT_STYLE.get("Expiration Begin"),
                 )
             )
 
@@ -3351,7 +3458,7 @@ class Vitals:
             intermediate_channels = [
                 Channel(
                     name="Flow Interpolated",
-                    time_index=f_interpolated.time_index, 
+                    time_index=f_interpolated.time_index,
                     data=f_interpolated.data,
                 ),
                 Channel(
@@ -3366,14 +3473,14 @@ class Vitals:
                 ),
                 Channel(
                     name="Slope Pressure",
-                    time_index=slope_p.time_index,       
+                    time_index=slope_p.time_index,
                     data=slope_p.data,
                 ),
                 Channel(
                     name="Product negative Flow Pressures Slope",
                     time_index=p_interpolated.time_index,
                     data=product_flow_pslope.data,
-                )
+                ),
             ]
             for channel in intermediate_channels:
                 channel.plotstyle = DEFAULT_PLOT_STYLE.get(channel.name)
@@ -3381,28 +3488,26 @@ class Vitals:
 
         if return_landmarks:
             return RespPhases(
-                inspiration = PhaseData(
-                    onsets_above_threshold= index.take(insp_onsets_above_threshold),
-                    filtered_onsets_above_threshold= index.take(insp_filtered_onsets),
-                    candidates= index.take(potential_insp_idxs),
-                    begins= insp_begin,
-                    intervals= insp_intervals,
-                    threshold= inspiratory_threshold
+                inspiration=PhaseData(
+                    onsets_above_threshold=index.take(insp_onsets_above_threshold),
+                    filtered_onsets_above_threshold=index.take(insp_filtered_onsets),
+                    candidates=index.take(potential_insp_idxs),
+                    begins=insp_begin,
+                    intervals=insp_intervals,
+                    threshold=inspiratory_threshold,
                 ),
-                expiration= PhaseData(
-                    onsets_above_threshold= index.take(exp_onsets_above_threshold),
-                    filtered_onsets_above_threshold= index.take(exp_filtered_onsets),
-                    candidates= index.take(potential_exp_idxs),
-                    begins= exp_begin,
-                    intervals= exp_intervals,
-                    threshold= expiratory_threshold
-                )
+                expiration=PhaseData(
+                    onsets_above_threshold=index.take(exp_onsets_above_threshold),
+                    filtered_onsets_above_threshold=index.take(exp_filtered_onsets),
+                    candidates=index.take(potential_exp_idxs),
+                    begins=exp_begin,
+                    intervals=exp_intervals,
+                    threshold=expiratory_threshold,
+                ),
             )
         else:
-            return 
-        
+            return
 
-        
     def filter_by_intervallabel(
         self,
         channel_or_label_to_filter: Channel | Label,
@@ -3411,7 +3516,7 @@ class Vitals:
         start_inclusive: bool = True,
         end_inclusive: bool = True,
         full_cover: bool = False,
-        ) -> Channel | Label:
+    ) -> Channel | Label:
         """Filters a channel or label by a given interval label.
 
         Parameters
@@ -3441,7 +3546,7 @@ class Vitals:
         Channel | Label
             The filtered channel or label.
         """
-            
+
         if not isinstance(channel_or_label_to_filter, (Channel, Label)):
             raise ValueError(
                 f"The specified channel_or_label_to_filter {channel_or_label_to_filter} is neither a "
@@ -3451,98 +3556,120 @@ class Vitals:
             raise ValueError(
                 f"The specified filter_by {filter_by} is not an IntervalLabel"
             )
-        
+
         # Determine whether we are filtering timestamps (Channel or Label)
         # or intervals (IntervalLabel)
         timestamps_to_filter = not isinstance(channel_or_label_to_filter, IntervalLabel)
         is_label = isinstance(channel_or_label_to_filter, Label)
-        
+
         # Get timestamps and the data of the channel or label
         channel_or_label_to_filter = deepcopy(channel_or_label_to_filter)
 
-        #early return for empty
-        if len(channel_or_label_to_filter) == 0: 
+        # early return for empty
+        if len(channel_or_label_to_filter) == 0:
             return channel_or_label_to_filter
-        
-        time_index = channel_or_label_to_filter.get_data().time_index
-        data = channel_or_label_to_filter.get_data().data.copy() if channel_or_label_to_filter.get_data().data is not None else np.array([])
-        text_data = channel_or_label_to_filter.get_data().text_data if channel_or_label_to_filter.get_data().text_data is not None else np.array([])
 
-        
-        
+        time_index = channel_or_label_to_filter.get_data().time_index
+        data = (
+            channel_or_label_to_filter.get_data().data.copy()
+            if channel_or_label_to_filter.get_data().data is not None
+            else np.array([])
+        )
+        text_data = (
+            channel_or_label_to_filter.get_data().text_data
+            if channel_or_label_to_filter.get_data().text_data is not None
+            else np.array([])
+        )
+
         # build a mask for filtering
         intervals = filter_by.get_data().time_index
         start = intervals[:, 0]
-        stop  = intervals[:, 1]
-        
-        if timestamps_to_filter: # Channel or Label
+        stop = intervals[:, 1]
+
+        if timestamps_to_filter:  # Channel or Label
             timestamps_to_filter = time_index.to_numpy()
-        
+
             if start_inclusive:
                 condition_start = timestamps_to_filter[:, None] >= start
             else:
                 condition_start = timestamps_to_filter[:, None] > start
-            
+
             if end_inclusive:
                 condition_end = timestamps_to_filter[:, None] <= stop
             else:
                 condition_end = timestamps_to_filter[:, None] < stop
-        
+
             mask = (condition_start & condition_end).any(axis=1)
-        
+
             if invert:
                 mask = ~mask
-            
+
             masked_index = time_index[mask]
-        
-        else: # IntervalLabel
+
+        else:  # IntervalLabel
             intervals_to_filter = time_index
-        
+
             intervals_to_filter_start = intervals_to_filter[:, 0]
             intervals_to_filter_end = intervals_to_filter[:, 1]
-        
+
             # A is the Interval to filter by B
             if full_cover:
                 if start_inclusive and end_inclusive:
                     # require full containment of A in some B, including touching borders
-                    mask = ((intervals_to_filter_start[:, None] >= start) & (intervals_to_filter_end[:, None] <= stop)).any(axis=1)
+                    mask = (
+                        (intervals_to_filter_start[:, None] >= start)
+                        & (intervals_to_filter_end[:, None] <= stop)
+                    ).any(axis=1)
                 elif start_inclusive and not end_inclusive:
                     # require full containment of A in some B, including touching start border
-                    mask = ((intervals_to_filter_start[:, None] >= start) & (intervals_to_filter_end[:, None] < stop)).any(axis=1)
+                    mask = (
+                        (intervals_to_filter_start[:, None] >= start)
+                        & (intervals_to_filter_end[:, None] < stop)
+                    ).any(axis=1)
                 elif not start_inclusive and end_inclusive:
                     # require full containment of A in some B, including touching end border
-                    mask = ((intervals_to_filter_start[:, None] > start) & (intervals_to_filter_end[:, None] <= stop)).any(axis=1)
-        
-            else: # any overlap
+                    mask = (
+                        (intervals_to_filter_start[:, None] > start)
+                        & (intervals_to_filter_end[:, None] <= stop)
+                    ).any(axis=1)
+
+            else:  # any overlap
                 if start_inclusive and end_inclusive:
                     # require any overlap between A and some B, including touching borders
-                    mask = ((intervals_to_filter_start[:, None] <= stop) & (intervals_to_filter_end[:, None] >= start)).any(axis=1)
+                    mask = (
+                        (intervals_to_filter_start[:, None] <= stop)
+                        & (intervals_to_filter_end[:, None] >= start)
+                    ).any(axis=1)
                 elif start_inclusive and not end_inclusive:
                     # require any overlap between A and some B, including touching start border
-                    mask = ((intervals_to_filter_start[:, None] < stop) & (intervals_to_filter_end[:, None] >= start)).any(axis=1)
+                    mask = (
+                        (intervals_to_filter_start[:, None] < stop)
+                        & (intervals_to_filter_end[:, None] >= start)
+                    ).any(axis=1)
                 elif not start_inclusive and end_inclusive:
                     # require any overlap between A and some B, including touching end border
-                    mask = ((intervals_to_filter_start[:, None] <= stop) & (intervals_to_filter_end[:, None] > start)).any(axis=1)
-        
+                    mask = (
+                        (intervals_to_filter_start[:, None] <= stop)
+                        & (intervals_to_filter_end[:, None] > start)
+                    ).any(axis=1)
+
             if invert:
                 mask = ~mask
 
             masked_index = time_index[mask]
             masked_index = masked_index.ravel()
 
-            
-
-        
         # Filter the given Channel or Label
-        
-        TS = TimeSeriesBase(masked_index-channel_or_label_to_filter.offset)
+
+        TS = TimeSeriesBase(masked_index - channel_or_label_to_filter.offset)
         new_index = TS.time_index
         new_start = TS.time_start
         channel_or_label_to_filter.time_index = new_index
         channel_or_label_to_filter.time_start = new_start
         channel_or_label_to_filter.data = data[mask] if len(data) > 0 else None
         if is_label:
-            channel_or_label_to_filter.text_data = text_data[mask] if len(text_data) > 0 else None
-        
-        return channel_or_label_to_filter
+            channel_or_label_to_filter.text_data = (
+                text_data[mask] if len(text_data) > 0 else None
+            )
 
+        return channel_or_label_to_filter
