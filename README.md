@@ -10,6 +10,9 @@
 
 [![Documentation Status](https://readthedocs.org/projects/vitabel/badge/?version=latest)](https://vitabel.readthedocs.io/en/latest/index.html)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/UniGrazMath/vitabel/main?urlpath=%2Flab%2Ftree%2Fexamples)
+![PyPI](https://img.shields.io/pypi/v/vitabel)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/vitabel/badges/version.svg)](https://anaconda.org/conda-forge/vitabel)
+
 
 In a nutshell, the vitabel package enables interactive loading, processing, and annotation of vital medical time-series data (e.g., from defibrillators, anesthesia records, or critical care monitors) within a Jupyter notebook. By structuring and labeling data efficiently and intuitively, it paves the way for AI-driven analysis.
 
@@ -27,6 +30,11 @@ your browser.
 The latest stable release of `vitabel` is distributed via PyPI and can be installed via
 ```sh
 $ pip install vitabel
+```
+
+Alternatively, if you prefer using **Conda**, you can install `vitabel` from the `conda-forge` channel:
+```sh
+$ conda install -c conda-forge vitabel
 ```
 
 The latest development version can be installed [from the `main` branch on
@@ -76,6 +84,11 @@ contained in the [examples directory](/examples/).
 ### 📚 Documentation
 
 You can find the full API documentation here: [vitabel.readthedocs.io – vitals module](https://vitabel.readthedocs.io/en/latest/autoapi/vitabel/vitals/index.html)
+
+### 🧾 Citing vitabel
+
+Simon Orlob, Wolfgang J. Kern, Benjamin Hackl, Jan Wnent, Jan-Thorsten Gräsner, Martin Holler  
+**Vitabel: Bridging Clinical Expertise and the Machine Learning Pipeline in Critical Care**. PREPRINT (Version 1), 29 September 2025. Research Square. [https://doi.org/10.21203/rs.3.rs-7227195/v1]()
 
 ### 🛠️ Development
 
