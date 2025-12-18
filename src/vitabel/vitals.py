@@ -6,6 +6,7 @@ import json
 import os
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import scipy.signal as sgn
 import logging
@@ -2957,7 +2958,7 @@ class Vitals:
         interpolated_pressure: DataSlice,
         slope_pressure: DataSlice,
         threshold: float,
-    ) -> np.ndarray:
+    ) -> npt.NDArray:
         """
         Derives the indices of the start of inspirations from the product of flow and pressure.
 
