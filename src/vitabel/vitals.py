@@ -3598,6 +3598,7 @@ class Vitals:
             channel_or_label_to_filter.data = object_data.data[filter_mask]
 
         if object_data.text_data is not None and len(object_data.text_data) > 0:
+            assert isinstance(channel_or_label_to_filter, Label)
             channel_or_label_to_filter.text_data = object_data.text_data[filter_mask]
 
         return channel_or_label_to_filter
