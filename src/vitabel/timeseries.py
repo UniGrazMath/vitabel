@@ -481,9 +481,8 @@ class TimeSeriesBase:
             )
 
         series = copy(self)
-        series._offset = pd.Timedelta(
-            0
-        )  # offset already applied to time_index, remove from copy
+        # offset already applied to time_index, remove from copy
+        series._offset = pd.Timedelta(0)
 
         if reference_time is None:
             if series.is_time_absolute():
