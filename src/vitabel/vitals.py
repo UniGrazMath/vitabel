@@ -2958,7 +2958,7 @@ class Vitals:
         interpolated_pressure: DataSlice,
         slope_pressure: DataSlice,
         threshold: float,
-    ) -> npt.NDArray:
+    ) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
         """
         Derives the indices of the start of inspirations from the product of flow and pressure.
 
@@ -3000,12 +3000,12 @@ class Vitals:
             An array of indices for the onsets above threshold after additional filtering (e.g., slope and pressure criteria).
         """
 
-        # Filterparameters
-        max_dur_short_breaks = np.timedelta64(15, "ms")
-        min_dur_landmark_segment = np.timedelta64(20, "ms")
-        max_oscillation_interval = np.timedelta64(375, "ms")
+        # Filter parameters
+        landmark_duration_max_interruption = np.timedelta64(15, "ms")
+        landmark_min_duration = np.timedelta64(20, "ms")
+        landmark_cooldown_duration = np.timedelta64(375, "ms")
 
-        max_dur_short_exp = np.timedelta64(70, "ms")
+        reverse_airflow_duration_limit = np.timedelta64(70, "ms")
 
         if not product.time_index.equals(interpolated_flow.time_index):
             raise ValueError(
@@ -3022,78 +3022,84 @@ class Vitals:
                 "The time indices of product and slope_pressure must match."
             )
 
-        index = product.time_index.copy()
+        times = product.time_index.copy()
         data = product.data.copy()
 
         # Find indices where product is above a threshold
-        above_idxs = np.flatnonzero(data > threshold).astype(int)
+        (above_idxs,) = (data > threshold).nonzero()
 
         # Early exit: nothing above threshold
         if above_idxs.size == 0:
             onsets_above_threshold = np.empty(0, dtype=int)
             filtered_onsets = onsets_above_threshold
         else:
-            # Identify segments above threshold separated by breaks longer than max_dur_short_breaks
+            # Identify segments above threshold separated by breaks longer than 
+            # the maximum allowed interruption duration for landmarks,
             # therefore filter breaks likely caused by oscillations
-            breaks = np.diff(index.take(above_idxs)) > max_dur_short_breaks
-            segment_starts_pos = np.r_[0, breaks.nonzero()[0] + 1]
-            segment_stops_pos = np.r_[breaks.nonzero()[0], above_idxs.size - 1]
+            breaks = np.diff(times[above_idxs]) > landmark_duration_max_interruption
+            (break_idxs,) = breaks.nonzero()
+            segment_starts_pos = np.r_[0, break_idxs + 1]
+            segment_stops_pos = np.r_[break_idxs, above_idxs.size - 1]
             onsets_above_threshold = above_idxs[segment_starts_pos]
 
             if onsets_above_threshold.size == 0:
                 filtered_onsets = onsets_above_threshold
             else:
-                # Filter segments that are shorter than min_dur_landmark_segment
-                starts = index.take(above_idxs[segment_starts_pos])
-                stops = index.take(above_idxs[segment_stops_pos])
+                # Filter segments that are shorter than landmark_min_duration
+                starts = times.take(above_idxs[segment_starts_pos])
+                stops = times.take(above_idxs[segment_stops_pos])
                 segment_width = stops - starts
-                segments_width_filter = segment_width >= min_dur_landmark_segment
+                segments_width_filter = segment_width >= landmark_min_duration
                 filtered_onsets = onsets_above_threshold[segments_width_filter]
 
         # If nothing survives filtering, early return
-        # Else filter oscillations by suppressing immediate neighbours
         if filtered_onsets.size == 0:
             return np.empty(0, dtype=int), onsets_above_threshold, filtered_onsets
+        # Otherwise filter oscillations by suppressing immediate neighbours
         elif filtered_onsets.size == 1:
-            # size 1 → keep it
+            # size 1 -> keep it
             pass
         else:
-            # keep the first; drop neighbours closer than 375 ms
+            # keep the first; drop neighbours closer than the given cooldown duration
             dt = np.diff(
-                index.take(filtered_onsets)
+                times.take(filtered_onsets)
             )  # timedeltas between consecutive kept onsets
-            spacing_ok = np.r_[True, dt > max_oscillation_interval]
+            spacing_ok = np.r_[True, dt > landmark_cooldown_duration]
             filtered_onsets = filtered_onsets[spacing_ok]
 
-        # identify inspiratory reverse airflow
-        # A segment of expiratory flow is considered to be caused by chest compressions if it meets the following criteria:
-        # 1. It is short in duration (less than or equal to 70 ms
+        # === Identification of inspiratory reverse airflow ===
+        # A segment of expiratory flow is considered to be caused by chest
+        # compressions if it meets the following criteria:
+        # 1. It is short in duration (less than or equal to 70 ms).
         # 2. The airway pressure is positive throughout the segment.
         # 3. The slope of the airway pressure is positive throughout the segment.
 
         # 1. find short segments of expiratory flow
         flow = interpolated_flow.data
-        segments_exp_flow = np.where(flow <= 0)[0]
+        assert flow is not None
+        (segments_exp_flow,) = np.where(flow <= 0)
         if segments_exp_flow.size == 0:
             exp_flow_starts = np.array([], dtype=int)
             exp_flow_ends = np.array([], dtype=int)
             duration_filter = np.array([], dtype=bool)
         else:
-            breaks = np.where(np.diff(segments_exp_flow) > 1)[0]
+            (breaks,) = np.where(np.diff(segments_exp_flow) > 1)
             exp_flow_starts = np.r_[segments_exp_flow[0], segments_exp_flow[breaks + 1]]
             exp_flow_ends = np.r_[segments_exp_flow[breaks], segments_exp_flow[-1]]
             duration_filter = (
-                index[exp_flow_ends] - index[exp_flow_starts]
-            ) <= max_dur_short_exp
+                times[exp_flow_ends] - times[exp_flow_starts]
+            ) <= reverse_airflow_duration_limit
 
         short_exp_segments = np.flatnonzero(duration_filter)
         starts = exp_flow_starts[short_exp_segments]
         ends = exp_flow_ends[short_exp_segments]
 
-        # 2. assuring that for the entire segment the pressure is positive
+        # 2. check that for the entire segment the pressure is positive
+        pressure = interpolated_pressure.data
+        assert pressure is not None
         positive_pressure = np.array(
             [
-                np.all(interpolated_pressure.data[s : e + 1] > 0)
+                np.all(pressure[s : e + 1] > 0)
                 for s, e in zip(starts, ends)
             ],
             dtype=bool,
@@ -3102,33 +3108,36 @@ class Vitals:
         segment_pressure_filter[short_exp_segments] = positive_pressure
 
         # 3. assuring that for the entire segment the slope is positive
+        slopes = slope_pressure.data
+        assert slopes is not None
         positive_slope = np.array(
-            [np.all(slope_pressure.data[s : e + 1] > 0) for s, e in zip(starts, ends)],
+            [np.all(slopes[s : e + 1] > 0) for s, e in zip(starts, ends)],
             dtype=bool,
         )
         segment_slope_filter = np.zeros_like(duration_filter, dtype=bool)
         segment_slope_filter[short_exp_segments] = positive_slope
 
-        # Identify segments of expiratory flow that are likely caused by chest compressions rather than true expiration.
-        # Transient reverse airflow can occur due to the mechanical force, but the airway pressure remains positive and rising,
+        # Identify segments of expiratory flow that are likely caused by chest
+        # compressions rather than true expiration.
+        # Transient reverse airflow can occur due to the mechanical force,
+        # but the airway pressure remains positive and rising,
         # distinguishing these events from normal expiratory phases.
-        # #Filtering out these segments helps prevent misclassification of chest compression artifacts as respiratory events.
+        # Filtering out these segments helps prevent misclassification of
+        # chest compression artifacts as respiratory events.
         compression_exp_flow = (
             duration_filter & segment_pressure_filter & segment_slope_filter
         )
 
         # Find zero crossing of product before positive segments
-        non_pos_product = np.where(data <= 0)[0]
-        breaks = np.where(np.diff(non_pos_product) > 1)[0]
+        (non_pos_product,) = np.where(data <= 0)
+        (breaks,) = np.where(np.diff(non_pos_product) > 1)
         zero_crossings = np.r_[non_pos_product[breaks], non_pos_product[-1]]
         if exp_flow_ends[compression_exp_flow].size > 0:
-            mask = ~np.isin(
-                zero_crossings, exp_flow_ends[compression_exp_flow]
-            )  # removes inspiratory reverse airflow
+            # removes inspiratory reverse airflow
+            mask = ~np.isin(zero_crossings, exp_flow_ends[compression_exp_flow])
         else:
-            mask = np.ones_like(
-                zero_crossings, dtype=bool
-            )  # keep all zero crossings if nothing to filter
+            # keep all zero crossings if there is nothing to filter
+            mask = np.ones_like(zero_crossings, dtype=bool)
         valid_zero_crossings = zero_crossings[mask]
 
         # Find the last zero before each start_above_idx in the zero_idxs without the short ones
