@@ -3517,8 +3517,41 @@ class Vitals:
         else:
             return
 
+    def _integrate_trapezoid(
+            signal: DataSlice):
+        """Integrates data with trapezoidal rule over the entire DataSlice.
 
-    def compute_ventilation_volumes():
+        Parameters
+        ----------
+        signal : DataSlice  
+            label or channel to integrate.
+
+        Returns
+        -------
+        DataSlice
+            :class:`.DataSlice` containing the cumulative trapezoidal integral of the input signal over time.
+        
+        """
+        if len(signal) < 2:
+            raise Exception("Length of time and data must be at least 2")
+        if signal.data is None:
+            raise Exception("DataSlice contains no data to integrate")
+        if len(signal.data) != len(signal.time_index):
+            raise Exception("Length of time and data must agree")
+
+        dt = signal.time_index[1:] - signal.time_index[:-1]
+        sample_sum = signal.data[1:] + signal.data[:-1]
+        changes = sample_sum*0.5*dt.total_seconds()
+        cumulative = np.concatenate(([0.0], np.cumsum(changes)))
+
+        return DataSlice(
+            time_index = signal.get_data().time_index,
+            data = cumulative,)
+    
+
+    def compute_ventilation_volumes(
+        self,
+    ):
         """Computes ventilatory volumes from flow channel based on respiratory phase labels.
         Therefore, inspiratory and expiratory tidal volumes are calculated for each respiratory cycle.
 
@@ -3528,9 +3561,17 @@ class Vitals:
         Definitons are given in :cite:`10.1016/j.resuscitation.2025.110511`
 
 
+        Parameters
+        ----------
+
+        
+
+        Returns
+        -------
 
         
         """
+        
 
 
         
