@@ -3517,6 +3517,26 @@ class Vitals:
         else:
             return
 
+
+    def compute_ventilation_volumes():
+        """Computes ventilatory volumes from flow channel based on respiratory phase labels.
+        Therefore, inspiratory and expiratory tidal volumes are calculated for each respiratory cycle.
+
+        *Intra-arrest Ventilation*
+        In case reverse airflow segments are detected the corresponding 
+        volumes are calculated separately, as well as the cumulative tidal volumes.
+        Definitons are given in :cite:`10.1016/j.resuscitation.2025.110511`
+
+
+
+        
+        """
+
+
+        
+
+
+
     def filter_by_intervallabel(
         self,
         channel_or_label_to_filter: Channel | Label,
