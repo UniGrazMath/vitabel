@@ -273,4 +273,28 @@ DEFAULT_PLOT_STYLE = {
         "label": "Product positive Flow Pressures Slope",
         "alpha": 1,
     },
+    "Volume" : {
+        "color": "dodgerblue",
+        "label": r'$\Delta V$',
+        "alpha": 0.8,
+    },
+    "Expiratory Volume" : {
+        "color": "coral",
+        "label": r"$V_{\mathrm{exp}}$",
+        "alpha": 0.8,
+    },
+    "Inspiratory Tidal Volume Label" : {
+        "color": "dodgerblue",
+        "label": r"$VT_{\mathrm{insp}}$",
+        "lstyle": "",
+        "marker": "^",
+        "alpha": 0.8,
+    },
+    "Expiratory Tidal Volume Label" : {
+        "color": "coral",
+        "label": r"$VT_{\mathrm{exp}}$",
+        "lstyle": "",
+        "marker": "^",
+        "alpha": 0.8,
+    },
 }

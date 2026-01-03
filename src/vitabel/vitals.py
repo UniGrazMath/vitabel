@@ -3571,8 +3571,250 @@ class Vitals:
 
         
         """
+        if not "Flow Interpolated" in self.channel_names:
+            raise ValueError(
+                "Channel 'Flow Interpolated' not found in Vitals object. "
+                "Please compute respiratory phases with add_intermediate_channels=True first."
+            )
         
 
+        if not "Inspiration" in self.label_names or not "Expiration" in self.label_names:
+            raise ValueError(
+                "Labels 'Inspiration' and 'Expiration' not found in Vitals object. "
+                "Please compute respiratory phases with add_labels=True first."
+            )
+        
+        def _concat_and_sort_dataslices(dataslices):
+            """Helper function to concatenate and sort a list of DataSlices into a single :class:`.DataSlice`.
+            Parameters
+            ----------
+            dataslices : list of :class:`.DataSlice`
+            
+            Returns
+            -------
+            :class:`.DataSlice`
+                A single DataSlice containing the concatenated and sorted data from the input DataSlices.
+            """
+            # 1. concatenate time indices and data
+            time_index = pd.DatetimeIndex(
+                np.concatenate([ds.time_index.values for ds in dataslices])
+            )
+            data = np.concatenate([ds.data for ds in dataslices])
+
+            # 2. sort by time
+            order = np.argsort(time_index.values)
+            time_index = time_index[order]
+            data = data[order]
+
+            # 3. return new DataSlice
+            return DataSlice(
+                time_index=time_index,
+                data=data,
+                text_data=None
+            )    
+        
+
+        def _argmax_dataslices(dataslices: list[DataSlice]) -> DataSlice:
+            """ Helper function to compute the argmax within each :class:`.DataSlice` in a list of DataSlices.
+
+            Parameters
+            ----------
+            dataslices : list of :class:`.DataSlice`    
+            
+            Returns
+            -------
+            :class:`.DataSlice`
+                A DataSlice containing the time indices and data values of the argmax within each input :class:`.DataSlice`.
+            
+            Volume as change of Volume during one respiratory cycle. 
+                
+            Vtinsp as peak of the integral during inspiration. Therefore, a reversed airflow at the end of inspiration does not lower VTinsp.
+
+            """
+            valid = [
+                ds for ds in dataslices
+                if ds.data is not None and len(ds.data) > 0 and not np.all(np.isnan(ds.data))
+            ]
+
+            return DataSlice(
+                time_index=pd.DatetimeIndex([
+                    ds.time_index[int(np.nanargmax(ds.data))]
+                    for ds in valid
+                ]),
+                data=np.array([
+                    float(np.nanmax(ds.data))
+                    for ds in valid
+                ]),
+                text_data=None
+            )
+        
+        flow = self.get_channel("Flow Interpolated")
+        inspiration = self.get_label("Inspiration")
+        expiration = self.get_label("Expiration")
+
+
+        ### Volume curve per breath
+        v = [
+            self._integrate_trapezoid(
+                flow.truncate(start_time=start, stop_time=stop)
+            )
+            for start, stop in zip(
+                inspiration.get_data().time_index[:-1],
+                inspiration.get_data().time_index[1:]
+            )
+        ]
+        #sort and add as channel with label
+        v = _concat_and_sort_dataslices(v)
+ 
+        volume = Channel(
+            name="Volume",
+            time_index=v.time_index,
+            data=v.data,
+            metadata={"Source" : "Computed"},
+            plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Volume"),
+        )
+
+        ### Inspiratory Tidal Volume
+        #v peak during inspiration as vtinsp
+        volume_start = volume.first_entry
+        volume_end = volume.last_entry
+        vi = [
+            volume.truncate(
+                start_time=start,
+                stop_time=stop
+            )
+            for start, stop in inspiration.get_data().time_index
+            if stop <= volume_end
+        ]
+        vt_insp = _argmax_dataslices(vi)
+        
+        vt_insp = Label(name="VTinsp",
+              time_index=vt_insp.time_index,
+              data=vt_insp.data,
+              metadata={"Source" : "Computed"},
+              plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Tidal Volume Label"),
+              )
+    
+        volume.attach_label(vt_insp)
+        self.add_channel(volume)
+
+        ### Expiratory Tidal Volume
+        ve = [
+            volume.truncate(
+                start_time=start,
+                stop_time=stop
+            )
+            for start, stop in expiration.get_data().time_index
+            if start >= volume_start
+        ]
+        # transform the volume curve to expiratory volume curve
+        ve = [
+            DataSlice(
+                time_index=ds.time_index,
+                data= -1.0*(ds.data-ds.data[0]),  # expiratory volume as negative change in volume
+                text_data=None
+            )
+            for ds in ve
+        ]
+
+        vt_exp = _argmax_dataslices(ve)
+        vt_exp = Label(name="VTexp",
+                       time_index=vt_exp.time_index,
+                        data=vt_exp.data,
+                        metadata={"Source" : "Computed"},
+                        plotstyle=DEFAULT_PLOT_STYLE.get("Expiratory Tidal Volume Label"),
+                        )
+
+        #### Cumulative Volumes         #Todo: make this conditional
+        ### Inspiratory Cumulative Volume
+
+        v_insp_cum = [
+            self._integrate_trapezoid(
+                DataSlice(
+                    time_index=fs.time_index,
+                    data=np.maximum(fs.data, 0.0),   # zero negative flow
+                    text_data=None
+                )
+            )
+            for fs in (
+                flow.truncate(start_time=start, stop_time=stop)
+                for start, stop in zip(
+                    inspiration.get_data().time_index[:-1],
+                    inspiration.get_data().time_index[1:]
+                )
+            )
+        ]
+        vt_insp_cum = _argmax_dataslices(v_insp_cum)
+        vt_insp_cum = Label(name="VTinsp_cum",                       
+                            time_index=vt_insp_cum.time_index,
+                            data=vt_insp_cum.data,
+                            metadata={"Source" : "Computed"},
+                            plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Inspiratory Tidal Volume Label"),
+                            )
+        
+        ### Expiratory Cumulative Volume
+        v_exp_cum = [
+            self._integrate_trapezoid(
+                DataSlice(
+                    time_index=fs.time_index,
+                    data=-1.0*(np.minimum(fs.data, 0.0)),   # zero positive flow
+                    text_data=None
+                )
+            )
+            for fs in (
+                flow.truncate(start_time=start, stop_time=stop)
+                for start, stop in zip(
+                    inspiration.get_data().time_index[:-1],
+                    inspiration.get_data().time_index[1:]
+                )
+            )
+        ]
+        vt_exp_cum = _argmax_dataslices(v_exp_cum)
+        vt_exp_cum = Label(name="VTexp_cum",                       
+                            time_index=vt_exp_cum.time_index,
+                            data=vt_exp_cum.data,
+                            metadata={"Source" : "Computed"},
+                            plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Expiratory Tidal Volume Label"),
+                            )
+
+        #### Reveresed Airflow Volumes
+        # Todo make this conditional
+
+        ### Inspiratory Reversed Airflow
+        reverse_insp = [
+            self._integrate_trapezoid(
+                DataSlice(
+                    time_index=fs.time_index,
+                    data=np.minimum(fs.data, 0.0),   # zero positive flow
+                    text_data=None
+                )
+            )
+            for fs in (
+                flow.truncate(start_time=start, stop_time=stop)
+                for start, stop in inspiration.get_data().time_index
+            )
+        ]
+
+        ### Expiratory Reversed Airflow
+        reverse_exp = [
+            self._integrate_trapezoid(
+                DataSlice(
+                    time_index=fs.time_index,
+                    data=-1.0*(np.maximum(fs.data, 0.0)),   # zero negative flow
+                    text_data=None
+                )
+            )
+            for fs in (
+                flow.truncate(start_time=start, stop_time=stop)
+                for start, stop in expiration.get_data().time_index
+            )
+        ]
+
+
+        #max inspiratory airway pressure
+        #minimal inspiratory airway pressure
+        # generate tabel 
+        #
 
         
 
