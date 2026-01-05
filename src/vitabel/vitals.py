@@ -3033,7 +3033,7 @@ class Vitals:
             onsets_above_threshold = np.empty(0, dtype=int)
             filtered_onsets = onsets_above_threshold
         else:
-            # Identify segments above threshold separated by breaks longer than 
+            # Identify segments above threshold separated by breaks longer than
             # the maximum allowed interruption duration for landmarks,
             # therefore filter breaks likely caused by oscillations
             breaks = np.diff(times[above_idxs]) > landmark_duration_max_interruption
@@ -3098,10 +3098,7 @@ class Vitals:
         pressure = interpolated_pressure.data
         assert pressure is not None
         positive_pressure = np.array(
-            [
-                np.all(pressure[s : e + 1] > 0)
-                for s, e in zip(starts, ends)
-            ],
+            [np.all(pressure[s : e + 1] > 0) for s, e in zip(starts, ends)],
             dtype=bool,
         )
         segment_pressure_filter = np.zeros_like(duration_filter, dtype=bool)
