@@ -3144,7 +3144,9 @@ class Vitals:
 
         return np.unique(inspiration_starts), onsets_above_threshold, filtered_onsets
 
-    def _get_expiration_start(self, product: DataSlice, threshold: float) -> np.ndarray:
+    def _get_expiration_start(
+        self, product: DataSlice, threshold: float
+    ) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
         """
         Derives the indices of the start of expirations from the product of flow and slope of pressure.
 
@@ -3162,8 +3164,12 @@ class Vitals:
 
         Returns
         -------
-        np.ndarray
-            An array of indices for the time index of the given product where the expirations start.
+        expiration_starts : np.ndarray
+            An array of indices for the time index of the given product where the expirations start (filtered zero crossings).
+        onsets_above_threshold : np.ndarray
+            An array of indices where the product first exceeds the threshold for each detected segment.
+        filtered_onsets : np.ndarray
+            An array of indices for the onsets above threshold after duration filtering.
         """
         # min_distance_landmarks = np.timedelta64(12, 'ms')
         min_dur_short_breaks = np.timedelta64(10, "ms")
