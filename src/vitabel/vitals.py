@@ -61,6 +61,40 @@ logger: logging.Logger = logging.getLogger("vitabel")
 """Global package logger."""
 
 
+def _compute_slope(dataslice: DataSlice) -> DataSlice:
+    """Compute the time derivative (slope) of a DataSlice.
+
+    Uses numpy's gradient function with central differences for interior points
+    and forward/backward differences at edges.
+
+    Parameters
+    ----------
+    dataslice : DataSlice
+        A DataSlice containing the time index and data to differentiate.
+
+    Returns
+    -------
+    DataSlice
+        A new DataSlice with the same time index and the computed slope as data.
+        Returns zeros if the input has fewer than 3 data points.
+    """
+    index = dataslice.time_index
+    data = dataslice.data
+
+    if len(dataslice) < 3:
+        return DataSlice(time_index=index, data=np.zeros(len(index), dtype=float))
+
+    # Convert time to seconds (float64) from nanoseconds
+    t_ns = index.view("int64")
+    t_rel_sec = (t_ns - t_ns[0]).astype(np.float64) * 1e-9
+
+    # Calculate the slope using central differences for interior points,
+    # forward/backward for edges
+    slope = np.gradient(data, t_rel_sec, edge_order=1)
+
+    return DataSlice(time_index=index, data=slope)
+
+
 class Vitals:
     """Container for vital data and labels, central interface of this package.
 
@@ -3353,17 +3387,7 @@ class Vitals:
         index = f_interpolated.time_index
 
         # get slope of pressure
-        if len(p_interpolated) > 2:
-            y = p_interpolated.data
-            # convert time to seconds (float64) from ns
-            t_ns = index.view("int64")
-            t_rel_sec = (t_ns - t_ns[0]).astype(np.float64) * 1e-9
-            # Calculate the slope using central differences for interior points, forward/backward for edges
-            slope_p = DataSlice(
-                time_index=index, data=np.gradient(y, t_rel_sec, edge_order=1)
-            )
-        else:
-            slope_p = DataSlice(time_index=index, data=np.zeros_like(y, dtype=float))
+        slope_p = _compute_slope(p_interpolated)
 
         # Calculate the product of flow and pressure
         product_flow_pressure = DataSlice(
