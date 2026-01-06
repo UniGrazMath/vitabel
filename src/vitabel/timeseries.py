@@ -1055,7 +1055,7 @@ class Label(TimeSeriesBase):
                 data = None
             else:
                 # replace None with np.nan and convert to float
-                data = data.astype(float)
+                data = np.asarray(data).astype(float)
 
         if text_data is not None and len(text_data) > 0:
             text_data = np.asarray(text_data, dtype=object)
