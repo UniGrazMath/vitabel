@@ -297,4 +297,35 @@ DEFAULT_PLOT_STYLE = {
         "marker": "^",
         "alpha": 0.8,
     },
+        "Cumulative Expiratory Volumel" : {
+        "color": "#A65628",
+        "label": r"$V_{\mathrm{exp,cum}}$",
+        "alpha": 0.6,
+    },
+    "Cumulative Inspiratory Volumel" : {
+        "color": "#0072B2",
+        "label": r"$V_{\mathrm{insp,cum}}$",
+        "alpha": 0.6,
+    },
+    "Maximal Inspiratory Pressure Label": {
+        "color": "mediumseagreen",
+        "label": r"$P_{\mathrm{insp,max}}$",
+        "linestyle": "",
+        "marker": 6,
+        "alpha": 0.8,
+    },
+    "Minimal Inspiratory Pressure Label": {
+        "color": "mediumseagreen",
+        "label": r"$P_{\mathrm{insp,min}}$",
+        "linestyle": "",
+        "marker": 7,
+        "alpha": 0.8,
+    },
+    "Delta VT": {
+        "color": "darkorange",
+        "label": r"$\Delta V_t$",
+        "linestyle": "",
+        "marker": "o",
+        "alpha": 0.8,
+    },
 }
