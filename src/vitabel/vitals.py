@@ -3518,6 +3518,7 @@ class Vitals:
             return
 
     def _integrate_trapezoid(
+            self,
             signal: DataSlice):
         """Integrates data with trapezoidal rule over the entire DataSlice.
 
@@ -3545,7 +3546,7 @@ class Vitals:
         cumulative = np.concatenate(([0.0], np.cumsum(changes)))
 
         return DataSlice(
-            time_index = signal.get_data().time_index,
+            time_index = signal.get_data().time_index if isinstance(signal, (Channel, Label)) else signal.time_index,
             data = cumulative,)
     
     def compute_ventilation_volumes(
@@ -3642,7 +3643,7 @@ class Vitals:
 
             return DataSlice(
                 time_index=pd.DatetimeIndex([
-                    ds.get_data().time_index[int(np.nanargmax(ds.data))]
+                    ds.get_data().time_index[int(np.nanargmax(ds.data))] if isinstance(ds, (Channel, Label)) else ds.time_index[int(np.nanargmax(ds.data))]
                     for ds in valid
                 ]),
                 data=np.array([
@@ -3663,7 +3664,7 @@ class Vitals:
             name="Inspiratory Time",
             time_index = insp_t[:,1],
             data=(insp_t[:,1] - insp_t[:,0])/np.timedelta64(1, 's'),  # duration of breath in seconds
-            metadata={"Source" : "Computed"},
+            metadata={"source" : "computed"},
         )
         self.add_global_label(ti)
         
@@ -3672,7 +3673,7 @@ class Vitals:
             name="Expiratory Time",
             time_index = exp_t[:,1],
             data=(exp_t[:,1] - exp_t[:,0])/np.timedelta64(1, 's'),  # duration of breath in seconds
-            metadata={"Source" : "Computed"},
+            metadata={"source" : "computed"},
         )
         self.add_global_label(te)
 
@@ -3690,7 +3691,7 @@ class Vitals:
             name="Maximal Inspiratory Pressure",
             time_index=p_insp_max.time_index,
             data=p_insp_max.data,
-            metadata={"Source" : "Computed"},
+            metadata={"source" : "computed"},
             plotstyle=DEFAULT_PLOT_STYLE.get("Maximal Inspiratory Pressure Label"),
         )
         pressure.attach_label(p_insp_max)
@@ -3709,27 +3710,26 @@ class Vitals:
                 ))
                 for start, stop in insp_t
             ]),
-            metadata={"Source" : "Computed"},
+            metadata={"source" : "computed"},
             plotstyle=DEFAULT_PLOT_STYLE.get("Positive End-Expiratory Pressure Label"),
         )
         pressure.attach_label(p_insp_min)
 
         ### Volume curve per breath
-        v = [
-            self._integrate_trapezoid(
+        v = [self._integrate_trapezoid(
                 flow.truncate(start_time=start, stop_time=stop)
-            )
-            for start, stop in zip(
-                inspiration.get_data().time_index[:-1],
-                inspiration.get_data().time_index[1:]
-            )
-        ]
+                )
+                for start, stop in zip(
+                    inspiration.get_data().time_index[:-1,0],
+                    inspiration.get_data().time_index[1:,0]
+                    )
+            ]
 
         # derive delta vt per breath
         delta_vt = [
             DataSlice(
-                time_index=ds.time_index[-1],
-                data=ds.data[-1] ,  # volume change during breath last value represents difference as first is zeroed
+                time_index=pd.DatetimeIndex([ds.time_index[-1]]),
+                data=[ds.data[-1]],  # volume change during breath last value represents difference as first is zeroed
                 text_data=None
             )
             for ds in v
@@ -3739,7 +3739,7 @@ class Vitals:
             name="Delta VT",
             time_index=delta_vt.time_index,
             data=delta_vt.data,
-            metadata={"Source" : "Computed"},
+            metadata={"source" : "computed"},
             plotstyle=DEFAULT_PLOT_STYLE.get("Delta VT"),
         )
         
@@ -3749,7 +3749,7 @@ class Vitals:
             name="Volume",
             time_index=v.time_index,
             data=v.data,
-            metadata={"Source" : "Computed"},
+            metadata={"source" : "computed"},
             plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Volume"),
         )
 
@@ -3770,7 +3770,7 @@ class Vitals:
         vt_insp = Label(name="VTinsp",
               time_index=vt_insp.time_index,
               data=vt_insp.data,
-              metadata={"Source" : "Computed"},
+              metadata={"source" : "computed"},
               plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Tidal Volume Label"),
               )
     
@@ -3781,12 +3781,12 @@ class Vitals:
                 stop_time=stop
             )
             for start, stop in expiration.get_data().time_index
-            if start >= volume_start
+            if start >= volume_start and stop <= volume_end
         ]
         # transform the volume curve to expiratory volume curve
         ve = [
             DataSlice(
-                time_index=ds.time_index,
+                time_index=ds.get_data().time_index,
                 data= -1.0*(ds.data-ds.data[0]),  # expiratory volume as negative change in volume
                 text_data=None
             )
@@ -3797,7 +3797,7 @@ class Vitals:
         vt_exp = Label(name="VTexp",
                        time_index=vt_exp.time_index,
                         data=vt_exp.data,
-                        metadata={"Source" : "Computed"},
+                        metadata={"source" : "computed"},
                         plotstyle=DEFAULT_PLOT_STYLE.get("Expiratory Tidal Volume Label"),
                         )
         
@@ -3811,7 +3811,7 @@ class Vitals:
         # continous curve #Todo make this conditional and calculate single volumes as Labels
         vic = [self._integrate_trapezoid(
                     DataSlice(
-                        time_index=fs.time_index,
+                        time_index=fs.get_data().time_index,
                         data=np.maximum(fs.data, 0.0),   # zero negative flow
                         text_data=None
                     )
@@ -3819,8 +3819,8 @@ class Vitals:
                 for fs in (
                     flow.truncate(start_time=start, stop_time=stop)
                     for start, stop in zip(
-                        inspiration.get_data().time_index[:-1],
-                        inspiration.get_data().time_index[1:]
+                        inspiration.get_data().time_index[:-1,0],
+                        inspiration.get_data().time_index[1:,0]
                     )
                 )
             ]
@@ -3828,7 +3828,7 @@ class Vitals:
         vt_insp_cum = Label(name="VTinsp_cum",                       
                             time_index=vt_insp_cum.time_index,
                             data=vt_insp_cum.data,
-                            metadata={"Source" : "Computed"},
+                            metadata={"source" : "computed"},
                             plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Inspiratory Tidal Volume Label"),
                             )
         vic = _concat_and_sort_dataslices(vic)
@@ -3836,7 +3836,7 @@ class Vitals:
             name="Cumulative Inspiratory Volume",
             time_index=vic.time_index,
             data=vic.data,
-            metadata={"Source" : "Computed"},
+            metadata={"source" : "computed"},
             plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Inspiratory Volume"),
         )        
         v_insp_cum.attach_label(vt_insp_cum)
@@ -3846,7 +3846,7 @@ class Vitals:
         # continous curve #Todo make this conditional and calculate single volumes as Labels
         vec = [self._integrate_trapezoid(
                 DataSlice(
-                    time_index=fs.time_index,
+                    time_index=fs.get_data().time_index,
                     data=-1.0*(np.minimum(fs.data, 0.0)),   # zero positive flow
                     text_data=None
                 )
@@ -3854,8 +3854,8 @@ class Vitals:
             for fs in (
                 flow.truncate(start_time=start, stop_time=stop)
                 for start, stop in zip(
-                    inspiration.get_data().time_index[:-1],
-                    inspiration.get_data().time_index[1:]
+                    inspiration.get_data().time_index[:-1,0],
+                    inspiration.get_data().time_index[1:,0]
                 )
             )
         ]
@@ -3864,7 +3864,7 @@ class Vitals:
         vt_exp_cum = Label(name="VTexp_cum",                       
                             time_index=vt_exp_cum.time_index,
                             data=vt_exp_cum.data,
-                            metadata={"Source" : "Computed"},
+                            metadata={"source" : "computed"},
                             plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Expiratory Tidal Volume Label"),
                             )
         vec = _concat_and_sort_dataslices(vec)
@@ -3872,7 +3872,7 @@ class Vitals:
             name="Cumulative Expiratory Volume",
             time_index=vec.time_index,
             data=vec.data,
-            metadata={"Source" : "Computed"},
+            metadata={"source" : "computed"},
             plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Expiratory Volume"),
         )
         v_exp_cum.attach_label(vt_exp_cum)
