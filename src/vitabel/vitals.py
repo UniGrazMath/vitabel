@@ -3519,7 +3519,9 @@ class Vitals:
 
     def _integrate_trapezoid(
             self,
-            signal: DataSlice):
+            signal: DataSlice,
+            correction_factor: float = 1.0,
+        ) -> DataSlice:
         """Integrates data with trapezoidal rule over the entire DataSlice.
 
         Parameters
@@ -3540,8 +3542,11 @@ class Vitals:
         if len(signal.data) != len(signal.time_index):
             raise Exception("Length of time and data must agree")
 
+        #apply unit correction factor
+        data = signal.data * correction_factor
+
         dt = signal.time_index[1:] - signal.time_index[:-1]
-        sample_sum = signal.data[1:] + signal.data[:-1]
+        sample_sum = data[1:] + data[:-1]
         changes = sample_sum*0.5*dt.total_seconds()
         cumulative = np.concatenate(([0.0], np.cumsum(changes)))
 
@@ -3551,6 +3556,7 @@ class Vitals:
     
     def compute_ventilation_volumes(
         self,
+        correction_factor: float = 1.0,
     ):
         """Computes ventilatory volumes from flow channel based on respiratory phase labels.
         Therefore, inspiratory and expiratory tidal volumes are calculated for each respiratory cycle.
@@ -3688,18 +3694,18 @@ class Vitals:
         ]
         p_insp_max = _argmax_dataslices(p_insp_max)
         p_insp_max = Label(
-            name="Maximal Inspiratory Pressure",
+            name="Maximal Inspiratory Airway Pressure",
             time_index=p_insp_max.time_index,
             data=p_insp_max.data,
             metadata={"source" : "computed"},
-            plotstyle=DEFAULT_PLOT_STYLE.get("Maximal Inspiratory Pressure Label"),
+            plotstyle=DEFAULT_PLOT_STYLE.get("Maximal Inspiratory Airway Pressure"),
         )
         pressure.attach_label(p_insp_max)
 
         ## min inspiratory pressure
         # as pressure at the beginning of inspiration (note: due to the definition of inspiration start the pressure is already rising--this is different to the definition in the paper)
         p_insp_min = Label(
-            name="Minimum Inspiratory Airway Pressure",
+            name="Minimal Inspiratory Airway Pressure",
             time_index=inspiration.get_data().time_index[:,0],
             data=np.array([
                 float(np.min(
@@ -3711,13 +3717,14 @@ class Vitals:
                 for start, stop in insp_t
             ]),
             metadata={"source" : "computed"},
-            plotstyle=DEFAULT_PLOT_STYLE.get("Positive End-Expiratory Pressure Label"),
+            plotstyle=DEFAULT_PLOT_STYLE.get("Minimal Inspiratory Airway Pressure"),
         )
         pressure.attach_label(p_insp_min)
 
         ### Volume curve per breath
         v = [self._integrate_trapezoid(
-                flow.truncate(start_time=start, stop_time=stop)
+                signal=flow.truncate(start_time=start, stop_time=stop),
+                correction_factor=correction_factor,
                 )
                 for start, stop in zip(
                     inspiration.get_data().time_index[:-1,0],
@@ -3810,11 +3817,11 @@ class Vitals:
         ### Inspiratory Cumulative Volume
         # continous curve #Todo make this conditional and calculate single volumes as Labels
         vic = [self._integrate_trapezoid(
-                    DataSlice(
+                    signal = DataSlice(
                         time_index=fs.get_data().time_index,
                         data=np.maximum(fs.data, 0.0),   # zero negative flow
-                        text_data=None
-                    )
+                        text_data=None), 
+                    correction_factor = correction_factor
                 )
                 for fs in (
                     flow.truncate(start_time=start, stop_time=stop)
@@ -3845,11 +3852,11 @@ class Vitals:
         ### Expiratory Cumulative Volume
         # continous curve #Todo make this conditional and calculate single volumes as Labels
         vec = [self._integrate_trapezoid(
-                DataSlice(
+                signal = DataSlice(
                     time_index=fs.get_data().time_index,
                     data=-1.0*(np.minimum(fs.data, 0.0)),   # zero positive flow
-                    text_data=None
-                )
+                    text_data=None),
+                correction_factor = correction_factor
             )
             for fs in (
                 flow.truncate(start_time=start, stop_time=stop)
@@ -3884,11 +3891,11 @@ class Vitals:
         ### Inspiratory Reversed Airflow
         reverse_insp = [
             self._integrate_trapezoid(
-                DataSlice(
+                signal = DataSlice(
                     time_index=fs.time_index,
                     data=np.minimum(fs.data, 0.0),   # zero positive flow
-                    text_data=None
-                )
+                    text_data=None),
+                correction_factor = correction_factor
             )
             for fs in (
                 flow.truncate(start_time=start, stop_time=stop)
@@ -3899,11 +3906,11 @@ class Vitals:
         ### Expiratory Reversed Airflow
         reverse_exp = [
             self._integrate_trapezoid(
-                DataSlice(
+                signal = DataSlice(
                     time_index=fs.time_index,
                     data=-1.0*(np.maximum(fs.data, 0.0)),   # zero negative flow
-                    text_data=None
-                )
+                    text_data=None),
+                correction_factor = correction_factor
             )
             for fs in (
                 flow.truncate(start_time=start, stop_time=stop)
