@@ -3778,7 +3778,7 @@ class Vitals:
               time_index=vt_insp.time_index,
               data=vt_insp.data,
               metadata={"source" : "computed"},
-              plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Tidal Volume Label"),
+              plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Tidal Volume"),
               )
     
         ### Expiratory Tidal Volume
@@ -3805,7 +3805,7 @@ class Vitals:
                        time_index=vt_exp.time_index,
                         data=vt_exp.data,
                         metadata={"source" : "computed"},
-                        plotstyle=DEFAULT_PLOT_STYLE.get("Expiratory Tidal Volume Label"),
+                        plotstyle=DEFAULT_PLOT_STYLE.get("Expiratory Tidal Volume"),
                         )
         
         volume.attach_label(delta_vt)
@@ -3836,7 +3836,7 @@ class Vitals:
                             time_index=vt_insp_cum.time_index,
                             data=vt_insp_cum.data,
                             metadata={"source" : "computed"},
-                            plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Inspiratory Tidal Volume Label"),
+                            plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Inspiratory Tidal Volume"),
                             )
         vic = _concat_and_sort_dataslices(vic)
         v_insp_cum = Channel(
@@ -3872,7 +3872,7 @@ class Vitals:
                             time_index=vt_exp_cum.time_index,
                             data=vt_exp_cum.data,
                             metadata={"source" : "computed"},
-                            plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Expiratory Tidal Volume Label"),
+                            plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Expiratory Tidal Volume"),
                             )
         vec = _concat_and_sort_dataslices(vec)
         v_exp_cum = Channel(

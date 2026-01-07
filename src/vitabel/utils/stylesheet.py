@@ -283,14 +283,14 @@ DEFAULT_PLOT_STYLE = {
         "label": r"$V_{\mathrm{exp}}$",
         "alpha": 0.8,
     },
-    "Inspiratory Tidal Volume Label" : {
+    "Inspiratory Tidal Volume" : {
         "color": "dodgerblue",
         "label": r"$VT_{\mathrm{insp}}$",
         "linestyle": "",
         "marker": 7,
         "alpha": 0.8,
     },
-    "Expiratory Tidal Volume Label" : {
+    "Expiratory Tidal Volume" : {
         "color": "coral",
         "label": r"$VT_{\mathrm{exp}}$",
         "linestyle": "",
@@ -302,9 +302,23 @@ DEFAULT_PLOT_STYLE = {
         "label": r"$V_{\mathrm{exp,cum}}$",
         "alpha": 0.6,
     },
+    "Cumulative Expiratory Tidal Volume": {
+        "color": "#A65628",
+        "label": r"$\Vt_{\mathrm{exp,cum}}$",
+        "linestyle": "",
+        "marker": 7,
+        "alpha": 0.6,
+    },
     "Cumulative Inspiratory Volume" : {
         "color": "#0072B2",
         "label": r"$V_{\mathrm{insp,cum}}$",
+        "alpha": 0.6,
+    },
+    "Cumulative Inspiratory Tidal Volume": {
+        "color": "#0072B2",
+        "label": r"$\Delta VT_{\mathrm{insp,cum}}$",
+        "linestyle": "",
+        "marker": 7,
         "alpha": 0.6,
     },
     "Maximal Inspiratory Airway Pressure": {
@@ -328,4 +342,5 @@ DEFAULT_PLOT_STYLE = {
         "marker": 4,
         "alpha": 0.6,
     },
+    
 }
