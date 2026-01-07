@@ -3205,12 +3205,22 @@ class Vitals:
         filtered_onsets : np.ndarray
             An array of indices for the onsets above threshold after duration filtering.
         """
-        # min_distance_landmarks = np.timedelta64(12, 'ms')
-        min_dur_short_breaks = np.timedelta64(10, "ms")
-        min_dur_landmark_segment = np.timedelta64(12, "ms")
-        max_dur_short_breaks = np.timedelta64(10, "ms")
+        # --- Filter parameters ---
+        # Minimum gap between above-threshold segments to treat them as separate.
+        # Gaps shorter than this are bridged (segments merged) to filter oscillations.
+        min_gap_between_segments = np.timedelta64(10, "ms")
 
-        oscillation_threshold = 30
+        # Minimum duration for a segment above threshold to be considered valid.
+        min_segment_duration = np.timedelta64(12, "ms")
+
+        # Maximum duration for a below-threshold (negative) segment during zero-crossing
+        # detection. Shorter segments are filtered out as oscillation artifacts.
+        max_oscillation_duration = np.timedelta64(10, "ms")
+
+        # Threshold to suppress small oscillations around zero when detecting zero crossings.
+        # Values at or below this threshold are treated as "non-positive" for zero-crossing
+        # detection. Unit: product of flow and pressure slope.
+        zero_crossing_tolerance = 30
 
         index = product.time_index.copy()
         data = product.data.copy()
@@ -3223,41 +3233,46 @@ class Vitals:
             onsets_above_threshold = np.empty(0, dtype=int)
             filtered_onsets = onsets_above_threshold
         else:
-            # identify breaks (segments below threshold) greater than min_dur_short_breaks
-            # thereby filtering out short breaks that are likely due to oscillations
-            breaks = np.diff(index.take(above_idxs)) > min_dur_short_breaks
+            # Identify breaks (gaps below threshold) greater than min_gap_between_segments,
+            # thereby filtering out short breaks that are likely due to oscillations.
+            breaks = np.diff(index.take(above_idxs)) > min_gap_between_segments
 
-            # determine length of segment above threshold and remove if shorter than min_dur_landmark_segment
+            # Determine segment boundaries and filter out segments shorter than min_segment_duration.
             segment_starts_pos = np.r_[0, breaks.nonzero()[0] + 1]
             segment_stops_pos = np.r_[breaks.nonzero()[0], above_idxs.size - 1]
             onsets_above_threshold = above_idxs[segment_starts_pos]
-            # Filter segments that are shorter than min_dur_landmark_segment
             starts = index.take(above_idxs[segment_starts_pos])
             stops = index.take(above_idxs[segment_stops_pos])
             segment_width = stops - starts
-            segments_width_filter = segment_width >= min_dur_landmark_segment
+            segments_width_filter = segment_width >= min_segment_duration
             filtered_onsets = onsets_above_threshold[segments_width_filter]
 
         # If nothing survives filtering, early return
         if filtered_onsets.size == 0:
             return np.empty(0, dtype=int), onsets_above_threshold, filtered_onsets
 
-        # Find zero crossings before the filtered onsets and filter for short segments of oscillations
-        non_pos_product = np.flatnonzero(
-            data <= 0 + oscillation_threshold
-        )  # condition must include negative values as not all zerocrossings in the array are separate datapoints//additionally, filter out small positive values close to zero
+        # Find zero crossings before the filtered onsets.
+        # Values at or below zero_crossing_tolerance are treated as "non-positive"
+        # to suppress small oscillations around zero.
+        non_pos_product = np.flatnonzero(data <= zero_crossing_tolerance)
         if non_pos_product.size == 0:
-            # No zero/non-positive → no valid "zero before onset"
+            # No zero/non-positive values -> no valid zero crossing candidates
             return np.empty(0, dtype=int), onsets_above_threshold, filtered_onsets
+
+        # Identify contiguous segments of non-positive values.
         breaks = np.flatnonzero(np.diff(non_pos_product) > 1)
-        starts = np.r_[non_pos_product[0], non_pos_product[breaks + 1]]
-        ends = np.r_[non_pos_product[breaks], non_pos_product[-1]]
-        short = (index[ends] - index[starts]) <= max_dur_short_breaks
-        if short.any():
-            keep_mask = ~np.isin(ends, ends[short])
-            zero_candidates = ends[keep_mask]
+        segment_starts = np.r_[non_pos_product[0], non_pos_product[breaks + 1]]
+        segment_ends = np.r_[non_pos_product[breaks], non_pos_product[-1]]
+
+        # Filter out short segments (likely oscillation artifacts) and keep the end
+        # of each remaining segment as a zero-crossing candidate.
+        segment_durations = index[segment_ends] - index[segment_starts]
+        is_short_segment = segment_durations <= max_oscillation_duration
+        if is_short_segment.any():
+            keep_mask = ~np.isin(segment_ends, segment_ends[is_short_segment])
+            zero_candidates = segment_ends[keep_mask]
         else:
-            zero_candidates = ends
+            zero_candidates = segment_ends
 
         # If none remain, no zeros to reference
         if zero_candidates.size == 0:
