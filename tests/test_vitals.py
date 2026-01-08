@@ -1191,3 +1191,222 @@ def test_add_eolife_ventilatory_feedback(vitabel_test_data_dir):
     actual_channel_names = [channel.name for channel in collection.channels]
     assert all(name in actual_channel_names for name in expected_channels)
     assert max([len(Channel) for Channel in collection.channels]) == 47
+
+
+# === Tests for _find_segments_above_threshold helper ===
+
+
+class TestFindSegmentsAboveThreshold:
+    """Tests for the _find_segments_above_threshold helper function."""
+
+    @pytest.fixture
+    def make_time_index(self):
+        """Factory fixture to create DatetimeIndex with millisecond resolution."""
+
+        def _make_time_index(n_points, start="2024-01-01", freq_ms=1):
+            return pd.date_range(
+                start=start, periods=n_points, freq=pd.Timedelta(freq_ms, "ms")
+            )
+
+        return _make_time_index
+
+    def test_empty_input(self, make_time_index):
+        """Test with empty arrays."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        data = np.array([])
+        time_index = make_time_index(0)
+        threshold = 10.0
+        max_gap = np.timedelta64(5, "ms")
+        min_duration = np.timedelta64(3, "ms")
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        assert onsets.size == 0
+        assert filtered.size == 0
+
+    def test_nothing_above_threshold(self, make_time_index):
+        """Test when no values exceed the threshold."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        data = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        time_index = make_time_index(5)
+        threshold = 10.0
+        max_gap = np.timedelta64(5, "ms")
+        min_duration = np.timedelta64(2, "ms")
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        assert onsets.size == 0
+        assert filtered.size == 0
+
+    def test_single_segment_above_threshold(self, make_time_index):
+        """Test with a single contiguous segment above threshold."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        # Data: indices 2-5 are above threshold (value 15)
+        data = np.array([1.0, 2.0, 15.0, 15.0, 15.0, 15.0, 3.0, 4.0])
+        time_index = make_time_index(8)
+        threshold = 10.0
+        max_gap = np.timedelta64(5, "ms")
+        min_duration = np.timedelta64(2, "ms")
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        # Should detect one segment starting at index 2
+        assert len(onsets) == 1
+        assert onsets[0] == 2
+        assert len(filtered) == 1
+        assert filtered[0] == 2
+
+    def test_multiple_segments_with_large_gap(self, make_time_index):
+        """Test with multiple segments separated by gaps larger than max_gap."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        # Two segments: indices 1-2 and 6-7 (gap of 3 indices = 3ms)
+        data = np.array([1.0, 15.0, 15.0, 1.0, 1.0, 1.0, 15.0, 15.0, 1.0])
+        time_index = make_time_index(9)
+        threshold = 10.0
+        max_gap = np.timedelta64(2, "ms")  # Gap of 3ms is larger
+        min_duration = np.timedelta64(1, "ms")
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        # Should detect two separate segments
+        assert len(onsets) == 2
+        assert list(onsets) == [1, 6]
+        assert len(filtered) == 2
+        assert list(filtered) == [1, 6]
+
+    def test_segments_merged_when_gap_small(self, make_time_index):
+        """Test that segments are merged when gap is smaller than max_gap."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        # Two segments: indices 1-2 and 4-5 (gap of 1 index = 1ms)
+        data = np.array([1.0, 15.0, 15.0, 1.0, 15.0, 15.0, 1.0])
+        time_index = make_time_index(7)
+        threshold = 10.0
+        max_gap = np.timedelta64(2, "ms")  # Gap of 1ms is smaller, so merge
+        min_duration = np.timedelta64(1, "ms")
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        # Should detect one merged segment starting at index 1
+        assert len(onsets) == 1
+        assert onsets[0] == 1
+        assert len(filtered) == 1
+
+    def test_short_segment_filtered_out(self, make_time_index):
+        """Test that segments shorter than min_duration are filtered."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        # Single point above threshold at index 3 (duration = 0ms)
+        data = np.array([1.0, 1.0, 1.0, 15.0, 1.0, 1.0])
+        time_index = make_time_index(6)
+        threshold = 10.0
+        max_gap = np.timedelta64(5, "ms")
+        min_duration = np.timedelta64(2, "ms")  # Requires at least 2ms duration
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        # Onset detected but filtered out due to short duration
+        assert len(onsets) == 1
+        assert onsets[0] == 3
+        assert len(filtered) == 0
+
+    def test_mixed_segments_some_filtered(self, make_time_index):
+        """Test with multiple segments where some are filtered by duration."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        # Segment 1: indices 1-4 (3ms duration) - should pass
+        # Segment 2: index 8 only (0ms duration) - should be filtered
+        data = np.array([1.0, 15.0, 15.0, 15.0, 15.0, 1.0, 1.0, 1.0, 15.0, 1.0])
+        time_index = make_time_index(10)
+        threshold = 10.0
+        max_gap = np.timedelta64(2, "ms")
+        min_duration = np.timedelta64(2, "ms")
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        # Two onsets detected, but only the first passes duration filter
+        assert len(onsets) == 2
+        assert list(onsets) == [1, 8]
+        assert len(filtered) == 1
+        assert filtered[0] == 1
+
+    def test_all_values_above_threshold(self, make_time_index):
+        """Test when all values exceed the threshold."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        data = np.array([15.0, 20.0, 25.0, 30.0, 35.0])
+        time_index = make_time_index(5)
+        threshold = 10.0
+        max_gap = np.timedelta64(5, "ms")
+        min_duration = np.timedelta64(2, "ms")
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        # One segment starting at index 0
+        assert len(onsets) == 1
+        assert onsets[0] == 0
+        assert len(filtered) == 1
+        assert filtered[0] == 0
+
+    def test_threshold_boundary(self, make_time_index):
+        """Test that values exactly at threshold are NOT included (> not >=)."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        data = np.array([10.0, 10.0, 10.0, 11.0, 10.0])
+        time_index = make_time_index(5)
+        threshold = 10.0
+        max_gap = np.timedelta64(5, "ms")
+        min_duration = np.timedelta64(0, "ms")
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        # Only index 3 is above threshold (value 11 > 10)
+        assert len(onsets) == 1
+        assert onsets[0] == 3
+
+    def test_realistic_timescale(self, make_time_index):
+        """Test with realistic millisecond timescales used in respiratory detection."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        # Simulate 100ms of data at 1ms resolution
+        # Segment from 20-40ms (20ms duration), gap, segment from 60-70ms (10ms)
+        data = np.zeros(100)
+        data[20:41] = 50.0  # 21 points = 20ms duration
+        data[60:71] = 50.0  # 11 points = 10ms duration
+        time_index = make_time_index(100)
+
+        threshold = 10.0
+        max_gap = np.timedelta64(15, "ms")
+        min_duration = np.timedelta64(12, "ms")
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        # Both segments detected, but only first passes 12ms duration filter
+        assert len(onsets) == 2
+        assert list(onsets) == [20, 60]
+        assert len(filtered) == 1
+        assert filtered[0] == 20
