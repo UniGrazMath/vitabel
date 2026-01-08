@@ -1410,3 +1410,152 @@ class TestFindSegmentsAboveThreshold:
         assert list(onsets) == [20, 60]
         assert len(filtered) == 1
         assert filtered[0] == 20
+
+
+class TestFilterAlternatingPhases:
+    """Tests for the _filter_alternating_phases helper function.
+
+    This function ensures respiratory phases alternate by keeping only the first
+    candidate in each interval defined by anchor phases.
+    """
+
+    def test_empty_candidates(self):
+        """Test with empty candidate array."""
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([], dtype=int)
+        anchors = np.array([100, 200, 300])
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        assert result.size == 0
+
+    def test_empty_anchors(self):
+        """Test with empty anchor array - should return candidates unchanged."""
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([50, 150, 250])
+        anchors = np.array([], dtype=int)
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        np.testing.assert_array_equal(result, candidates)
+
+    def test_both_empty(self):
+        """Test with both arrays empty."""
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([], dtype=int)
+        anchors = np.array([], dtype=int)
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        assert result.size == 0
+
+    def test_docstring_example(self):
+        """Test the example from the docstring.
+
+        Anchors at [100, 200, 300], candidates at [50, 120, 150, 250]:
+        - Interval (-inf, 100]: candidate 50, keep 50
+        - Interval (100, 200]: candidates 120, 150, keep 120 (first only)
+        - Interval (200, 300]: candidate 250, keep 250
+        Result: [50, 120, 250]
+        """
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([50, 120, 150, 250])
+        anchors = np.array([100, 200, 300])
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        np.testing.assert_array_equal(result, np.array([50, 120, 250]))
+
+    def test_single_candidate_per_interval(self):
+        """Test when each interval already has at most one candidate."""
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([50, 150, 250, 350])
+        anchors = np.array([100, 200, 300, 400])
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        np.testing.assert_array_equal(result, candidates)
+
+    def test_multiple_candidates_per_interval(self):
+        """Test filtering when multiple candidates fall in same interval."""
+        from vitabel.vitals import _filter_alternating_phases
+
+        # All candidates in interval (100, 200]
+        candidates = np.array([110, 120, 130, 140, 150])
+        anchors = np.array([100, 200])
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        # Should keep only the first one
+        np.testing.assert_array_equal(result, np.array([110]))
+
+    def test_candidate_before_first_anchor(self):
+        """Test that candidates before the first anchor are included."""
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([10, 20, 30, 150])
+        anchors = np.array([100, 200])
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        # First candidate before anchor (10) + first in (100,200] interval (150)
+        np.testing.assert_array_equal(result, np.array([10, 150]))
+
+    def test_candidate_after_last_anchor(self):
+        """Test that candidates after the last anchor are included."""
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([50, 150, 350, 400])
+        anchors = np.array([100, 200, 300])
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        # 50 in (-inf, 100], 150 in (100, 200], 350 first in (300, +inf)
+        np.testing.assert_array_equal(result, np.array([50, 150, 350]))
+
+    def test_candidate_exactly_at_anchor(self):
+        """Test behavior when candidate equals an anchor value.
+
+        Candidate at anchor_i is NOT > anchor_i (lower bound), so it doesn't
+        fall in the interval (anchor_i, anchor_{i+1}]. Only candidates strictly
+        greater than a boundary are included in that interval.
+        """
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([100, 150, 200])
+        anchors = np.array([100, 200, 300])
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        # 100 is NOT > 100 (lower bound of interval (100, 200]), so excluded
+        # 150 in (100, 200] -> keep 150
+        # 200 is NOT > 200 (lower bound of interval (200, 300]), so excluded
+        np.testing.assert_array_equal(result, np.array([150]))
+
+    def test_single_anchor(self):
+        """Test with only one anchor point."""
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([50, 60, 150, 160])
+        anchors = np.array([100])
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        # 50 first in (-inf, 100], 150 first in (100, +inf)
+        np.testing.assert_array_equal(result, np.array([50, 150]))
+
+    def test_single_candidate(self):
+        """Test with only one candidate."""
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([150])
+        anchors = np.array([100, 200, 300])
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        np.testing.assert_array_equal(result, np.array([150]))
