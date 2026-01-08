@@ -3692,9 +3692,10 @@ class Vitals:
             )
         )
 
-        # Calculate the product of flow and slope of pressure
-        neg_flow = f_interpolated.data.copy()
-        neg_flow[neg_flow > 0] = 0
+        # For expiration detection, only negative (outward-directed) airflow is
+        # considered. Positive flow values are clipped to zero so they don't
+        # contribute to the product used for expiration landmark detection.
+        neg_flow = np.minimum(f_interpolated.data, 0)
         product_flow_pslope = DataSlice(index, neg_flow * slope_p.data)
 
         # derive idx for expiration start
