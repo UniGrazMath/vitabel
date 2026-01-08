@@ -163,6 +163,100 @@ def _find_segments_above_threshold(
     return onsets_above_threshold, filtered_onsets
 
 
+def _filter_alternating_phases(
+    candidate_phase_idxs: np.ndarray, anchor_phase_idxs: np.ndarray
+) -> np.ndarray:
+    """Filter phase candidates to ensure alternation with anchor phases.
+
+    This function ensures that respiratory phases (inspiration/expiration) strictly
+    alternate by keeping only the first candidate in each interval defined by the
+    anchor phases.
+
+    Algorithm
+    ---------
+    1. Divide the timeline into intervals using anchor phases as boundaries:
+       ``(-inf, anchor_0], (anchor_0, anchor_1], (anchor_1, anchor_2], ...``
+    2. Assign each candidate to the interval it falls into.
+    3. Keep only the first (earliest) candidate per interval.
+
+    This guarantees that between any two consecutive anchor phases, at most one
+    candidate phase is selected, enforcing the alternating pattern required for
+    valid respiratory cycles.
+
+    Parameters
+    ----------
+    candidate_phase_idxs : np.ndarray
+        Indices of potential phase onsets (e.g., inspiration starts) to be filtered.
+        Must be sorted in ascending order.
+    anchor_phase_idxs : np.ndarray
+        Indices of the complementary phase onsets (e.g., expiration starts) that
+        define the interval boundaries. Must be sorted in ascending order.
+
+    Returns
+    -------
+    np.ndarray
+        Filtered indices containing at most one candidate per interval, preserving
+        alternation with anchor phases.
+
+    Examples
+    --------
+    Given anchor phases at indices [100, 200, 300] and candidate phases at
+    indices [50, 120, 150, 250]:
+
+    - Interval (-inf, 100]: candidate 50, keep 50
+    - Interval (100, 200]: candidates 120, 150, keep 120 (first only)
+    - Interval (200, 300]: candidate 250, keep 250
+
+    Result: [50, 120, 250]
+    """
+    if candidate_phase_idxs.size == 0 or anchor_phase_idxs.size == 0:
+        return candidate_phase_idxs
+
+    # Create interval boundaries from anchor phases, with infinity sentinel
+    # to capture any candidates after the last anchor.
+    # Intervals: (-inf, anchor_0], (anchor_0, anchor_1], ..., (anchor_n, +inf)
+    interval_boundaries = np.r_[anchor_phase_idxs, np.inf]
+
+    # Assign each candidate to an interval index.
+    # searchsorted with side="right" gives the index of the first boundary > candidate,
+    # so subtracting 1 gives the interval the candidate belongs to.
+    interval_idx = (
+        np.searchsorted(interval_boundaries, candidate_phase_idxs, side="right") - 1
+    )
+
+    # Determine which candidates fall within valid intervals.
+    # Valid intervals are those bounded by actual anchor phases (not the sentinel).
+    is_valid_interval = (interval_idx >= 0) & (
+        interval_idx < len(interval_boundaries) - 1
+    )
+
+    # Check that candidates are strictly within their interval bounds:
+    # candidate > lower_bound AND candidate <= upper_bound
+    is_within_bounds = np.zeros_like(candidate_phase_idxs, dtype=bool)
+    is_within_bounds[is_valid_interval] = (
+        candidate_phase_idxs[is_valid_interval]
+        > interval_boundaries[interval_idx[is_valid_interval]]
+    ) & (
+        candidate_phase_idxs[is_valid_interval]
+        <= interval_boundaries[interval_idx[is_valid_interval] + 1]
+    )
+
+    # Special case: include candidates before the first anchor phase.
+    # These belong to the implicit interval (-inf, anchor_0].
+    if candidate_phase_idxs[0] < interval_boundaries[0]:
+        is_within_bounds[0] = True
+
+    # Select candidates that passed the bounds check
+    selected_intervals = interval_idx[is_within_bounds]
+    selected_candidates = candidate_phase_idxs[is_within_bounds]
+
+    # Keep only the first candidate per interval.
+    # np.unique returns indices of first occurrences when array is sorted.
+    _, first_occurrence_idx = np.unique(selected_intervals, return_index=True)
+
+    return selected_candidates[first_occurrence_idx]
+
+
 class Vitals:
     """Container for vital data and labels, central interface of this package.
 
@@ -3322,52 +3416,6 @@ class Vitals:
 
         return np.unique(potential_exp_starts), onsets_above_threshold, filtered_onsets
 
-    def _filter_alternating_phases(
-        self, potential_phase_idxs: np.ndarray, fencing_phase_idxs: np.ndarray
-    ) -> np.ndarray:
-        """
-        Assures phases in respiratory cycle alternatingly
-        This function filters the potential phase starts (inspiration or expiration) to ensure that they alternate with the given fencing phase starts (expiration or inspiration).
-
-        Parameters
-        ----------
-        potential_phase_idxs: np.ndarray
-            An array of indices for the time index of the given product where the potential phase (inspiration or expiration) starts.
-        fencing_phase_idxs: np.ndarray
-            An array of indices for the time index of the given product where the fencing phase (expiration or inspiration) starts.
-
-        Returns
-        -------
-        np.ndarray
-            An array of indices for the time index of the given product where the filtered phases (inspiration or expiration) start.
-
-        """
-
-        if potential_phase_idxs.size == 0 or fencing_phase_idxs.size == 0:
-            return potential_phase_idxs
-
-        # Filter second events starts between two fencing events
-        # right-bound sentinel guarantees insp_bounds[left+1] exists
-        fencing_bounds = np.r_[fencing_phase_idxs, np.inf]
-        # For each stop, find index of the start immediately to its left
-        left = np.searchsorted(fencing_bounds, potential_phase_idxs, side="right") - 1
-        # valid when between 0 and last real interval
-        valid_left = (left >= 0) & (left < len(fencing_bounds) - 1)
-        between = np.zeros_like(potential_phase_idxs, dtype=bool)
-        between[valid_left] = (
-            potential_phase_idxs[valid_left] > fencing_bounds[left[valid_left]]
-        ) & (potential_phase_idxs[valid_left] <= fencing_bounds[left[valid_left] + 1])
-        # Mark first event start before first fencing event
-        if potential_phase_idxs[0] < fencing_bounds[0]:
-            between[0] = True
-        # For valid stops, keep the first one per interval (per 'left')
-        bins = left[between]  # which interval each stop belongs to
-        vals = potential_phase_idxs[between]  # their stop values
-
-        _, first_pos = np.unique(bins, return_index=True)
-
-        return vals[first_pos]
-
     def compute_respiratory_phases(
         self,
         flow: Channel,
@@ -3470,12 +3518,12 @@ class Vitals:
         )
 
         # Filter secondary expiration starts between two inspiration starts
-        exp_idxs = self._filter_alternating_phases(
-            potential_phase_idxs=potential_exp_idxs,
-            fencing_phase_idxs=potential_insp_idxs,
+        exp_idxs = _filter_alternating_phases(
+            candidate_phase_idxs=potential_exp_idxs,
+            anchor_phase_idxs=potential_insp_idxs,
         )
-        insp_idxs = self._filter_alternating_phases(
-            potential_phase_idxs=potential_insp_idxs, fencing_phase_idxs=exp_idxs
+        insp_idxs = _filter_alternating_phases(
+            candidate_phase_idxs=potential_insp_idxs, anchor_phase_idxs=exp_idxs
         )
 
         # Generating Results
