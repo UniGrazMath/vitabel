@@ -1559,3 +1559,159 @@ class TestFilterAlternatingPhases:
         result = _filter_alternating_phases(candidates, anchors)
 
         np.testing.assert_array_equal(result, np.array([150]))
+
+
+class TestCreatePhaseIntervals:
+    """Tests for _create_phase_intervals helper function."""
+
+    def test_empty_insp_begins(self):
+        """Test with empty inspiration begins."""
+        from vitabel.vitals import _create_phase_intervals
+
+        insp = pd.DatetimeIndex([])
+        exp = pd.DatetimeIndex(["2021-01-01 00:00:02", "2021-01-01 00:00:06"])
+
+        insp_ivl, exp_ivl = _create_phase_intervals(insp, exp)
+
+        assert insp_ivl == []
+        assert exp_ivl == []
+
+    def test_empty_exp_begins(self):
+        """Test with empty expiration begins."""
+        from vitabel.vitals import _create_phase_intervals
+
+        insp = pd.DatetimeIndex(["2021-01-01 00:00:00", "2021-01-01 00:00:04"])
+        exp = pd.DatetimeIndex([])
+
+        insp_ivl, exp_ivl = _create_phase_intervals(insp, exp)
+
+        assert insp_ivl == []
+        assert exp_ivl == []
+
+    def test_both_empty(self):
+        """Test with both inputs empty."""
+        from vitabel.vitals import _create_phase_intervals
+
+        insp = pd.DatetimeIndex([])
+        exp = pd.DatetimeIndex([])
+
+        insp_ivl, exp_ivl = _create_phase_intervals(insp, exp)
+
+        assert insp_ivl == []
+        assert exp_ivl == []
+
+    def test_docstring_example(self):
+        """Verify the docstring example works correctly."""
+        from vitabel.vitals import _create_phase_intervals
+
+        insp = pd.DatetimeIndex(["2021-01-01 00:00:00", "2021-01-01 00:00:04"])
+        exp = pd.DatetimeIndex(["2021-01-01 00:00:02", "2021-01-01 00:00:06"])
+
+        insp_ivl, exp_ivl = _create_phase_intervals(insp, exp)
+
+        # Inspiration intervals: (insp[0], exp[0]), (insp[1], exp[1])
+        assert len(insp_ivl) == 2
+        assert insp_ivl[0] == (
+            pd.Timestamp("2021-01-01 00:00:00"),
+            pd.Timestamp("2021-01-01 00:00:02"),
+        )
+        assert insp_ivl[1] == (
+            pd.Timestamp("2021-01-01 00:00:04"),
+            pd.Timestamp("2021-01-01 00:00:06"),
+        )
+
+        # Expiration intervals: (exp[0], insp[1])
+        assert len(exp_ivl) == 1
+        assert exp_ivl[0] == (
+            pd.Timestamp("2021-01-01 00:00:02"),
+            pd.Timestamp("2021-01-01 00:00:04"),
+        )
+
+    def test_single_insp_single_exp(self):
+        """Test with single inspiration and expiration."""
+        from vitabel.vitals import _create_phase_intervals
+
+        insp = pd.DatetimeIndex(["2021-01-01 00:00:00"])
+        exp = pd.DatetimeIndex(["2021-01-01 00:00:02"])
+
+        insp_ivl, exp_ivl = _create_phase_intervals(insp, exp)
+
+        # One insp interval (insp -> exp), no exp intervals
+        assert len(insp_ivl) == 1
+        assert insp_ivl[0] == (
+            pd.Timestamp("2021-01-01 00:00:00"),
+            pd.Timestamp("2021-01-01 00:00:02"),
+        )
+        assert exp_ivl == []
+
+    def test_exp_before_insp(self):
+        """Test when expiration starts before first inspiration."""
+        from vitabel.vitals import _create_phase_intervals
+
+        insp = pd.DatetimeIndex(["2021-01-01 00:00:02", "2021-01-01 00:00:06"])
+        exp = pd.DatetimeIndex(["2021-01-01 00:00:00", "2021-01-01 00:00:04"])
+
+        insp_ivl, exp_ivl = _create_phase_intervals(insp, exp)
+
+        # Inspiration: insp[0]=:02 < e_last=:04, insp[1]=:06 NOT < :04
+        # So only insp[0] can pair with exp after :02, which is exp[1]=:04
+        assert len(insp_ivl) == 1
+        assert insp_ivl[0] == (
+            pd.Timestamp("2021-01-01 00:00:02"),
+            pd.Timestamp("2021-01-01 00:00:04"),
+        )
+
+        # Expiration: exp[0]=:00 < i_last=:06, exp[1]=:04 < :06
+        # So exp[0] and exp[1] can pair with insp after :00, which are :02 and :06
+        assert len(exp_ivl) == 2
+        assert exp_ivl[0] == (
+            pd.Timestamp("2021-01-01 00:00:00"),
+            pd.Timestamp("2021-01-01 00:00:02"),
+        )
+        assert exp_ivl[1] == (
+            pd.Timestamp("2021-01-01 00:00:04"),
+            pd.Timestamp("2021-01-01 00:00:06"),
+        )
+
+    def test_multiple_cycles(self):
+        """Test with multiple complete respiratory cycles."""
+        from vitabel.vitals import _create_phase_intervals
+
+        # 3 inspirations, 3 expirations alternating
+        insp = pd.DatetimeIndex(
+            ["2021-01-01 00:00:00", "2021-01-01 00:00:04", "2021-01-01 00:00:08"]
+        )
+        exp = pd.DatetimeIndex(
+            ["2021-01-01 00:00:02", "2021-01-01 00:00:06", "2021-01-01 00:00:10"]
+        )
+
+        insp_ivl, exp_ivl = _create_phase_intervals(insp, exp)
+
+        # All 3 inspirations have following expirations
+        assert len(insp_ivl) == 3
+
+        # Only first 2 expirations have following inspirations
+        assert len(exp_ivl) == 2
+
+    def test_insp_ends_last(self):
+        """Test when inspiration is the last phase (no following expiration)."""
+        from vitabel.vitals import _create_phase_intervals
+
+        insp = pd.DatetimeIndex(["2021-01-01 00:00:00", "2021-01-01 00:00:10"])
+        exp = pd.DatetimeIndex(["2021-01-01 00:00:02"])
+
+        insp_ivl, exp_ivl = _create_phase_intervals(insp, exp)
+
+        # Only insp[0] can pair (< e_last=:02), insp[1]=:10 NOT < :02
+        assert len(insp_ivl) == 1
+        assert insp_ivl[0] == (
+            pd.Timestamp("2021-01-01 00:00:00"),
+            pd.Timestamp("2021-01-01 00:00:02"),
+        )
+
+        # exp[0]=:02 < i_last=:10, so it can pair with insp > :02 = insp[1]=:10
+        assert len(exp_ivl) == 1
+        assert exp_ivl[0] == (
+            pd.Timestamp("2021-01-01 00:00:02"),
+            pd.Timestamp("2021-01-01 00:00:10"),
+        )

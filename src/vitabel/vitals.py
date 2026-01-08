@@ -257,6 +257,79 @@ def _filter_alternating_phases(
     return selected_candidates[first_occurrence_idx]
 
 
+def _create_phase_intervals(
+    insp_begins: pd.DatetimeIndex,
+    exp_begins: pd.DatetimeIndex,
+) -> tuple[list[tuple], list[tuple]]:
+    """Create inspiration and expiration intervals from phase onset times.
+
+    Given the timestamps of inspiration and expiration phase beginnings,
+    this function creates intervals by pairing consecutive phase boundaries:
+    - Inspiration intervals: from each inspiration start to the next expiration start
+    - Expiration intervals: from each expiration start to the next inspiration start
+
+    This assumes the phases alternate (insp -> exp -> insp -> ...) and only
+    creates intervals where proper pairing is possible.
+
+    Parameters
+    ----------
+    insp_begins : pd.DatetimeIndex
+        Timestamps of inspiration phase onsets, sorted chronologically.
+    exp_begins : pd.DatetimeIndex
+        Timestamps of expiration phase onsets, sorted chronologically.
+
+    Returns
+    -------
+    insp_intervals : list[tuple]
+        List of (start, end) tuples for inspiration phases. Each interval
+        spans from an inspiration onset to the following expiration onset.
+    exp_intervals : list[tuple]
+        List of (start, end) tuples for expiration phases. Each interval
+        spans from an expiration onset to the following inspiration onset.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> insp = pd.DatetimeIndex(['2021-01-01 00:00:00', '2021-01-01 00:00:04'])
+    >>> exp = pd.DatetimeIndex(['2021-01-01 00:00:02', '2021-01-01 00:00:06'])
+    >>> insp_ivl, exp_ivl = _create_phase_intervals(insp, exp)
+    >>> insp_ivl  # [(insp[0], exp[0]), (insp[1], exp[1])]
+    [(Timestamp('2021-01-01 00:00:00'), Timestamp('2021-01-01 00:00:02')),
+     (Timestamp('2021-01-01 00:00:04'), Timestamp('2021-01-01 00:00:06'))]
+    >>> exp_ivl  # [(exp[0], insp[1])]
+    [(Timestamp('2021-01-01 00:00:02'), Timestamp('2021-01-01 00:00:04'))]
+
+    Notes
+    -----
+    - If either input is empty, both outputs will be empty lists.
+    - Inspiration intervals pair each inspiration with the next expiration
+      that occurs after it (and before the last expiration).
+    - Expiration intervals pair each expiration with the next inspiration
+      that occurs after it (and before the last inspiration).
+    """
+    # Early exit: can't form intervals without both phase types
+    if len(insp_begins) == 0 or len(exp_begins) == 0:
+        return [], []
+
+    # --- Inspiration intervals: [insp_start, next exp_start) ---
+    # Only include inspirations that have a following expiration
+    i_first = insp_begins[0]
+    e_last = exp_begins[-1]
+    i_for_insp = insp_begins[insp_begins < e_last]
+    e_for_insp = exp_begins[exp_begins > i_first]
+    insp_intervals = list(zip(i_for_insp, e_for_insp))
+
+    # --- Expiration intervals: [exp_start, next insp_start) ---
+    # Only include expirations that have a following inspiration
+    i_last = insp_begins[-1]
+    e_first = exp_begins[0]
+    e_for_exp = exp_begins[exp_begins < i_last]
+    i_for_exp = insp_begins[insp_begins > e_first]
+    exp_intervals = list(zip(e_for_exp, i_for_exp))
+
+    return insp_intervals, exp_intervals
+
+
 class Vitals:
     """Container for vital data and labels, central interface of this package.
 
@@ -3416,6 +3489,63 @@ class Vitals:
 
         return np.unique(potential_exp_starts), onsets_above_threshold, filtered_onsets
 
+    def _add_respiratory_labels(
+        self,
+        insp_begin: pd.DatetimeIndex,
+        exp_begin: pd.DatetimeIndex,
+        insp_intervals: list[tuple],
+        exp_intervals: list[tuple],
+    ) -> None:
+        """Add respiratory phase labels to the Vitals object.
+
+        Creates and adds the following global labels:
+        - "Inspiration Begin": point label at each inspiration onset
+        - "Expiration Begin": point label at each expiration onset
+        - "Inspiration": interval label spanning inspiration phases
+        - "Expiration": interval label spanning expiration phases
+
+        Parameters
+        ----------
+        insp_begin : pd.DatetimeIndex
+            Timestamps of inspiration phase onsets.
+        exp_begin : pd.DatetimeIndex
+            Timestamps of expiration phase onsets.
+        insp_intervals : list[tuple]
+            List of (start, end) tuples for inspiration phases.
+        exp_intervals : list[tuple]
+            List of (start, end) tuples for expiration phases.
+        """
+        self.add_global_label(
+            Label(
+                name="Inspiration Begin",
+                time_index=insp_begin,
+                plotstyle=DEFAULT_PLOT_STYLE.get("Inspiration Begin"),
+            )
+        )
+        self.add_global_label(
+            Label(
+                name="Expiration Begin",
+                time_index=exp_begin,
+                plotstyle=DEFAULT_PLOT_STYLE.get("Expiration Begin"),
+            )
+        )
+
+        if len(insp_begin) > 0 and len(exp_begin) > 0:
+            self.add_global_label(
+                IntervalLabel(
+                    name="Inspiration",
+                    time_index=insp_intervals,
+                    plotstyle=DEFAULT_PLOT_STYLE.get("Inspiration"),
+                )
+            )
+            self.add_global_label(
+                IntervalLabel(
+                    name="Expiration",
+                    time_index=exp_intervals,
+                    plotstyle=DEFAULT_PLOT_STYLE.get("Expiration"),
+                )
+            )
+
     def compute_respiratory_phases(
         self,
         flow: Channel,
@@ -3526,69 +3656,20 @@ class Vitals:
             candidate_phase_idxs=potential_insp_idxs, anchor_phase_idxs=exp_idxs
         )
 
-        # Generating Results
-        # If either side is empty, you can't form intervals
+        # Generating Results: convert indices to timestamps and create intervals
         if insp_idxs.size == 0 or exp_idxs.size == 0:
             insp_begin = index[:0]  # empty, same type as index
             exp_begin = index[:0]
-            insp_intervals = []
-            exp_intervals = []
         else:
-            # Onsets of phases (DatetimeIndex or Index)
             insp_begin = index.take(insp_idxs)
             exp_begin = index.take(exp_idxs)
-            # If after selection one is empty, bail gracefully
-            if len(insp_begin) == 0 or len(exp_begin) == 0:
-                insp_intervals = []
-                exp_intervals = []
-            else:
-                # --- Inspiration intervals: [insp_start, next exp_start) ---
-                i_first = insp_begin[0]
-                e_last = exp_begin[-1]
-                i_for_insp = insp_begin[insp_begin < e_last]
-                e_for_insp = exp_begin[exp_begin > i_first]
-                insp_intervals = list(zip(i_for_insp, e_for_insp))
-                # --- Expiration intervals: [exp_start, next insp_start) ---
-                i_last = insp_begin[-1]
-                e_first = exp_begin[0]
-                e_for_exp = exp_begin[exp_begin < i_last]
-                i_for_exp = insp_begin[insp_begin > e_first]
-                exp_intervals = list(zip(e_for_exp, i_for_exp))
 
-        # Add inspiration and expiration labels to the Vitals object
+        insp_intervals, exp_intervals = _create_phase_intervals(insp_begin, exp_begin)
+
         if add_labels:
-            self.add_global_label(
-                Label(
-                    name="Inspiration Begin",
-                    time_index=insp_begin,
-                    plotstyle=DEFAULT_PLOT_STYLE.get("Inspiration Begin"),
-                )
+            self._add_respiratory_labels(
+                insp_begin, exp_begin, insp_intervals, exp_intervals
             )
-            self.add_global_label(
-                Label(
-                    name="Expiration Begin",
-                    time_index=exp_begin,
-                    plotstyle=DEFAULT_PLOT_STYLE.get("Expiration Begin"),
-                )
-            )
-
-            if len(insp_begin) > 0 and len(exp_begin) > 0:
-                # Inspiration Intervval
-                self.add_global_label(
-                    IntervalLabel(
-                        name="Inspiration",
-                        time_index=insp_intervals,
-                        plotstyle=DEFAULT_PLOT_STYLE.get("Inspiration"),
-                    )
-                )
-                # Expiration Interval
-                self.add_global_label(
-                    IntervalLabel(
-                        name="Expiration",
-                        time_index=exp_intervals,
-                        plotstyle=DEFAULT_PLOT_STYLE.get("Expiration"),
-                    )
-                )
 
         if add_intermediate_channels:
             intermediate_channels = [
