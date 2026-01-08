@@ -3546,6 +3546,63 @@ class Vitals:
                 )
             )
 
+    def _add_respiratory_intermediate_channels(
+        self,
+        f_interpolated: DataSlice,
+        p_interpolated: DataSlice,
+        product_flow_pressure: DataSlice,
+        slope_p: DataSlice,
+        product_flow_pslope: DataSlice,
+    ) -> None:
+        """Add intermediate channels from respiratory phase detection.
+
+        These channels expose the internal computations of the respiratory
+        phase detection algorithm, useful for debugging and visualization.
+
+        Parameters
+        ----------
+        f_interpolated : DataSlice
+            Interpolated flow data resampled to a common time index.
+        p_interpolated : DataSlice
+            Interpolated pressure data resampled to a common time index.
+        product_flow_pressure : DataSlice
+            Product of flow and pressure, used for inspiration detection.
+        slope_p : DataSlice
+            Time derivative (slope) of the pressure signal.
+        product_flow_pslope : DataSlice
+            Product of negative flow and pressure slope, used for expiration detection.
+        """
+        intermediate_channels = [
+            Channel(
+                name="Flow Interpolated",
+                time_index=f_interpolated.time_index,
+                data=f_interpolated.data,
+            ),
+            Channel(
+                name="Pressure Interpolated",
+                time_index=p_interpolated.time_index,
+                data=p_interpolated.data,
+            ),
+            Channel(
+                name="Product Flow Pressure",
+                time_index=product_flow_pressure.time_index,
+                data=product_flow_pressure.data,
+            ),
+            Channel(
+                name="Slope Pressure",
+                time_index=slope_p.time_index,
+                data=slope_p.data,
+            ),
+            Channel(
+                name="Product negative Flow Pressures Slope",
+                time_index=p_interpolated.time_index,
+                data=product_flow_pslope.data,
+            ),
+        ]
+        for channel in intermediate_channels:
+            channel.plotstyle = DEFAULT_PLOT_STYLE.get(channel.name)
+            self.add_channel(channel)
+
     def compute_respiratory_phases(
         self,
         flow: Channel,
@@ -3672,36 +3729,13 @@ class Vitals:
             )
 
         if add_intermediate_channels:
-            intermediate_channels = [
-                Channel(
-                    name="Flow Interpolated",
-                    time_index=f_interpolated.time_index,
-                    data=f_interpolated.data,
-                ),
-                Channel(
-                    name="Pressure Interpolated",
-                    time_index=p_interpolated.time_index,
-                    data=p_interpolated.data,
-                ),
-                Channel(
-                    name="Product Flow Pressure",
-                    time_index=product_flow_pressure.time_index,
-                    data=product_flow_pressure.data,
-                ),
-                Channel(
-                    name="Slope Pressure",
-                    time_index=slope_p.time_index,
-                    data=slope_p.data,
-                ),
-                Channel(
-                    name="Product negative Flow Pressures Slope",
-                    time_index=p_interpolated.time_index,
-                    data=product_flow_pslope.data,
-                ),
-            ]
-            for channel in intermediate_channels:
-                channel.plotstyle = DEFAULT_PLOT_STYLE.get(channel.name)
-                self.add_channel(channel)
+            self._add_respiratory_intermediate_channels(
+                f_interpolated,
+                p_interpolated,
+                product_flow_pressure,
+                slope_p,
+                product_flow_pslope,
+            )
 
         if return_landmarks:
             return RespPhases(
