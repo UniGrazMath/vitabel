@@ -95,6 +95,74 @@ def _compute_slope(dataslice: DataSlice) -> DataSlice:
     return DataSlice(time_index=index, data=slope)
 
 
+def _find_segments_above_threshold(
+    data: npt.NDArray,
+    time_index: pd.DatetimeIndex,
+    threshold: float,
+    max_gap: np.timedelta64,
+    min_duration: np.timedelta64,
+) -> tuple[npt.NDArray, npt.NDArray]:
+    """Identify segments where data exceeds a threshold, with gap/duration filtering.
+
+    This function detects contiguous segments of data above a threshold value.
+    It merges segments separated by gaps shorter than `max_gap` and discards
+    segments whose duration is less than `min_duration`.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        The data array to analyze.
+    time_index : pd.DatetimeIndex
+        The corresponding time index for the data.
+    threshold : float
+        The threshold value; segments where data > threshold are detected.
+    max_gap : np.timedelta64
+        Maximum gap duration between above-threshold indices to consider them
+        as part of the same segment. Gaps shorter than this are bridged.
+    min_duration : np.timedelta64
+        Minimum segment duration for a segment to be retained.
+
+    Returns
+    -------
+    onsets_above_threshold : np.ndarray
+        An array of indices where each detected segment starts (before duration filtering).
+    filtered_onsets : np.ndarray
+        An array of segment start indices after filtering by minimum duration.
+    """
+    # Find indices where data is above the threshold
+    above_idxs = np.flatnonzero(data > threshold).astype(int)
+
+    # Early exit: nothing above threshold
+    if above_idxs.size == 0:
+        onsets_above_threshold = np.empty(0, dtype=int)
+        filtered_onsets = onsets_above_threshold
+        return onsets_above_threshold, filtered_onsets
+
+    # Identify breaks (gaps below threshold) greater than max_gap,
+    # thereby filtering out short breaks that are likely due to oscillations.
+    breaks = np.diff(time_index.take(above_idxs)) > max_gap
+
+    # Determine segment boundaries
+    (break_idxs,) = breaks.nonzero()
+    segment_starts_pos = np.r_[0, break_idxs + 1]
+    segment_stops_pos = np.r_[break_idxs, above_idxs.size - 1]
+    onsets_above_threshold = above_idxs[segment_starts_pos]
+
+    # Early exit: no segments found
+    if onsets_above_threshold.size == 0:
+        filtered_onsets = onsets_above_threshold
+        return onsets_above_threshold, filtered_onsets
+
+    # Filter out segments shorter than min_duration
+    starts = time_index.take(above_idxs[segment_starts_pos])
+    stops = time_index.take(above_idxs[segment_stops_pos])
+    segment_width = stops - starts
+    segments_width_filter = segment_width >= min_duration
+    filtered_onsets = onsets_above_threshold[segments_width_filter]
+
+    return onsets_above_threshold, filtered_onsets
+
+
 class Vitals:
     """Container for vital data and labels, central interface of this package.
 
@@ -3059,32 +3127,14 @@ class Vitals:
         times = product.time_index.copy()
         data = product.data.copy()
 
-        # Find indices where product is above a threshold
-        (above_idxs,) = (data > threshold).nonzero()
-
-        # Early exit: nothing above threshold
-        if above_idxs.size == 0:
-            onsets_above_threshold = np.empty(0, dtype=int)
-            filtered_onsets = onsets_above_threshold
-        else:
-            # Identify segments above threshold separated by breaks longer than
-            # the maximum allowed interruption duration for landmarks,
-            # therefore filter breaks likely caused by oscillations
-            breaks = np.diff(times[above_idxs]) > landmark_duration_max_interruption
-            (break_idxs,) = breaks.nonzero()
-            segment_starts_pos = np.r_[0, break_idxs + 1]
-            segment_stops_pos = np.r_[break_idxs, above_idxs.size - 1]
-            onsets_above_threshold = above_idxs[segment_starts_pos]
-
-            if onsets_above_threshold.size == 0:
-                filtered_onsets = onsets_above_threshold
-            else:
-                # Filter segments that are shorter than landmark_min_duration
-                starts = times.take(above_idxs[segment_starts_pos])
-                stops = times.take(above_idxs[segment_stops_pos])
-                segment_width = stops - starts
-                segments_width_filter = segment_width >= landmark_min_duration
-                filtered_onsets = onsets_above_threshold[segments_width_filter]
+        # Detect segments above threshold using shared helper
+        onsets_above_threshold, filtered_onsets = _find_segments_above_threshold(
+            data=data,
+            time_index=times,
+            threshold=threshold,
+            max_gap=landmark_duration_max_interruption,
+            min_duration=landmark_min_duration,
+        )
 
         # If nothing survives filtering, early return
         if filtered_onsets.size == 0:
@@ -3225,27 +3275,14 @@ class Vitals:
         index = product.time_index.copy()
         data = product.data.copy()
 
-        # Find indices where product is above a threshold
-        above_idxs = np.flatnonzero(data > threshold).astype(int)
-
-        # Early exit: nothing above threshold
-        if above_idxs.size == 0:
-            onsets_above_threshold = np.empty(0, dtype=int)
-            filtered_onsets = onsets_above_threshold
-        else:
-            # Identify breaks (gaps below threshold) greater than min_gap_between_segments,
-            # thereby filtering out short breaks that are likely due to oscillations.
-            breaks = np.diff(index.take(above_idxs)) > min_gap_between_segments
-
-            # Determine segment boundaries and filter out segments shorter than min_segment_duration.
-            segment_starts_pos = np.r_[0, breaks.nonzero()[0] + 1]
-            segment_stops_pos = np.r_[breaks.nonzero()[0], above_idxs.size - 1]
-            onsets_above_threshold = above_idxs[segment_starts_pos]
-            starts = index.take(above_idxs[segment_starts_pos])
-            stops = index.take(above_idxs[segment_stops_pos])
-            segment_width = stops - starts
-            segments_width_filter = segment_width >= min_segment_duration
-            filtered_onsets = onsets_above_threshold[segments_width_filter]
+        # Detect segments above threshold using shared helper
+        onsets_above_threshold, filtered_onsets = _find_segments_above_threshold(
+            data=data,
+            time_index=index,
+            threshold=threshold,
+            max_gap=min_gap_between_segments,
+            min_duration=min_segment_duration,
+        )
 
         # If nothing survives filtering, early return
         if filtered_onsets.size == 0:
