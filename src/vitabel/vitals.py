@@ -76,7 +76,8 @@ def _compute_slope(dataslice: DataSlice) -> DataSlice:
     -------
     DataSlice
         A new DataSlice with the same time index and the computed slope as data.
-        Returns zeros if the input has fewer than 3 data points.
+        The slope values have dtype float. If the input has fewer than 3 data points,
+        returns a DataSlice with zeros (insufficient points for gradient computation).
     """
     index = dataslice.time_index
     data = dataslice.data
@@ -125,9 +126,16 @@ def _find_segments_above_threshold(
     Returns
     -------
     onsets_above_threshold : np.ndarray
-        An array of indices where each detected segment starts (before duration filtering).
+        An array of integer indices where each detected segment starts (before
+        duration filtering). Empty array (dtype int) if no values exceed the threshold.
     filtered_onsets : np.ndarray
-        An array of segment start indices after filtering by minimum duration.
+        An array of integer segment start indices after filtering by minimum duration.
+        Empty array (dtype int) if no segments survive filtering.
+
+    Notes
+    -----
+    Both returned arrays always have dtype int and maintain consistent shapes
+    even when empty, allowing safe unpacking and downstream processing.
     """
     # Find indices where data is above the threshold
     above_idxs = np.flatnonzero(data > threshold).astype(int)
@@ -196,7 +204,9 @@ def _filter_alternating_phases(
     -------
     np.ndarray
         Filtered indices containing at most one candidate per interval, preserving
-        alternation with anchor phases.
+        alternation with anchor phases. If ``candidate_phase_idxs`` is empty or
+        ``anchor_phase_idxs`` is empty, returns ``candidate_phase_idxs`` unchanged.
+        The dtype of the returned array matches the input ``candidate_phase_idxs``.
 
     Examples
     --------
@@ -3262,11 +3272,21 @@ class Vitals:
         Returns
         -------
         inspiration_starts : np.ndarray
-            An array of indices for the time index of the given product where the inspirations start (filtered zero crossings).
+            An array of integer indices for the time index of the given product where
+            the inspirations start (filtered zero crossings). Empty array (dtype int)
+            if no valid inspiration starts are detected.
         onsets_above_threshold : np.ndarray
-            An array of indices where the product first exceeds the threshold for each detected segment.
+            An array of integer indices where the product first exceeds the threshold
+            for each detected segment. Empty array (dtype int) if no segments are detected.
         filtered_onsets : np.ndarray
-            An array of indices for the onsets above threshold after additional filtering (e.g., slope and pressure criteria).
+            An array of integer indices for the onsets above threshold after additional
+            filtering (e.g., slope and pressure criteria). Empty array (dtype int) if
+            no onsets survive filtering.
+
+        Notes
+        -----
+        All three returned arrays always have dtype int and maintain consistent shapes
+        even when empty, allowing safe tuple unpacking and downstream processing.
         """
 
         # Filter parameters
@@ -3416,11 +3436,20 @@ class Vitals:
         Returns
         -------
         expiration_starts : np.ndarray
-            An array of indices for the time index of the given product where the expirations start (filtered zero crossings).
+            An array of integer indices for the time index of the given product where
+            the expirations start (filtered zero crossings). Empty array (dtype int)
+            if no valid expiration starts are detected.
         onsets_above_threshold : np.ndarray
-            An array of indices where the product first exceeds the threshold for each detected segment.
+            An array of integer indices where the product first exceeds the threshold
+            for each detected segment. Empty array (dtype int) if no segments are detected.
         filtered_onsets : np.ndarray
-            An array of indices for the onsets above threshold after duration filtering.
+            An array of integer indices for the onsets above threshold after duration
+            filtering. Empty array (dtype int) if no onsets survive filtering.
+
+        Notes
+        -----
+        All three returned arrays always have dtype int and maintain consistent shapes
+        even when empty, allowing safe tuple unpacking and downstream processing.
         """
         # --- Filter parameters ---
         # Minimum gap between above-threshold segments to treat them as separate.
