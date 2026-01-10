@@ -93,7 +93,12 @@ class DataSlice:
     Primarily used in the various ``get_data`` methods.
     """
 
-    time_index: pd.DatetimeIndex | pd.TimedeltaIndex | npt.NDArray[np.datetime64] | npt.NDArray[np.timedelta64]
+    time_index: (
+        pd.DatetimeIndex
+        | pd.TimedeltaIndex
+        | npt.NDArray[np.datetime64]
+        | npt.NDArray[np.timedelta64]
+    )
     """The time index of the selected data range."""
 
     data: npt.NDArray | None = None

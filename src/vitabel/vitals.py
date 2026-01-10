@@ -61,6 +61,285 @@ logger: logging.Logger = logging.getLogger("vitabel")
 """Global package logger."""
 
 
+def _compute_slope(dataslice: DataSlice) -> DataSlice:
+    """Compute the time derivative (slope) of a DataSlice.
+
+    Uses numpy's gradient function with central differences for interior points
+    and forward/backward differences at edges.
+
+    Parameters
+    ----------
+    dataslice : DataSlice
+        A DataSlice containing the time index and data to differentiate.
+
+    Returns
+    -------
+    DataSlice
+        A new DataSlice with the same time index and the computed slope as data.
+        The slope values have dtype float. If the input has fewer than 3 data points,
+        returns a DataSlice with zeros (insufficient points for gradient computation).
+    """
+    index = dataslice.time_index
+    data = dataslice.data
+
+    if len(dataslice) < 3:
+        return DataSlice(time_index=index, data=np.zeros(len(index), dtype=float))
+
+    # Convert time to seconds (float64) from nanoseconds
+    t_ns = index.view("int64")
+    t_rel_sec = (t_ns - t_ns[0]).astype(np.float64) * 1e-9
+
+    # Calculate the slope using central differences for interior points,
+    # forward/backward for edges
+    slope = np.gradient(data, t_rel_sec, edge_order=1)
+
+    return DataSlice(time_index=index, data=slope)
+
+
+def _find_segments_above_threshold(
+    data: npt.NDArray,
+    time_index: pd.DatetimeIndex,
+    threshold: float,
+    max_gap: np.timedelta64,
+    min_duration: np.timedelta64,
+) -> tuple[npt.NDArray, npt.NDArray]:
+    """Identify segments where data exceeds a threshold, with gap/duration filtering.
+
+    This function detects contiguous segments of data above a threshold value.
+    It merges segments separated by gaps shorter than `max_gap` and discards
+    segments whose duration is less than `min_duration`.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        The data array to analyze.
+    time_index : pd.DatetimeIndex
+        The corresponding time index for the data.
+    threshold : float
+        The threshold value; segments where data > threshold are detected.
+    max_gap : np.timedelta64
+        Maximum gap duration between above-threshold indices to consider them
+        as part of the same segment. Gaps shorter than this are bridged.
+    min_duration : np.timedelta64
+        Minimum segment duration for a segment to be retained.
+
+    Returns
+    -------
+    onsets_above_threshold : np.ndarray
+        An array of integer indices where each detected segment starts (before
+        duration filtering). Empty array (dtype int) if no values exceed the threshold.
+    filtered_onsets : np.ndarray
+        An array of integer segment start indices after filtering by minimum duration.
+        Empty array (dtype int) if no segments survive filtering.
+
+    Notes
+    -----
+    Both returned arrays always have dtype int and maintain consistent shapes
+    even when empty, allowing safe unpacking and downstream processing.
+    """
+    # Find indices where data is above the threshold
+    above_idxs = np.flatnonzero(data > threshold).astype(int)
+
+    # Early exit: nothing above threshold
+    if above_idxs.size == 0:
+        onsets_above_threshold = np.empty(0, dtype=int)
+        filtered_onsets = onsets_above_threshold
+        return onsets_above_threshold, filtered_onsets
+
+    # Identify breaks (gaps below threshold) greater than max_gap,
+    # thereby filtering out short breaks that are likely due to oscillations.
+    breaks = np.diff(time_index.take(above_idxs)) > max_gap
+
+    # Determine segment boundaries
+    (break_idxs,) = breaks.nonzero()
+    segment_starts_pos = np.r_[0, break_idxs + 1]
+    segment_stops_pos = np.r_[break_idxs, above_idxs.size - 1]
+    onsets_above_threshold = above_idxs[segment_starts_pos]
+
+    # Early exit: no segments found
+    if onsets_above_threshold.size == 0:
+        filtered_onsets = onsets_above_threshold
+        return onsets_above_threshold, filtered_onsets
+
+    # Filter out segments shorter than min_duration
+    starts = time_index.take(above_idxs[segment_starts_pos])
+    stops = time_index.take(above_idxs[segment_stops_pos])
+    segment_width = stops - starts
+    segments_width_filter = segment_width >= min_duration
+    filtered_onsets = onsets_above_threshold[segments_width_filter]
+
+    return onsets_above_threshold, filtered_onsets
+
+
+def _filter_alternating_phases(
+    candidate_phase_idxs: np.ndarray, anchor_phase_idxs: np.ndarray
+) -> np.ndarray:
+    """Filter phase candidates to ensure alternation with anchor phases.
+
+    This function ensures that respiratory phases (inspiration/expiration) strictly
+    alternate by keeping only the first candidate in each interval defined by the
+    anchor phases.
+
+    Algorithm
+    ---------
+    1. Divide the timeline into intervals using anchor phases as boundaries:
+       ``(-inf, anchor_0], (anchor_0, anchor_1], (anchor_1, anchor_2], ...``
+    2. Assign each candidate to the interval it falls into.
+    3. Keep only the first (earliest) candidate per interval.
+
+    This guarantees that between any two consecutive anchor phases, at most one
+    candidate phase is selected, enforcing the alternating pattern required for
+    valid respiratory cycles.
+
+    Parameters
+    ----------
+    candidate_phase_idxs : np.ndarray
+        Indices of potential phase onsets (e.g., inspiration starts) to be filtered.
+        Must be sorted in ascending order.
+    anchor_phase_idxs : np.ndarray
+        Indices of the complementary phase onsets (e.g., expiration starts) that
+        define the interval boundaries. Must be sorted in ascending order.
+
+    Returns
+    -------
+    np.ndarray
+        Filtered indices containing at most one candidate per interval, preserving
+        alternation with anchor phases. If ``candidate_phase_idxs`` is empty or
+        ``anchor_phase_idxs`` is empty, returns ``candidate_phase_idxs`` unchanged.
+        The dtype of the returned array matches the input ``candidate_phase_idxs``.
+
+    Examples
+    --------
+    Given anchor phases at indices [100, 200, 300] and candidate phases at
+    indices [50, 120, 150, 250]:
+
+    - Interval (-inf, 100]: candidate 50, keep 50
+    - Interval (100, 200]: candidates 120, 150, keep 120 (first only)
+    - Interval (200, 300]: candidate 250, keep 250
+
+    Result: [50, 120, 250]
+    """
+    if candidate_phase_idxs.size == 0 or anchor_phase_idxs.size == 0:
+        return candidate_phase_idxs
+
+    # Create interval boundaries from anchor phases, with infinity sentinel
+    # to capture any candidates after the last anchor.
+    # Intervals: (-inf, anchor_0], (anchor_0, anchor_1], ..., (anchor_n, +inf)
+    interval_boundaries = np.r_[anchor_phase_idxs, np.inf]
+
+    # Assign each candidate to an interval index.
+    # searchsorted with side="right" gives the index of the first boundary > candidate,
+    # so subtracting 1 gives the interval the candidate belongs to.
+    interval_idx = (
+        np.searchsorted(interval_boundaries, candidate_phase_idxs, side="right") - 1
+    )
+
+    # Determine which candidates fall within valid intervals.
+    # Valid intervals are those bounded by actual anchor phases (not the sentinel).
+    is_valid_interval = (interval_idx >= 0) & (
+        interval_idx < len(interval_boundaries) - 1
+    )
+
+    # Check that candidates are strictly within their interval bounds:
+    # candidate > lower_bound AND candidate <= upper_bound
+    is_within_bounds = np.zeros_like(candidate_phase_idxs, dtype=bool)
+    is_within_bounds[is_valid_interval] = (
+        candidate_phase_idxs[is_valid_interval]
+        > interval_boundaries[interval_idx[is_valid_interval]]
+    ) & (
+        candidate_phase_idxs[is_valid_interval]
+        <= interval_boundaries[interval_idx[is_valid_interval] + 1]
+    )
+
+    # Special case: include candidates before the first anchor phase.
+    # These belong to the implicit interval (-inf, anchor_0].
+    if candidate_phase_idxs[0] < interval_boundaries[0]:
+        is_within_bounds[0] = True
+
+    # Select candidates that passed the bounds check
+    selected_intervals = interval_idx[is_within_bounds]
+    selected_candidates = candidate_phase_idxs[is_within_bounds]
+
+    # Keep only the first candidate per interval.
+    # np.unique returns indices of first occurrences when array is sorted.
+    _, first_occurrence_idx = np.unique(selected_intervals, return_index=True)
+
+    return selected_candidates[first_occurrence_idx]
+
+
+def _create_phase_intervals(
+    insp_begins: pd.DatetimeIndex,
+    exp_begins: pd.DatetimeIndex,
+) -> tuple[list[tuple], list[tuple]]:
+    """Create inspiration and expiration intervals from phase onset times.
+
+    Given the timestamps of inspiration and expiration phase beginnings,
+    this function creates intervals by pairing consecutive phase boundaries:
+    - Inspiration intervals: from each inspiration start to the next expiration start
+    - Expiration intervals: from each expiration start to the next inspiration start
+
+    This assumes the phases alternate (insp -> exp -> insp -> ...) and only
+    creates intervals where proper pairing is possible.
+
+    Parameters
+    ----------
+    insp_begins : pd.DatetimeIndex
+        Timestamps of inspiration phase onsets, sorted chronologically.
+    exp_begins : pd.DatetimeIndex
+        Timestamps of expiration phase onsets, sorted chronologically.
+
+    Returns
+    -------
+    insp_intervals : list[tuple]
+        List of (start, end) tuples for inspiration phases. Each interval
+        spans from an inspiration onset to the following expiration onset.
+    exp_intervals : list[tuple]
+        List of (start, end) tuples for expiration phases. Each interval
+        spans from an expiration onset to the following inspiration onset.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> insp = pd.DatetimeIndex(['2021-01-01 00:00:00', '2021-01-01 00:00:04'])
+    >>> exp = pd.DatetimeIndex(['2021-01-01 00:00:02', '2021-01-01 00:00:06'])
+    >>> insp_ivl, exp_ivl = _create_phase_intervals(insp, exp)
+    >>> insp_ivl  # [(insp[0], exp[0]), (insp[1], exp[1])]
+    [(Timestamp('2021-01-01 00:00:00'), Timestamp('2021-01-01 00:00:02')),
+     (Timestamp('2021-01-01 00:00:04'), Timestamp('2021-01-01 00:00:06'))]
+    >>> exp_ivl  # [(exp[0], insp[1])]
+    [(Timestamp('2021-01-01 00:00:02'), Timestamp('2021-01-01 00:00:04'))]
+
+    Notes
+    -----
+    - If either input is empty, both outputs will be empty lists.
+    - Inspiration intervals pair each inspiration with the next expiration
+      that occurs after it (and before the last expiration).
+    - Expiration intervals pair each expiration with the next inspiration
+      that occurs after it (and before the last inspiration).
+    """
+    # Early exit: can't form intervals without both phase types
+    if len(insp_begins) == 0 or len(exp_begins) == 0:
+        return [], []
+
+    # --- Inspiration intervals: [insp_start, next exp_start) ---
+    # Only include inspirations that have a following expiration
+    i_first = insp_begins[0]
+    e_last = exp_begins[-1]
+    i_for_insp = insp_begins[insp_begins < e_last]
+    e_for_insp = exp_begins[exp_begins > i_first]
+    insp_intervals = list(zip(i_for_insp, e_for_insp))
+
+    # --- Expiration intervals: [exp_start, next insp_start) ---
+    # Only include expirations that have a following inspiration
+    i_last = insp_begins[-1]
+    e_first = exp_begins[0]
+    e_for_exp = exp_begins[exp_begins < i_last]
+    i_for_exp = insp_begins[insp_begins > e_first]
+    exp_intervals = list(zip(e_for_exp, i_for_exp))
+
+    return insp_intervals, exp_intervals
+
+
 class Vitals:
     """Container for vital data and labels, central interface of this package.
 
@@ -2993,11 +3272,21 @@ class Vitals:
         Returns
         -------
         inspiration_starts : np.ndarray
-            An array of indices for the time index of the given product where the inspirations start (filtered zero crossings).
+            An array of integer indices for the time index of the given product where
+            the inspirations start (filtered zero crossings). Empty array (dtype int)
+            if no valid inspiration starts are detected.
         onsets_above_threshold : np.ndarray
-            An array of indices where the product first exceeds the threshold for each detected segment.
+            An array of integer indices where the product first exceeds the threshold
+            for each detected segment. Empty array (dtype int) if no segments are detected.
         filtered_onsets : np.ndarray
-            An array of indices for the onsets above threshold after additional filtering (e.g., slope and pressure criteria).
+            An array of integer indices for the onsets above threshold after additional
+            filtering (e.g., slope and pressure criteria). Empty array (dtype int) if
+            no onsets survive filtering.
+
+        Notes
+        -----
+        All three returned arrays always have dtype int and maintain consistent shapes
+        even when empty, allowing safe tuple unpacking and downstream processing.
         """
 
         # Filter parameters
@@ -3025,32 +3314,14 @@ class Vitals:
         times = product.time_index.copy()
         data = product.data.copy()
 
-        # Find indices where product is above a threshold
-        (above_idxs,) = (data > threshold).nonzero()
-
-        # Early exit: nothing above threshold
-        if above_idxs.size == 0:
-            onsets_above_threshold = np.empty(0, dtype=int)
-            filtered_onsets = onsets_above_threshold
-        else:
-            # Identify segments above threshold separated by breaks longer than 
-            # the maximum allowed interruption duration for landmarks,
-            # therefore filter breaks likely caused by oscillations
-            breaks = np.diff(times[above_idxs]) > landmark_duration_max_interruption
-            (break_idxs,) = breaks.nonzero()
-            segment_starts_pos = np.r_[0, break_idxs + 1]
-            segment_stops_pos = np.r_[break_idxs, above_idxs.size - 1]
-            onsets_above_threshold = above_idxs[segment_starts_pos]
-
-            if onsets_above_threshold.size == 0:
-                filtered_onsets = onsets_above_threshold
-            else:
-                # Filter segments that are shorter than landmark_min_duration
-                starts = times.take(above_idxs[segment_starts_pos])
-                stops = times.take(above_idxs[segment_stops_pos])
-                segment_width = stops - starts
-                segments_width_filter = segment_width >= landmark_min_duration
-                filtered_onsets = onsets_above_threshold[segments_width_filter]
+        # Detect segments above threshold using shared helper
+        onsets_above_threshold, filtered_onsets = _find_segments_above_threshold(
+            data=data,
+            time_index=times,
+            threshold=threshold,
+            max_gap=landmark_duration_max_interruption,
+            min_duration=landmark_min_duration,
+        )
 
         # If nothing survives filtering, early return
         if filtered_onsets.size == 0:
@@ -3098,10 +3369,7 @@ class Vitals:
         pressure = interpolated_pressure.data
         assert pressure is not None
         positive_pressure = np.array(
-            [
-                np.all(pressure[s : e + 1] > 0)
-                for s, e in zip(starts, ends)
-            ],
+            [np.all(pressure[s : e + 1] > 0) for s, e in zip(starts, ends)],
             dtype=bool,
         )
         segment_pressure_filter = np.zeros_like(duration_filter, dtype=bool)
@@ -3147,7 +3415,9 @@ class Vitals:
 
         return np.unique(inspiration_starts), onsets_above_threshold, filtered_onsets
 
-    def _get_expiration_start(self, product: DataSlice, threshold: float) -> np.ndarray:
+    def _get_expiration_start(
+        self, product: DataSlice, threshold: float
+    ) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
         """
         Derives the indices of the start of expirations from the product of flow and slope of pressure.
 
@@ -3165,62 +3435,77 @@ class Vitals:
 
         Returns
         -------
-        np.ndarray
-            An array of indices for the time index of the given product where the expirations start.
-        """
-        # min_distance_landmarks = np.timedelta64(12, 'ms')
-        min_dur_short_breaks = np.timedelta64(10, "ms")
-        min_dur_landmark_segment = np.timedelta64(12, "ms")
-        max_dur_short_breaks = np.timedelta64(10, "ms")
+        expiration_starts : np.ndarray
+            An array of integer indices for the time index of the given product where
+            the expirations start (filtered zero crossings). Empty array (dtype int)
+            if no valid expiration starts are detected.
+        onsets_above_threshold : np.ndarray
+            An array of integer indices where the product first exceeds the threshold
+            for each detected segment. Empty array (dtype int) if no segments are detected.
+        filtered_onsets : np.ndarray
+            An array of integer indices for the onsets above threshold after duration
+            filtering. Empty array (dtype int) if no onsets survive filtering.
 
-        oscillation_threshold = 30
+        Notes
+        -----
+        All three returned arrays always have dtype int and maintain consistent shapes
+        even when empty, allowing safe tuple unpacking and downstream processing.
+        """
+        # --- Filter parameters ---
+        # Minimum gap between above-threshold segments to treat them as separate.
+        # Gaps shorter than this are bridged (segments merged) to filter oscillations.
+        min_gap_between_segments = np.timedelta64(10, "ms")
+
+        # Minimum duration for a segment above threshold to be considered valid.
+        min_segment_duration = np.timedelta64(12, "ms")
+
+        # Maximum duration for a below-threshold (negative) segment during zero-crossing
+        # detection. Shorter segments are filtered out as oscillation artifacts.
+        max_oscillation_duration = np.timedelta64(10, "ms")
+
+        # Threshold to suppress small oscillations around zero when detecting zero crossings.
+        # Values at or below this threshold are treated as "non-positive" for zero-crossing
+        # detection. Unit: product of flow and pressure slope.
+        zero_crossing_tolerance = 30
 
         index = product.time_index.copy()
         data = product.data.copy()
 
-        # Find indices where product is above a threshold
-        above_idxs = np.flatnonzero(data > threshold).astype(int)
-
-        # Early exit: nothing above threshold
-        if above_idxs.size == 0:
-            onsets_above_threshold = np.empty(0, dtype=int)
-            filtered_onsets = onsets_above_threshold
-        else:
-            # identify breaks (segments below threshold) greater than min_dur_short_breaks
-            # thereby filtering out short breaks that are likely due to oscillations
-            breaks = np.diff(index.take(above_idxs)) > min_dur_short_breaks
-
-            # determine length of segment above threshold and remove if shorter than min_dur_landmark_segment
-            segment_starts_pos = np.r_[0, breaks.nonzero()[0] + 1]
-            segment_stops_pos = np.r_[breaks.nonzero()[0], above_idxs.size - 1]
-            onsets_above_threshold = above_idxs[segment_starts_pos]
-            # Filter segments that are shorter than min_dur_landmark_segment
-            starts = index.take(above_idxs[segment_starts_pos])
-            stops = index.take(above_idxs[segment_stops_pos])
-            segment_width = stops - starts
-            segments_width_filter = segment_width >= min_dur_landmark_segment
-            filtered_onsets = onsets_above_threshold[segments_width_filter]
+        # Detect segments above threshold using shared helper
+        onsets_above_threshold, filtered_onsets = _find_segments_above_threshold(
+            data=data,
+            time_index=index,
+            threshold=threshold,
+            max_gap=min_gap_between_segments,
+            min_duration=min_segment_duration,
+        )
 
         # If nothing survives filtering, early return
         if filtered_onsets.size == 0:
             return np.empty(0, dtype=int), onsets_above_threshold, filtered_onsets
 
-        # Find zero crossings before the filtered onsets and filter for short segments of oscillations
-        non_pos_product = np.flatnonzero(
-            data <= 0 + oscillation_threshold
-        )  # condition must include negative values as not all zerocrossings in the array are separate datapoints//additionally, filter out small positive values close to zero
+        # Find zero crossings before the filtered onsets.
+        # Values at or below zero_crossing_tolerance are treated as "non-positive"
+        # to suppress small oscillations around zero.
+        non_pos_product = np.flatnonzero(data <= zero_crossing_tolerance)
         if non_pos_product.size == 0:
-            # No zero/non-positive → no valid "zero before onset"
+            # No zero/non-positive values -> no valid zero crossing candidates
             return np.empty(0, dtype=int), onsets_above_threshold, filtered_onsets
+
+        # Identify contiguous segments of non-positive values.
         breaks = np.flatnonzero(np.diff(non_pos_product) > 1)
-        starts = np.r_[non_pos_product[0], non_pos_product[breaks + 1]]
-        ends = np.r_[non_pos_product[breaks], non_pos_product[-1]]
-        short = (index[ends] - index[starts]) <= max_dur_short_breaks
-        if short.any():
-            keep_mask = ~np.isin(ends, ends[short])
-            zero_candidates = ends[keep_mask]
+        segment_starts = np.r_[non_pos_product[0], non_pos_product[breaks + 1]]
+        segment_ends = np.r_[non_pos_product[breaks], non_pos_product[-1]]
+
+        # Filter out short segments (likely oscillation artifacts) and keep the end
+        # of each remaining segment as a zero-crossing candidate.
+        segment_durations = index[segment_ends] - index[segment_starts]
+        is_short_segment = segment_durations <= max_oscillation_duration
+        if is_short_segment.any():
+            keep_mask = ~np.isin(segment_ends, segment_ends[is_short_segment])
+            zero_candidates = segment_ends[keep_mask]
         else:
-            zero_candidates = ends
+            zero_candidates = segment_ends
 
         # If none remain, no zeros to reference
         if zero_candidates.size == 0:
@@ -3233,51 +3518,119 @@ class Vitals:
 
         return np.unique(potential_exp_starts), onsets_above_threshold, filtered_onsets
 
-    def _filter_alternating_phases(
-        self, potential_phase_idxs: np.ndarray, fencing_phase_idxs: np.ndarray
-    ) -> np.ndarray:
-        """
-        Assures phases in respiratory cycle alternatingly
-        This function filters the potential phase starts (inspiration or expiration) to ensure that they alternate with the given fencing phase starts (expiration or inspiration).
+    def _add_respiratory_labels(
+        self,
+        insp_begin: pd.DatetimeIndex,
+        exp_begin: pd.DatetimeIndex,
+        insp_intervals: list[tuple],
+        exp_intervals: list[tuple],
+    ) -> None:
+        """Add respiratory phase labels to the Vitals object.
+
+        Creates and adds the following global labels:
+        - "Inspiration Begin": point label at each inspiration onset
+        - "Expiration Begin": point label at each expiration onset
+        - "Inspiration": interval label spanning inspiration phases
+        - "Expiration": interval label spanning expiration phases
 
         Parameters
         ----------
-        potential_phase_idxs: np.ndarray
-            An array of indices for the time index of the given product where the potential phase (inspiration or expiration) starts.
-        fencing_phase_idxs: np.ndarray
-            An array of indices for the time index of the given product where the fencing phase (expiration or inspiration) starts.
-
-        Returns
-        -------
-        np.ndarray
-            An array of indices for the time index of the given product where the filtered phases (inspiration or expiration) start.
-
+        insp_begin : pd.DatetimeIndex
+            Timestamps of inspiration phase onsets.
+        exp_begin : pd.DatetimeIndex
+            Timestamps of expiration phase onsets.
+        insp_intervals : list[tuple]
+            List of (start, end) tuples for inspiration phases.
+        exp_intervals : list[tuple]
+            List of (start, end) tuples for expiration phases.
         """
+        self.add_global_label(
+            Label(
+                name="Inspiration Begin",
+                time_index=insp_begin,
+                plotstyle=DEFAULT_PLOT_STYLE.get("Inspiration Begin"),
+            )
+        )
+        self.add_global_label(
+            Label(
+                name="Expiration Begin",
+                time_index=exp_begin,
+                plotstyle=DEFAULT_PLOT_STYLE.get("Expiration Begin"),
+            )
+        )
 
-        if potential_phase_idxs.size == 0 or fencing_phase_idxs.size == 0:
-            return potential_phase_idxs
+        if len(insp_begin) > 0 and len(exp_begin) > 0:
+            self.add_global_label(
+                IntervalLabel(
+                    name="Inspiration",
+                    time_index=insp_intervals,
+                    plotstyle=DEFAULT_PLOT_STYLE.get("Inspiration"),
+                )
+            )
+            self.add_global_label(
+                IntervalLabel(
+                    name="Expiration",
+                    time_index=exp_intervals,
+                    plotstyle=DEFAULT_PLOT_STYLE.get("Expiration"),
+                )
+            )
 
-        # Filter second events starts between two fencing events
-        # right-bound sentinel guarantees insp_bounds[left+1] exists
-        fencing_bounds = np.r_[fencing_phase_idxs, np.inf]
-        # For each stop, find index of the start immediately to its left
-        left = np.searchsorted(fencing_bounds, potential_phase_idxs, side="right") - 1
-        # valid when between 0 and last real interval
-        valid_left = (left >= 0) & (left < len(fencing_bounds) - 1)
-        between = np.zeros_like(potential_phase_idxs, dtype=bool)
-        between[valid_left] = (
-            potential_phase_idxs[valid_left] > fencing_bounds[left[valid_left]]
-        ) & (potential_phase_idxs[valid_left] <= fencing_bounds[left[valid_left] + 1])
-        # Mark first event start before first fencing event
-        if potential_phase_idxs[0] < fencing_bounds[0]:
-            between[0] = True
-        # For valid stops, keep the first one per interval (per 'left')
-        bins = left[between]  # which interval each stop belongs to
-        vals = potential_phase_idxs[between]  # their stop values
+    def _add_respiratory_intermediate_channels(
+        self,
+        f_interpolated: DataSlice,
+        p_interpolated: DataSlice,
+        product_flow_pressure: DataSlice,
+        slope_p: DataSlice,
+        product_flow_pslope: DataSlice,
+    ) -> None:
+        """Add intermediate channels from respiratory phase detection.
 
-        _, first_pos = np.unique(bins, return_index=True)
+        These channels expose the internal computations of the respiratory
+        phase detection algorithm, useful for debugging and visualization.
 
-        return vals[first_pos]
+        Parameters
+        ----------
+        f_interpolated : DataSlice
+            Interpolated flow data resampled to a common time index.
+        p_interpolated : DataSlice
+            Interpolated pressure data resampled to a common time index.
+        product_flow_pressure : DataSlice
+            Product of flow and pressure, used for inspiration detection.
+        slope_p : DataSlice
+            Time derivative (slope) of the pressure signal.
+        product_flow_pslope : DataSlice
+            Product of negative flow and pressure slope, used for expiration detection.
+        """
+        intermediate_channels = [
+            Channel(
+                name="Flow Interpolated",
+                time_index=f_interpolated.time_index,
+                data=f_interpolated.data,
+            ),
+            Channel(
+                name="Pressure Interpolated",
+                time_index=p_interpolated.time_index,
+                data=p_interpolated.data,
+            ),
+            Channel(
+                name="Product Flow Pressure",
+                time_index=product_flow_pressure.time_index,
+                data=product_flow_pressure.data,
+            ),
+            Channel(
+                name="Slope Pressure",
+                time_index=slope_p.time_index,
+                data=slope_p.data,
+            ),
+            Channel(
+                name="Product negative Flow Pressures Slope",
+                time_index=p_interpolated.time_index,
+                data=product_flow_pslope.data,
+            ),
+        ]
+        for channel in intermediate_channels:
+            channel.plotstyle = DEFAULT_PLOT_STYLE.get(channel.name)
+            self.add_channel(channel)
 
     def compute_respiratory_phases(
         self,
@@ -3350,17 +3703,7 @@ class Vitals:
         index = f_interpolated.time_index
 
         # get slope of pressure
-        if len(p_interpolated) > 2:
-            y = p_interpolated.data
-            # convert time to seconds (float64) from ns
-            t_ns = index.view("int64")
-            t_rel_sec = (t_ns - t_ns[0]).astype(np.float64) * 1e-9
-            # Calculate the slope using central differences for interior points, forward/backward for edges
-            slope_p = DataSlice(
-                time_index=index, data=np.gradient(y, t_rel_sec, edge_order=1)
-            )
-        else:
-            slope_p = DataSlice(time_index=index, data=np.zeros_like(y, dtype=float))
+        slope_p = _compute_slope(p_interpolated)
 
         # Calculate the product of flow and pressure
         product_flow_pressure = DataSlice(
@@ -3378,9 +3721,10 @@ class Vitals:
             )
         )
 
-        # Calculate the product of flow and slope of pressure
-        neg_flow = f_interpolated.data.copy()
-        neg_flow[neg_flow > 0] = 0
+        # For expiration detection, only negative (outward-directed) airflow is
+        # considered. Positive flow values are clipped to zero so they don't
+        # contribute to the product used for expiration landmark detection.
+        neg_flow = np.minimum(f_interpolated.data, 0)
         product_flow_pslope = DataSlice(index, neg_flow * slope_p.data)
 
         # derive idx for expiration start
@@ -3391,109 +3735,37 @@ class Vitals:
         )
 
         # Filter secondary expiration starts between two inspiration starts
-        exp_idxs = self._filter_alternating_phases(
-            potential_phase_idxs=potential_exp_idxs,
-            fencing_phase_idxs=potential_insp_idxs,
+        exp_idxs = _filter_alternating_phases(
+            candidate_phase_idxs=potential_exp_idxs,
+            anchor_phase_idxs=potential_insp_idxs,
         )
-        insp_idxs = self._filter_alternating_phases(
-            potential_phase_idxs=potential_insp_idxs, fencing_phase_idxs=exp_idxs
+        insp_idxs = _filter_alternating_phases(
+            candidate_phase_idxs=potential_insp_idxs, anchor_phase_idxs=exp_idxs
         )
 
-        # Generating Results
-        # If either side is empty, you can't form intervals
+        # Generating Results: convert indices to timestamps and create intervals
         if insp_idxs.size == 0 or exp_idxs.size == 0:
             insp_begin = index[:0]  # empty, same type as index
             exp_begin = index[:0]
-            insp_intervals = []
-            exp_intervals = []
         else:
-            # Onsets of phases (DatetimeIndex or Index)
             insp_begin = index.take(insp_idxs)
             exp_begin = index.take(exp_idxs)
-            # If after selection one is empty, bail gracefully
-            if len(insp_begin) == 0 or len(exp_begin) == 0:
-                insp_intervals = []
-                exp_intervals = []
-            else:
-                # --- Inspiration intervals: [insp_start, next exp_start) ---
-                i_first = insp_begin[0]
-                e_last = exp_begin[-1]
-                i_for_insp = insp_begin[insp_begin < e_last]
-                e_for_insp = exp_begin[exp_begin > i_first]
-                insp_intervals = list(zip(i_for_insp, e_for_insp))
-                # --- Expiration intervals: [exp_start, next insp_start) ---
-                i_last = insp_begin[-1]
-                e_first = exp_begin[0]
-                e_for_exp = exp_begin[exp_begin < i_last]
-                i_for_exp = insp_begin[insp_begin > e_first]
-                exp_intervals = list(zip(e_for_exp, i_for_exp))
 
-        # Add inspiration and expiration labels to the Vitals object
+        insp_intervals, exp_intervals = _create_phase_intervals(insp_begin, exp_begin)
+
         if add_labels:
-            self.add_global_label(
-                Label(
-                    name="Inspiration Begin",
-                    time_index=insp_begin,
-                    plotstyle=DEFAULT_PLOT_STYLE.get("Inspiration Begin"),
-                )
+            self._add_respiratory_labels(
+                insp_begin, exp_begin, insp_intervals, exp_intervals
             )
-            self.add_global_label(
-                Label(
-                    name="Expiration Begin",
-                    time_index=exp_begin,
-                    plotstyle=DEFAULT_PLOT_STYLE.get("Expiration Begin"),
-                )
-            )
-
-            if len(insp_begin) > 0 and len(exp_begin) > 0:
-                # Inspiration Intervval
-                self.add_global_label(
-                    IntervalLabel(
-                        name="Inspiration",
-                        time_index=insp_intervals,
-                        plotstyle=DEFAULT_PLOT_STYLE.get("Inspiration"),
-                    )
-                )
-                # Expiration Interval
-                self.add_global_label(
-                    IntervalLabel(
-                        name="Expiration",
-                        time_index=exp_intervals,
-                        plotstyle=DEFAULT_PLOT_STYLE.get("Expiration"),
-                    )
-                )
 
         if add_intermediate_channels:
-            intermediate_channels = [
-                Channel(
-                    name="Flow Interpolated",
-                    time_index=f_interpolated.time_index,
-                    data=f_interpolated.data,
-                ),
-                Channel(
-                    name="Pressure Interpolated",
-                    time_index=p_interpolated.time_index,
-                    data=p_interpolated.data,
-                ),
-                Channel(
-                    name="Product Flow Pressure",
-                    time_index=product_flow_pressure.time_index,
-                    data=product_flow_pressure.data,
-                ),
-                Channel(
-                    name="Slope Pressure",
-                    time_index=slope_p.time_index,
-                    data=slope_p.data,
-                ),
-                Channel(
-                    name="Product negative Flow Pressures Slope",
-                    time_index=p_interpolated.time_index,
-                    data=product_flow_pslope.data,
-                ),
-            ]
-            for channel in intermediate_channels:
-                channel.plotstyle = DEFAULT_PLOT_STYLE.get(channel.name)
-                self.add_channel(channel)
+            self._add_respiratory_intermediate_channels(
+                f_interpolated,
+                p_interpolated,
+                product_flow_pressure,
+                slope_p,
+                product_flow_pslope,
+            )
 
         if return_landmarks:
             return RespPhases(
