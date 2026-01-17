@@ -4004,6 +4004,8 @@ class Vitals:
                     )
             ]
 
+        
+
         # derive delta vt per breath
         delta_vt = [
             DataSlice(
@@ -4070,7 +4072,7 @@ class Vitals:
         # transform the volume curve to expiratory volume curve
         ve = [
             DataSlice(
-                time_index=ds.get_data().time_index,
+                time_index=ds.get_data().time_index, 
                 data= -1.0*(ds.data-ds.data[0]),  # expiratory volume as negative change in volume
                 text_data=None
             )
@@ -4086,13 +4088,17 @@ class Vitals:
                         )
         
         # reset expirtory volume with every inspiration start to 0
-        ve.extend(
+        insp_time = self.filter_by_intervallabel(
+            channel_or_label_to_filter = flow,
+            filter_by = inspiration, 
+            start_inclusive=False, 
+            end_inclusive=False).get_data().time_index
+        ve.append(
             DataSlice(
-                time_index=insp_start,
-                data=np.array([0.0]),
+                time_index=insp_time,
+                data=np.zeros(len(insp_time), dtype=float),
                 text_data=None
             )
-            for insp_start in insp_t[:, 0]
         )
 
         ve = _concat_and_sort_dataslices(ve)

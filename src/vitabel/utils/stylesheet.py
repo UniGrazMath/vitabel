@@ -316,7 +316,7 @@ DEFAULT_PLOT_STYLE = {
     },
     "Cumulative Inspiratory Tidal Volume": {
         "color": "#0072B2",
-        "label": r"$\Delta Vt_{\mathrm{insp,cum}}$",
+        "label": r"$Vt_{\mathrm{insp,cum}}$",
         "linestyle": "",
         "marker": 7,
         "alpha": 0.6,
