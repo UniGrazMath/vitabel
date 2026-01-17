@@ -4052,6 +4052,10 @@ class Vitals:
               metadata={"source" : "computed"},
               plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Tidal Volume"),
               )
+          
+        volume.attach_label(delta_vt)
+        volume.attach_label(vt_insp)
+        self.add_channel(volume)
     
         ### Expiratory Tidal Volume
         ve = [
@@ -4062,6 +4066,7 @@ class Vitals:
             for start, stop in expiration.get_data().time_index
             if start >= volume_start and stop <= volume_end
         ]
+
         # transform the volume curve to expiratory volume curve
         ve = [
             DataSlice(
@@ -4080,10 +4085,28 @@ class Vitals:
                         plotstyle=DEFAULT_PLOT_STYLE.get("Expiratory Tidal Volume"),
                         )
         
-        volume.attach_label(delta_vt)
-        volume.attach_label(vt_exp)
-        volume.attach_label(vt_insp)
-        self.add_channel(volume)
+        # reset expirtory volume with every inspiration start to 0
+        ve.extend(
+            DataSlice(
+                time_index=insp_start,
+                data=np.array([0.0]),
+                text_data=None
+            )
+            for insp_start in insp_t[:, 0]
+        )
+
+        ve = _concat_and_sort_dataslices(ve)
+        volume_exp = Channel(   
+            name="Expiratory Volume",
+            time_index=ve.time_index,
+            data=ve.data,
+            metadata={"source" : "computed"},
+            plotstyle=DEFAULT_PLOT_STYLE.get("Expiratory Volume"),
+        )
+
+        volume_exp.attach_label(vt_exp)     
+        self.add_channel(volume_exp)   
+        
 
         #### Cumulative Volumes         #Todo: make this conditional
         ### Inspiratory Cumulative Volume
