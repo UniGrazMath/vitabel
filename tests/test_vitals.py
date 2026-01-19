@@ -661,6 +661,117 @@ def test_truncate():
     )
 
 
+def test_filter_by_intervallabel_channel():
+    cha = Channel(
+        "Channel1",
+        [
+            "2020-04-13 02:48:00",
+            "2020-04-13 02:50:00",
+            "2020-04-13 02:56:00",
+            "2020-04-13 02:58:00",
+        ],
+        np.array([1, 2, 3, 4]),
+    )
+    lab = IntervalLabel(
+        name="filter label",
+        time_index=[
+            "2020-04-13 02:49:00",
+            "2020-04-13 02:55:00",
+            "2020-04-13 02:57:00",
+            "2020-04-13 03:00:00",
+        ],
+        text_data=["one", "two"],
+        anchored_channel=cha,
+    )
+    case = Vitals()
+    case.add_channel(cha)
+    filtered_channel = case.filter_by_intervallabel(cha, filter_by=lab)
+    data = filtered_channel.get_data()
+    assert len(data.time_index) == 2
+    assert np.all(pd.Timestamp("2020-04-13 02:49:00") <= data.time_index)
+    assert np.all(pd.Timestamp("2020-04-13 03:00:00") >= data.time_index)
+
+
+def test_filter_by_intervallabel_intervals():
+    case_intervals = IntervalLabel(
+        name="case intervals",
+        time_index=[
+            "2020-04-13 02:48:00",
+            "2020-04-13 02:50:00",
+            "2020-04-13 02:56:00",
+            "2020-04-13 02:58:00",
+            "2020-04-13 03:00:00",
+            "2020-04-13 03:02:00",
+        ],
+        data=[10, 20, 30],
+        text_data=["a", "b", "c"],
+    )
+    filter_intervals = IntervalLabel(
+        name="filter intervals",
+        time_index=[
+            "2020-04-13 02:49:00",
+            "2020-04-13 02:55:00",
+            "2020-04-13 03:00:00",
+            "2020-04-13 03:03:00",
+        ],
+    )
+    case = Vitals()
+    case.add_global_label(case_intervals)
+    filtered_intervals_overlap = case.filter_by_intervallabel(
+        case_intervals, filter_by=filter_intervals
+    )
+    assert len(filtered_intervals_overlap) == 2
+    data = filtered_intervals_overlap.get_data()
+    np.testing.assert_equal(
+        data.time_index,
+        pd.DatetimeIndex(
+            [
+                "2020-04-13 02:48:00",
+                "2020-04-13 02:50:00",
+                "2020-04-13 03:00:00",
+                "2020-04-13 03:02:00",
+            ]
+        )
+        .to_numpy()
+        .reshape(-1, 2),
+    )
+    assert list(data.data) == [10, 30]
+    assert list(data.text_data) == ["a", "c"]
+
+    filtered_intervals_covered = case.filter_by_intervallabel(
+        case_intervals,
+        filter_by=filter_intervals,
+        full_cover=True,
+    )
+    assert len(filtered_intervals_covered) == 1
+    data = filtered_intervals_covered.get_data()
+    np.testing.assert_equal(
+        data.time_index,
+        pd.DatetimeIndex(
+            [
+                "2020-04-13 03:00:00",
+                "2020-04-13 03:02:00",
+            ]
+        )
+        .to_numpy()
+        .reshape(-1, 2),
+    )
+    assert list(data.data) == [30]
+    assert list(data.text_data) == ["c"]
+
+    filtered_intervals_empty = case.filter_by_intervallabel(
+        case_intervals,
+        filter_by=filter_intervals,
+        full_cover=True,
+        start_inclusive=False,
+    )
+    assert len(filtered_intervals_empty) == 0
+    data = filtered_intervals_empty.get_data()
+    assert len(data.time_index) == 0
+    assert len(data.data) == 0
+    assert len(data.text_data) == 0
+
+
 def test_saving_and_loading(tmpdir):
     cha = Channel(
         "Channel1",
@@ -693,6 +804,7 @@ def test_saving_and_loading(tmpdir):
     assert "vitabel version" in cardio_object2.metadata
     assert cardio_object2.metadata["vitabel version"] == __version__
 
+
 def test_saving_and_loading_with_offset(tmpdir):
     channel = Channel(
         "Channel1",
@@ -717,8 +829,11 @@ def test_saving_and_loading_with_offset(tmpdir):
     loaded_channel = loaded_case.get_channel("Channel1")
     assert loaded_channel.time_start == pd.Timestamp(2020, 4, 13, 2, 48, 0)
     assert loaded_channel.offset == pd.Timedelta("1 hour")
-    assert loaded_channel.get_data().time_index[0] == pd.Timestamp(2020, 4, 13, 3, 48, 0)
+    assert loaded_channel.get_data().time_index[0] == pd.Timestamp(
+        2020, 4, 13, 3, 48, 0
+    )
     assert vital_case.data == loaded_case.data
+
 
 def test_create_shock_information_DataFrame():
     shock_energie = Channel(
@@ -762,7 +877,9 @@ def test_etco2_and_ventilation_detection(vitabel_test_data_dir):
         "capnography", t, data, time_start=pd.Timestamp(2024, 1, 1, 0, 0, 0)
     )
     cardio_object.add_channel(co2_channel)
-    cardio_object.compute_etco2_and_ventilations(mode="threshold",breath_thresh=4,etco2_thresh=4) #TODO: test might be adapted to new default values in the future
+    cardio_object.compute_etco2_and_ventilations(
+        mode="threshold", breath_thresh=4, etco2_thresh=4
+    )  # TODO: test might be adapted to new default values in the future
     vent_dict = cardio_object.get_label("ventilations_from_capnography").to_dict()
     etCO2_dict = cardio_object.get_label("etco2_from_capnography").to_dict()
 
@@ -856,7 +973,7 @@ def test_cycle_duration_analysis_absolute(vitabel_test_data_dir):
 
     starts = np.array(CC_Start_dict_test["time_index"])
     stops = np.array(CC_Stop_dict_test["time_index"])
- 
+
     periods_test = np.empty(starts.size + stops.size, dtype=starts.dtype)
     periods_test[0::2] = starts
     periods_test[1::2] = stops
@@ -905,11 +1022,11 @@ def test_acceleration_CC_period_dection_absolute(vitabel_test_data_dir):
 
     starts = np.array(CC_Start_dict_test["time_index"])
     stops = np.array(CC_Stop_dict_test["time_index"])
- 
+
     periods_test = np.empty(starts.size + stops.size, dtype=starts.dtype)
     periods_test[0::2] = starts
     periods_test[1::2] = stops
-        
+
     assert (cc_periods == periods_test).all()
 
 
@@ -997,7 +1114,9 @@ def test_analysis_exception_for_missing_data(caplog):
         cardio_recording.compute_etco2_and_ventilations()
     with pytest.raises(ValueError, match="Channel specification was ambiguous"):
         cardio_recording.find_CC_periods_acc()
-    with pytest.raises(ValueError, match="Could not identify channels with single chest compressions."):
+    with pytest.raises(
+        ValueError, match="Could not identify channels with single chest compressions."
+    ):
         cardio_recording.cycle_duration_analysis()
     with pytest.raises(ValueError, match="Channel specification was ambiguous"):
         cardio_recording.predict_circulation()
@@ -1010,11 +1129,17 @@ def test_area_under_threshold_computation():
 
     vital_case.add_data_from_DataFrame(
         pd.DataFrame(
-            index=pd.date_range(start="2024-04-04 10:00:00", end="2024-04-04 12:00:00", periods=100),
-            data=np.array([
-                42 * np.ones(100),
-                [(-1)**(k//2) for k in range(100)],  # +1, +1, -1, -1, +1, +1, -1, -1, ...
-            ]).transpose(),
+            index=pd.date_range(
+                start="2024-04-04 10:00:00", end="2024-04-04 12:00:00", periods=100
+            ),
+            data=np.array(
+                [
+                    42 * np.ones(100),
+                    [
+                        (-1) ** (k // 2) for k in range(100)
+                    ],  # +1, +1, -1, -1, +1, +1, -1, -1, ...
+                ]
+            ).transpose(),
         )
     )
     threshold_metric = vital_case.area_under_threshold(source="0", threshold=10)
@@ -1030,26 +1155,563 @@ def test_area_under_threshold_computation():
 
     threshold_metric = vital_case.area_under_threshold(source="1", threshold=0)
     assert threshold_metric.observational_interval_duration == pd.Timedelta(2, unit="h")
-    assert threshold_metric.duration_under_threshold == pd.Timedelta("01:00:00.000000001")
+    assert threshold_metric.duration_under_threshold == pd.Timedelta(
+        "01:00:00.000000001"
+    )
 
 
 def test_add_eolife_ventilatory_feedback(vitabel_test_data_dir):
     """Test loading EOlife ventilatory feedback CSV file."""
     collection = Vitals()
-    eolife_file = vitabel_test_data_dir / "sample_signals" / "eolife_test_file_with_empty_values.csv"
+    eolife_file = (
+        vitabel_test_data_dir
+        / "sample_signals"
+        / "eolife_test_file_with_empty_values.csv"
+    )
     collection.add_ventilatory_feedback(eolife_file)
     # Check that at least one channel is present and not empty
     assert len(collection.channels) == 9
     assert all(
-        hasattr(channel, 'data') and len(channel.data) > 0
+        hasattr(channel, "data") and len(channel.data) > 0
         for channel in collection.channels
     )
 
     # Furthermore, check for expected channel names
-    expected_channels = ['Cycle number', 'Ti', 'Te', 'Tp', 'Freq', 'Vi', 'Vt', 'Leakage', 'Leakage ratio']
+    expected_channels = [
+        "Cycle number",
+        "Ti",
+        "Te",
+        "Tp",
+        "Freq",
+        "Vi",
+        "Vt",
+        "Leakage",
+        "Leakage ratio",
+    ]
     actual_channel_names = [channel.name for channel in collection.channels]
     assert all(name in actual_channel_names for name in expected_channels)
     assert max([len(Channel) for Channel in collection.channels]) == 47
-   
 
 
+# === Tests for _find_segments_above_threshold helper ===
+
+
+class TestFindSegmentsAboveThreshold:
+    """Tests for the _find_segments_above_threshold helper function."""
+
+    @pytest.fixture
+    def make_time_index(self):
+        """Factory fixture to create DatetimeIndex with millisecond resolution."""
+
+        def _make_time_index(n_points, start="2024-01-01", freq_ms=1):
+            return pd.date_range(
+                start=start, periods=n_points, freq=pd.Timedelta(freq_ms, "ms")
+            )
+
+        return _make_time_index
+
+    def test_empty_input(self, make_time_index):
+        """Test with empty arrays."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        data = np.array([])
+        time_index = make_time_index(0)
+        threshold = 10.0
+        max_gap = np.timedelta64(5, "ms")
+        min_duration = np.timedelta64(3, "ms")
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        assert onsets.size == 0
+        assert filtered.size == 0
+
+    def test_nothing_above_threshold(self, make_time_index):
+        """Test when no values exceed the threshold."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        data = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        time_index = make_time_index(5)
+        threshold = 10.0
+        max_gap = np.timedelta64(5, "ms")
+        min_duration = np.timedelta64(2, "ms")
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        assert onsets.size == 0
+        assert filtered.size == 0
+
+    def test_single_segment_above_threshold(self, make_time_index):
+        """Test with a single contiguous segment above threshold."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        # Data: indices 2-5 are above threshold (value 15)
+        data = np.array([1.0, 2.0, 15.0, 15.0, 15.0, 15.0, 3.0, 4.0])
+        time_index = make_time_index(8)
+        threshold = 10.0
+        max_gap = np.timedelta64(5, "ms")
+        min_duration = np.timedelta64(2, "ms")
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        # Should detect one segment starting at index 2
+        assert len(onsets) == 1
+        assert onsets[0] == 2
+        assert len(filtered) == 1
+        assert filtered[0] == 2
+
+    def test_multiple_segments_with_large_gap(self, make_time_index):
+        """Test with multiple segments separated by gaps larger than max_gap."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        # Two segments: indices 1-2 and 6-7 (gap of 3 indices = 3ms)
+        data = np.array([1.0, 15.0, 15.0, 1.0, 1.0, 1.0, 15.0, 15.0, 1.0])
+        time_index = make_time_index(9)
+        threshold = 10.0
+        max_gap = np.timedelta64(2, "ms")  # Gap of 3ms is larger
+        min_duration = np.timedelta64(1, "ms")
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        # Should detect two separate segments
+        assert len(onsets) == 2
+        assert list(onsets) == [1, 6]
+        assert len(filtered) == 2
+        assert list(filtered) == [1, 6]
+
+    def test_segments_merged_when_gap_small(self, make_time_index):
+        """Test that segments are merged when gap is smaller than max_gap."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        # Two segments: indices 1-2 and 4-5 (gap of 1 index = 1ms)
+        data = np.array([1.0, 15.0, 15.0, 1.0, 15.0, 15.0, 1.0])
+        time_index = make_time_index(7)
+        threshold = 10.0
+        max_gap = np.timedelta64(2, "ms")  # Gap of 1ms is smaller, so merge
+        min_duration = np.timedelta64(1, "ms")
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        # Should detect one merged segment starting at index 1
+        assert len(onsets) == 1
+        assert onsets[0] == 1
+        assert len(filtered) == 1
+
+    def test_short_segment_filtered_out(self, make_time_index):
+        """Test that segments shorter than min_duration are filtered."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        # Single point above threshold at index 3 (duration = 0ms)
+        data = np.array([1.0, 1.0, 1.0, 15.0, 1.0, 1.0])
+        time_index = make_time_index(6)
+        threshold = 10.0
+        max_gap = np.timedelta64(5, "ms")
+        min_duration = np.timedelta64(2, "ms")  # Requires at least 2ms duration
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        # Onset detected but filtered out due to short duration
+        assert len(onsets) == 1
+        assert onsets[0] == 3
+        assert len(filtered) == 0
+
+    def test_mixed_segments_some_filtered(self, make_time_index):
+        """Test with multiple segments where some are filtered by duration."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        # Segment 1: indices 1-4 (3ms duration) - should pass
+        # Segment 2: index 8 only (0ms duration) - should be filtered
+        data = np.array([1.0, 15.0, 15.0, 15.0, 15.0, 1.0, 1.0, 1.0, 15.0, 1.0])
+        time_index = make_time_index(10)
+        threshold = 10.0
+        max_gap = np.timedelta64(2, "ms")
+        min_duration = np.timedelta64(2, "ms")
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        # Two onsets detected, but only the first passes duration filter
+        assert len(onsets) == 2
+        assert list(onsets) == [1, 8]
+        assert len(filtered) == 1
+        assert filtered[0] == 1
+
+    def test_all_values_above_threshold(self, make_time_index):
+        """Test when all values exceed the threshold."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        data = np.array([15.0, 20.0, 25.0, 30.0, 35.0])
+        time_index = make_time_index(5)
+        threshold = 10.0
+        max_gap = np.timedelta64(5, "ms")
+        min_duration = np.timedelta64(2, "ms")
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        # One segment starting at index 0
+        assert len(onsets) == 1
+        assert onsets[0] == 0
+        assert len(filtered) == 1
+        assert filtered[0] == 0
+
+    def test_threshold_boundary(self, make_time_index):
+        """Test that values exactly at threshold are NOT included (> not >=)."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        data = np.array([10.0, 10.0, 10.0, 11.0, 10.0])
+        time_index = make_time_index(5)
+        threshold = 10.0
+        max_gap = np.timedelta64(5, "ms")
+        min_duration = np.timedelta64(0, "ms")
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        # Only index 3 is above threshold (value 11 > 10)
+        assert len(onsets) == 1
+        assert onsets[0] == 3
+
+    def test_realistic_timescale(self, make_time_index):
+        """Test with realistic millisecond timescales used in respiratory detection."""
+        from vitabel.vitals import _find_segments_above_threshold
+
+        # Simulate 100ms of data at 1ms resolution
+        # Segment from 20-40ms (20ms duration), gap, segment from 60-70ms (10ms)
+        data = np.zeros(100)
+        data[20:41] = 50.0  # 21 points = 20ms duration
+        data[60:71] = 50.0  # 11 points = 10ms duration
+        time_index = make_time_index(100)
+
+        threshold = 10.0
+        max_gap = np.timedelta64(15, "ms")
+        min_duration = np.timedelta64(12, "ms")
+
+        onsets, filtered = _find_segments_above_threshold(
+            data, time_index, threshold, max_gap, min_duration
+        )
+
+        # Both segments detected, but only first passes 12ms duration filter
+        assert len(onsets) == 2
+        assert list(onsets) == [20, 60]
+        assert len(filtered) == 1
+        assert filtered[0] == 20
+
+
+class TestFilterAlternatingPhases:
+    """Tests for the _filter_alternating_phases helper function.
+
+    This function ensures respiratory phases alternate by keeping only the first
+    candidate in each interval defined by anchor phases.
+    """
+
+    def test_empty_candidates(self):
+        """Test with empty candidate array."""
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([], dtype=int)
+        anchors = np.array([100, 200, 300])
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        assert result.size == 0
+
+    def test_empty_anchors(self):
+        """Test with empty anchor array - should return candidates unchanged."""
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([50, 150, 250])
+        anchors = np.array([], dtype=int)
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        np.testing.assert_array_equal(result, candidates)
+
+    def test_both_empty(self):
+        """Test with both arrays empty."""
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([], dtype=int)
+        anchors = np.array([], dtype=int)
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        assert result.size == 0
+
+    def test_docstring_example(self):
+        """Test the example from the docstring.
+
+        Anchors at [100, 200, 300], candidates at [50, 120, 150, 250]:
+        - Interval (-inf, 100]: candidate 50, keep 50
+        - Interval (100, 200]: candidates 120, 150, keep 120 (first only)
+        - Interval (200, 300]: candidate 250, keep 250
+        Result: [50, 120, 250]
+        """
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([50, 120, 150, 250])
+        anchors = np.array([100, 200, 300])
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        np.testing.assert_array_equal(result, np.array([50, 120, 250]))
+
+    def test_single_candidate_per_interval(self):
+        """Test when each interval already has at most one candidate."""
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([50, 150, 250, 350])
+        anchors = np.array([100, 200, 300, 400])
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        np.testing.assert_array_equal(result, candidates)
+
+    def test_multiple_candidates_per_interval(self):
+        """Test filtering when multiple candidates fall in same interval."""
+        from vitabel.vitals import _filter_alternating_phases
+
+        # All candidates in interval (100, 200]
+        candidates = np.array([110, 120, 130, 140, 150])
+        anchors = np.array([100, 200])
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        # Should keep only the first one
+        np.testing.assert_array_equal(result, np.array([110]))
+
+    def test_candidate_before_first_anchor(self):
+        """Test that candidates before the first anchor are included."""
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([10, 20, 30, 150])
+        anchors = np.array([100, 200])
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        # First candidate before anchor (10) + first in (100,200] interval (150)
+        np.testing.assert_array_equal(result, np.array([10, 150]))
+
+    def test_candidate_after_last_anchor(self):
+        """Test that candidates after the last anchor are included."""
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([50, 150, 350, 400])
+        anchors = np.array([100, 200, 300])
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        # 50 in (-inf, 100], 150 in (100, 200], 350 first in (300, +inf)
+        np.testing.assert_array_equal(result, np.array([50, 150, 350]))
+
+    def test_candidate_exactly_at_anchor(self):
+        """Test behavior when candidate equals an anchor value.
+
+        Candidate at anchor_i is NOT > anchor_i (lower bound), so it doesn't
+        fall in the interval (anchor_i, anchor_{i+1}]. Only candidates strictly
+        greater than a boundary are included in that interval.
+        """
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([100, 150, 200])
+        anchors = np.array([100, 200, 300])
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        # 100 is NOT > 100 (lower bound of interval (100, 200]), so excluded
+        # 150 in (100, 200] -> keep 150
+        # 200 is NOT > 200 (lower bound of interval (200, 300]), so excluded
+        np.testing.assert_array_equal(result, np.array([150]))
+
+    def test_single_anchor(self):
+        """Test with only one anchor point."""
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([50, 60, 150, 160])
+        anchors = np.array([100])
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        # 50 first in (-inf, 100], 150 first in (100, +inf)
+        np.testing.assert_array_equal(result, np.array([50, 150]))
+
+    def test_single_candidate(self):
+        """Test with only one candidate."""
+        from vitabel.vitals import _filter_alternating_phases
+
+        candidates = np.array([150])
+        anchors = np.array([100, 200, 300])
+
+        result = _filter_alternating_phases(candidates, anchors)
+
+        np.testing.assert_array_equal(result, np.array([150]))
+
+
+class TestCreatePhaseIntervals:
+    """Tests for _create_phase_intervals helper function."""
+
+    def test_empty_insp_begins(self):
+        """Test with empty inspiration begins."""
+        from vitabel.vitals import _create_phase_intervals
+
+        insp = pd.DatetimeIndex([])
+        exp = pd.DatetimeIndex(["2021-01-01 00:00:02", "2021-01-01 00:00:06"])
+
+        insp_ivl, exp_ivl = _create_phase_intervals(insp, exp)
+
+        assert insp_ivl == []
+        assert exp_ivl == []
+
+    def test_empty_exp_begins(self):
+        """Test with empty expiration begins."""
+        from vitabel.vitals import _create_phase_intervals
+
+        insp = pd.DatetimeIndex(["2021-01-01 00:00:00", "2021-01-01 00:00:04"])
+        exp = pd.DatetimeIndex([])
+
+        insp_ivl, exp_ivl = _create_phase_intervals(insp, exp)
+
+        assert insp_ivl == []
+        assert exp_ivl == []
+
+    def test_both_empty(self):
+        """Test with both inputs empty."""
+        from vitabel.vitals import _create_phase_intervals
+
+        insp = pd.DatetimeIndex([])
+        exp = pd.DatetimeIndex([])
+
+        insp_ivl, exp_ivl = _create_phase_intervals(insp, exp)
+
+        assert insp_ivl == []
+        assert exp_ivl == []
+
+    def test_docstring_example(self):
+        """Verify the docstring example works correctly."""
+        from vitabel.vitals import _create_phase_intervals
+
+        insp = pd.DatetimeIndex(["2021-01-01 00:00:00", "2021-01-01 00:00:04"])
+        exp = pd.DatetimeIndex(["2021-01-01 00:00:02", "2021-01-01 00:00:06"])
+
+        insp_ivl, exp_ivl = _create_phase_intervals(insp, exp)
+
+        # Inspiration intervals: (insp[0], exp[0]), (insp[1], exp[1])
+        assert len(insp_ivl) == 2
+        assert insp_ivl[0] == (
+            pd.Timestamp("2021-01-01 00:00:00"),
+            pd.Timestamp("2021-01-01 00:00:02"),
+        )
+        assert insp_ivl[1] == (
+            pd.Timestamp("2021-01-01 00:00:04"),
+            pd.Timestamp("2021-01-01 00:00:06"),
+        )
+
+        # Expiration intervals: (exp[0], insp[1])
+        assert len(exp_ivl) == 1
+        assert exp_ivl[0] == (
+            pd.Timestamp("2021-01-01 00:00:02"),
+            pd.Timestamp("2021-01-01 00:00:04"),
+        )
+
+    def test_single_insp_single_exp(self):
+        """Test with single inspiration and expiration."""
+        from vitabel.vitals import _create_phase_intervals
+
+        insp = pd.DatetimeIndex(["2021-01-01 00:00:00"])
+        exp = pd.DatetimeIndex(["2021-01-01 00:00:02"])
+
+        insp_ivl, exp_ivl = _create_phase_intervals(insp, exp)
+
+        # One insp interval (insp -> exp), no exp intervals
+        assert len(insp_ivl) == 1
+        assert insp_ivl[0] == (
+            pd.Timestamp("2021-01-01 00:00:00"),
+            pd.Timestamp("2021-01-01 00:00:02"),
+        )
+        assert exp_ivl == []
+
+    def test_exp_before_insp(self):
+        """Test when expiration starts before first inspiration."""
+        from vitabel.vitals import _create_phase_intervals
+
+        insp = pd.DatetimeIndex(["2021-01-01 00:00:02", "2021-01-01 00:00:06"])
+        exp = pd.DatetimeIndex(["2021-01-01 00:00:00", "2021-01-01 00:00:04"])
+
+        insp_ivl, exp_ivl = _create_phase_intervals(insp, exp)
+
+        # Inspiration: insp[0]=:02 < e_last=:04, insp[1]=:06 NOT < :04
+        # So only insp[0] can pair with exp after :02, which is exp[1]=:04
+        assert len(insp_ivl) == 1
+        assert insp_ivl[0] == (
+            pd.Timestamp("2021-01-01 00:00:02"),
+            pd.Timestamp("2021-01-01 00:00:04"),
+        )
+
+        # Expiration: exp[0]=:00 < i_last=:06, exp[1]=:04 < :06
+        # So exp[0] and exp[1] can pair with insp after :00, which are :02 and :06
+        assert len(exp_ivl) == 2
+        assert exp_ivl[0] == (
+            pd.Timestamp("2021-01-01 00:00:00"),
+            pd.Timestamp("2021-01-01 00:00:02"),
+        )
+        assert exp_ivl[1] == (
+            pd.Timestamp("2021-01-01 00:00:04"),
+            pd.Timestamp("2021-01-01 00:00:06"),
+        )
+
+    def test_multiple_cycles(self):
+        """Test with multiple complete respiratory cycles."""
+        from vitabel.vitals import _create_phase_intervals
+
+        # 3 inspirations, 3 expirations alternating
+        insp = pd.DatetimeIndex(
+            ["2021-01-01 00:00:00", "2021-01-01 00:00:04", "2021-01-01 00:00:08"]
+        )
+        exp = pd.DatetimeIndex(
+            ["2021-01-01 00:00:02", "2021-01-01 00:00:06", "2021-01-01 00:00:10"]
+        )
+
+        insp_ivl, exp_ivl = _create_phase_intervals(insp, exp)
+
+        # All 3 inspirations have following expirations
+        assert len(insp_ivl) == 3
+
+        # Only first 2 expirations have following inspirations
+        assert len(exp_ivl) == 2
+
+    def test_insp_ends_last(self):
+        """Test when inspiration is the last phase (no following expiration)."""
+        from vitabel.vitals import _create_phase_intervals
+
+        insp = pd.DatetimeIndex(["2021-01-01 00:00:00", "2021-01-01 00:00:10"])
+        exp = pd.DatetimeIndex(["2021-01-01 00:00:02"])
+
+        insp_ivl, exp_ivl = _create_phase_intervals(insp, exp)
+
+        # Only insp[0] can pair (< e_last=:02), insp[1]=:10 NOT < :02
+        assert len(insp_ivl) == 1
+        assert insp_ivl[0] == (
+            pd.Timestamp("2021-01-01 00:00:00"),
+            pd.Timestamp("2021-01-01 00:00:02"),
+        )
+
+        # exp[0]=:02 < i_last=:10, so it can pair with insp > :02 = insp[1]=:10
+        assert len(exp_ivl) == 1
+        assert exp_ivl[0] == (
+            pd.Timestamp("2021-01-01 00:00:02"),
+            pd.Timestamp("2021-01-01 00:00:10"),
+        )

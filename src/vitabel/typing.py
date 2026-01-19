@@ -4,15 +4,14 @@ from __future__ import annotations
 
 import pandas as pd
 import numpy as np
+import numpy.typing as npt
 
 from dataclasses import dataclass
 from typing import Any, Union, TypeAlias, Literal, Iterator, TYPE_CHECKING
 
-from dataclasses import dataclass
 
 if TYPE_CHECKING:
     from vitabel import Channel, Label
-    from pandas._libs.tslibs.timedeltas import UnitChoices as TimeUnitChoices
 
 Timedelta: TypeAlias = pd.Timedelta | np.timedelta64
 """Type alias of a time difference / duration."""
@@ -27,12 +26,16 @@ LabelSpecification: TypeAlias = Union[str, dict[str, Any], "Label"]
 """Type alias for different ways to specify a Label."""
 
 LabelPlotType: TypeAlias = Literal["scatter", "vline", "combined"]
-LabelPlotVLineTextSource: TypeAlias = Literal["data", "text_data", "combined", "disabled"]
+LabelPlotVLineTextSource: TypeAlias = Literal[
+    "data", "text_data", "combined", "disabled"
+]
 
 IntervalLabelPlotType: TypeAlias = Literal["box", "hline", "combined"]
 # IntervalLabelPlotVLineTextSource: TypeAlias = Literal["data", "text_data", "combined", "disabled"] #TODO: yet not implemented
 
-LabelAnnotationPresetType: TypeAlias = Literal["timestamp", "numerical", "textual", "combined"]
+LabelAnnotationPresetType: TypeAlias = Literal[
+    "timestamp", "numerical", "textual", "combined"
+]
 
 
 @dataclass
@@ -46,7 +49,7 @@ class EOLifeRecord:
 @dataclass
 class Metric:
     """Auxiliary dataclass used to store (numeric) values and their unit.
-    
+
     Parameters
     ----------
     value
@@ -54,6 +57,7 @@ class Metric:
     unit
         String representation of the unit of the stored value.
     """
+
     value: float
     unit: str
 
@@ -75,6 +79,7 @@ class ThresholdMetrics:
     observational_interval_duration
         Time interval length from first last recording.
     """
+
     area_under_threshold: Metric
     duration_under_threshold: pd.Timedelta
     time_weighted_average_under_threshold: Metric
@@ -84,25 +89,84 @@ class ThresholdMetrics:
 @dataclass
 class DataSlice:
     """Auxiliary dataclass holding a slice of data from a label or channel.
-    
+
     Primarily used in the various ``get_data`` methods.
     """
 
-    time_index: pd.DatetimeIndex | pd.TimedeltaIndex | np.typing.NDArray
+    time_index: (
+        pd.DatetimeIndex
+        | pd.TimedeltaIndex
+        | npt.NDArray[np.datetime64]
+        | npt.NDArray[np.timedelta64]
+    )
     """The time index of the selected data range."""
 
-    data: np.typing.NDArray | None = None
+    data: npt.NDArray | None = None
     """The data of the selected data range, or ``None`` if no data
     is available.
     """
 
-    text_data: np.typing.NDArray | None = None
+    text_data: npt.NDArray | None = None
     """The text data of the selected data range, or ``None`` if no text data
     is available.
     """
-    
+
     def __len__(self) -> int:
         return len(self.time_index)
-    
+
     def __iter__(self) -> Iterator:
         return iter((self.time_index, self.data, self.text_data))
+
+
+@dataclass
+class PhaseData:
+    """Data for a single respiratory phase (inspiration or expiration).
+
+    Parameters
+    ----------
+    onsets_above_threshold
+        Array of timestamps marking onsets above threshold.
+        Solely fulfilling the condition of being above the threshold. No further filtering.
+
+    filtered_onsets_above_threshold
+        Array of timestamps marking onsets above threshold.
+        Filtered by alternating expiration phases.
+
+    candidates
+        Array of candidate timestamps for the start of inspiration phases.
+        Yet, not filtered as alternating phases.
+
+    begins
+        Array of timestamps marking the beginning of inspiration phases.
+        Filtered by alternating expiration phases.
+
+    intervals
+        Array of intervals marking the intervals of inspiration phases.
+
+    threshold
+        The threshold value used to detect inspiration phases.
+
+    """
+
+    onsets_above_threshold: npt.NDArray
+    filtered_onsets_above_threshold: npt.NDArray
+    candidates: npt.NDArray
+    begins: npt.NDArray
+    intervals: list[tuple[pd.Timestamp, pd.Timestamp]]
+    threshold: float
+
+
+@dataclass
+class RespPhases:
+    """Auxiliary dataclass used to represent respiratory phases information.
+
+    Parameters
+    ----------
+    inspiration
+        All inspiration-related phase data.
+    expiration
+        All expiration-related phase data.
+    """
+
+    inspiration: PhaseData
+    expiration: PhaseData
