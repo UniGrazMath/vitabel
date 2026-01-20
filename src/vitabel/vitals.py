@@ -4044,7 +4044,7 @@ class Vitals:
                 stop_time=stop
             )
             for start, stop in inspiration.get_data().time_index
-            if stop <= volume_end
+            if start >= volume_start and stop <= volume_end
         ]
         vt_insp = _argmax_dataslices(vi)
         
@@ -4055,6 +4055,48 @@ class Vitals:
               plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Tidal Volume"),
               )
           
+        #inspiratory volume
+        vi = [
+            DataSlice(
+                time_index=ds.get_data().time_index,  
+                data= np.concatenate(([0], ds.data[1:])),  # reset volume to 0 at start of inspiration  
+                text_data=None
+            )
+            for ds in vi
+        ]
+        vi_exp_time = [
+            volume.truncate(
+                start_time=start,
+                stop_time=stop,
+            )
+            for start, stop in expiration.get_data().time_index
+            if start >= volume_start and stop < volume_end
+        ]
+        vi_exp_time = [
+            DataSlice(
+                time_index=ds.get_data().time_index[:-1],
+                data=(
+                    ds.data if ds.data.size == 0
+                    else np.full_like(ds.data[:-1], ds.data[0])
+                ),
+                text_data=None
+            )
+            for ds in vi_exp_time
+        ]
+
+        vi.extend(vi_exp_time)
+
+        vi = _concat_and_sort_dataslices(vi)
+        v_insp = Channel(
+            name="Inspiratory Volume",
+            time_index=vi.time_index,
+            data=vi.data,
+            metadata={"source" : "computed"},
+            plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Volume"),
+        )
+
+        self.add_channel(v_insp)
+
         volume.attach_label(delta_vt)
         volume.attach_label(vt_insp)
         self.add_channel(volume)

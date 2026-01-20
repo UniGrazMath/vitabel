@@ -283,6 +283,11 @@ DEFAULT_PLOT_STYLE = {
         "label": r"$V_{\mathrm{exp}}$",
         "alpha": 0.8,
     },
+    "Inspiratory Volume" : {
+        "color": "dodgerblue",
+        "label": r"$V_{\mathrm{insp}}$",
+        "alpha": 0.8,
+    },
     "Inspiratory Tidal Volume" : {
         "color": "dodgerblue",
         "label": r"$Vt_{\mathrm{insp}}$",
