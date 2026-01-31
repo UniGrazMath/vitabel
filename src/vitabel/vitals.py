@@ -3825,7 +3825,7 @@ class Vitals:
         return DataSlice(
             time_index = signal.get_data().time_index if isinstance(signal, (Channel, Label)) else signal.time_index,
             data = cumulative,)
-    
+
     def compute_ventilation_volumes(
         self,
         correction_factor: float = 1.0,
@@ -3955,7 +3955,18 @@ class Vitals:
         )
         self.add_global_label(te)
 
-        ## max inspiratory pressure
+        ### Respiratory Rate
+        rr = Label(
+            name="Respiratory Rate",
+            time_index=insp_t[1:,0],
+            data= 60/ ((insp_t[1:,0] - insp_t[:-1,0])/np.timedelta64(1, 's')),
+            metadata={"source" : "computed"},
+            plotstyle=DEFAULT_PLOT_STYLE.get("Respiratory Rate"),
+        )
+        self.add_global_label(rr)
+
+
+        ### Maximal Inspiratory Airway Pressure
         # as maximal pressure during inspiration
         p_insp_max = [
             pressure.truncate(
@@ -3974,7 +3985,7 @@ class Vitals:
         )
         pressure.attach_label(p_insp_max)
 
-        ## min inspiratory pressure
+        ### Minimal Inspiratory Airway Pressure
         # as pressure at the beginning of inspiration (note: due to the definition of inspiration start the pressure is already rising--this is different to the definition in the paper)
         p_insp_min = Label(
             name="Minimal Inspiratory Airway Pressure",
@@ -3994,6 +4005,10 @@ class Vitals:
         pressure.attach_label(p_insp_min)
 
         ### Volume curve per breath
+        # due to slices per breath the first value is always zero. 
+        # as the end is the start of the next breath we remove the last value to avoid overlap
+        ### NOTE no benefit of parallelization for small number of breaths
+        
         v = [self._integrate_trapezoid(
                 signal=flow.truncate(start_time=start, stop_time=stop),
                 correction_factor=correction_factor,
@@ -4004,9 +4019,23 @@ class Vitals:
                     )
             ]
 
-        
+        volume = [DataSlice(
+                time_index=ds.time_index[:-1],  # remove last point to avoid overlap with next cycle
+                data= ds.data[:-1],  # remove last point to avoid overlap with next cycle
+                text_data=None
+            )
+            for ds in v
+        ]
+        volume = _concat_and_sort_dataslices(volume)
+        volume = Channel(
+            name="Volume",
+            time_index=volume.time_index,
+            data=volume.data,
+            metadata={"source" : "computed"},
+            plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Volume"),
+        )
 
-        # derive delta vt per breath
+        ### Delta VT per breath
         delta_vt = [
             DataSlice(
                 time_index=pd.DatetimeIndex([ds.time_index[-1]]),
@@ -4023,19 +4052,9 @@ class Vitals:
             metadata={"source" : "computed"},
             plotstyle=DEFAULT_PLOT_STYLE.get("Delta VT"),
         )
-        
-        #sort and add as channel with label
-        v = _concat_and_sort_dataslices(v)
-        volume = Channel(
-            name="Volume",
-            time_index=v.time_index,
-            data=v.data,
-            metadata={"source" : "computed"},
-            plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Volume"),
-        )
 
         ### Inspiratory Tidal Volume
-        #v peak during inspiration as vtinsp
+        # derived as peak of integrated volume curve during inspiration
         volume_start = volume.first_entry
         volume_end = volume.last_entry
         vi = [
@@ -4047,24 +4066,30 @@ class Vitals:
             if start >= volume_start and stop <= volume_end
         ]
         vt_insp = _argmax_dataslices(vi)
-        
         vt_insp = Label(name="VTinsp",
-              time_index=vt_insp.time_index,
-              data=vt_insp.data,
-              metadata={"source" : "computed"},
-              plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Tidal Volume"),
-              )
-          
-        #inspiratory volume
+            time_index=vt_insp.time_index,
+            data=vt_insp.data,
+            metadata={"source" : "computed"},
+            plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Tidal Volume"),
+            )
+            
+        volume.attach_label(vt_insp)
+        volume.attach_label(delta_vt)
+        self.add_channel(volume)
+
+        ### Inspiratory Volume
+        # as volume change during inspiration 
+        # for the expiration phase the volume remains constant
+        # note this does not equal VTinsp in case of reverse flow during inspiration
         vi = [
             DataSlice(
                 time_index=ds.get_data().time_index,  
-                data= np.concatenate(([0], ds.data[1:])),  # reset volume to 0 at start of inspiration  
+                data=ds.data, 
                 text_data=None
             )
             for ds in vi
         ]
-        vi_exp_time = [
+        vi_exp_interval= [
             volume.truncate(
                 start_time=start,
                 stop_time=stop,
@@ -4072,20 +4097,18 @@ class Vitals:
             for start, stop in expiration.get_data().time_index
             if start >= volume_start and stop < volume_end
         ]
-        vi_exp_time = [
+        vi_exp_interval= [
             DataSlice(
-                time_index=ds.get_data().time_index[:-1],
+                time_index=ds.get_data().time_index[1:-1], # to avoid overlap at end of inspiration/ start of expiration and expiration end/inspiration start
                 data=(
                     ds.data if ds.data.size == 0
-                    else np.full_like(ds.data[:-1], ds.data[0])
+                    else np.full_like(ds.data[1:-1], ds.data[0])
                 ),
                 text_data=None
             )
-            for ds in vi_exp_time
+            for ds in vi_exp_interval
         ]
-
-        vi.extend(vi_exp_time)
-
+        vi.extend(vi_exp_interval)
         vi = _concat_and_sort_dataslices(vi)
         v_insp = Channel(
             name="Inspiratory Volume",
@@ -4094,14 +4117,10 @@ class Vitals:
             metadata={"source" : "computed"},
             plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Volume"),
         )
-
         self.add_channel(v_insp)
 
-        volume.attach_label(delta_vt)
-        volume.attach_label(vt_insp)
-        self.add_channel(volume)
-    
         ### Expiratory Tidal Volume
+        # deriving expiratory start as negative volume change during expiration
         ve = [
             volume.truncate(
                 start_time=start,
@@ -4110,30 +4129,25 @@ class Vitals:
             for start, stop in expiration.get_data().time_index
             if start >= volume_start and stop <= volume_end
         ]
-
-        # transform the volume curve to expiratory volume curve
         ve = [
             DataSlice(
-                time_index=ds.get_data().time_index, 
-                data= -1.0*(ds.data-ds.data[0]),  # expiratory volume as negative change in volume
+                time_index=ds.get_data().time_index[:-1],  # remove last point to avoid overlap with next cycle
+                data= -1.0*(ds.data[:-1]-ds.data[0]),  # expiratory volume as negative change in volume
                 text_data=None
             )
             for ds in ve
         ]
-
         vt_exp = _argmax_dataslices(ve)
         vt_exp = Label(name="VTexp",
-                       time_index=vt_exp.time_index,
+                        time_index=vt_exp.time_index,
                         data=vt_exp.data,
                         metadata={"source" : "computed"},
                         plotstyle=DEFAULT_PLOT_STYLE.get("Expiratory Tidal Volume"),
                         )
-        
-        # reset expirtory volume with every inspiration start to 0
         insp_time = self.filter_by_intervallabel(
             channel_or_label_to_filter = flow,
             filter_by = inspiration, 
-            start_inclusive=False, 
+            start_inclusive=True, 
             end_inclusive=False).get_data().time_index
         ve.append(
             DataSlice(
@@ -4142,8 +4156,8 @@ class Vitals:
                 text_data=None
             )
         )
-
         ve = _concat_and_sort_dataslices(ve)
+
         volume_exp = Channel(   
             name="Expiratory Volume",
             time_index=ve.time_index,
@@ -4155,14 +4169,13 @@ class Vitals:
         volume_exp.attach_label(vt_exp)     
         self.add_channel(volume_exp)   
         
-
-        #### Cumulative Volumes         #Todo: make this conditional
+        #### Cumulative Volumes         #TODO: make this conditional
         ### Inspiratory Cumulative Volume
-        # continous curve #Todo make this conditional and calculate single volumes as Labels
+        # continous curve #TODO make this conditional and calculate single volumes as Labels
         vic = [self._integrate_trapezoid(
                     signal = DataSlice(
-                        time_index=fs.get_data().time_index,
-                        data=np.maximum(fs.data, 0.0),   # zero negative flow
+                        time_index=fs.get_data().time_index[:-1],   # remove last point to avoid overlap
+                        data=np.maximum(fs.data[:-1], 0.0),   # zero negative flow 
                         text_data=None), 
                     correction_factor = correction_factor
                 )
@@ -4193,11 +4206,11 @@ class Vitals:
         self.add_channel(v_insp_cum)
         
         ### Expiratory Cumulative Volume
-        # continous curve #Todo make this conditional and calculate single volumes as Labels
+        # continous curve #TODO make this conditional and calculate single volumes as Labels
         vec = [self._integrate_trapezoid(
                 signal = DataSlice(
-                    time_index=fs.get_data().time_index,
-                    data=-1.0*(np.minimum(fs.data, 0.0)),   # zero positive flow
+                    time_index=fs.get_data().time_index[:-1], # remove last point to avoid overlap
+                    data=-1.0*(np.minimum(fs.data[:-1], 0.0)),   # zero positive flow
                     text_data=None),
                 correction_factor = correction_factor
             )
@@ -4260,6 +4273,7 @@ class Vitals:
                 for start, stop in expiration.get_data().time_index
             )
         ]
+        return
 
         # todo
         #-[x]max inspiratory airway pressure
@@ -4272,9 +4286,6 @@ class Vitals:
         
 
         
-
-
-
     def filter_by_intervallabel(
         self,
         channel_or_label_to_filter: Channel | Label,
