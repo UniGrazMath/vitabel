@@ -347,6 +347,13 @@ DEFAULT_PLOT_STYLE = {
         "marker": 4,
         "alpha": 0.6,
     },
+    "Respiratory Rate": {
+        "color": "green",
+        "label": r"Respiratory Rate",
+        "linestyle": "",
+        "marker": "o",
+        "alpha": 0.6,
+    },
     
     
 }
