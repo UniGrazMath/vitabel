@@ -580,6 +580,10 @@ class Channel(TimeSeriesBase):
             offset=offset,
         )
 
+    def __repr__(self) -> str:
+        """A string representation of the channel."""
+        return f"{self.__class__.__name__}({self.name})"
+
     def data_hash(self) -> str:
         """Return a hash representing the data and the metadata of this channel."""
         data = {
