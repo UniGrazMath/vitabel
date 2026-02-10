@@ -1,0 +1,48 @@
+cff-version: 1.2.0
+title: vitabel
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Wolfgang J.
+    family-names: Kern
+    orcid: 'https://orcid.org/0000-0001-5080-382X'
+  - given-names: Benjamin
+    family-names: Hackl
+    orcid: 'https://orcid.org/0000-0003-2998-9599'
+    affiliation: University of Graz
+  - given-names: Simon
+    family-names: Orlob
+    affiliation: Innsbruck Medical University
+    orcid: 'https://orcid.org/0000-0001-7799-4822'
+identifiers:
+  - type: doi
+    value: 10.21203/rs.3.rs-7227195
+    description: >-
+      Preprint of the companion article related to release
+      v0.1.0.
+repository-code: 'https://github.com/unigrazmath/vitabel'
+url: 'https://vitabel.readthedocs.io/en/latest/index.html'
+abstract: >-
+  This package provides a toolbox for interactively
+  annotating and labeling vital data.
+
+
+  The main feature of vitabel, interactive plots that can be
+  used to annotate data, is designed to work in Jupyter
+  notebooks. Start a new server by running jupyter notebook
+  (or create a new notebook in an existing server), then
+  import the central Vitals class that acts as a container
+  for the vital data.
+keywords:
+  - python
+  - timeseries
+  - jupyter notebook
+  - health data
+  - interactive visualizations
+  - interactive annotation
+license: MIT
+version: v0.1.0
+date-released: '2025-06-30'
+
