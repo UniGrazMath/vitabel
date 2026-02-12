@@ -3277,7 +3277,7 @@ class Vitals:
             if no valid inspiration starts are detected.
         onsets_above_threshold : np.ndarray
             An array of integer indices where the product first exceeds the threshold
-            for each detected segment. Empty array (dtype int) if no segments are detected.
+            for each detected segment. Empty array (dtype int) if candidateno segments are detected.
         filtered_onsets : np.ndarray
             An array of integer indices for the onsets above threshold after additional
             filtering (e.g., slope and pressure criteria). Empty array (dtype int) if
@@ -3466,7 +3466,7 @@ class Vitals:
         # Threshold to suppress small oscillations around zero when detecting zero crossings.
         # Values at or below this threshold are treated as "non-positive" for zero-crossing
         # detection. Unit: product of flow and pressure slope.
-        zero_crossing_tolerance = 30
+        zero_crossing_tolerance = 0.05
 
         index = product.time_index.copy()
         data = product.data.copy()
@@ -3638,8 +3638,8 @@ class Vitals:
         self,
         flow: Channel,
         pressure: Channel,
-        inspiratory_threshold: float = 500,
-        expiratory_threshold: float = 700,
+        inspiratory_threshold: float = 6.55,
+        expiratory_threshold: float = 0.85,
         add_labels: bool = True,
         add_intermediate_channels: bool = False,
         return_landmarks: bool = False,
@@ -3697,8 +3697,8 @@ class Vitals:
         Notes
         -----
         This function and its thresholds are developed and tested on data from the following sensors:
-            - Flow: Sensirion SFM3000, recording at ~195Hz in slm
-            - Pressure: All Sensors DLVR-L60D, recording at ~480Hz in cmH₂O
+            - Flow: Sensirion SFM3000, recording at ~200Hz in slm
+            - Pressure: All Sensors DLVR-L60D, recording at ~500Hz in cmH₂O
         """
 
         # Interpolate Flow and Pressure to have a common index and crosses of y=0
