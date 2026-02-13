@@ -3709,9 +3709,9 @@ class Vitals:
         # get slope of pressure
         dp_dt = _compute_slope(p_interpolated)
 
-        # Calculate the product of flow and pressure
+        # Calculate the product of flow and pressure (ventilation power in J/min)
         product_flow_pressure = DataSlice(
-            time_index=index, data = f_interpolated.data * p_interpolated.data * 0.0980665 # L/min) * (cmH₂O/s) -> J/s
+            time_index=index, data=f_interpolated.data * p_interpolated.data * constants.CMH2O_TO_KPA
         )
 
         # derive idx for inspiration start
@@ -3729,7 +3729,9 @@ class Vitals:
         # considered. Positive flow values are clipped to zero so they don't
         # contribute to the product used for expiration landmark detection.
         neg_flow = np.minimum(f_interpolated.data, 0)
-        product_flow_pslope = DataSlice(index, neg_flow * dp_dt.data * 0.001634417 )  # (L/min) * (cmH₂O/s) -> W/s
+        product_flow_pslope = DataSlice(
+            index, neg_flow * dp_dt.data * constants.L_MIN_CMH2O_PER_S_TO_WATTS
+        )
         # derive idx for expiration start
         potential_exp_idxs, exp_onsets_above_threshold, exp_filtered_onsets = (
             self._get_expiration_start(
