@@ -3466,7 +3466,7 @@ class Vitals:
         # Threshold to suppress small oscillations around zero when detecting zero crossings.
         # Values at or below this threshold are treated as "non-positive" for zero-crossing
         # detection. Unit: product of flow and pressure slope.
-        zero_crossing_tolerance = 30
+        zero_crossing_tolerance = 0.05
 
         index = product.time_index.copy()
         data = product.data.copy()
@@ -3616,6 +3616,7 @@ class Vitals:
                 name="Product Flow Pressure",
                 time_index=product_flow_pressure.time_index,
                 data=product_flow_pressure.data,
+                metadata={"unit": "J/min"},
             ),
             Channel(
                 name="Slope Pressure",
@@ -3626,6 +3627,7 @@ class Vitals:
                 name="Product negative Flow Pressures Slope",
                 time_index=p_interpolated.time_index,
                 data=product_flow_pslope.data,
+                metadata={"unit": "W/s"},
             ),
         ]
         for channel in intermediate_channels:
@@ -3636,14 +3638,16 @@ class Vitals:
         self,
         flow: Channel,
         pressure: Channel,
-        inspiratory_threshold: float = 500,
-        expiratory_threshold: float = 700,
+        inspiratory_threshold: float = 6.55,
+        expiratory_threshold: float = 0.85,
         add_labels: bool = True,
         add_intermediate_channels: bool = False,
         return_landmarks: bool = False,
     ) -> None:
         """
         Derives the respiratory phases from air flow and airway pressure channels and adds them as global labels.
+
+        It expects flow in L/min and pressure in cmH₂O.
 
         This function derives the begin of inspiration based on the product of flow and pressure see :meth:`_get_inspiration_start`.
         The begin of expiration is derived from the product of flow and slope of pressure see :meth:`_get_expiration_start`.
@@ -3678,9 +3682,9 @@ class Vitals:
         add_intermediate_channels: bool
             Whether to add intermediate channels to the Vitals object. If True, the following channels are added:
             - interpolated flow and pressure
-            - product of flow and pressure
-            - slope of pressure
-            - product of flow and slope of pressure
+            - product of flow and pressure (power of ventilation) in J/min
+            - slope of pressure in cmH₂O/s
+            - product of negative flow and slope of pressure in W/s
 
         return_landmarks: bool
             Whether to return the computed landmarks.
@@ -3693,8 +3697,8 @@ class Vitals:
         Notes
         -----
         This function and its thresholds are developed and tested on data from the following sensors:
-            - Flow: Sensirion SFM3000, recording at ~195Hz in slm
-            - Pressure: Amphenol All Sensors DLVR-L60D, recording at ~480Hz in cmH₂O
+            - Flow: Sensirion SFM3000, recording at ~200Hz in slm
+            - Pressure: All Sensors DLVR-L60D, recording at ~500Hz in cmH₂O
         """
 
         # Interpolate Flow and Pressure to have a common index and crosses of y=0
@@ -3703,11 +3707,12 @@ class Vitals:
         index = f_interpolated.time_index
 
         # get slope of pressure
-        slope_p = _compute_slope(p_interpolated)
+        dp_dt = _compute_slope(p_interpolated)
 
-        # Calculate the product of flow and pressure
+        # Calculate the product of flow and pressure (ventilation power in J/min)
         product_flow_pressure = DataSlice(
-            time_index=index, data=f_interpolated.data * p_interpolated.data
+            time_index=index,
+            data=f_interpolated.data * p_interpolated.data * constants.CMH2O_TO_KPA,
         )
 
         # derive idx for inspiration start
@@ -3716,7 +3721,7 @@ class Vitals:
                 product=product_flow_pressure,
                 interpolated_flow=f_interpolated,
                 interpolated_pressure=p_interpolated,
-                slope_pressure=slope_p,
+                slope_pressure=dp_dt,
                 threshold=inspiratory_threshold,
             )
         )
@@ -3725,8 +3730,9 @@ class Vitals:
         # considered. Positive flow values are clipped to zero so they don't
         # contribute to the product used for expiration landmark detection.
         neg_flow = np.minimum(f_interpolated.data, 0)
-        product_flow_pslope = DataSlice(index, neg_flow * slope_p.data)
-
+        product_flow_pslope = DataSlice(
+            index, neg_flow * dp_dt.data * constants.L_MIN_CMH2O_PER_S_TO_WATTS
+        )
         # derive idx for expiration start
         potential_exp_idxs, exp_onsets_above_threshold, exp_filtered_onsets = (
             self._get_expiration_start(
@@ -3763,7 +3769,7 @@ class Vitals:
                 f_interpolated,
                 p_interpolated,
                 product_flow_pressure,
-                slope_p,
+                dp_dt,
                 product_flow_pslope,
             )
 
