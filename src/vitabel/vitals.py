@@ -3616,7 +3616,7 @@ class Vitals:
                 name="Product Flow Pressure",
                 time_index=product_flow_pressure.time_index,
                 data=product_flow_pressure.data,
-                metadata={"unit" : "J/min"}
+                metadata={"unit": "J/min"},
             ),
             Channel(
                 name="Slope Pressure",
@@ -3627,7 +3627,7 @@ class Vitals:
                 name="Product negative Flow Pressures Slope",
                 time_index=p_interpolated.time_index,
                 data=product_flow_pslope.data,
-                metadata={"unit": "W/s"}
+                metadata={"unit": "W/s"},
             ),
         ]
         for channel in intermediate_channels:
@@ -3711,7 +3711,8 @@ class Vitals:
 
         # Calculate the product of flow and pressure (ventilation power in J/min)
         product_flow_pressure = DataSlice(
-            time_index=index, data=f_interpolated.data * p_interpolated.data * constants.CMH2O_TO_KPA
+            time_index=index,
+            data=f_interpolated.data * p_interpolated.data * constants.CMH2O_TO_KPA,
         )
 
         # derive idx for inspiration start
