@@ -3277,7 +3277,7 @@ class Vitals:
             if no valid inspiration starts are detected.
         onsets_above_threshold : np.ndarray
             An array of integer indices where the product first exceeds the threshold
-            for each detected segment. Empty array (dtype int) if candidateno segments are detected.
+            for each detected segment. Empty array (dtype int) if no segments are detected.
         filtered_onsets : np.ndarray
             An array of integer indices for the onsets above threshold after additional
             filtering (e.g., slope and pressure criteria). Empty array (dtype int) if
