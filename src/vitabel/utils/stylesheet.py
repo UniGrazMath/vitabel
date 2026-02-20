@@ -189,7 +189,7 @@ DEFAULT_PLOT_STYLE = {
     "etco2_from_capnography": {
         "color": "darkred",
         "alpha": 0.8,
-        "linestyle": "",
+        "linestyle": "",Minimal Ins
         "marker": "s",
         "ms": 2,
         "label": "etCO₂",
@@ -280,24 +280,24 @@ DEFAULT_PLOT_STYLE = {
     },
     "Expiratory Volume" : {
         "color": "coral",
-        "label": r"$V_{\mathrm{exp}}$",
+        "label": r"$V_{\mathrm{e}}$",
         "alpha": 0.8,
     },
     "Inspiratory Volume" : {
         "color": "dodgerblue",
-        "label": r"$V_{\mathrm{insp}}$",
+        "label": r"$V_{\mathrm{i}}$",
         "alpha": 0.8,
     },
     "Inspiratory Tidal Volume" : {
         "color": "dodgerblue",
-        "label": r"$Vt_{\mathrm{insp}}$",
+        "label": r"$Vt_{\mathrm{i}}$",
         "linestyle": "",
         "marker": 7,
         "alpha": 0.8,
     },
     "Expiratory Tidal Volume" : {
         "color": "coral",
-        "label": r"$Vt_{\mathrm{exp}}$",
+        "label": r"$Vt_{\mathrm{e}}$",
         "linestyle": "",
         "marker": 7,
         "alpha": 0.8,
@@ -309,19 +309,19 @@ DEFAULT_PLOT_STYLE = {
     },
     "Cumulative Expiratory Tidal Volume": {
         "color": "#A65628",
-        "label": r"$Vt_{\mathrm{exp,cum}}$",
+        "label": r"$Vt_{\mathrm{e,cum}}$",
         "linestyle": "",
         "marker": 7,
         "alpha": 0.6,
     },
     "Cumulative Inspiratory Volume" : {
         "color": "#0072B2",
-        "label": r"$V_{\mathrm{insp,cum}}$",
+        "label": r"$V_{\mathrm{i,cum}}$",
         "alpha": 0.6,
     },
     "Cumulative Inspiratory Tidal Volume": {
         "color": "#0072B2",
-        "label": r"$Vt_{\mathrm{insp,cum}}$",
+        "label": r"$Vt_{\mathrm{i,cum}}$",
         "linestyle": "",
         "marker": 7,
         "alpha": 0.6,
