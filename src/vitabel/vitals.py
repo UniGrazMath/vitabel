@@ -3643,6 +3643,7 @@ class Vitals:
         add_labels: bool = True,
         add_intermediate_channels: bool = False,
         return_landmarks: bool = False,
+        overwrite_existing_output: bool = False,
     ) -> None:
         """
         Derives the respiratory phases from air flow and airway pressure channels and adds them as global labels.
@@ -3678,6 +3679,12 @@ class Vitals:
             - Expiration Begin as :class:`.Label`
             - Inspiration as :class:`.IntervalLabel`
             - Expiration as :class:`.IntervalLabel`
+            - Inspiratory Reverse Airflow as :class:`.IntervalLabel`
+            - Expiratory Reverse Airflow as :class:`.IntervalLabel`
+            - Inspiratory Reverse Airflow Segment Volume as :class:`.Label`
+            - Expiratory Reverse Airflow Segment Volume as :class:`.Label`
+            - Inspiratory Reverse Airflow Sum per Inspiration as :class:`.Label`
+            - Expiratory Reverse Airflow Sum per Expiration as :class:`.Label`
 
         add_intermediate_channels: bool
             Whether to add intermediate channels to the Vitals object. If True, the following channels are added:
@@ -3688,6 +3695,9 @@ class Vitals:
 
         return_landmarks: bool
             Whether to return the computed landmarks.
+
+        overwrite_existing_output: bool
+            Whether to overwrite existing respiratory phase labels and intermediate channels if they already exist in the Vitals object. If False and such labels exist, the function will raise an exception to avoid unintentional overwriting.
 
         Returns
         -------
@@ -3700,6 +3710,32 @@ class Vitals:
             - Flow: Sensirion SFM3000, recording at ~200Hz in slm
             - Pressure: All Sensors DLVR-L60D, recording at ~500Hz in cmH₂O
         """
+
+        if overwrite_existing_output:
+            for label_name in [
+                "Inspiration Begin",
+                "Expiration Begin",
+                "Inspiration",
+                "Expiration",
+                "Inspiratory Reverse Airflow",
+                "Expiratory Reverse Airflow",
+                "Inspiratory Reverse Airflow Segment Volume",
+                "Expiratory Reverse Airflow Segment Volume",
+                "Inspiratory Reverse Airflow Sum per Inspiration",
+                "Expiratory Reverse Airflow Sum per Expiration",
+            ]:
+                if label_name in self.get_label_names():
+                    self.remove_label(name=label_name)
+
+            for channel_name in [
+                "Flow Interpolated",
+                "Pressure Interpolated",
+                "Product Flow Pressure",
+                "Slope Pressure",
+                "Product negative Flow Pressures Slope",
+            ]:
+                if channel_name in self.get_channel_names():
+                    self.remove_channel(name=channel_name)
 
         # Interpolate Flow and Pressure to have a common index and crosses of y=0
         # f_interpolated, p_interpolated = _resample_to_common_index(flow, pressure)
@@ -4243,46 +4279,98 @@ class Vitals:
         )
         v_exp_cum.attach_label(vt_exp_cum)
         self.add_channel(v_exp_cum)
+        
 
         #### Reveresed Airflow Volumes
         # Todo make this conditional
 
-        ### Inspiratory Reversed Airflow
-        reverse_insp = [
-            self._integrate_trapezoid(
-                signal = DataSlice(
-                    time_index=fs.time_index,
-                    data=np.minimum(fs.data, 0.0),   # zero positive flow
-                    text_data=None),
-                correction_factor = correction_factor
-            )
-            for fs in (
-                flow.truncate(start_time=start, stop_time=stop)
-                for start, stop in inspiration.get_data().time_index
-            )
-        ]
+        def _area(y, time_index):
+            dt = (time_index[1:] - time_index[:-1]).total_seconds()
+            return float(np.sum(0.5 * (y[1:] + y[:-1]) * dt))
 
-        ### Expiratory Reversed Airflow
-        reverse_exp = [
-            self._integrate_trapezoid(
-                signal = DataSlice(
-                    time_index=fs.time_index,
-                    data=-1.0*(np.maximum(fs.data, 0.0)),   # zero negative flow
-                    text_data=None),
-                correction_factor = correction_factor
-            )
-            for fs in (
-                flow.truncate(start_time=start, stop_time=stop)
-                for start, stop in expiration.get_data().time_index
-            )
-        ]
-        return
+        def _area_segment(start, end, flow, correction_factor):
+            mask = (flow.get_data().time_index >= start) & (flow.get_data().time_index <= end)
+            return _area(flow.data[mask] * correction_factor, flow.get_data().time_index[mask])
 
+        crossing = np.array(flow.get_data().time_index[flow.data == 0])
+        segment = np.array(list(zip(crossing, crossing[1:])))
+
+        segment_volume = np.array([_area_segment(start, end, flow, correction_factor) for start, end in segment])
+
+        s = crossing[:-1]
+        e = crossing[1:]
+        insp_s = inspiration.get_data().time_index[:, 0]
+        insp_e = inspiration.get_data().time_index[:, 1]
+        exp_s = expiration.get_data().time_index[:, 0]
+        exp_e = expiration.get_data().time_index[:, 1]
+
+        in_insp = (insp_s[None, :] <= s[:, None]) & (e[:, None] <= insp_e[None, :])
+        in_exp  = (exp_s[None, :]  <= s[:, None]) & (e[:, None] <= exp_e[None, :])
+
+        neg_values = segment_volume < 0
+        pos_values = segment_volume > 0
+
+        mask_insp_reverse = in_insp.any(axis=1) & neg_values
+        mask_exp_reverse  = in_exp.any(axis=1)  & pos_values
+
+        insp_reverse_volume = Label(
+            name="Inspiratory Reverse Airflow Segment Volume",
+            time_index=crossing[1:][mask_insp_reverse],
+            data=-1 * segment_volume[mask_insp_reverse],
+            metadata={"source": "computed"},
+            )
+
+        insp_reverse_airflow = IntervalLabel(
+            name="Inspiratory Reverse Airflow",
+            time_index=segment[mask_insp_reverse],
+            data=None,
+            metadata={"source": "computed"},
+            )
+
+        insp_reverse_sum = Label(
+            name="Inspiratory Reverse Airflow Sum per Inspiration",
+            time_index=insp_e,
+            data=-(in_insp.T @ np.where(neg_values, segment_volume, 0.0)),
+            metadata={"source": "computed"},
+            plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Reverse Airflow"),
+        )
+
+        exp_reverse_volume = Label(
+            name="Expiratory Reverse Airflow Segment Volume",
+            time_index=crossing[1:][mask_exp_reverse],
+            data=segment_volume[mask_exp_reverse],
+            metadata={"source": "computed"},    
+            )
+
+        exp_reverse_airflow = IntervalLabel(
+            name="Expiratory Reverse Airflow",
+            time_index=segment[mask_exp_reverse],
+            data=None,
+            metadata={"source": "computed"},
+            )
+    
+        exp_reverse_sum = Label(
+            name="Expiratory Reverse Airflow Sum per Expiration",
+            time_index=exp_e,
+            data=(in_exp.T @ np.where(pos_values, segment_volume, 0.0)),
+            metadata={"source": "computed"},
+            plotstyle=DEFAULT_PLOT_STYLE.get("Expiratory Reverse Airflow"),
+        )
+
+
+        self.add_global_label(insp_reverse_airflow)
+        self.add_global_label(exp_reverse_airflow)
+        self.add_global_label(insp_reverse_volume)
+        self.add_global_label(exp_reverse_volume)
+        self.add_global_label(insp_reverse_sum)
+        self.add_global_label(exp_reverse_sum)
+
+        return 
         # todo
         #-[x]max inspiratory airway pressure
         #-[x]minimal inspiratory airway pressure
         #-[ ]generate tabel 
-        #-[ ]reverse volumes
+        #-[x]reverse volumes
         #-[x]delta vt
         #-[x]ti, te, 
         #-[ ]I:E
