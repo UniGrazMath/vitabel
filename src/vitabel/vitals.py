@@ -3646,7 +3646,7 @@ class Vitals:
         overwrite_existing_output: bool = False,
     ) -> None:
         """
-        Derives the respiratory phases from air flow and airway pressure channels and adds them as global labels.
+        Derives the respiratory phases from air flow and airway pressure channels and adds them as global labels as described in Orlob et al. :cite:`10.1016/j.resuscitation.2026.111050`.
 
         It expects flow in L/min and pressure in cmH₂O.
 
