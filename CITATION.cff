@@ -5,17 +5,29 @@ message: >-
   metadata from this file.
 type: software
 authors:
+  - given-names: Simon
+    family-names: Orlob
+    affiliation: Medical University of Innsbruck
+    orcid: 'https://orcid.org/0000-0001-7799-4822'
   - given-names: Wolfgang J.
     family-names: Kern
     orcid: 'https://orcid.org/0000-0001-5080-382X'
   - given-names: Benjamin
     family-names: Hackl
-    orcid: 'https://orcid.org/0000-0003-2998-9599'
     affiliation: University of Graz
-  - given-names: Simon
-    family-names: Orlob
-    affiliation: Innsbruck Medical University
-    orcid: 'https://orcid.org/0000-0001-7799-4822'
+    orcid: 'https://orcid.org/0000-0003-2998-9599'
+  - given-names: Jan
+    family-names: Wnent
+    affiliation: University Hospital Schleswig-Holstein
+    orcid: 'https://orcid.org/0000-0002-8685-858X'
+  - given-names: Jan-Thorsten
+    family-names: Gräsner
+    affiliation: University Hospital Schleswig-Holstein
+    orcid: 'https://orcid.org/0000-0001-8143-0376'
+  - given-names: Martin
+    family-names: Holler
+    affiliation: University of Graz
+    orcid: 'https://orcid.org/0000-0002-2895-2375'
 identifiers:
   - type: doi
     value: 10.21203/rs.3.rs-7227195
