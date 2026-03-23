@@ -204,7 +204,7 @@ def test_add_nonexistent_file(vitabel_test_data_dir):
         cardio_object.add_defibrillator_recording(recording_path)
 
 def test_add_edfplus(vitabel_test_data_dir):
-    f_path = vitabel_test_data_dir / "test_generator_2.edf.bz2"
+    f_path = vitabel_test_data_dir / "sample_signals" / "test_generator_2.edf.bz2"
     if f_path.suffix == ".bz2":
         unpacked_path = f_path.with_suffix("")
         with bz2.open(f_path, "rb") as src, open(unpacked_path, "wb") as dst:
