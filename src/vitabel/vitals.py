@@ -19,6 +19,14 @@ from typing import Any, Literal
 from IPython.display import display
 from pathlib import Path
 
+from vitabel.analysis.ventilation.volumes import (
+    argmax_dataslices,
+    compute_breath_duration_and_rate_labels,
+    compute_inspiratory_pressure_labels,
+    compute_reverse_airflow_labels,
+    concat_and_sort_dataslices,
+    integrate_trapezoid,
+)
 from vitabel.timeseries import (
     Channel,
     Label,
@@ -3277,7 +3285,7 @@ class Vitals:
             if no valid inspiration starts are detected.
         onsets_above_threshold : np.ndarray
             An array of integer indices where the product first exceeds the threshold
-            for each detected segment. Empty array (dtype int) if candidateno segments are detected.
+            for each detected segment. Empty array (dtype int) if no segments are detected.
         filtered_onsets : np.ndarray
             An array of integer indices for the onsets above threshold after additional
             filtering (e.g., slope and pressure criteria). Empty array (dtype int) if
@@ -3422,8 +3430,8 @@ class Vitals:
         Derives the indices of the start of expirations from the product of flow and slope of pressure.
 
         This function identifies segments of the product that are above a certain threshold
-        and finds the preceding zero crossing before each segment as potenital expiration start.
-        It returns the first candidate between two inspritation starts as the expiration start.
+        and finds the preceding zero crossing before each segment as potential expiration start.
+        It returns the first candidate between two inspiration starts as the expiration start.
 
         Parameters
         ----------
@@ -3634,6 +3642,56 @@ class Vitals:
             channel.plotstyle = DEFAULT_PLOT_STYLE.get(channel.name)
             self.add_channel(channel)
 
+    def _prepare_named_outputs(
+        self,
+        *,
+        channel_names: list[str],
+        label_names: list[str],
+        overwrite_existing_output: bool,
+    ) -> None:
+        """Validate or remove pre-existing named outputs.
+
+        Parameters
+        ----------
+        channel_names
+            Names of channels produced by the computation.
+        label_names
+            Names of labels produced by the computation.
+        overwrite_existing_output
+            If ``True``, all matching outputs are removed before new ones are
+            created. Otherwise, a :class:`ValueError` is raised if matching
+            outputs already exist.
+        """
+        existing_channel_names = sorted(
+            {
+                channel.name
+                for name in channel_names
+                for channel in self.data.get_channels(name=name)
+            }
+        )
+        existing_label_names = sorted(
+            {
+                label.name
+                for name in label_names
+                for label in self.data.get_labels(name=name)
+            }
+        )
+
+        existing_outputs = existing_channel_names + existing_label_names
+        if existing_outputs and not overwrite_existing_output:
+            raise ValueError(
+                "Outputs already exist in Vitals object. "
+                f"Use overwrite_existing_output=True to replace: {existing_outputs}"
+            )
+
+        for name in channel_names:
+            for channel in list(self.data.get_channels(name=name)):
+                self.remove_channel(channel=channel)
+
+        for name in label_names:
+            for label in list(self.data.get_labels(name=name)):
+                self.remove_label(label=label)
+
     def compute_respiratory_phases(
         self,
         flow: Channel,
@@ -3646,7 +3704,9 @@ class Vitals:
         overwrite_existing_output: bool = False,
     ) -> None:
         """
-        Derives the respiratory phases from air flow and airway pressure channels and adds them as global labels as described in Orlob et al. :cite:`10.1016/j.resuscitation.2026.111050`.
+        Derives the respiratory phases from air flow and airway pressure channels
+        and adds them as global labels as described in Orlob et al.
+        :cite:`10.1016/j.resuscitation.2026.111050`.
 
         It expects flow in L/min and pressure in cmH₂O.
 
@@ -3679,12 +3739,6 @@ class Vitals:
             - Expiration Begin as :class:`.Label`
             - Inspiration as :class:`.IntervalLabel`
             - Expiration as :class:`.IntervalLabel`
-            - Inspiratory Reverse Airflow as :class:`.IntervalLabel`
-            - Expiratory Reverse Airflow as :class:`.IntervalLabel`
-            - Inspiratory Reverse Airflow Segment Volume as :class:`.Label`
-            - Expiratory Reverse Airflow Segment Volume as :class:`.Label`
-            - Inspiratory Reverse Airflow Sum per Inspiration as :class:`.Label`
-            - Expiratory Reverse Airflow Sum per Expiration as :class:`.Label`
 
         add_intermediate_channels: bool
             Whether to add intermediate channels to the Vitals object. If True, the following channels are added:
@@ -3711,31 +3765,30 @@ class Vitals:
             - Pressure: All Sensors DLVR-L60D, recording at ~500Hz in cmH₂O
         """
 
-        if overwrite_existing_output:
-            for label_name in [
-                "Inspiration Begin",
-                "Expiration Begin",
-                "Inspiration",
-                "Expiration",
-                "Inspiratory Reverse Airflow",
-                "Expiratory Reverse Airflow",
-                "Inspiratory Reverse Airflow Segment Volume",
-                "Expiratory Reverse Airflow Segment Volume",
-                "Inspiratory Reverse Airflow Sum per Inspiration",
-                "Expiratory Reverse Airflow Sum per Expiration",
-            ]:
-                if label_name in self.get_label_names():
-                    self.remove_label(name=label_name)
-
-            for channel_name in [
-                "Flow Interpolated",
-                "Pressure Interpolated",
-                "Product Flow Pressure",
-                "Slope Pressure",
-                "Product negative Flow Pressures Slope",
-            ]:
-                if channel_name in self.get_channel_names():
-                    self.remove_channel(name=channel_name)
+        self._prepare_named_outputs(
+            channel_names=(
+                [
+                    "Flow Interpolated",
+                    "Pressure Interpolated",
+                    "Product Flow Pressure",
+                    "Slope Pressure",
+                    "Product negative Flow Pressures Slope",
+                ]
+                if add_intermediate_channels
+                else []
+            ),
+            label_names=(
+                [
+                    "Inspiration Begin",
+                    "Expiration Begin",
+                    "Inspiration",
+                    "Expiration",
+                ]
+                if add_labels
+                else []
+            ),
+            overwrite_existing_output=overwrite_existing_output,
+        )
 
         # Interpolate Flow and Pressure to have a common index and crosses of y=0
         # f_interpolated, p_interpolated = _resample_to_common_index(flow, pressure)
@@ -3831,267 +3884,167 @@ class Vitals:
         else:
             return
 
-    def _integrate_trapezoid(
-            self,
-            signal: DataSlice,
-            correction_factor: float = 1.0,
-        ) -> DataSlice:
-        """Integrates data with trapezoidal rule over the entire DataSlice.
-
-        Parameters
-        ----------
-        signal : DataSlice  
-            label or channel to integrate.
-
-        Returns
-        -------
-        DataSlice
-            :class:`.DataSlice` containing the cumulative trapezoidal integral of the input signal over time.
-        
-        """
-        if len(signal) < 2:
-            raise Exception("Length of time and data must be at least 2")
-        if signal.data is None:
-            raise Exception("DataSlice contains no data to integrate")
-        if len(signal.data) != len(signal.time_index):
-            raise Exception("Length of time and data must agree")
-
-        #apply unit correction factor
-        data = signal.data * correction_factor
-
-        dt = signal.time_index[1:] - signal.time_index[:-1]
-        sample_sum = data[1:] + data[:-1]
-        changes = sample_sum*0.5*dt.total_seconds()
-        cumulative = np.concatenate(([0.0], np.cumsum(changes)))
-
-        return DataSlice(
-            time_index = signal.get_data().time_index if isinstance(signal, (Channel, Label)) else signal.time_index,
-            data = cumulative,)
-
-    def compute_ventilation_volumes(
+    def _require_ventilation_volume_inputs(
         self,
-        correction_factor: float = 1.0,
-    ):
-        """Computes ventilatory volumes from flow channel based on respiratory phase labels.
-        Therefore, inspiratory and expiratory tidal volumes are calculated for each respiratory cycle.
-
-        *Intra-arrest Ventilation*
-        In case reverse airflow segments are detected the corresponding 
-        volumes are calculated separately, as well as the cumulative tidal volumes.
-        Definitons are given in :cite:`10.1016/j.resuscitation.2025.110511`
-
-
-        Parameters
-        ----------
-
-        
-
-        Returns
-        -------
-
-        
-        """
-        if not "Flow Interpolated" in self.get_channel_names():
+    ) -> tuple[Channel, Channel, IntervalLabel, IntervalLabel]:
+        """Return validated inputs required for ventilation-volume computation."""
+        if "Flow Interpolated" not in self.get_channel_names():
             raise ValueError(
                 "Channel 'Flow Interpolated' not found in Vitals object. "
                 "Please compute respiratory phases with add_intermediate_channels=True first."
             )
 
-        if not "Pressure Interpolated" in self.get_channel_names():
+        if "Pressure Interpolated" not in self.get_channel_names():
             raise ValueError(
                 "Channel 'Pressure Interpolated' not found in Vitals object. "
                 "Please compute respiratory phases with add_intermediate_channels=True first."
             )
 
-        if not "Inspiration" in self.get_label_names() or not "Expiration" in self.get_label_names():
+        if (
+            "Inspiration" not in self.get_label_names()
+            or "Expiration" not in self.get_label_names()
+        ):
             raise ValueError(
                 "Labels 'Inspiration' and 'Expiration' not found in Vitals object. "
                 "Please compute respiratory phases with add_labels=True first."
             )
-        
-        def _concat_and_sort_dataslices(dataslices):
-            """Helper function to concatenate and sort a list of DataSlices into a single :class:`.DataSlice`.
-            Parameters
-            ----------
-            dataslices : list of :class:`.DataSlice`
-            
-            Returns
-            -------
-            :class:`.DataSlice`
-                A single DataSlice containing the concatenated and sorted data from the input DataSlices.
-            """
-            # 1. concatenate time indices and data
-            time_index = pd.DatetimeIndex(
-                np.concatenate([ds.time_index.values for ds in dataslices])
-            )
-            data = np.concatenate([ds.data for ds in dataslices])
 
-            # 2. sort by time
-            order = np.argsort(time_index.values)
-            time_index = time_index[order]
-            data = data[order]
-
-            # 3. return new DataSlice
-            return DataSlice(
-                time_index=time_index,
-                data=data,
-                text_data=None
-            )    
-        
-
-        def _argmax_dataslices(dataslices: list[DataSlice]) -> DataSlice:
-            """ Helper function to compute the argmax within each :class:`.DataSlice` in a list of DataSlices.
-
-            Parameters
-            ----------
-            dataslices : list of :class:`.DataSlice`    
-            
-            Returns
-            -------
-            :class:`.DataSlice`
-                A DataSlice containing the time indices and data values of the argmax within each input :class:`.DataSlice`.
-            
-            Volume as change of Volume during one respiratory cycle. 
-                
-            Vtinsp as peak of the integral during inspiration. Therefore, a reversed airflow at the end of inspiration does not lower VTinsp.
-
-            """
-            valid = [
-                ds for ds in dataslices
-                if ds.data is not None and len(ds.data) > 0 and not np.all(np.isnan(ds.data))
-            ]
-
-            return DataSlice(
-                time_index=pd.DatetimeIndex([
-                    ds.get_data().time_index[int(np.nanargmax(ds.data))] if isinstance(ds, (Channel, Label)) else ds.time_index[int(np.nanargmax(ds.data))]
-                    for ds in valid
-                ]),
-                data=np.array([
-                    float(np.nanmax(ds.data))
-                    for ds in valid
-                ]),
-                text_data=None
-            )
-        
         flow = self.get_channel("Flow Interpolated")
         pressure = self.get_channel("Pressure Interpolated")
         inspiration = self.get_label("Inspiration")
         expiration = self.get_label("Expiration")
 
-        ### Inspiratory and Expiratory Time
+        assert isinstance(inspiration, IntervalLabel)
+        assert isinstance(expiration, IntervalLabel)
+        return flow, pressure, inspiration, expiration
+
+    def compute_ventilation_volumes(
+        self,
+        correction_factor: float = 1.0,
+        overwrite_existing_output: bool = False,
+    ) -> None:
+        """Compute ventilation-related volume and pressure outputs.
+
+        Derived quantities are based on the interpolated flow/pressure channels
+        and on pre-computed inspiration/expiration labels.
+
+        In case reverse airflow segments are detected, the corresponding
+        segment-wise and aggregated volumes are computed as described in
+        :cite:`10.1016/j.resuscitation.2025.110511`.
+
+        Parameters
+        ----------
+        correction_factor : float
+            Multiplicative factor applied to flow before integration.
+        overwrite_existing_output : bool
+            Whether to overwrite already existing derived ventilation outputs.
+
+        Returns
+        -------
+        None
+        """
+        self._prepare_named_outputs(
+            channel_names=[
+                "Volume",
+                "Inspiratory Volume",
+                "Expiratory Volume",
+                "Cumulative Inspiratory Volume",
+                "Cumulative Expiratory Volume",
+            ],
+            label_names=[
+                "Inspiratory Time",
+                "Expiratory Time",
+                "Respiratory Rate",
+                "Maximal Inspiratory Airway Pressure",
+                "Minimal Inspiratory Airway Pressure",
+                "Delta VT",
+                "VTinsp",
+                "VTexp",
+                "VTinsp_cum",
+                "VTexp_cum",
+                "Inspiratory Reverse Airflow Segment Volume",
+                "Expiratory Reverse Airflow Segment Volume",
+                "Inspiratory Reverse Airflow",
+                "Expiratory Reverse Airflow",
+                "Inspiratory Reverse Airflow Sum per Inspiration",
+                "Expiratory Reverse Airflow Sum per Expiration",
+            ],
+            overwrite_existing_output=overwrite_existing_output,
+        )
+
+        flow, pressure, inspiration, expiration = (
+            self._require_ventilation_volume_inputs()
+        )
+
         insp_t = inspiration.get_data().time_index
-        ti = Label(
-            name="Inspiratory Time",
-            time_index = insp_t[:,1],
-            data=(insp_t[:,1] - insp_t[:,0])/np.timedelta64(1, 's'),  # duration of breath in seconds
-            metadata={"source" : "computed"},
+
+        ti, te, rr = compute_breath_duration_and_rate_labels(
+            inspiration,
+            expiration,
         )
         self.add_global_label(ti)
-        
-        exp_t = expiration.get_data().time_index
-        te = Label(
-            name="Expiratory Time",
-            time_index = exp_t[:,1],
-            data=(exp_t[:,1] - exp_t[:,0])/np.timedelta64(1, 's'),  # duration of breath in seconds
-            metadata={"source" : "computed"},
-        )
         self.add_global_label(te)
-
-        ### Respiratory Rate
-        rr = Label(
-            name="Respiratory Rate",
-            time_index=insp_t[1:,0],
-            data= 60/ ((insp_t[1:,0] - insp_t[:-1,0])/np.timedelta64(1, 's')),
-            metadata={"source" : "computed"},
-            plotstyle=DEFAULT_PLOT_STYLE.get("Respiratory Rate"),
-        )
         self.add_global_label(rr)
 
-
-        ### Maximal Inspiratory Airway Pressure
-        # as maximal pressure during inspiration
-        p_insp_max = [
-            pressure.truncate(
-                start_time=start,
-                stop_time=stop
-            )
-            for start, stop in inspiration.get_data().time_index
-        ]
-        p_insp_max = _argmax_dataslices(p_insp_max)
-        p_insp_max = Label(
-            name="Maximal Inspiratory Airway Pressure",
-            time_index=p_insp_max.time_index,
-            data=p_insp_max.data,
-            metadata={"source" : "computed"},
-            plotstyle=DEFAULT_PLOT_STYLE.get("Maximal Inspiratory Airway Pressure"),
+        p_insp_max, p_insp_min = compute_inspiratory_pressure_labels(
+            pressure,
+            insp_t,
         )
         pressure.attach_label(p_insp_max)
-
-        ### Minimal Inspiratory Airway Pressure
-        # as pressure at the beginning of inspiration (note: due to the definition of inspiration start the pressure is already rising--this is different to the definition in the paper)
-        p_insp_min = Label(
-            name="Minimal Inspiratory Airway Pressure",
-            time_index=inspiration.get_data().time_index[:,0],
-            data=np.array([
-                float(np.min(
-                    pressure.truncate(
-                        start_time=start,
-                        stop_time=stop
-                    ).data
-                ))
-                for start, stop in insp_t
-            ]),
-            metadata={"source" : "computed"},
-            plotstyle=DEFAULT_PLOT_STYLE.get("Minimal Inspiratory Airway Pressure"),
-        )
         pressure.attach_label(p_insp_min)
 
         ### Volume curve per breath
-        # due to slices per breath the first value is always zero. 
+        # due to slices per breath the first value is always zero.
         # as the end is the start of the next breath we remove the last value to avoid overlap
         ### NOTE no benefit of parallelization for small number of breaths
-        
-        v = [self._integrate_trapezoid(
+
+        v = [
+            integrate_trapezoid(
                 signal=flow.truncate(start_time=start, stop_time=stop),
                 correction_factor=correction_factor,
-                )
-                for start, stop in zip(
-                    inspiration.get_data().time_index[:-1,0],
-                    inspiration.get_data().time_index[1:,0]
-                    )
-            ]
+            )
+            for start, stop in zip(
+                inspiration.get_data().time_index[:-1, 0],
+                inspiration.get_data().time_index[1:, 0],
+            )
+        ]
 
-        volume = [DataSlice(
-                time_index=ds.time_index[:-1],  # remove last point to avoid overlap with next cycle
-                data= ds.data[:-1],  # remove last point to avoid overlap with next cycle
-                text_data=None
+        volume = [
+            DataSlice(
+                time_index=ds.time_index[
+                    :-1
+                ],  # remove last point to avoid overlap with next cycle
+                data=ds.data[:-1],  # remove last point to avoid overlap with next cycle
+                text_data=None,
             )
             for ds in v
         ]
-        volume = _concat_and_sort_dataslices(volume)
+        volume = concat_and_sort_dataslices(volume)
         volume = Channel(
             name="Volume",
             time_index=volume.time_index,
             data=volume.data,
-            metadata={"source" : "computed"},
-            plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Volume"),
+            metadata={"source": "computed"},
+            plotstyle=DEFAULT_PLOT_STYLE.get("Volume"),
         )
 
         ### Delta VT per breath
         delta_vt = [
             DataSlice(
-                time_index=pd.DatetimeIndex([ds.time_index[-1]]),
-                data=[ds.data[-1]],  # volume change during breath last value represents difference as first is zeroed
-                text_data=None
+                time_index=pd.Index([ds.time_index[-1]]),
+                data=[
+                    ds.data[-1]
+                ],  # volume change during breath last value represents difference as first is zeroed
+                text_data=None,
             )
             for ds in v
         ]
-        delta_vt = _concat_and_sort_dataslices(delta_vt)
+        delta_vt = concat_and_sort_dataslices(delta_vt)
         delta_vt = Label(
             name="Delta VT",
             time_index=delta_vt.time_index,
             data=delta_vt.data,
-            metadata={"source" : "computed"},
+            metadata={"source": "computed"},
             plotstyle=DEFAULT_PLOT_STYLE.get("Delta VT"),
         )
 
@@ -4100,38 +4053,32 @@ class Vitals:
         volume_start = volume.first_entry
         volume_end = volume.last_entry
         vi = [
-            volume.truncate(
-                start_time=start,
-                stop_time=stop
-            )
+            volume.truncate(start_time=start, stop_time=stop)
             for start, stop in inspiration.get_data().time_index
             if start >= volume_start and stop <= volume_end
         ]
-        vt_insp = _argmax_dataslices(vi)
-        vt_insp = Label(name="VTinsp",
+        vt_insp = argmax_dataslices(vi)
+        vt_insp = Label(
+            name="VTinsp",
             time_index=vt_insp.time_index,
             data=vt_insp.data,
-            metadata={"source" : "computed"},
+            metadata={"source": "computed"},
             plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Tidal Volume"),
-            )
-            
+        )
+
         volume.attach_label(vt_insp)
         volume.attach_label(delta_vt)
         self.add_channel(volume)
 
         ### Inspiratory Volume
-        # as volume change during inspiration 
+        # as volume change during inspiration
         # for the expiration phase the volume remains constant
         # note this does not equal VTinsp in case of reverse flow during inspiration
         vi = [
-            DataSlice(
-                time_index=ds.get_data().time_index,  
-                data=ds.data, 
-                text_data=None
-            )
+            DataSlice(time_index=ds.get_data().time_index, data=ds.data, text_data=None)
             for ds in vi
         ]
-        vi_exp_interval= [
+        vi_exp_interval = [
             volume.truncate(
                 start_time=start,
                 stop_time=stop,
@@ -4139,24 +4086,27 @@ class Vitals:
             for start, stop in expiration.get_data().time_index
             if start >= volume_start and stop < volume_end
         ]
-        vi_exp_interval= [
+        vi_exp_interval = [
             DataSlice(
-                time_index=ds.get_data().time_index[1:-1], # to avoid overlap at end of inspiration/ start of expiration and expiration end/inspiration start
+                time_index=ds.get_data().time_index[
+                    1:-1
+                ],  # to avoid overlap at end of inspiration/ start of expiration and expiration end/inspiration start
                 data=(
-                    ds.data if ds.data.size == 0
+                    ds.data
+                    if ds.data.size == 0
                     else np.full_like(ds.data[1:-1], ds.data[0])
                 ),
-                text_data=None
+                text_data=None,
             )
             for ds in vi_exp_interval
         ]
         vi.extend(vi_exp_interval)
-        vi = _concat_and_sort_dataslices(vi)
+        vi = concat_and_sort_dataslices(vi)
         v_insp = Channel(
             name="Inspiratory Volume",
             time_index=vi.time_index,
             data=vi.data,
-            metadata={"source" : "computed"},
+            metadata={"source": "computed"},
             plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Volume"),
         )
         self.add_channel(v_insp)
@@ -4164,202 +4114,154 @@ class Vitals:
         ### Expiratory Tidal Volume
         # deriving expiratory start as negative volume change during expiration
         ve = [
-            volume.truncate(
-                start_time=start,
-                stop_time=stop
-            )
+            volume.truncate(start_time=start, stop_time=stop)
             for start, stop in expiration.get_data().time_index
             if start >= volume_start and stop <= volume_end
         ]
         ve = [
             DataSlice(
-                time_index=ds.get_data().time_index[:-1],  # remove last point to avoid overlap with next cycle
-                data= -1.0*(ds.data[:-1]-ds.data[0]),  # expiratory volume as negative change in volume
-                text_data=None
+                time_index=ds.get_data().time_index[
+                    :-1
+                ],  # remove last point to avoid overlap with next cycle
+                data=-1.0
+                * (
+                    ds.data[:-1] - ds.data[0]
+                ),  # expiratory volume as negative change in volume
+                text_data=None,
             )
             for ds in ve
         ]
-        vt_exp = _argmax_dataslices(ve)
-        vt_exp = Label(name="VTexp",
-                        time_index=vt_exp.time_index,
-                        data=vt_exp.data,
-                        metadata={"source" : "computed"},
-                        plotstyle=DEFAULT_PLOT_STYLE.get("Expiratory Tidal Volume"),
-                        )
-        insp_time = self.filter_by_intervallabel(
-            channel_or_label_to_filter = flow,
-            filter_by = inspiration, 
-            start_inclusive=True, 
-            end_inclusive=False).get_data().time_index
+        vt_exp = argmax_dataslices(ve)
+        vt_exp = Label(
+            name="VTexp",
+            time_index=vt_exp.time_index,
+            data=vt_exp.data,
+            metadata={"source": "computed"},
+            plotstyle=DEFAULT_PLOT_STYLE.get("Expiratory Tidal Volume"),
+        )
+        insp_time = (
+            self.filter_by_intervallabel(
+                channel_or_label_to_filter=flow,
+                filter_by=inspiration,
+                start_inclusive=True,
+                end_inclusive=False,
+            )
+            .get_data()
+            .time_index
+        )
         ve.append(
             DataSlice(
                 time_index=insp_time,
                 data=np.zeros(len(insp_time), dtype=float),
-                text_data=None
+                text_data=None,
             )
         )
-        ve = _concat_and_sort_dataslices(ve)
+        ve = concat_and_sort_dataslices(ve)
 
-        volume_exp = Channel(   
+        volume_exp = Channel(
             name="Expiratory Volume",
             time_index=ve.time_index,
             data=ve.data,
-            metadata={"source" : "computed"},
+            metadata={"source": "computed"},
             plotstyle=DEFAULT_PLOT_STYLE.get("Expiratory Volume"),
         )
 
-        volume_exp.attach_label(vt_exp)     
-        self.add_channel(volume_exp)   
-        
-        #### Cumulative Volumes         #TODO: make this conditional
-        ### Inspiratory Cumulative Volume
-        # continous curve #TODO make this conditional and calculate single volumes as Labels
-        vic = [self._integrate_trapezoid(
-                    signal = DataSlice(
-                        time_index=fs.get_data().time_index[:-1],   # remove last point to avoid overlap
-                        data=np.maximum(fs.data[:-1], 0.0),   # zero negative flow 
-                        text_data=None), 
-                    correction_factor = correction_factor
-                )
-                for fs in (
-                    flow.truncate(start_time=start, stop_time=stop)
-                    for start, stop in zip(
-                        inspiration.get_data().time_index[:-1,0],
-                        inspiration.get_data().time_index[1:,0]
-                    )
-                )
-            ]
-        vt_insp_cum = _argmax_dataslices(vic)
-        vt_insp_cum = Label(name="VTinsp_cum",                       
-                            time_index=vt_insp_cum.time_index,
-                            data=vt_insp_cum.data,
-                            metadata={"source" : "computed"},
-                            plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Inspiratory Tidal Volume"),
-                            )
-        vic = _concat_and_sort_dataslices(vic)
-        v_insp_cum = Channel(
-            name="Cumulative Inspiratory Volume",
-            time_index=vic.time_index,
-            data=vic.data,
-            metadata={"source" : "computed"},
-            plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Inspiratory Volume"),
-        )        
-        v_insp_cum.attach_label(vt_insp_cum)
-        self.add_channel(v_insp_cum)
-        
-        ### Expiratory Cumulative Volume
-        # continous curve #TODO make this conditional and calculate single volumes as Labels
-        vec = [self._integrate_trapezoid(
-                signal = DataSlice(
-                    time_index=fs.get_data().time_index[:-1], # remove last point to avoid overlap
-                    data=-1.0*(np.minimum(fs.data[:-1], 0.0)),   # zero positive flow
-                    text_data=None),
-                correction_factor = correction_factor
+        volume_exp.attach_label(vt_exp)
+        self.add_channel(volume_exp)
+
+        # Cumulative volumes
+        # Inspiratory cumulative volume
+        vic = [
+            integrate_trapezoid(
+                signal=DataSlice(
+                    time_index=fs.get_data().time_index[
+                        :-1
+                    ],  # remove last point to avoid overlap
+                    data=np.maximum(fs.data[:-1], 0.0),  # zero negative flow
+                    text_data=None,
+                ),
+                correction_factor=correction_factor,
             )
             for fs in (
                 flow.truncate(start_time=start, stop_time=stop)
                 for start, stop in zip(
-                    inspiration.get_data().time_index[:-1,0],
-                    inspiration.get_data().time_index[1:,0]
+                    inspiration.get_data().time_index[:-1, 0],
+                    inspiration.get_data().time_index[1:, 0],
                 )
             )
         ]
-        
-        vt_exp_cum = _argmax_dataslices(vec)
-        vt_exp_cum = Label(name="VTexp_cum",                       
-                            time_index=vt_exp_cum.time_index,
-                            data=vt_exp_cum.data,
-                            metadata={"source" : "computed"},
-                            plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Expiratory Tidal Volume"),
-                            )
-        vec = _concat_and_sort_dataslices(vec)
+        vt_insp_cum = argmax_dataslices(vic)
+        vt_insp_cum = Label(
+            name="VTinsp_cum",
+            time_index=vt_insp_cum.time_index,
+            data=vt_insp_cum.data,
+            metadata={"source": "computed"},
+            plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Inspiratory Tidal Volume"),
+        )
+        vic = concat_and_sort_dataslices(vic)
+        v_insp_cum = Channel(
+            name="Cumulative Inspiratory Volume",
+            time_index=vic.time_index,
+            data=vic.data,
+            metadata={"source": "computed"},
+            plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Inspiratory Volume"),
+        )
+        v_insp_cum.attach_label(vt_insp_cum)
+        self.add_channel(v_insp_cum)
+
+        # Expiratory cumulative volume
+        vec = [
+            integrate_trapezoid(
+                signal=DataSlice(
+                    time_index=fs.get_data().time_index[
+                        :-1
+                    ],  # remove last point to avoid overlap
+                    data=-1.0 * (np.minimum(fs.data[:-1], 0.0)),  # zero positive flow
+                    text_data=None,
+                ),
+                correction_factor=correction_factor,
+            )
+            for fs in (
+                flow.truncate(start_time=start, stop_time=stop)
+                for start, stop in zip(
+                    inspiration.get_data().time_index[:-1, 0],
+                    inspiration.get_data().time_index[1:, 0],
+                )
+            )
+        ]
+
+        vt_exp_cum = argmax_dataslices(vec)
+        vt_exp_cum = Label(
+            name="VTexp_cum",
+            time_index=vt_exp_cum.time_index,
+            data=vt_exp_cum.data,
+            metadata={"source": "computed"},
+            plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Expiratory Tidal Volume"),
+        )
+        vec = concat_and_sort_dataslices(vec)
         v_exp_cum = Channel(
             name="Cumulative Expiratory Volume",
             time_index=vec.time_index,
             data=vec.data,
-            metadata={"source" : "computed"},
+            metadata={"source": "computed"},
             plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Expiratory Volume"),
         )
         v_exp_cum.attach_label(vt_exp_cum)
         self.add_channel(v_exp_cum)
-        
 
-        #### Reveresed Airflow Volumes
-        # Todo make this conditional
-
-        def _area(y, time_index):
-            dt = (time_index[1:] - time_index[:-1]).total_seconds()
-            return float(np.sum(0.5 * (y[1:] + y[:-1]) * dt))
-
-        def _area_segment(start, end, flow, correction_factor):
-            mask = (flow.get_data().time_index >= start) & (flow.get_data().time_index <= end)
-            return _area(flow.data[mask] * correction_factor, flow.get_data().time_index[mask])
-
-        crossing = np.array(flow.get_data().time_index[flow.data == 0])
-        segment = np.array(list(zip(crossing, crossing[1:])))
-
-        segment_volume = np.array([_area_segment(start, end, flow, correction_factor) for start, end in segment])
-
-        s = crossing[:-1]
-        e = crossing[1:]
-        insp_s = inspiration.get_data().time_index[:, 0]
-        insp_e = inspiration.get_data().time_index[:, 1]
-        exp_s = expiration.get_data().time_index[:, 0]
-        exp_e = expiration.get_data().time_index[:, 1]
-
-        in_insp = (insp_s[None, :] <= s[:, None]) & (e[:, None] <= insp_e[None, :])
-        in_exp  = (exp_s[None, :]  <= s[:, None]) & (e[:, None] <= exp_e[None, :])
-
-        neg_values = segment_volume < 0
-        pos_values = segment_volume > 0
-
-        mask_insp_reverse = in_insp.any(axis=1) & neg_values
-        mask_exp_reverse  = in_exp.any(axis=1)  & pos_values
-
-        insp_reverse_volume = Label(
-            name="Inspiratory Reverse Airflow Segment Volume",
-            time_index=crossing[1:][mask_insp_reverse],
-            data=-1 * segment_volume[mask_insp_reverse],
-            metadata={"source": "computed"},
-            )
-
-        insp_reverse_airflow = IntervalLabel(
-            name="Inspiratory Reverse Airflow",
-            time_index=segment[mask_insp_reverse],
-            data=None,
-            metadata={"source": "computed"},
-            )
-
-        insp_reverse_sum = Label(
-            name="Inspiratory Reverse Airflow Sum per Inspiration",
-            time_index=insp_e,
-            data=-(in_insp.T @ np.where(neg_values, segment_volume, 0.0)),
-            metadata={"source": "computed"},
-            plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Reverse Airflow"),
+        (
+            insp_reverse_volume,
+            insp_reverse_airflow,
+            insp_reverse_sum,
+            exp_reverse_volume,
+            exp_reverse_airflow,
+            exp_reverse_sum,
+        ) = compute_reverse_airflow_labels(
+            flow,
+            inspiration,
+            expiration,
+            correction_factor,
         )
-
-        exp_reverse_volume = Label(
-            name="Expiratory Reverse Airflow Segment Volume",
-            time_index=crossing[1:][mask_exp_reverse],
-            data=segment_volume[mask_exp_reverse],
-            metadata={"source": "computed"},    
-            )
-
-        exp_reverse_airflow = IntervalLabel(
-            name="Expiratory Reverse Airflow",
-            time_index=segment[mask_exp_reverse],
-            data=None,
-            metadata={"source": "computed"},
-            )
-    
-        exp_reverse_sum = Label(
-            name="Expiratory Reverse Airflow Sum per Expiration",
-            time_index=exp_e,
-            data=(in_exp.T @ np.where(pos_values, segment_volume, 0.0)),
-            metadata={"source": "computed"},
-            plotstyle=DEFAULT_PLOT_STYLE.get("Expiratory Reverse Airflow"),
-        )
-
 
         self.add_global_label(insp_reverse_airflow)
         self.add_global_label(exp_reverse_airflow)
@@ -4368,18 +4270,8 @@ class Vitals:
         self.add_global_label(insp_reverse_sum)
         self.add_global_label(exp_reverse_sum)
 
-        return 
-        # todo
-        #-[x]max inspiratory airway pressure
-        #-[x]minimal inspiratory airway pressure
-        #-[ ]generate tabel 
-        #-[x]reverse volumes
-        #-[x]delta vt
-        #-[x]ti, te, 
-        #-[ ]I:E
-        
+        return
 
-        
     def filter_by_intervallabel(
         self,
         channel_or_label_to_filter: Channel | Label,

@@ -255,7 +255,7 @@ DEFAULT_PLOT_STYLE = {
     },
     "Pressure Interpolated": {
         "color": "mediumseagreen",
-        "label": "Pressure Interpolated", 
+        "label": "Pressure Interpolated",
         "alpha": 1,
     },
     "Product Flow Pressure": {
@@ -273,36 +273,36 @@ DEFAULT_PLOT_STYLE = {
         "label": "Product positive Flow Pressures Slope",
         "alpha": 1,
     },
-    "Volume" : {
+    "Volume": {
         "color": "dodgerblue",
-        "label": r'$\Delta V$',
+        "label": r"$\Delta V$",
         "alpha": 0.8,
     },
-    "Expiratory Volume" : {
+    "Expiratory Volume": {
         "color": "coral",
         "label": r"$V_{\mathrm{e}}$",
         "alpha": 0.8,
     },
-    "Inspiratory Volume" : {
+    "Inspiratory Volume": {
         "color": "dodgerblue",
         "label": r"$V_{\mathrm{i}}$",
         "alpha": 0.8,
     },
-    "Inspiratory Tidal Volume" : {
+    "Inspiratory Tidal Volume": {
         "color": "dodgerblue",
         "label": r"$Vt_{\mathrm{i}}$",
         "linestyle": "",
         "marker": 7,
         "alpha": 0.8,
     },
-    "Expiratory Tidal Volume" : {
+    "Expiratory Tidal Volume": {
         "color": "coral",
         "label": r"$Vt_{\mathrm{e}}$",
         "linestyle": "",
         "marker": 7,
         "alpha": 0.8,
     },
-    "Cumulative Expiratory Volume" : {
+    "Cumulative Expiratory Volume": {
         "color": "#A65628",
         "label": r"$V_{\mathrm{exp,cum}}$",
         "alpha": 0.6,
@@ -314,7 +314,7 @@ DEFAULT_PLOT_STYLE = {
         "marker": 7,
         "alpha": 0.6,
     },
-    "Cumulative Inspiratory Volume" : {
+    "Cumulative Inspiratory Volume": {
         "color": "#0072B2",
         "label": r"$V_{\mathrm{i,cum}}$",
         "alpha": 0.6,
@@ -354,6 +354,4 @@ DEFAULT_PLOT_STYLE = {
         "marker": "o",
         "alpha": 0.6,
     },
-    
-    
 }

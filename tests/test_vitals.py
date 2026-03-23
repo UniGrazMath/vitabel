@@ -1715,3 +1715,87 @@ class TestCreatePhaseIntervals:
             pd.Timestamp("2021-01-01 00:00:02"),
             pd.Timestamp("2021-01-01 00:00:10"),
         )
+
+
+def _make_vitals_with_ventilation_inputs() -> Vitals:
+    """Create a small synthetic recording for ventilation-volume tests."""
+    recording = Vitals()
+    time_index = pd.to_timedelta(np.arange(9), unit="s")
+
+    flow = Channel(
+        "Flow Interpolated",
+        time_index=time_index,
+        data=np.array([0.0, 2.0, 0.0, -2.0, 0.0, 2.0, 0.0, -2.0, 0.0]),
+    )
+    pressure = Channel(
+        "Pressure Interpolated",
+        time_index=time_index,
+        data=np.array([1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0]),
+    )
+    inspiration = IntervalLabel(
+        "Inspiration",
+        time_index=[
+            (pd.Timedelta(seconds=0), pd.Timedelta(seconds=2)),
+            (pd.Timedelta(seconds=4), pd.Timedelta(seconds=6)),
+        ],
+    )
+    expiration = IntervalLabel(
+        "Expiration",
+        time_index=[
+            (pd.Timedelta(seconds=2), pd.Timedelta(seconds=4)),
+            (pd.Timedelta(seconds=6), pd.Timedelta(seconds=8)),
+        ],
+    )
+
+    recording.add_channel(flow)
+    recording.add_channel(pressure)
+    recording.add_global_label(inspiration)
+    recording.add_global_label(expiration)
+    return recording
+
+
+class TestComputeVentilationVolumes:
+    def test_compute_ventilation_volumes_basic_outputs(self):
+        recording = _make_vitals_with_ventilation_inputs()
+
+        recording.compute_ventilation_volumes()
+
+        assert recording.get_channel("Volume")
+        assert recording.get_channel("Inspiratory Volume")
+        assert recording.get_channel("Expiratory Volume")
+        assert recording.get_channel("Cumulative Inspiratory Volume")
+        assert recording.get_channel("Cumulative Expiratory Volume")
+
+        rr = recording.get_label("Respiratory Rate")
+        np.testing.assert_allclose(rr.data, np.array([15.0]))
+
+        insp_reverse_sum = recording.get_label(
+            "Inspiratory Reverse Airflow Sum per Inspiration"
+        )
+        exp_reverse_sum = recording.get_label(
+            "Expiratory Reverse Airflow Sum per Expiration"
+        )
+        np.testing.assert_allclose(insp_reverse_sum.data, np.array([0.0, 0.0]))
+        np.testing.assert_allclose(exp_reverse_sum.data, np.array([0.0, 0.0]))
+
+        assert len(recording.data.get_labels(name="Inspiratory Reverse Airflow")) == 1
+        assert len(recording.get_label("Inspiratory Reverse Airflow")) == 0
+
+    def test_compute_ventilation_volumes_repeat_requires_overwrite(self):
+        recording = _make_vitals_with_ventilation_inputs()
+        recording.compute_ventilation_volumes()
+
+        with pytest.raises(ValueError, match="overwrite_existing_output=True"):
+            recording.compute_ventilation_volumes()
+
+    def test_compute_ventilation_volumes_repeat_with_overwrite(self):
+        recording = _make_vitals_with_ventilation_inputs()
+        recording.compute_ventilation_volumes()
+        recording.compute_ventilation_volumes(overwrite_existing_output=True)
+
+        assert len(recording.data.get_channels(name="Volume")) == 1
+        assert len(recording.data.get_channels(name="Inspiratory Volume")) == 1
+        assert len(recording.data.get_channels(name="Expiratory Volume")) == 1
+        assert len(recording.data.get_labels(name="VTinsp")) == 1
+        assert len(recording.data.get_labels(name="VTexp")) == 1
+        assert len(recording.data.get_labels(name="Respiratory Rate")) == 1
