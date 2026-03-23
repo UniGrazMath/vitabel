@@ -699,6 +699,56 @@ class Vitals:
 
         self.metadata["Recording_files_added"].append(str(filepath))
 
+    def add_edfplus(
+        self,
+        file_path: Path | str,
+        channel_names: list[str] | None = None,
+        label_names: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Load channels and labels from an EDF+ file.
+
+        Reads biosignal channels and annotation labels from an EDF+ file
+        using :func:`.utils.loading.read_edfplus` and adds them to the
+        internal data collection.
+
+        Parameters
+        ----------
+        file_path
+            Path to the EDF+ file.
+        channel_names
+            List of channel names to import. If ``None``, all channels
+            are imported.
+        label_names
+            List of label names to import. If ``None``, all labels
+            are imported.
+        metadata
+            Additional metadata to merge into the recording metadata.
+            If ``None``, no extra metadata is added.
+        """
+        if metadata is None:
+            metadata = {}
+
+        channels, labels, recording_metadata = loading.read_edfplus(file_path)
+
+        if channel_names is not None:
+            channels = [ch for ch in channels if ch.name in channel_names]
+
+        if label_names is not None:
+            labels = [lb for lb in labels if lb.name in label_names]
+
+        for ch in channels:
+            self.data.add_channel(ch)
+
+        for lb in labels:
+            self.data.add_global_label(lb)
+
+        self.metadata.update(recording_metadata)
+        if metadata:
+            self.metadata.update(metadata)
+        self.metadata["Recording_files_added"].append(str(file_path))
+
+
     def add_old_cardio_label(self, filepath: Path | str) -> None:
         """Add labels from legacy version of this package.
 
