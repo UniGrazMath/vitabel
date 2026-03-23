@@ -3629,6 +3629,7 @@ class TimeDataCollection:
         partial_interval_artist = None
         shifting_reference_time = None
         shifting_reference_axis = None
+        is_repainting = False
 
         def update_ylim_settings():
             for ax, limit_widget in zip(channel_axes, limit_widgets):
@@ -3652,13 +3653,32 @@ class TimeDataCollection:
 
             return format_string
 
+        def _axis_xlim_to_window(ax):
+            xmin, xmax = ax.get_xlim()
+            window_start = reference_time + pd.to_timedelta(xmin, unit=time_unit)
+            window_stop = reference_time + pd.to_timedelta(xmax, unit=time_unit)
+            if window_stop < window_start:
+                window_start, window_stop = window_stop, window_start
+            return window_start, window_stop
+
+        def sync_view_from_axis(ax):
+            nonlocal start, stop, shift_span, is_repainting
+
+            if is_repainting:
+                return
+
+            start, stop = _axis_xlim_to_window(ax)
+            shift_span = (stop - start) * 0.25
+            repaint_plot(start, stop)
+
         def repaint_plot(start, stop):
             nonlocal \
                 fig, \
                 channel_axes, \
                 overview_axes, \
                 overview_indicators, \
-                screen_pixel_width
+                screen_pixel_width, \
+                is_repainting
             data_width = (stop - start).total_seconds()
             screen_pixel_width, _ = fig.canvas.get_width_height()
             resolution = data_width / screen_pixel_width
@@ -3667,70 +3687,74 @@ class TimeDataCollection:
             if partial_interval_artist is not None:
                 partial_interval_artist_ax = partial_interval_artist.axes
 
-            with plt.ioff():
-                for channel_list, label_list, indicator, subax in zip(
-                    channel_lists, label_lists, x_indicators, channel_axes
-                ):
-                    old_ylims = subax.get_ylim()
-                    old_ylabel = subax.yaxis.get_label_text()
-                    subax.clear()
-                    subax.add_artist(indicator)
-                    subax.format_coord = format_coords
-                    subax.set_xlim(
-                        (
-                            (start - reference_time)
-                            / pd.to_timedelta(1, unit=time_unit),
-                            (stop - reference_time)
-                            / pd.to_timedelta(1, unit=time_unit),
+            is_repainting = True
+            try:
+                with plt.ioff():
+                    for channel_list, label_list, indicator, subax in zip(
+                        channel_lists, label_lists, x_indicators, channel_axes
+                    ):
+                        old_ylims = subax.get_ylim()
+                        old_ylabel = subax.yaxis.get_label_text()
+                        subax.clear()
+                        subax.add_artist(indicator)
+                        subax.format_coord = format_coords
+                        subax.set_xlim(
+                            (
+                                (start - reference_time)
+                                / pd.to_timedelta(1, unit=time_unit),
+                                (stop - reference_time)
+                                / pd.to_timedelta(1, unit=time_unit),
+                            )
                         )
-                    )
-                    subax.grid(True)
-                    subax.set_xlabel(f"time [{time_unit}]", labelpad=-12, fontsize=7)
-                    subax.yaxis.set_label_text(old_ylabel)
-                    if old_ylims != (0, 1):
-                        subax.set_ylim(old_ylims)
-                    for channel in channel_list:
-                        channel.plot(
-                            plot_axes=subax,
-                            start=start,
-                            stop=stop,
-                            resolution=resolution,
-                            time_unit=time_unit,
-                            reference_time=reference_time,
-                        )
+                        subax.grid(True)
+                        subax.set_xlabel(f"time [{time_unit}]", labelpad=-12, fontsize=7)
+                        subax.yaxis.set_label_text(old_ylabel)
+                        if old_ylims != (0, 1):
+                            subax.set_ylim(old_ylims)
+                        for channel in channel_list:
+                            channel.plot(
+                                plot_axes=subax,
+                                start=start,
+                                stop=stop,
+                                resolution=resolution,
+                                time_unit=time_unit,
+                                reference_time=reference_time,
+                            )
 
-                    for label in label_list:
-                        label.plot(
-                            plot_axes=subax,
-                            start=start,
-                            stop=stop,
-                            time_unit=time_unit,
-                            reference_time=reference_time,
+                        for label in label_list:
+                            label.plot(
+                                plot_axes=subax,
+                                start=start,
+                                stop=stop,
+                                time_unit=time_unit,
+                                reference_time=reference_time,
+                            )
+                        subax.legend(loc="lower right")
+                    for indicator in overview_indicators:
+                        indicator.remove()
+                    overview_indicators = [
+                        ax.axvspan(
+                            xmin=(start - reference_time)
+                            / pd.to_timedelta(1, unit=time_unit),
+                            xmax=(stop - reference_time)
+                            / pd.to_timedelta(1, unit=time_unit),
+                            color="red",
+                            alpha=0.25,
                         )
-                    subax.legend(loc="lower right")
-                for indicator in overview_indicators:
-                    indicator.remove()
-                overview_indicators = [
-                    ax.axvspan(
-                        xmin=(start - reference_time)
-                        / pd.to_timedelta(1, unit=time_unit),
-                        xmax=(stop - reference_time)
-                        / pd.to_timedelta(1, unit=time_unit),
-                        color="red",
-                        alpha=0.25,
-                    )
-                    for ax in overview_axes
-                ]
-                if shifting_reference_time is not None:
-                    shifting_reference_axis.axvline(
-                        x=(shifting_reference_time - reference_time)
-                        / pd.to_timedelta(1, unit=time_unit),
-                        color="red",
-                        linestyle="--",
-                        linewidth=1.5,
-                    )
-                if partial_interval_artist is not None:
-                    partial_interval_artist_ax.add_artist(partial_interval_artist)
+                        for ax in overview_axes
+                    ]
+                    if shifting_reference_time is not None:
+                        shifting_reference_axis.axvline(
+                            x=(shifting_reference_time - reference_time)
+                            / pd.to_timedelta(1, unit=time_unit),
+                            color="red",
+                            linestyle="--",
+                            linewidth=1.5,
+                        )
+                    if partial_interval_artist is not None:
+                        partial_interval_artist_ax.add_artist(partial_interval_artist)
+            finally:
+                is_repainting = False
             return
 
         def repaint_overview_plot():
@@ -3774,6 +3798,9 @@ class TimeDataCollection:
 
         repaint_overview_plot()
         repaint_plot(start, stop)
+
+        for ax in channel_axes:
+            ax.callbacks.connect("xlim_changed", sync_view_from_axis)
 
         interactive_plot = widgets.AppLayout(
             header=tab, center=fig.canvas, pane_heights=[1, 4, 0]
