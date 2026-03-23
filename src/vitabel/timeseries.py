@@ -198,37 +198,59 @@ class TimeSeriesBase:
                     f"but found {value} ({type(value)}) instead of {time_type}"
                 )
 
-        if time_type in (str, np.str_):
+        parsed_from_strings = time_type in (str, np.str_)
+        parse_error_types = (
+            ValueError,
+            TypeError,
+            OverflowError,
+            pd.errors.OutOfBoundsDatetime,
+            pd.errors.OutOfBoundsTimedelta,
+        )
+
+        if parsed_from_strings:
             for convert_func in [pd.to_datetime, pd.to_timedelta]:
                 try:
                     time_index = convert_func(time_index)
                     time_type = type(time_index[0])
                     break
-                except ValueError:
+                except parse_error_types:
                     pass
             else:
                 raise ValueError(
                     "The time data could not be parsed to timestamps or timedeltas"
                 )
 
-        if time_type in (pd.Timestamp, np.datetime64):  # absolute time
-            # check that time_start does not conflict
-            if time_start is not None:
-                raise ValueError("time_start cannot be passed if time data is absolute")
-            if len(time_index) > 0:
-                time_start = pd.Timestamp(time_index[0])
-            time_index = pd.to_timedelta([time - time_start for time in time_index])
+        try:
+            if time_type in (pd.Timestamp, np.datetime64):  # absolute time
+                # check that time_start does not conflict
+                if time_start is not None:
+                    raise ValueError(
+                        "time_start cannot be passed if time data is absolute"
+                    )
+                if len(time_index) > 0:
+                    time_start = pd.Timestamp(time_index[0])
+                time_index = pd.to_timedelta([time - time_start for time in time_index])
 
-        elif time_type in (pd.Timedelta, np.timedelta64):
-            time_index = pd.to_timedelta(time_index)
+            elif time_type in (pd.Timedelta, np.timedelta64):
+                time_index = pd.to_timedelta(time_index)
 
-        elif issubclass(time_type, numbers.Number):
-            time_index = pd.to_timedelta(time_index, unit=self.time_unit)
+            elif issubclass(time_type, numbers.Number):
+                time_index = pd.to_timedelta(time_index, unit=self.time_unit)
 
-        else:
-            raise ValueError(f"The time data type {time_type} is not supported")
+            else:
+                raise ValueError(f"The time data type {time_type} is not supported")
 
-        self.time_index = time_index + offset
+            self.time_index = time_index + offset
+        except (
+            OverflowError,
+            pd.errors.OutOfBoundsDatetime,
+            pd.errors.OutOfBoundsTimedelta,
+        ) as exc:
+            if parsed_from_strings:
+                raise ValueError(
+                    "The time data could not be parsed to timestamps or timedeltas"
+                ) from exc
+            raise
 
         if time_start is not None:
             time_start = pd.Timestamp(time_start)
@@ -594,14 +616,14 @@ class Channel(TimeSeriesBase):
         """Return a hash representing the data and the metadata of this channel."""
         data = {
             "name": self.name,
-            "time_index": self.time_index,
-            "data": self.data,
+            "time_index": self.numeric_time(),
+            "data": None if self.data is None else np.asarray(self.data),
             "metadata": self.metadata,
-            "time_start": self.time_start,
+            "time_start": str(self.time_start) if self.time_start is not None else None,
             "time_unit": self.time_unit,
-            "offset": self.offset,
+            "offset": self.offset / pd.to_timedelta(1, unit=self.time_unit),
         }
-        data_buffer = json.dumps(data, cls=NumpyEncoder).encode("utf-8")
+        data_buffer = json.dumps(data, cls=NumpyEncoder, sort_keys=True).encode("utf-8")
         return hashlib.sha256(data_buffer).hexdigest()
 
     def attach_label(self, label: Label):
