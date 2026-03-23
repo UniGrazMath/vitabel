@@ -1,12 +1,14 @@
 import bz2
 import shutil
 import tempfile
-import pandas as pd
-import numpy as np
-import json
-import pytest
-
+from datetime import datetime
 from pathlib import Path
+
+import json
+import numpy as np
+import pandas as pd
+import pyedflib
+import pytest
 
 from vitabel import Vitals, __version__
 from vitabel import Channel, Label, IntervalLabel
@@ -28,6 +30,32 @@ def compare_two_dictionaries(dict1, dict2):
                     return compare_two_dictionaries(dict1, dict2)
                 else:
                     return dict1[key] == dict2[key]
+
+
+def _write_test_edfplus(path: Path):
+    writer = pyedflib.EdfWriter(
+        str(path), 1, file_type=pyedflib.FILETYPE_EDFPLUS
+    )
+    writer.setStartdatetime(datetime(2024, 1, 1, 12, 0, 0))
+    writer.setSignalHeader(
+        0,
+        {
+            "label": "sig",
+            "dimension": "uV",
+            "sample_frequency": 1,
+            "physical_min": -1,
+            "physical_max": 1,
+            "digital_min": -32768,
+            "digital_max": 32767,
+            "transducer": "",
+            "prefilter": "",
+        },
+    )
+    writer.writeSamples([np.array([0.0, 1.0] * 6, dtype=float)])
+    writer.writeAnnotation(1.0, 2.5, "artifact")
+    writer.writeAnnotation(5.0, 1.0, "artifact")
+    writer.writeAnnotation(8.0, 0.5, "noise")
+    writer.close()
 
 
 def test_cardio_init():
@@ -203,18 +231,71 @@ def test_add_nonexistent_file(vitabel_test_data_dir):
     ):
         cardio_object.add_defibrillator_recording(recording_path)
 
-def test_add_edfplus(vitabel_test_data_dir):
+def test_add_edfplus(vitabel_test_data_dir, tmp_path):
     f_path = vitabel_test_data_dir / "sample_signals" / "test_generator_2.edf.bz2"
     if f_path.suffix == ".bz2":
-        unpacked_path = f_path.with_suffix("")
+        unpacked_path = tmp_path / f_path.with_suffix("").name
         with bz2.open(f_path, "rb") as src, open(unpacked_path, "wb") as dst:
             shutil.copyfileobj(src, dst)
         f_path = unpacked_path
     case = Vitals()
     case.add_edfplus(f_path)
-    assert len(case.channels) == 11 
+    assert len(case.channels) == 11
     assert len(case.labels) == 1
- 
+
+
+def test_add_edfplus_interval_annotations(tmp_path):
+    f_path = tmp_path / "interval_annotations.edf"
+    _write_test_edfplus(f_path)
+
+    case = Vitals()
+    case.add_edfplus(f_path)
+
+    artifact_label = case.get_label("EDF+ Interval: artifact")
+    noise_label = case.get_label("EDF+ Interval: noise")
+
+    assert isinstance(artifact_label, IntervalLabel)
+    assert isinstance(noise_label, IntervalLabel)
+
+    np.testing.assert_array_equal(
+        artifact_label.intervals,
+        np.array(
+            [
+                [
+                    np.datetime64("2024-01-01T12:00:01.000000000"),
+                    np.datetime64("2024-01-01T12:00:03.500000000"),
+                ],
+                [
+                    np.datetime64("2024-01-01T12:00:05.000000000"),
+                    np.datetime64("2024-01-01T12:00:06.000000000"),
+                ],
+            ],
+            dtype="datetime64[ns]",
+        ),
+    )
+    np.testing.assert_array_equal(
+        artifact_label.text_data,
+        np.array(["artifact", "artifact"], dtype=object),
+    )
+    assert artifact_label.metadata["annotation_type"] == "interval"
+    assert artifact_label.metadata["durations"] == [2.5, 1.0]
+
+    np.testing.assert_array_equal(
+        noise_label.intervals,
+        np.array(
+            [
+                [
+                    np.datetime64("2024-01-01T12:00:08.000000000"),
+                    np.datetime64("2024-01-01T12:00:08.500000000"),
+                ]
+            ],
+            dtype="datetime64[ns]",
+        ),
+    )
+    np.testing.assert_array_equal(
+        noise_label.text_data,
+        np.array(["noise"], dtype=object),
+    )
 
 
 # Comptability Function to old cardio version: No test required.

@@ -3282,9 +3282,9 @@ def read_edfplus(file_path: Path | str) -> tuple[list, list, dict]:
                 onsets = np.array([interval_onsets[i] for i in indices])
                 offsets = np.array([interval_offsets[i] for i in indices])
 
-                interval_label = vitabel.Label(
+                interval_label = vitabel.IntervalLabel(
                     name=f"EDF+ Interval: {ann_text}",
-                    time_index=onsets,
+                    time_index=np.column_stack([onsets, offsets]),
                     text_data=np.array([ann_text] * len(onsets), dtype=str),
                     time_start=rec_startdatetime,
                     time_unit="s",
@@ -3292,7 +3292,6 @@ def read_edfplus(file_path: Path | str) -> tuple[list, list, dict]:
                         "source": "EDF+",
                         "category": "annotation",
                         "annotation_type": "interval",
-                        "offsets": offsets.tolist(),
                         "durations": (offsets - onsets).tolist(),
                     },
                 )
