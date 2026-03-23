@@ -88,7 +88,8 @@ You can find the full API documentation here: [vitabel.readthedocs.io – vitals
 ### 🧾 Citing vitabel
 
 Simon Orlob, Wolfgang J. Kern, Benjamin Hackl, Jan Wnent, Jan-Thorsten Gräsner, Martin Holler  
-**Vitabel: Bridging Clinical Expertise and the Machine Learning Pipeline in Critical Care**. PREPRINT (Version 1), 29 September 2025. Research Square. [https://doi.org/10.21203/rs.3.rs-7227195/v1]()
+**Vitabel: Bridging Clinical Expertise and the Machine Learning Pipeline in Critical Care**.
+PREPRINT (Version 1), 29 September 2025. Research Square. <https://doi.org/10.21203/rs.3.rs-7227195/v1>
 
 ### 🛠️ Development
 
