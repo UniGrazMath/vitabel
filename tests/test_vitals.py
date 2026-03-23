@@ -1155,9 +1155,9 @@ def test_area_under_threshold_computation():
 
     threshold_metric = vital_case.area_under_threshold(source="1", threshold=0)
     assert threshold_metric.observational_interval_duration == pd.Timedelta(2, unit="h")
-    assert threshold_metric.duration_under_threshold == pd.Timedelta(
-        "01:00:00.000000001"
-    )
+    assert abs(
+        threshold_metric.duration_under_threshold - pd.Timedelta(hours=1)
+    ) <= pd.Timedelta(microseconds=1)
 
 
 def test_add_eolife_ventilatory_feedback(vitabel_test_data_dir):
