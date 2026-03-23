@@ -1799,3 +1799,107 @@ class TestComputeVentilationVolumes:
         assert len(recording.data.get_labels(name="VTinsp")) == 1
         assert len(recording.data.get_labels(name="VTexp")) == 1
         assert len(recording.data.get_labels(name="Respiratory Rate")) == 1
+
+    def test_compute_ventilation_volumes_exact_values(self):
+        recording = _make_vitals_with_ventilation_inputs()
+
+        recording.compute_ventilation_volumes()
+
+        volume = recording.get_channel("Volume")
+        np.testing.assert_array_equal(
+            volume.get_data().time_index,
+            pd.to_timedelta([0, 1, 2, 3], unit="s"),
+        )
+        np.testing.assert_allclose(volume.data, np.array([0.0, 1.0, 2.0, 1.0]))
+        assert [label.name for label in volume.labels] == ["VTinsp", "Delta VT"]
+
+        inspiratory_volume = recording.get_channel("Inspiratory Volume")
+        np.testing.assert_array_equal(
+            inspiratory_volume.get_data().time_index,
+            pd.to_timedelta([0, 1, 2], unit="s"),
+        )
+        np.testing.assert_allclose(inspiratory_volume.data, np.array([0.0, 1.0, 2.0]))
+
+        expiratory_volume = recording.get_channel("Expiratory Volume")
+        np.testing.assert_array_equal(
+            expiratory_volume.get_data().time_index,
+            pd.to_timedelta([0, 1, 4, 5], unit="s"),
+        )
+        np.testing.assert_allclose(expiratory_volume.data, np.zeros(4))
+
+        cumulative_insp = recording.get_channel("Cumulative Inspiratory Volume")
+        np.testing.assert_array_equal(
+            cumulative_insp.get_data().time_index,
+            pd.to_timedelta([0, 1, 2, 3], unit="s"),
+        )
+        np.testing.assert_allclose(cumulative_insp.data, np.array([0.0, 1.0, 2.0, 2.0]))
+
+        cumulative_exp = recording.get_channel("Cumulative Expiratory Volume")
+        np.testing.assert_array_equal(
+            cumulative_exp.get_data().time_index,
+            pd.to_timedelta([0, 1, 2, 3], unit="s"),
+        )
+        np.testing.assert_allclose(cumulative_exp.data, np.array([0.0, 0.0, 0.0, 1.0]))
+
+        np.testing.assert_allclose(
+            recording.get_label("Inspiratory Time").data,
+            np.array([2.0, 2.0]),
+        )
+        np.testing.assert_allclose(
+            recording.get_label("Expiratory Time").data,
+            np.array([2.0, 2.0]),
+        )
+        np.testing.assert_allclose(
+            recording.get_label("Respiratory Rate").data,
+            np.array([15.0]),
+        )
+        np.testing.assert_allclose(
+            recording.get_label("Delta VT").data, np.array([0.0])
+        )
+        np.testing.assert_allclose(recording.get_label("VTinsp").data, np.array([2.0]))
+        np.testing.assert_allclose(
+            recording.get_label("VTinsp_cum").data, np.array([2.0])
+        )
+        np.testing.assert_allclose(
+            recording.get_label("VTexp_cum").data, np.array([1.0])
+        )
+        np.testing.assert_allclose(
+            recording.get_label("Maximal Inspiratory Airway Pressure").data,
+            np.array([3.0, 3.0]),
+        )
+        np.testing.assert_allclose(
+            recording.get_label("Minimal Inspiratory Airway Pressure").data,
+            np.array([1.0, 1.0]),
+        )
+
+        vt_exp = recording.get_label("VTexp")
+        assert len(vt_exp) == 0
+        assert vt_exp.data is None
+        assert vt_exp.anchored_channel.name == "Expiratory Volume"
+
+    def test_compute_ventilation_volumes_correction_factor_scales_outputs(self):
+        recording = _make_vitals_with_ventilation_inputs()
+
+        recording.compute_ventilation_volumes(correction_factor=0.5)
+
+        np.testing.assert_allclose(
+            recording.get_channel("Volume").data,
+            np.array([0.0, 0.5, 1.0, 0.5]),
+        )
+        np.testing.assert_allclose(
+            recording.get_channel("Cumulative Inspiratory Volume").data,
+            np.array([0.0, 0.5, 1.0, 1.0]),
+        )
+        np.testing.assert_allclose(
+            recording.get_channel("Cumulative Expiratory Volume").data,
+            np.array([0.0, 0.0, 0.0, 0.5]),
+        )
+        np.testing.assert_allclose(recording.get_label("VTinsp").data, np.array([1.0]))
+        np.testing.assert_allclose(
+            recording.get_label("VTinsp_cum").data,
+            np.array([1.0]),
+        )
+        np.testing.assert_allclose(
+            recording.get_label("VTexp_cum").data,
+            np.array([0.5]),
+        )
