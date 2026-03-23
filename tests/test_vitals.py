@@ -203,6 +203,19 @@ def test_add_nonexistent_file(vitabel_test_data_dir):
     ):
         cardio_object.add_defibrillator_recording(recording_path)
 
+def test_add_edfplus(vitabel_test_data_dir):
+    f_path = Path("../tests/data/sample_signals/test_generator_2.edf.bz2")
+    if f_path.suffix == ".bz2":
+        unpacked_path = f_path.with_suffix("")
+        with bz2.open(f_path, "rb") as src, open(unpacked_path, "wb") as dst:
+            shutil.copyfileobj(src, dst)
+        f_path = unpacked_path
+    case = Vitals()
+    case.add_edfplus(f_path)
+    assert len(case.channels) == 11 
+    assert len(case.labels) == 1
+ 
+
 
 # Comptability Function to old cardio version: No test required.
 # def test_add_old_json_labels(vitabel_test_data_dir):
