@@ -1,4 +1,4 @@
-"""Helpers for ventilation-volume analysis."""
+"""Utilities for deriving ventilation-volume metrics from phase labels."""
 
 from __future__ import annotations
 
@@ -14,7 +14,22 @@ def integrate_trapezoid(
     signal: DataSlice,
     correction_factor: float = 1.0,
 ) -> DataSlice:
-    """Integrate data with the trapezoidal rule over a full data slice."""
+    """Integrate a sampled signal cumulatively with the trapezoidal rule.
+
+    Parameters
+    ----------
+    signal
+        Input samples to integrate. The time index is expected to be ordered and
+        to have the same length as the data array.
+    correction_factor
+        Multiplicative factor applied to the data before integration. This is
+        typically used for unit conversion or device-specific flow correction.
+
+    Returns
+    -------
+    DataSlice
+        Cumulative integral with the same time index as the input.
+    """
     if len(signal) < 2:
         raise ValueError("Length of time and data must be at least 2")
     if signal.data is None:
@@ -39,7 +54,18 @@ def integrate_trapezoid(
 
 
 def concat_and_sort_dataslices(dataslices: list[DataSlice]) -> DataSlice:
-    """Concatenate and sort data slices into a single data slice."""
+    """Concatenate multiple data slices and sort the result by time.
+
+    Parameters
+    ----------
+    dataslices
+        Data slices to combine. All slices are expected to contain numeric data.
+
+    Returns
+    -------
+    DataSlice
+        A single chronologically ordered data slice containing all samples.
+    """
     time_index = pd.Index(np.concatenate([ds.time_index.values for ds in dataslices]))
     data = np.concatenate([ds.data for ds in dataslices])
 
@@ -52,7 +78,20 @@ def concat_and_sort_dataslices(dataslices: list[DataSlice]) -> DataSlice:
 
 
 def argmax_dataslices(dataslices: list[DataSlice]) -> DataSlice:
-    """Compute the argmax within each data slice of a list."""
+    """Extract the maximum value and its timestamp from each data slice.
+
+    Empty slices and slices containing only ``NaN`` values are ignored.
+
+    Parameters
+    ----------
+    dataslices
+        Data slices for which peak values should be determined.
+
+    Returns
+    -------
+    DataSlice
+        One timestamp/value pair per valid input slice.
+    """
     valid = [
         ds
         for ds in dataslices
@@ -77,7 +116,20 @@ def compute_breath_duration_and_rate_labels(
     inspiration: IntervalLabel,
     expiration: IntervalLabel,
 ) -> tuple[Label, Label, Label]:
-    """Compute inspiratory/expiratory durations and respiratory rate labels."""
+    """Create breath-duration and respiratory-rate labels from phase intervals.
+
+    Parameters
+    ----------
+    inspiration
+        Inspiration intervals.
+    expiration
+        Expiration intervals.
+
+    Returns
+    -------
+    tuple[Label, Label, Label]
+        Labels for inspiratory time, expiratory time, and respiratory rate.
+    """
     insp_t = inspiration.get_data().time_index
     exp_t = expiration.get_data().time_index
 
@@ -107,7 +159,20 @@ def compute_inspiratory_pressure_labels(
     pressure: Channel,
     insp_t: np.ndarray,
 ) -> tuple[Label, Label]:
-    """Compute maximum and minimum inspiratory pressure labels."""
+    """Create per-breath inspiratory pressure summary labels.
+
+    Parameters
+    ----------
+    pressure
+        Pressure channel sampled on the common respiratory-phase time base.
+    insp_t
+        Array of inspiration intervals as ``(start, stop)`` pairs.
+
+    Returns
+    -------
+    tuple[Label, Label]
+        Labels for maximal and minimal inspiratory airway pressure.
+    """
     pressure_during_inspiration = [
         pressure.truncate(start_time=start, stop_time=stop) for start, stop in insp_t
     ]
@@ -139,7 +204,7 @@ def _compute_cycle_integrals(
     insp_t: np.ndarray,
     correction_factor: float,
 ) -> list[DataSlice]:
-    """Integrate flow over complete breathing cycles."""
+    """Integrate flow between consecutive inspiration starts."""
     return [
         integrate_trapezoid(
             signal=flow.truncate(start_time=start, stop_time=stop),
@@ -155,7 +220,29 @@ def compute_volume_channels_and_labels(
     expiration: IntervalLabel,
     correction_factor: float,
 ) -> tuple[Channel, Channel, Channel, Label, Label, Label]:
-    """Compute integrated volume channels and their tidal-volume labels."""
+    """Compute primary ventilation-volume channels and tidal-volume labels.
+
+    This function derives the net cycle integral (``Volume``), a phase-specific
+    inspiratory volume curve, a phase-specific expiratory volume curve, and the
+    associated tidal-volume summary labels.
+
+    Parameters
+    ----------
+    flow
+        Interpolated flow channel.
+    inspiration
+        Inspiration intervals.
+    expiration
+        Expiration intervals.
+    correction_factor
+        Multiplicative factor applied before integrating flow.
+
+    Returns
+    -------
+    tuple[Channel, Channel, Channel, Label, Label, Label]
+        ``(volume, inspiratory_volume, expiratory_volume, delta_vt, vt_insp,
+        vt_exp)``.
+    """
     insp_t = inspiration.get_data().time_index
     exp_t = expiration.get_data().time_index
     cycle_integrals = _compute_cycle_integrals(flow, insp_t, correction_factor)
@@ -293,7 +380,26 @@ def compute_cumulative_volume_channels(
     inspiration: IntervalLabel,
     correction_factor: float,
 ) -> tuple[Channel, Channel, Label, Label]:
-    """Compute cumulative inspiratory and expiratory volume channels."""
+    """Compute cumulative inspiratory and expiratory volume channels.
+
+    Positive and negative flow are integrated separately on a cycle basis to
+    obtain cumulative inspiratory and expiratory volume curves.
+
+    Parameters
+    ----------
+    flow
+        Interpolated flow channel.
+    inspiration
+        Inspiration intervals used to define complete breathing cycles.
+    correction_factor
+        Multiplicative factor applied before integrating flow.
+
+    Returns
+    -------
+    tuple[Channel, Channel, Label, Label]
+        ``(cumulative_inspiratory_volume, cumulative_expiratory_volume,
+        vt_insp_cum, vt_exp_cum)``.
+    """
     insp_t = inspiration.get_data().time_index
     cycle_ranges = zip(insp_t[:-1, 0], insp_t[1:, 0])
 
@@ -376,7 +482,28 @@ def compute_reverse_airflow_labels(
     expiration: IntervalLabel,
     correction_factor: float,
 ) -> tuple[Label, IntervalLabel, Label, Label, IntervalLabel, Label]:
-    """Compute reverse-airflow interval and summary labels."""
+    """Compute labels describing reverse airflow within respiratory phases.
+
+    Reverse airflow is quantified on zero-crossing-delimited flow segments and
+    then summarized per inspiration and per expiration.
+
+    Parameters
+    ----------
+    flow
+        Interpolated flow channel.
+    inspiration
+        Inspiration intervals.
+    expiration
+        Expiration intervals.
+    correction_factor
+        Multiplicative factor applied before integrating segment flow.
+
+    Returns
+    -------
+    tuple[Label, IntervalLabel, Label, Label, IntervalLabel, Label]
+        ``(insp_reverse_volume, insp_reverse_airflow, insp_reverse_sum,
+        exp_reverse_volume, exp_reverse_airflow, exp_reverse_sum)``.
+    """
 
     def _area(y, time_index):
         dt = (time_index[1:] - time_index[:-1]).total_seconds()

@@ -3922,25 +3922,30 @@ class Vitals:
         correction_factor: float = 1.0,
         overwrite_existing_output: bool = False,
     ) -> None:
-        """Compute ventilation-related volume and pressure outputs.
+        """Compute ventilation-related volume, pressure, and reverse-flow outputs.
 
-        Derived quantities are based on the interpolated flow/pressure channels
-        and on pre-computed inspiration/expiration labels.
-
-        In case reverse airflow segments are detected, the corresponding
-        segment-wise and aggregated volumes are computed as described in
-        :cite:`10.1016/j.resuscitation.2025.110511`.
+        This method expects respiratory phases to have been computed beforehand
+        with both intermediate channels and phase labels added to the
+        :class:`Vitals` object. It derives breath timing labels, inspiratory
+        pressure summaries, net and phase-specific volume channels, cumulative
+        inspiratory/expiratory volumes, and reverse-airflow summaries as
+        described in :cite:`10.1016/j.resuscitation.2025.110511`.
 
         Parameters
         ----------
-        correction_factor : float
-            Multiplicative factor applied to flow before integration.
-        overwrite_existing_output : bool
-            Whether to overwrite already existing derived ventilation outputs.
+        correction_factor
+            Multiplicative factor applied to flow before all integrations. This
+            can be used for unit conversion or sensor-specific correction.
+        overwrite_existing_output
+            If ``True``, previously derived ventilation outputs with the same
+            names are removed before recomputation. Otherwise a
+            :class:`ValueError` is raised if such outputs already exist.
 
         Returns
         -------
         None
+            The derived channels and labels are attached to the current
+            :class:`Vitals` object.
         """
         self._prepare_named_outputs(
             channel_names=[
