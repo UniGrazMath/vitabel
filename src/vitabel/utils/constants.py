@@ -6,7 +6,18 @@ __all__ = [
     "zoll_wavetype_dict",
     "LP15_all_trend_data",
     "LP15_collected_trend_data",
+    "CMH2O_TO_KPA",
+    "L_MIN_CMH2O_PER_S_TO_WATTS",
 ]
+
+
+# Unit conversion constants for respiratory mechanics
+# Pressure: 1 cmH2O = 98.0665 Pa = 0.0980665 kPa
+CMH2O_TO_KPA = 0.0980665
+
+# Conversion from (L/min) * (cmH2O/s) to Watts
+# = (1 L/min in m³/s) * (1 cmH2O in Pa) = (1/60000) * 98.0665 ≈ 0.0016344 W
+L_MIN_CMH2O_PER_S_TO_WATTS = 0.001634417
 
 
 corpuls2channelnames_dict = {

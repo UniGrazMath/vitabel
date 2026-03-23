@@ -288,6 +288,14 @@ def test_channel_time_only():
     assert channel.is_time_only()
 
 
+def test_channel_repr():
+    time = np.arange(0, 1, 0.1)
+    data = np.sin(2 * np.pi * time)
+    channel = Channel(name="HR", time_index=time, data=data)
+
+    assert repr(channel) == "Channel(HR)"
+
+
 def test_channel_get_data():
     time = np.arange(0, 5, 0.1)
     data = np.sin(2 * np.pi * time)
