@@ -134,6 +134,242 @@ def compute_inspiratory_pressure_labels(
     return p_insp_max, p_insp_min
 
 
+def _compute_cycle_integrals(
+    flow: Channel,
+    insp_t: np.ndarray,
+    correction_factor: float,
+) -> list[DataSlice]:
+    """Integrate flow over complete breathing cycles."""
+    return [
+        integrate_trapezoid(
+            signal=flow.truncate(start_time=start, stop_time=stop),
+            correction_factor=correction_factor,
+        )
+        for start, stop in zip(insp_t[:-1, 0], insp_t[1:, 0])
+    ]
+
+
+def compute_volume_channels_and_labels(
+    flow: Channel,
+    inspiration: IntervalLabel,
+    expiration: IntervalLabel,
+    correction_factor: float,
+) -> tuple[Channel, Channel, Channel, Label, Label, Label]:
+    """Compute integrated volume channels and their tidal-volume labels."""
+    insp_t = inspiration.get_data().time_index
+    exp_t = expiration.get_data().time_index
+    cycle_integrals = _compute_cycle_integrals(flow, insp_t, correction_factor)
+
+    volume_segments = [
+        DataSlice(
+            time_index=ds.time_index[:-1],
+            data=ds.data[:-1],
+            text_data=None,
+        )
+        for ds in cycle_integrals
+    ]
+    volume_data = concat_and_sort_dataslices(volume_segments)
+    volume = Channel(
+        name="Volume",
+        time_index=volume_data.time_index,
+        data=volume_data.data,
+        metadata={"source": "computed"},
+        plotstyle=DEFAULT_PLOT_STYLE.get("Volume"),
+    )
+
+    delta_vt_data = concat_and_sort_dataslices(
+        [
+            DataSlice(
+                time_index=pd.Index([ds.time_index[-1]]),
+                data=[ds.data[-1]],
+                text_data=None,
+            )
+            for ds in cycle_integrals
+        ]
+    )
+    delta_vt = Label(
+        name="Delta VT",
+        time_index=delta_vt_data.time_index,
+        data=delta_vt_data.data,
+        metadata={"source": "computed"},
+        plotstyle=DEFAULT_PLOT_STYLE.get("Delta VT"),
+    )
+
+    volume_start = volume.first_entry
+    volume_end = volume.last_entry
+    inspiration_volume_segments = [
+        volume.truncate(start_time=start, stop_time=stop)
+        for start, stop in insp_t
+        if start >= volume_start and stop <= volume_end
+    ]
+    vt_insp_data = argmax_dataslices(inspiration_volume_segments)
+    vt_insp = Label(
+        name="VTinsp",
+        time_index=vt_insp_data.time_index,
+        data=vt_insp_data.data,
+        metadata={"source": "computed"},
+        plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Tidal Volume"),
+    )
+    volume.attach_label(vt_insp)
+    volume.attach_label(delta_vt)
+
+    inspiratory_volume_parts = [
+        DataSlice(time_index=ds.get_data().time_index, data=ds.data, text_data=None)
+        for ds in inspiration_volume_segments
+    ]
+    inspiratory_plateaus = [
+        DataSlice(
+            time_index=ds.get_data().time_index[1:-1],
+            data=(
+                ds.data
+                if ds.data.size == 0
+                else np.full_like(ds.data[1:-1], ds.data[0])
+            ),
+            text_data=None,
+        )
+        for ds in [
+            volume.truncate(start_time=start, stop_time=stop)
+            for start, stop in exp_t
+            if start >= volume_start and stop < volume_end
+        ]
+    ]
+    inspiratory_volume_parts.extend(inspiratory_plateaus)
+    inspiratory_volume_data = concat_and_sort_dataslices(inspiratory_volume_parts)
+    inspiratory_volume = Channel(
+        name="Inspiratory Volume",
+        time_index=inspiratory_volume_data.time_index,
+        data=inspiratory_volume_data.data,
+        metadata={"source": "computed"},
+        plotstyle=DEFAULT_PLOT_STYLE.get("Inspiratory Volume"),
+    )
+
+    expiratory_segments = [
+        DataSlice(
+            time_index=ds.get_data().time_index[:-1],
+            data=-1.0 * (ds.data[:-1] - ds.data[0]),
+            text_data=None,
+        )
+        for ds in [
+            volume.truncate(start_time=start, stop_time=stop)
+            for start, stop in exp_t
+            if start >= volume_start and stop <= volume_end
+        ]
+    ]
+    vt_exp_data = argmax_dataslices(expiratory_segments)
+    vt_exp = Label(
+        name="VTexp",
+        time_index=vt_exp_data.time_index,
+        data=vt_exp_data.data,
+        metadata={"source": "computed"},
+        plotstyle=DEFAULT_PLOT_STYLE.get("Expiratory Tidal Volume"),
+    )
+    insp_mask = inspiration.contains_time(
+        flow.get_data().time_index.to_numpy(),
+        include_start=True,
+        include_end=False,
+    )
+    expiratory_segments.append(
+        DataSlice(
+            time_index=flow.get_data().time_index[insp_mask],
+            data=np.zeros(np.sum(insp_mask), dtype=float),
+            text_data=None,
+        )
+    )
+    expiratory_volume_data = concat_and_sort_dataslices(expiratory_segments)
+    expiratory_volume = Channel(
+        name="Expiratory Volume",
+        time_index=expiratory_volume_data.time_index,
+        data=expiratory_volume_data.data,
+        metadata={"source": "computed"},
+        plotstyle=DEFAULT_PLOT_STYLE.get("Expiratory Volume"),
+    )
+    expiratory_volume.attach_label(vt_exp)
+
+    return volume, inspiratory_volume, expiratory_volume, delta_vt, vt_insp, vt_exp
+
+
+def compute_cumulative_volume_channels(
+    flow: Channel,
+    inspiration: IntervalLabel,
+    correction_factor: float,
+) -> tuple[Channel, Channel, Label, Label]:
+    """Compute cumulative inspiratory and expiratory volume channels."""
+    insp_t = inspiration.get_data().time_index
+    cycle_ranges = zip(insp_t[:-1, 0], insp_t[1:, 0])
+
+    inspiratory_cycles = [
+        integrate_trapezoid(
+            signal=DataSlice(
+                time_index=fs.get_data().time_index[:-1],
+                data=np.maximum(fs.data[:-1], 0.0),
+                text_data=None,
+            ),
+            correction_factor=correction_factor,
+        )
+        for fs in (
+            flow.truncate(start_time=start, stop_time=stop)
+            for start, stop in cycle_ranges
+        )
+    ]
+    vt_insp_cum_data = argmax_dataslices(inspiratory_cycles)
+    vt_insp_cum = Label(
+        name="VTinsp_cum",
+        time_index=vt_insp_cum_data.time_index,
+        data=vt_insp_cum_data.data,
+        metadata={"source": "computed"},
+        plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Inspiratory Tidal Volume"),
+    )
+    inspiratory_volume_data = concat_and_sort_dataslices(inspiratory_cycles)
+    cumulative_inspiratory_volume = Channel(
+        name="Cumulative Inspiratory Volume",
+        time_index=inspiratory_volume_data.time_index,
+        data=inspiratory_volume_data.data,
+        metadata={"source": "computed"},
+        plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Inspiratory Volume"),
+    )
+    cumulative_inspiratory_volume.attach_label(vt_insp_cum)
+
+    cycle_ranges = zip(insp_t[:-1, 0], insp_t[1:, 0])
+    expiratory_cycles = [
+        integrate_trapezoid(
+            signal=DataSlice(
+                time_index=fs.get_data().time_index[:-1],
+                data=-1.0 * np.minimum(fs.data[:-1], 0.0),
+                text_data=None,
+            ),
+            correction_factor=correction_factor,
+        )
+        for fs in (
+            flow.truncate(start_time=start, stop_time=stop)
+            for start, stop in cycle_ranges
+        )
+    ]
+    vt_exp_cum_data = argmax_dataslices(expiratory_cycles)
+    vt_exp_cum = Label(
+        name="VTexp_cum",
+        time_index=vt_exp_cum_data.time_index,
+        data=vt_exp_cum_data.data,
+        metadata={"source": "computed"},
+        plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Expiratory Tidal Volume"),
+    )
+    expiratory_volume_data = concat_and_sort_dataslices(expiratory_cycles)
+    cumulative_expiratory_volume = Channel(
+        name="Cumulative Expiratory Volume",
+        time_index=expiratory_volume_data.time_index,
+        data=expiratory_volume_data.data,
+        metadata={"source": "computed"},
+        plotstyle=DEFAULT_PLOT_STYLE.get("Cumulative Expiratory Volume"),
+    )
+    cumulative_expiratory_volume.attach_label(vt_exp_cum)
+
+    return (
+        cumulative_inspiratory_volume,
+        cumulative_expiratory_volume,
+        vt_insp_cum,
+        vt_exp_cum,
+    )
+
+
 def compute_reverse_airflow_labels(
     flow: Channel,
     inspiration: IntervalLabel,
