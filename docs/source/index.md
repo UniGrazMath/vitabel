@@ -1,17 +1,19 @@
 # vitabel
 
-This package provides a toolbox for interactively annotating
-and labeling vital data.
+`vitabel` is an open-source Python framework for post-hoc loading, visualizing,
+aligning, and annotating high-resolution physiological time series.
 
-The main feature of `vitabel`, interactive plots that can be used to annotate data,
-is designed to work in Jupyter notebooks. Start a new server by running `jupyter notebook`
-(or create a new notebook in an existing server), then import the central `Vitals` class
-that acts as a container for the vital data.
+It is designed for retrospective critical care and perioperative research, where
+recordings are often heterogeneous, noisy, and distributed across multiple devices
+and file formats. `vitabel` helps turn these data into curated, analysis-ready
+datasets by combining interactive visualization, manual annotation, timeline
+alignment, and reusable processing workflows in a single Jupyter-based environment.
 
-A set of data can be added using, for example,
-the `Vitals.add_defibrillator_recording` method, or `Vitals.add_vital_db_recording`;
-various output formats of defibrillators
-and VitalDB are supported.  
+The framework provides sensible defaults for common use cases while remaining
+flexible and extensible for project-specific analysis and annotation pipelines.
+Data can be added, for example, via `Vitals.add_defibrillator_recording` or
+`Vitals.add_vital_db_recording`; multiple defibrillator formats and VitalDB-based
+workflows are supported.
 
 ![vitabel annotation demo](_static/img/vitabel-demo.png)
 
