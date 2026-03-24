@@ -37,16 +37,19 @@ identifiers:
 repository-code: 'https://github.com/unigrazmath/vitabel'
 url: 'https://vitabel.readthedocs.io/en/latest/index.html'
 abstract: >-
-  This package provides a toolbox for interactively
-  annotating and labeling vital data.
+  vitabel is an open-source Python framework for post-hoc
+  loading, visualizing, aligning, and annotating
+  high-resolution physiological time series.
 
 
-  The main feature of vitabel, interactive plots that can be
-  used to annotate data, is designed to work in Jupyter
-  notebooks. Start a new server by running jupyter notebook
-  (or create a new notebook in an existing server), then
-  import the central Vitals class that acts as a container
-  for the vital data.
+  It is designed for retrospective critical care and
+  perioperative research workflows, helping users turn
+  heterogeneous recordings from medical devices into curated,
+  analysis-ready data and labels. The framework combines
+  interactive visualization in Jupyter notebooks with
+  reusable processing and annotation workflows, while
+  remaining flexible and extensible for project-specific
+  pipelines.
 keywords:
   - python
   - timeseries
