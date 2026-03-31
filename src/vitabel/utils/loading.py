@@ -1904,8 +1904,15 @@ def read_zollcsv(filepath: Path | str, filepathxml: Path | str, quick=False):
             nonz1 = nonz[0]
             nonz2 = nonz[-1]
         except IndexError:
-            nonz1 = 0
-            nonz2 = -1
+            # Channel exists in the recording but contains only zeros (e.g. a lead
+            # that was connected but not actively recording). Store it as an empty
+            # DataFrame so downstream code can detect its presence without carrying
+            # a large array of meaningless zeros.
+            newname = new_names(key)
+            df = pd.DataFrame(columns=pd.Index([newname]))
+            df.index.name = "timestamp"
+            data[newname] = df
+            continue
         series = series[nonz1:nonz2]
         timestamps1 = timestamps1[nonz1:nonz2]
         newname = new_names(key)
@@ -1924,8 +1931,15 @@ def read_zollcsv(filepath: Path | str, filepathxml: Path | str, quick=False):
             nonz1 = nonz[0]
             nonz2 = nonz[-1]
         except IndexError:
-            nonz1 = 0
-            nonz2 = -1
+            # Channel exists in the recording but contains only zeros (e.g. a lead
+            # that was connected but not actively recording). Store it as an empty
+            # DataFrame so downstream code can detect its presence without carrying
+            # a large array of meaningless zeros.
+            newname = new_names(key)
+            df = pd.DataFrame(columns=pd.Index([newname]))
+            df.index.name = "timestamp"
+            data[newname] = df
+            continue
         series = series[nonz1:nonz2]
         timestamps1 = timestamps1[nonz1:nonz2]
 
