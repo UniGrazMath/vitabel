@@ -1942,6 +1942,8 @@ def read_zollcsv(filepath: Path | str, filepathxml: Path | str, quick=False):
         series = np.array(a[key])
         timestamps1 = timestamps[series != 0]
         series = series[series != 0]
+        if len(timestamps1) == 0:
+            continue
         no_double_entries = (
             pd.Series(timestamps1[1:] - timestamps1[:-1]).dt.total_seconds() > 0.01
         )
@@ -1956,7 +1958,8 @@ def read_zollcsv(filepath: Path | str, filepathxml: Path | str, quick=False):
         df = pd.DataFrame(df)
         df.set_index("timestamp", inplace=True)
         data[newname] = df
-    data["CompDisp"]["CompDisp"] *= 2.54
+    if "CompDisp" in data:
+        data["CompDisp"]["CompDisp"] *= 2.54
 
     pat_dat = {}
 
@@ -1980,12 +1983,16 @@ def read_zollcsv(filepath: Path | str, filepathxml: Path | str, quick=False):
         pat_dat["Keys"]["Unit"][key] = "mV"
 
     for key in ["CompDisp", "CompRate"]:
+        if key not in data:
+            continue
         pat_dat["Keys"]["Type"][key] = "Trend data"
         pat_dat["Keys"]["Start"][key] = data[key].first_valid_index()
         pat_dat["Keys"]["Stop"][key] = data[key].last_valid_index()
         pat_dat["Keys"]["Length"][key] = len(data[key][key])
-    pat_dat["Keys"]["Unit"]["CompDisp"] = "cm"
-    pat_dat["Keys"]["Unit"]["CompRate"] = "1/min"
+    if "CompDisp" in data:
+        pat_dat["Keys"]["Unit"]["CompDisp"] = "cm"
+    if "CompRate" in data:
+        pat_dat["Keys"]["Unit"]["CompRate"] = "1/min"
 
     pat_dat["Keys"] = (
         pd.DataFrame.from_dict(pat_dat["Keys"], orient="columns")
