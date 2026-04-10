@@ -1359,6 +1359,11 @@ class Label(TimeSeriesBase):
 
             time_data = time_data - self.time_start
 
+        if isinstance(time_data, Timedelta) and len(self.time_index) > 0:
+            self.time_index = self.time_index.as_unit(
+                np.datetime_data(time_data.to_timedelta64().dtype)[0]
+            )
+
         [insert_index] = self.time_index.searchsorted([time_data])
         self.time_index = self.time_index.insert(insert_index, time_data)
 
