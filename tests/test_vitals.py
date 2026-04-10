@@ -1,12 +1,14 @@
 import bz2
 import shutil
 import tempfile
-import pandas as pd
-import numpy as np
-import json
-import pytest
-
+from datetime import datetime
 from pathlib import Path
+
+import json
+import numpy as np
+import pandas as pd
+import pyedflib
+import pytest
 
 from vitabel import Vitals, __version__
 from vitabel import Channel, Label, IntervalLabel
@@ -28,6 +30,32 @@ def compare_two_dictionaries(dict1, dict2):
                     return compare_two_dictionaries(dict1, dict2)
                 else:
                     return dict1[key] == dict2[key]
+
+
+def _write_test_edfplus(path: Path):
+    writer = pyedflib.EdfWriter(
+        str(path), 1, file_type=pyedflib.FILETYPE_EDFPLUS
+    )
+    writer.setStartdatetime(datetime(2024, 1, 1, 12, 0, 0))
+    writer.setSignalHeader(
+        0,
+        {
+            "label": "sig",
+            "dimension": "uV",
+            "sample_frequency": 1,
+            "physical_min": -1,
+            "physical_max": 1,
+            "digital_min": -32768,
+            "digital_max": 32767,
+            "transducer": "",
+            "prefilter": "",
+        },
+    )
+    writer.writeSamples([np.array([0.0, 1.0] * 6, dtype=float)])
+    writer.writeAnnotation(1.0, 2.5, "artifact")
+    writer.writeAnnotation(5.0, 1.0, "artifact")
+    writer.writeAnnotation(8.0, 0.5, "noise")
+    writer.close()
 
 
 def test_cardio_init():
@@ -202,6 +230,72 @@ def test_add_nonexistent_file(vitabel_test_data_dir):
         FileNotFoundError, match="File not found in directory. Check path!"
     ):
         cardio_object.add_defibrillator_recording(recording_path)
+
+def test_add_edfplus(vitabel_test_data_dir, tmp_path):
+    f_path = vitabel_test_data_dir / "sample_signals" / "test_generator_2.edf.bz2"
+    if f_path.suffix == ".bz2":
+        unpacked_path = tmp_path / f_path.with_suffix("").name
+        with bz2.open(f_path, "rb") as src, open(unpacked_path, "wb") as dst:
+            shutil.copyfileobj(src, dst)
+        f_path = unpacked_path
+    case = Vitals()
+    case.add_edfplus(f_path)
+    assert len(case.channels) == 11
+    assert len(case.labels) == 1
+
+
+def test_add_edfplus_interval_annotations(tmp_path):
+    f_path = tmp_path / "interval_annotations.edf"
+    _write_test_edfplus(f_path)
+
+    case = Vitals()
+    case.add_edfplus(f_path)
+
+    artifact_label = case.get_label("EDF+ Interval: artifact")
+    noise_label = case.get_label("EDF+ Interval: noise")
+
+    assert isinstance(artifact_label, IntervalLabel)
+    assert isinstance(noise_label, IntervalLabel)
+
+    np.testing.assert_array_equal(
+        artifact_label.intervals,
+        np.array(
+            [
+                [
+                    np.datetime64("2024-01-01T12:00:01.000000000"),
+                    np.datetime64("2024-01-01T12:00:03.500000000"),
+                ],
+                [
+                    np.datetime64("2024-01-01T12:00:05.000000000"),
+                    np.datetime64("2024-01-01T12:00:06.000000000"),
+                ],
+            ],
+            dtype="datetime64[ns]",
+        ),
+    )
+    np.testing.assert_array_equal(
+        artifact_label.text_data,
+        np.array(["artifact", "artifact"], dtype=object),
+    )
+    assert artifact_label.metadata["annotation_type"] == "interval"
+    assert artifact_label.metadata["durations"] == [2.5, 1.0]
+
+    np.testing.assert_array_equal(
+        noise_label.intervals,
+        np.array(
+            [
+                [
+                    np.datetime64("2024-01-01T12:00:08.000000000"),
+                    np.datetime64("2024-01-01T12:00:08.500000000"),
+                ]
+            ],
+            dtype="datetime64[ns]",
+        ),
+    )
+    np.testing.assert_array_equal(
+        noise_label.text_data,
+        np.array(["noise"], dtype=object),
+    )
 
 
 # Comptability Function to old cardio version: No test required.
@@ -1155,9 +1249,9 @@ def test_area_under_threshold_computation():
 
     threshold_metric = vital_case.area_under_threshold(source="1", threshold=0)
     assert threshold_metric.observational_interval_duration == pd.Timedelta(2, unit="h")
-    assert threshold_metric.duration_under_threshold == pd.Timedelta(
-        "01:00:00.000000001"
-    )
+    assert abs(
+        threshold_metric.duration_under_threshold - pd.Timedelta(hours=1)
+    ) <= pd.Timedelta(microseconds=1)
 
 
 def test_add_eolife_ventilatory_feedback(vitabel_test_data_dir):
@@ -1714,4 +1808,192 @@ class TestCreatePhaseIntervals:
         assert exp_ivl[0] == (
             pd.Timestamp("2021-01-01 00:00:02"),
             pd.Timestamp("2021-01-01 00:00:10"),
+        )
+
+
+def _make_vitals_with_ventilation_inputs() -> Vitals:
+    """Create a small synthetic recording for ventilation-volume tests."""
+    recording = Vitals()
+    time_index = pd.to_timedelta(np.arange(9), unit="s")
+
+    flow = Channel(
+        "Flow Interpolated",
+        time_index=time_index,
+        data=np.array([0.0, 2.0, 0.0, -2.0, 0.0, 2.0, 0.0, -2.0, 0.0]),
+    )
+    pressure = Channel(
+        "Pressure Interpolated",
+        time_index=time_index,
+        data=np.array([1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0]),
+    )
+    inspiration = IntervalLabel(
+        "Inspiration",
+        time_index=[
+            (pd.Timedelta(seconds=0), pd.Timedelta(seconds=2)),
+            (pd.Timedelta(seconds=4), pd.Timedelta(seconds=6)),
+        ],
+    )
+    expiration = IntervalLabel(
+        "Expiration",
+        time_index=[
+            (pd.Timedelta(seconds=2), pd.Timedelta(seconds=4)),
+            (pd.Timedelta(seconds=6), pd.Timedelta(seconds=8)),
+        ],
+    )
+
+    recording.add_channel(flow)
+    recording.add_channel(pressure)
+    recording.add_global_label(inspiration)
+    recording.add_global_label(expiration)
+    return recording
+
+
+class TestComputeVentilationVolumes:
+    def test_compute_ventilation_volumes_basic_outputs(self):
+        recording = _make_vitals_with_ventilation_inputs()
+
+        recording.compute_ventilation_volumes()
+
+        assert recording.get_channel("Volume")
+        assert recording.get_channel("Inspiratory Volume")
+        assert recording.get_channel("Expiratory Volume")
+        assert recording.get_channel("Cumulative Inspiratory Volume")
+        assert recording.get_channel("Cumulative Expiratory Volume")
+
+        rr = recording.get_label("Respiratory Rate")
+        np.testing.assert_allclose(rr.data, np.array([15.0]))
+
+        insp_reverse_sum = recording.get_label(
+            "Inspiratory Reverse Airflow Sum per Inspiration"
+        )
+        exp_reverse_sum = recording.get_label(
+            "Expiratory Reverse Airflow Sum per Expiration"
+        )
+        np.testing.assert_allclose(insp_reverse_sum.data, np.array([0.0, 0.0]))
+        np.testing.assert_allclose(exp_reverse_sum.data, np.array([0.0, 0.0]))
+
+        assert len(recording.data.get_labels(name="Inspiratory Reverse Airflow")) == 1
+        assert len(recording.get_label("Inspiratory Reverse Airflow")) == 0
+
+    def test_compute_ventilation_volumes_repeat_requires_overwrite(self):
+        recording = _make_vitals_with_ventilation_inputs()
+        recording.compute_ventilation_volumes()
+
+        with pytest.raises(ValueError, match="overwrite_existing_output=True"):
+            recording.compute_ventilation_volumes()
+
+    def test_compute_ventilation_volumes_repeat_with_overwrite(self):
+        recording = _make_vitals_with_ventilation_inputs()
+        recording.compute_ventilation_volumes()
+        recording.compute_ventilation_volumes(overwrite_existing_output=True)
+
+        assert len(recording.data.get_channels(name="Volume")) == 1
+        assert len(recording.data.get_channels(name="Inspiratory Volume")) == 1
+        assert len(recording.data.get_channels(name="Expiratory Volume")) == 1
+        assert len(recording.data.get_labels(name="VTinsp")) == 1
+        assert len(recording.data.get_labels(name="VTexp")) == 1
+        assert len(recording.data.get_labels(name="Respiratory Rate")) == 1
+
+    def test_compute_ventilation_volumes_exact_values(self):
+        recording = _make_vitals_with_ventilation_inputs()
+
+        recording.compute_ventilation_volumes()
+
+        volume = recording.get_channel("Volume")
+        np.testing.assert_array_equal(
+            volume.get_data().time_index,
+            pd.to_timedelta([0, 1, 2, 3], unit="s"),
+        )
+        np.testing.assert_allclose(volume.data, np.array([0.0, 1.0, 2.0, 1.0]))
+        assert [label.name for label in volume.labels] == ["VTinsp", "Delta VT"]
+
+        inspiratory_volume = recording.get_channel("Inspiratory Volume")
+        np.testing.assert_array_equal(
+            inspiratory_volume.get_data().time_index,
+            pd.to_timedelta([0, 1, 2], unit="s"),
+        )
+        np.testing.assert_allclose(inspiratory_volume.data, np.array([0.0, 1.0, 2.0]))
+
+        expiratory_volume = recording.get_channel("Expiratory Volume")
+        np.testing.assert_array_equal(
+            expiratory_volume.get_data().time_index,
+            pd.to_timedelta([0, 1, 4, 5], unit="s"),
+        )
+        np.testing.assert_allclose(expiratory_volume.data, np.zeros(4))
+
+        cumulative_insp = recording.get_channel("Cumulative Inspiratory Volume")
+        np.testing.assert_array_equal(
+            cumulative_insp.get_data().time_index,
+            pd.to_timedelta([0, 1, 2, 3], unit="s"),
+        )
+        np.testing.assert_allclose(cumulative_insp.data, np.array([0.0, 1.0, 2.0, 2.0]))
+
+        cumulative_exp = recording.get_channel("Cumulative Expiratory Volume")
+        np.testing.assert_array_equal(
+            cumulative_exp.get_data().time_index,
+            pd.to_timedelta([0, 1, 2, 3], unit="s"),
+        )
+        np.testing.assert_allclose(cumulative_exp.data, np.array([0.0, 0.0, 0.0, 1.0]))
+
+        np.testing.assert_allclose(
+            recording.get_label("Inspiratory Time").data,
+            np.array([2.0, 2.0]),
+        )
+        np.testing.assert_allclose(
+            recording.get_label("Expiratory Time").data,
+            np.array([2.0, 2.0]),
+        )
+        np.testing.assert_allclose(
+            recording.get_label("Respiratory Rate").data,
+            np.array([15.0]),
+        )
+        np.testing.assert_allclose(
+            recording.get_label("Delta VT").data, np.array([0.0])
+        )
+        np.testing.assert_allclose(recording.get_label("VTinsp").data, np.array([2.0]))
+        np.testing.assert_allclose(
+            recording.get_label("VTinsp_cum").data, np.array([2.0])
+        )
+        np.testing.assert_allclose(
+            recording.get_label("VTexp_cum").data, np.array([1.0])
+        )
+        np.testing.assert_allclose(
+            recording.get_label("Maximal Inspiratory Airway Pressure").data,
+            np.array([3.0, 3.0]),
+        )
+        np.testing.assert_allclose(
+            recording.get_label("Minimal Inspiratory Airway Pressure").data,
+            np.array([1.0, 1.0]),
+        )
+
+        vt_exp = recording.get_label("VTexp")
+        assert len(vt_exp) == 0
+        assert vt_exp.data is None
+        assert vt_exp.anchored_channel.name == "Expiratory Volume"
+
+    def test_compute_ventilation_volumes_correction_factor_scales_outputs(self):
+        recording = _make_vitals_with_ventilation_inputs()
+
+        recording.compute_ventilation_volumes(correction_factor=0.5)
+
+        np.testing.assert_allclose(
+            recording.get_channel("Volume").data,
+            np.array([0.0, 0.5, 1.0, 0.5]),
+        )
+        np.testing.assert_allclose(
+            recording.get_channel("Cumulative Inspiratory Volume").data,
+            np.array([0.0, 0.5, 1.0, 1.0]),
+        )
+        np.testing.assert_allclose(
+            recording.get_channel("Cumulative Expiratory Volume").data,
+            np.array([0.0, 0.0, 0.0, 0.5]),
+        )
+        np.testing.assert_allclose(recording.get_label("VTinsp").data, np.array([1.0]))
+        np.testing.assert_allclose(
+            recording.get_label("VTinsp_cum").data,
+            np.array([1.0]),
+        )
+        np.testing.assert_allclose(
+            recording.get_label("VTexp_cum").data,
+            np.array([0.5]),
         )

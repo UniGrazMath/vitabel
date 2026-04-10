@@ -3,7 +3,7 @@
     <td width="170"><img src="https://raw.githubusercontent.com/UniGrazMath/vitabel/main/assets/logo/Vitabel_Logo.png" width="150"></td>
     <td width="850">
       <b><h1 style="margin: 0;">vitabel</h1></b>
-      <p style="margin-top: 0;">a toolbox for interactively annotating and labeling vital data</p>
+      <p style="margin-top: 0;">an open-source Python framework for visualizing and labeling high-resolution physiological data</p>
     </td>
   </tr>
 </table>
@@ -14,7 +14,7 @@
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/vitabel/badges/version.svg)](https://anaconda.org/conda-forge/vitabel)
 
 
-In a nutshell, the vitabel package enables interactive loading, processing, and annotation of vital medical time-series data (e.g., from defibrillators, anesthesia records, or critical care monitors) within a Jupyter notebook. By structuring and labeling data efficiently and intuitively, it paves the way for AI-driven analysis.
+In a nutshell, `vitabel` is an open-source Python framework for post-hoc loading, visualizing, aligning, and annotating high-resolution physiological time-series data within Jupyter notebooks. It is designed for retrospective critical care and perioperative research workflows, helping users turn heterogeneous recordings from devices such as defibrillators, anaesthesia systems, and patient monitors into curated, analysis-ready data and labels for downstream signal processing, statistics, and machine learning.
 
 ![vitabel annotation screenshot](assets/vitabel-demo.png)
 
@@ -43,12 +43,12 @@ GitHub](https://github.com/UniGrazMath/vitabel) by running
 $ pip install git+https://github.com/UniGrazMath/vitabel.git
 ```
 
-The main feature of `vitabel`, interactive plots that can be used to annotate data,
-is designed to work in Jupyter notebooks. Start a new server by running `jupyter notebook`
-(or create a new notebook in an existing server), then import the central `Vitals` class
-that acts as a container for the vital data. A set of data can be added using, for example,
-the `Vitals.add_defibrillator_recording` method, or `Vitals.add_vital_db_recording`; various output formats of defibrillators
-and VitalDB are supported.  
+`vitabel` is built around interactive, notebook-based workflows. Its central `Vitals`
+class acts as a container for channels, labels, and metadata, allowing users to combine
+recordings from different sources, align timelines, add derived labels, and curate data
+for downstream analysis. Data can be loaded, for example, via
+`Vitals.add_defibrillator_recording` or `Vitals.add_vital_db_recording`; multiple
+output formats of defibrillators and VitalDB-based workflows are supported.
 
 A typical use of this package reads as follows:
 
@@ -83,12 +83,15 @@ contained in the [examples directory](/examples/).
 
 ### 📚 Documentation
 
-You can find the full API documentation here: [vitabel.readthedocs.io – vitals module](https://vitabel.readthedocs.io/en/latest/autoapi/vitabel/vitals/index.html)
+The documentation provides an overview of the framework, installation and usage guidance,
+worked examples, and full API references. Start here:
+[vitabel.readthedocs.io](https://vitabel.readthedocs.io/en/latest/)
 
 ### 🧾 Citing vitabel
 
 Simon Orlob, Wolfgang J. Kern, Benjamin Hackl, Jan Wnent, Jan-Thorsten Gräsner, Martin Holler  
-**Vitabel: Bridging Clinical Expertise and the Machine Learning Pipeline in Critical Care**. PREPRINT (Version 1), 29 September 2025. Research Square. [https://doi.org/10.21203/rs.3.rs-7227195/v1]()
+**Vitabel: Bridging Clinical Expertise and the Machine Learning Pipeline in Critical Care**.
+PREPRINT (Version 1), 29 September 2025. Research Square. <https://doi.org/10.21203/rs.3.rs-7227195/v1>
 
 ### 🛠️ Development
 

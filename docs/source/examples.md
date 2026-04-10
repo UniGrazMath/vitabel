@@ -1,7 +1,9 @@
 # Examples
 
-The following comprehensive examples illustrate how `vitabel` can be
-used in different real-world scenarios.
+The following notebooks illustrate `vitabel` from two complementary angles:
+
+- a foundational example introducing the core data structures used throughout the package
+- application-oriented use cases based on realistic critical care and perioperative workflows
 
 You can download the associated Jupyter notebooks as well as the
 corresponding data from [our GitHub repository](https://github.com/UniGrazMath/vitabel/tree/main/examples).
@@ -11,6 +13,7 @@ browser using our
 
 ```{toctree}
 :maxdepth: 3
+examples/fundamentals
 examples/01_defibrillator
 examples/02_animal_lab
 examples/03_anaesthesia_chart

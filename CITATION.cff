@@ -1,0 +1,63 @@
+cff-version: 1.2.0
+title: vitabel
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Simon
+    family-names: Orlob
+    affiliation: Medical University of Innsbruck
+    orcid: 'https://orcid.org/0000-0001-7799-4822'
+  - given-names: Wolfgang J.
+    family-names: Kern
+    orcid: 'https://orcid.org/0000-0001-5080-382X'
+  - given-names: Benjamin
+    family-names: Hackl
+    affiliation: University of Graz
+    orcid: 'https://orcid.org/0000-0003-2998-9599'
+  - given-names: Jan
+    family-names: Wnent
+    affiliation: University Hospital Schleswig-Holstein
+    orcid: 'https://orcid.org/0000-0002-8685-858X'
+  - given-names: Jan-Thorsten
+    family-names: Gräsner
+    affiliation: University Hospital Schleswig-Holstein
+    orcid: 'https://orcid.org/0000-0001-8143-0376'
+  - given-names: Martin
+    family-names: Holler
+    affiliation: University of Graz
+    orcid: 'https://orcid.org/0000-0002-2895-2375'
+identifiers:
+  - type: doi
+    value: 10.21203/rs.3.rs-7227195
+    description: >-
+      Preprint of the companion article related to release
+      v0.1.0.
+repository-code: 'https://github.com/unigrazmath/vitabel'
+url: 'https://vitabel.readthedocs.io/en/latest/index.html'
+abstract: >-
+  vitabel is an open-source Python framework for post-hoc
+  loading, visualizing, aligning, and annotating
+  high-resolution physiological time series.
+
+
+  It is designed for retrospective critical care and
+  perioperative research workflows, helping users turn
+  heterogeneous recordings from medical devices into curated,
+  analysis-ready data and labels. The framework combines
+  interactive visualization in Jupyter notebooks with
+  reusable processing and annotation workflows, while
+  remaining flexible and extensible for project-specific
+  pipelines.
+keywords:
+  - python
+  - timeseries
+  - jupyter notebook
+  - health data
+  - interactive visualizations
+  - interactive annotation
+license: MIT
+version: v0.1.1
+date-released: '2026-03-24'
+

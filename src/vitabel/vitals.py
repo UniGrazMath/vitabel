@@ -19,6 +19,13 @@ from typing import Any, Literal
 from IPython.display import display
 from pathlib import Path
 
+from vitabel.analysis.ventilation.volumes import (
+    compute_breath_duration_and_rate_labels,
+    compute_cumulative_volume_channels,
+    compute_inspiratory_pressure_labels,
+    compute_reverse_airflow_labels,
+    compute_volume_channels_and_labels,
+)
 from vitabel.timeseries import (
     Channel,
     Label,
@@ -691,6 +698,56 @@ class Vitals:
                 self.add_global_label(label)
 
         self.metadata["Recording_files_added"].append(str(filepath))
+
+    def add_edfplus(
+        self,
+        file_path: Path | str,
+        channel_names: list[str] | None = None,
+        label_names: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Load channels and labels from an EDF+ file.
+
+        Reads biosignal channels and annotation labels from an EDF+ file
+        using :func:`.utils.loading.read_edfplus` and adds them to the
+        internal data collection.
+
+        Parameters
+        ----------
+        file_path
+            Path to the EDF+ file.
+        channel_names
+            List of channel names to import. If ``None``, all channels
+            are imported.
+        label_names
+            List of label names to import. If ``None``, all labels
+            are imported.
+        metadata
+            Additional metadata to merge into the recording metadata.
+            If ``None``, no extra metadata is added.
+        """
+        if metadata is None:
+            metadata = {}
+
+        channels, labels, recording_metadata = loading.read_edfplus(file_path)
+
+        if channel_names is not None:
+            channels = [ch for ch in channels if ch.name in channel_names]
+
+        if label_names is not None:
+            labels = [lb for lb in labels if lb.name in label_names]
+
+        for ch in channels:
+            self.data.add_channel(ch)
+
+        for lb in labels:
+            self.data.add_global_label(lb)
+
+        self.metadata.update(recording_metadata)
+        if metadata:
+            self.metadata.update(metadata)
+        self.metadata["Recording_files_added"].append(str(file_path))
+
 
     def add_old_cardio_label(self, filepath: Path | str) -> None:
         """Add labels from legacy version of this package.
@@ -3422,8 +3479,8 @@ class Vitals:
         Derives the indices of the start of expirations from the product of flow and slope of pressure.
 
         This function identifies segments of the product that are above a certain threshold
-        and finds the preceding zero crossing before each segment as potenital expiration start.
-        It returns the first candidate between two inspritation starts as the expiration start.
+        and finds the preceding zero crossing before each segment as potential expiration start.
+        It returns the first candidate between two inspiration starts as the expiration start.
 
         Parameters
         ----------
@@ -3634,6 +3691,56 @@ class Vitals:
             channel.plotstyle = DEFAULT_PLOT_STYLE.get(channel.name)
             self.add_channel(channel)
 
+    def _prepare_named_outputs(
+        self,
+        *,
+        channel_names: list[str],
+        label_names: list[str],
+        overwrite_existing_output: bool,
+    ) -> None:
+        """Validate or remove pre-existing named outputs.
+
+        Parameters
+        ----------
+        channel_names
+            Names of channels produced by the computation.
+        label_names
+            Names of labels produced by the computation.
+        overwrite_existing_output
+            If ``True``, all matching outputs are removed before new ones are
+            created. Otherwise, a :class:`ValueError` is raised if matching
+            outputs already exist.
+        """
+        existing_channel_names = sorted(
+            {
+                channel.name
+                for name in channel_names
+                for channel in self.data.get_channels(name=name)
+            }
+        )
+        existing_label_names = sorted(
+            {
+                label.name
+                for name in label_names
+                for label in self.data.get_labels(name=name)
+            }
+        )
+
+        existing_outputs = existing_channel_names + existing_label_names
+        if existing_outputs and not overwrite_existing_output:
+            raise ValueError(
+                "Outputs already exist in Vitals object. "
+                f"Use overwrite_existing_output=True to replace: {existing_outputs}"
+            )
+
+        for name in channel_names:
+            for channel in list(self.data.get_channels(name=name)):
+                self.remove_channel(channel=channel)
+
+        for name in label_names:
+            for label in list(self.data.get_labels(name=name)):
+                self.remove_label(label=label)
+
     def compute_respiratory_phases(
         self,
         flow: Channel,
@@ -3643,9 +3750,12 @@ class Vitals:
         add_labels: bool = True,
         add_intermediate_channels: bool = False,
         return_landmarks: bool = False,
+        overwrite_existing_output: bool = False,
     ) -> None:
         """
-        Derives the respiratory phases from air flow and airway pressure channels and adds them as global labels.
+        Derives the respiratory phases from air flow and airway pressure channels
+        and adds them as global labels as described in Orlob et al.
+        :cite:`10.1016/j.resuscitation.2026.111050`.
 
         It expects flow in L/min and pressure in cmH₂O.
 
@@ -3689,6 +3799,9 @@ class Vitals:
         return_landmarks: bool
             Whether to return the computed landmarks.
 
+        overwrite_existing_output: bool
+            Whether to overwrite existing respiratory phase labels and intermediate channels if they already exist in the Vitals object. If False and such labels exist, the function will raise an exception to avoid unintentional overwriting.
+
         Returns
         -------
         None or :class:`.RespPhases`
@@ -3700,6 +3813,31 @@ class Vitals:
             - Flow: Sensirion SFM3000, recording at ~200Hz in slm
             - Pressure: All Sensors DLVR-L60D, recording at ~500Hz in cmH₂O
         """
+
+        self._prepare_named_outputs(
+            channel_names=(
+                [
+                    "Flow Interpolated",
+                    "Pressure Interpolated",
+                    "Product Flow Pressure",
+                    "Slope Pressure",
+                    "Product negative Flow Pressures Slope",
+                ]
+                if add_intermediate_channels
+                else []
+            ),
+            label_names=(
+                [
+                    "Inspiration Begin",
+                    "Expiration Begin",
+                    "Inspiration",
+                    "Expiration",
+                ]
+                if add_labels
+                else []
+            ),
+            overwrite_existing_output=overwrite_existing_output,
+        )
 
         # Interpolate Flow and Pressure to have a common index and crosses of y=0
         # f_interpolated, p_interpolated = _resample_to_common_index(flow, pressure)
@@ -3794,6 +3932,161 @@ class Vitals:
             )
         else:
             return
+
+    def _require_ventilation_volume_inputs(
+        self,
+    ) -> tuple[Channel, Channel, IntervalLabel, IntervalLabel]:
+        """Return validated inputs required for ventilation-volume computation."""
+        if "Flow Interpolated" not in self.get_channel_names():
+            raise ValueError(
+                "Channel 'Flow Interpolated' not found in Vitals object. "
+                "Please compute respiratory phases with add_intermediate_channels=True first."
+            )
+
+        if "Pressure Interpolated" not in self.get_channel_names():
+            raise ValueError(
+                "Channel 'Pressure Interpolated' not found in Vitals object. "
+                "Please compute respiratory phases with add_intermediate_channels=True first."
+            )
+
+        if (
+            "Inspiration" not in self.get_label_names()
+            or "Expiration" not in self.get_label_names()
+        ):
+            raise ValueError(
+                "Labels 'Inspiration' and 'Expiration' not found in Vitals object. "
+                "Please compute respiratory phases with add_labels=True first."
+            )
+
+        flow = self.get_channel("Flow Interpolated")
+        pressure = self.get_channel("Pressure Interpolated")
+        inspiration = self.get_label("Inspiration")
+        expiration = self.get_label("Expiration")
+
+        assert isinstance(inspiration, IntervalLabel)
+        assert isinstance(expiration, IntervalLabel)
+        return flow, pressure, inspiration, expiration
+
+    def compute_ventilation_volumes(
+        self,
+        correction_factor: float = 1.0,
+        overwrite_existing_output: bool = False,
+    ) -> None:
+        """Compute ventilation-related volume, pressure, and reverse-flow outputs.
+
+        This method expects respiratory phases to have been computed beforehand
+        with both intermediate channels and phase labels added to the
+        :class:`Vitals` object. It derives breath timing labels, inspiratory
+        pressure summaries, net and phase-specific volume channels, cumulative
+        inspiratory/expiratory volumes, and reverse-airflow summaries as
+        described in :cite:`10.1016/j.resuscitation.2025.110511`.
+
+        Parameters
+        ----------
+        correction_factor
+            Multiplicative factor applied to flow before all integrations. This
+            can be used for unit conversion or sensor-specific correction.
+        overwrite_existing_output
+            If ``True``, previously derived ventilation outputs with the same
+            names are removed before recomputation. Otherwise a
+            :class:`ValueError` is raised if such outputs already exist.
+
+        Returns
+        -------
+        None
+            The derived channels and labels are attached to the current
+            :class:`Vitals` object.
+        """
+        self._prepare_named_outputs(
+            channel_names=[
+                "Volume",
+                "Inspiratory Volume",
+                "Expiratory Volume",
+                "Cumulative Inspiratory Volume",
+                "Cumulative Expiratory Volume",
+            ],
+            label_names=[
+                "Inspiratory Time",
+                "Expiratory Time",
+                "Respiratory Rate",
+                "Maximal Inspiratory Airway Pressure",
+                "Minimal Inspiratory Airway Pressure",
+                "Delta VT",
+                "VTinsp",
+                "VTexp",
+                "VTinsp_cum",
+                "VTexp_cum",
+                "Inspiratory Reverse Airflow Segment Volume",
+                "Expiratory Reverse Airflow Segment Volume",
+                "Inspiratory Reverse Airflow",
+                "Expiratory Reverse Airflow",
+                "Inspiratory Reverse Airflow Sum per Inspiration",
+                "Expiratory Reverse Airflow Sum per Expiration",
+            ],
+            overwrite_existing_output=overwrite_existing_output,
+        )
+
+        flow, pressure, inspiration, expiration = (
+            self._require_ventilation_volume_inputs()
+        )
+
+        insp_t = inspiration.get_data().time_index
+
+        ti, te, rr = compute_breath_duration_and_rate_labels(
+            inspiration,
+            expiration,
+        )
+        self.add_global_label(ti)
+        self.add_global_label(te)
+        self.add_global_label(rr)
+
+        p_insp_max, p_insp_min = compute_inspiratory_pressure_labels(
+            pressure,
+            insp_t,
+        )
+        pressure.attach_label(p_insp_max)
+        pressure.attach_label(p_insp_min)
+
+        volume, v_insp, volume_exp, _, _, _ = compute_volume_channels_and_labels(
+            flow,
+            inspiration,
+            expiration,
+            correction_factor,
+        )
+        self.add_channel(volume)
+        self.add_channel(v_insp)
+        self.add_channel(volume_exp)
+
+        v_insp_cum, v_exp_cum, _, _ = compute_cumulative_volume_channels(
+            flow,
+            inspiration,
+            correction_factor,
+        )
+        self.add_channel(v_insp_cum)
+        self.add_channel(v_exp_cum)
+
+        (
+            insp_reverse_volume,
+            insp_reverse_airflow,
+            insp_reverse_sum,
+            exp_reverse_volume,
+            exp_reverse_airflow,
+            exp_reverse_sum,
+        ) = compute_reverse_airflow_labels(
+            flow,
+            inspiration,
+            expiration,
+            correction_factor,
+        )
+
+        self.add_global_label(insp_reverse_airflow)
+        self.add_global_label(exp_reverse_airflow)
+        self.add_global_label(insp_reverse_volume)
+        self.add_global_label(exp_reverse_volume)
+        self.add_global_label(insp_reverse_sum)
+        self.add_global_label(exp_reverse_sum)
+
+        return
 
     def filter_by_intervallabel(
         self,
