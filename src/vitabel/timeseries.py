@@ -1359,6 +1359,11 @@ class Label(TimeSeriesBase):
 
             time_data = time_data - self.time_start
 
+        if isinstance(time_data, Timedelta) and len(self.time_index) > 0:
+            self.time_index = self.time_index.as_unit(
+                np.datetime_data(time_data.to_timedelta64().dtype)[0]
+            )
+
         [insert_index] = self.time_index.searchsorted([time_data])
         self.time_index = self.time_index.insert(insert_index, time_data)
 
@@ -3885,7 +3890,7 @@ class TimeDataCollection:
                         if isinstance(active_label, IntervalLabel):
                             if DELETE_ANNOTATIONS:
                                 time_data = (
-                                    event.xdata * pd.to_timedelta(1, unit=time_unit)
+                                    pd.to_timedelta(event.xdata, unit=time_unit)
                                     + reference_time
                                 )
                                 selected_intervals = (
@@ -3924,11 +3929,11 @@ class TimeDataCollection:
                             else:
                                 t1, y1 = partial_interval_data
                                 t2, y2 = event.xdata, event.ydata
-                                t1 = reference_time + t1 * pd.to_timedelta(
-                                    1, unit=time_unit
+                                t1 = reference_time + pd.to_timedelta(
+                                    t1, unit=time_unit
                                 )
-                                t2 = reference_time + t2 * pd.to_timedelta(
-                                    1, unit=time_unit
+                                t2 = reference_time + pd.to_timedelta(
+                                    t2, unit=time_unit
                                 )
                                 if t2 < t1:
                                     t1, t2 = t2, t1
@@ -3951,7 +3956,7 @@ class TimeDataCollection:
                                 fig.canvas._figure_label = " "
                         else:
                             time_data = (
-                                event.xdata * pd.to_timedelta(1, unit=time_unit)
+                                pd.to_timedelta(event.xdata, unit=time_unit)
                                 + reference_time
                             )
                             if DELETE_ANNOTATIONS:
@@ -3990,13 +3995,13 @@ class TimeDataCollection:
                                 linewidth=1.5,
                             )
                             shifting_reference_time = (
-                                event.xdata * pd.to_timedelta(1, unit=time_unit)
+                                pd.to_timedelta(event.xdata, unit=time_unit)
                                 + reference_time
                             )
                             shifting_reference_axis = current_axes
                         else:
                             offset = (
-                                event.xdata * pd.to_timedelta(1, unit=time_unit)
+                                pd.to_timedelta(event.xdata, unit=time_unit)
                                 + reference_time
                                 - shifting_reference_time
                             )
@@ -4012,7 +4017,7 @@ class TimeDataCollection:
                 current_axes in overview_axes
             ):  # if click is within overview plot: move there
                 time_data = (
-                    event.xdata * pd.to_timedelta(1, unit=time_unit) + reference_time
+                    pd.to_timedelta(event.xdata, unit=time_unit) + reference_time
                 )
                 plot_span = stop - start
                 stop = time_data + 0.5 * plot_span
