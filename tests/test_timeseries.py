@@ -630,6 +630,30 @@ def test_label_relative_time_add_remove_data():
         label.remove_data(pd.to_timedelta(999, unit="s"))
 
 
+def test_label_add_data_preserves_subsecond_precision_for_second_based_labels():
+    label = Label(name="events", time_index=[0, 2], time_unit="s")
+
+    label.add_data(pd.to_timedelta(1.5, unit="s"))
+
+    np.testing.assert_array_equal(label.time_index.total_seconds(), [0.0, 1.5, 2.0])
+    assert label.time_index.dtype == "timedelta64[ns]"
+
+
+def test_label_add_data_does_not_downcast_existing_high_resolution_index():
+    label = Label(
+        name="events",
+        time_index=pd.to_timedelta([0.123456789, 2.987654321], unit="s"),
+    )
+
+    label.add_data(pd.to_timedelta(1, unit="s"))
+
+    np.testing.assert_array_equal(
+        label.time_index.total_seconds(),
+        [0.123456789, 1.0, 2.987654321],
+    )
+    assert label.time_index.dtype == "timedelta64[ns]"
+
+
 def test_label_absolute_time_add_remove_data():
     label = Label(
         name="events",
