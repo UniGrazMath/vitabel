@@ -1709,7 +1709,8 @@ class Label(TimeSeriesBase):
         )
 
         if self.is_time_absolute():
-            reference_time = reference_time or self.time_start
+            if reference_time is None:
+                reference_time = self.time_start
             time_index = time_index - reference_time
 
         if time_unit is None:
@@ -3131,6 +3132,7 @@ class TimeDataCollection:
 
         start = self._get_time_extremum(start, channel_lists, minimum=True)
         stop = self._get_time_extremum(stop, channel_lists, minimum=False)
+        
         if start is None and stop is None:
             logger.warning(
                 "Specified channels contain no data, setting start to the current time."
@@ -3159,10 +3161,16 @@ class TimeDataCollection:
                     stop=stop,
                     resolution=resolution,
                     time_unit=time_unit,
+                    reference_time=start,
                 )
 
             for label in label_list:
-                label.plot(plot_axes=subax, start=start, stop=stop, time_unit=time_unit)
+                label.plot(
+                    plot_axes=subax, 
+                    start=start, 
+                    stop=stop, 
+                    time_unit=time_unit,
+                    reference_time=start)
 
             plot_duration = (stop - start) / pd.to_timedelta(1, unit=time_unit)
             subax.set_xlim((0, plot_duration))
