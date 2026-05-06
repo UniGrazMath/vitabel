@@ -1911,7 +1911,7 @@ class IntervalLabel(Label):
         plot_type: IntervalLabelPlotType = "combined",
         annotation_preset_type: LabelAnnotationPresetType | None = None,
     ):
-        if time_index is not None and len(time_index) > 0:
+        if time_index is not None:
             time_index = np.array(time_index)
             if time_index.ndim == 2 and time_index.shape[1] == 2:
                 # time data passed as pairs of interval end points

@@ -545,7 +545,7 @@ def compute_reverse_airflow_labels(
     )
     insp_reverse_airflow = IntervalLabel(
         name="Inspiratory Reverse Airflow",
-        time_index=segment[mask_insp_reverse].tolist(),
+        time_index=segment[mask_insp_reverse],
         data=None,
         metadata={"source": "computed"},
     )
@@ -565,7 +565,7 @@ def compute_reverse_airflow_labels(
     )
     exp_reverse_airflow = IntervalLabel(
         name="Expiratory Reverse Airflow",
-        time_index=segment[mask_exp_reverse].tolist(),
+        time_index=segment[mask_exp_reverse],
         data=None,
         metadata={"source": "computed"},
     )
