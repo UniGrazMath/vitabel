@@ -272,6 +272,14 @@ def test_channel_creation():
     assert channel.data.shape == (10,)
 
 
+def test_channel_creation_2d_data_raises():
+    time = np.arange(5, dtype=float)
+    with pytest.raises(ValueError, match="1D array"):
+        Channel(name="test", time_index=time, data=np.zeros((5, 5)))
+    with pytest.raises(ValueError, match="1D array"):
+        Channel(name="test", time_index=np.zeros((5, 5)))
+
+
 def test_channel_creation_data_from_list():
     time = [0, 0.12, 3.17, 6.42]
     data = [1, 2, 3, 4.5]
@@ -544,6 +552,16 @@ def test_label_creation_errors():
         match="length of the data must be equal to the length of the time index",
     ):
         Label(name="test", time_index=[0, 5, 12], data=[None, None])
+
+
+def test_label_creation_2d_raises():
+    time = np.arange(5, dtype=float)
+    with pytest.raises(ValueError, match="1D array"):
+        Label(name="test", time_index=time, data=np.zeros((5, 2)))
+    with pytest.raises(ValueError, match="1D array"):
+        Label(name="test", time_index=time, text_data=np.empty((5, 2), dtype=object))
+    with pytest.raises(ValueError, match="1D array"):
+        Label(name="test", time_index=np.zeros((5, 2)))
 
 
 def test_label_attached_to_channel():

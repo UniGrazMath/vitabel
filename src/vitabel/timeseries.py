@@ -165,6 +165,12 @@ class TimeSeriesBase:
         # it is possible that the specified time_index is empty
         # or contains undefined values like pandas.NaT, numpy.nan, or None.
 
+        time_index_arr = np.asarray(time_index)
+        if time_index_arr.ndim != 1:
+            raise ValueError(
+                f"time_index must be a 1D array, got shape {time_index_arr.shape}"
+            )
+
         cleaned_time_index_iter = (value for value in time_index if not pd.isna(value))
 
         try:
@@ -581,6 +587,11 @@ class Channel(TimeSeriesBase):
         if data is not None:
             if not isinstance(data, np.ndarray):
                 data = np.asarray(data)
+            
+            if data.ndim != 1:
+                raise ValueError(
+                    f"data must be a 1D array, got shape {data.shape}"
+                )
 
             if len(data) != len(time_index):
                 raise ValueError(
@@ -1082,9 +1093,17 @@ class Label(TimeSeriesBase):
             else:
                 # replace None with np.nan and convert to float
                 data = np.asarray(data, dtype=float)
+                if data.ndim != 1:
+                    raise ValueError(
+                        f"data must be a 1D array, got shape {data.shape}"
+                    )
 
         if text_data is not None and len(text_data) > 0:
             text_data = np.asarray(text_data, dtype=object)
+            if text_data.ndim != 1:
+                raise ValueError(
+                    f"text_data must be a 1D array, got shape {text_data.shape}"
+                )
             text_data[text_data == ""] = None
         else:
             text_data = None
