@@ -272,6 +272,13 @@ def test_channel_creation():
     assert channel.data.shape == (10,)
 
 
+def test_channel_creation_2d_data_raises():
+    time = np.arange(5, dtype=float)
+    data_2d = np.zeros((5, 5))
+    with pytest.raises(ValueError, match="1D array"):
+        Channel(name="test", time_index=time, data=data_2d)
+
+
 def test_channel_creation_data_from_list():
     time = [0, 0.12, 3.17, 6.42]
     data = [1, 2, 3, 4.5]
