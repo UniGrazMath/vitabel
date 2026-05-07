@@ -581,6 +581,11 @@ class Channel(TimeSeriesBase):
         if data is not None:
             if not isinstance(data, np.ndarray):
                 data = np.asarray(data)
+            
+            if data.ndim != 1:
+                raise ValueError(
+                    f"data must be a 1D array, got shape {data.shape}"
+                )
 
             if len(data) != len(time_index):
                 raise ValueError(
