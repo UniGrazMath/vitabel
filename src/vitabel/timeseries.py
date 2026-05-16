@@ -558,6 +558,15 @@ class TimeSeriesBase:
         what the true time was at that moment. Drift is assumed to
         accumulate linearly between the two observations.
 
+        .. note::
+            Clock drift is a property of a clock, not of an individual
+            channel. Apply this method to **all** channels and labels
+            driven by the same clock — for many devices that is the
+            whole recording, but some (e.g. with OEM modules that bring
+            their own clock) have several clocks. Correcting only some
+            of the affected series risks desynchronising them;
+            correcting unaffected series risks introducing new desync.
+
         Specify the drift at ``drift_point`` in exactly one of two ways:
 
         - ``drift`` — the signed offset ``device − true`` at ``drift_point``
