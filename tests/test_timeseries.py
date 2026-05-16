@@ -505,6 +505,67 @@ def test_channel_scale_time_index_absolute():
     ]
 
 
+def test_channel_correct_clock_drift_with_drift():
+    # Device clock recorded 3605s between anchor and drift_point,
+    # but only 3600s of wall-clock time actually elapsed → device ran 5s fast.
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    times = [anchor, anchor + pd.Timedelta(seconds=1802.5), drift_point]
+    channel = Channel(name="test", time_index=times)
+
+    corrected = channel.correct_clock_drift(
+        anchor, drift_point, drift=pd.Timedelta("5s")
+    )
+    corrected_times = list(corrected.get_data().time_index)
+
+    assert corrected_times[0] == anchor
+    assert corrected_times[-1] == anchor + pd.Timedelta(seconds=3600)
+    np.testing.assert_allclose(
+        (corrected_times[1] - anchor).total_seconds(),
+        1802.5 * 3600 / 3605,
+    )
+
+
+def test_channel_correct_clock_drift_with_true_time():
+    # Same scenario expressed via the wall-clock time at drift_point.
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    true_time = pd.Timestamp("2020-02-02 13:00:00")
+    times = [anchor, drift_point]
+    channel = Channel(name="test", time_index=times)
+
+    corrected = channel.correct_clock_drift(
+        anchor, drift_point, true_time=true_time
+    )
+    corrected_times = list(corrected.get_data().time_index)
+
+    assert corrected_times[0] == anchor
+    assert corrected_times[-1] == true_time
+
+
+def test_channel_correct_clock_drift_requires_one_of():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:00")
+    channel = Channel(name="test", time_index=[anchor, drift_point])
+
+    with pytest.raises(ValueError, match="exactly one of `drift` or `true_time`"):
+        channel.correct_clock_drift(anchor, drift_point)
+    with pytest.raises(ValueError, match="exactly one of `drift` or `true_time`"):
+        channel.correct_clock_drift(
+            anchor,
+            drift_point,
+            drift=pd.Timedelta("5s"),
+            true_time=pd.Timestamp("2020-02-02 12:59:55"),
+        )
+
+
+def test_channel_correct_clock_drift_zero_interval_raises():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    channel = Channel(name="test", time_index=[anchor, anchor + pd.Timedelta("1h")])
+    with pytest.raises(ValueError, match="drift_point must differ from anchor_time"):
+        channel.correct_clock_drift(anchor, anchor, drift=pd.Timedelta("1s"))
+
+
 def test_label_creation():
     label = Label(name="test", time_index=[0, 5, 12])
 
