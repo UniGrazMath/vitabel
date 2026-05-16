@@ -491,17 +491,31 @@ class TimeSeriesBase:
         scale_factor: float,
         reference_time: Timestamp | Timedelta | None = None,
     ) -> Self:
-        """Scale the time index by a given factor while keeping
-        a given reference time fixed.
+        """Rescale the time index linearly about a fixed reference time.
+
+        The primary use case is **clock-drift / clock-rate correction**:
+        when a recording device's clock runs at a slightly different rate
+        than wall-clock time, timestamps drift linearly away from a known
+        sync point. This method corrects that drift by stretching or
+        compressing the time index about ``reference_time``.
+
+        Each timestamp ``t`` is mapped to
+        ``reference_time + scale_factor * (t - reference_time)``,
+        so points at the reference are unchanged and points farther away
+        are shifted proportionally.
 
         Parameters
         ----------
         scale_factor
-            The factor to scale the time index by.
+            The factor to scale the time index by. Must be positive.
+            For drift correction, use ``true_duration / measured_duration``
+            between two sync points (e.g. ``0.999`` if the device clock
+            ran ~0.1% fast).
         reference_time
-            If specified, the time index is scaled with respect to this
-            reference time. If not specified, the time index is scaled
-            relative to the start of the time index.
+            The fixed point of the scaling — typically a known sync
+            timestamp where the device clock and wall clock agreed.
+            If not specified, the start of the time index is used (for
+            relative time indices) or the epoch (for absolute time indices).
         """
         if scale_factor <= 0:
             raise ValueError(
@@ -527,6 +541,66 @@ class TimeSeriesBase:
         series.time_index = scaled_index
 
         return series
+
+    def correct_clock_drift(
+        self,
+        anchor_time: Timestamp | Timedelta,
+        drift_point: Timestamp | Timedelta,
+        *,
+        drift: Timedelta | None = None,
+        true_time: Timestamp | Timedelta | None = None,
+    ) -> Self:
+        """Correct a linear clock drift from one anchor and one drift observation.
+
+        Use this when the device clock and wall clock agreed at
+        ``anchor_time`` and, at a second ``drift_point`` (in device-clock
+        terms), you know either how far the device clock has drifted or
+        what the true time was at that moment. Drift is assumed to
+        accumulate linearly between the two observations.
+
+        Specify the drift at ``drift_point`` in exactly one of two ways:
+
+        - ``drift`` — the signed offset ``device − true`` at ``drift_point``
+          (positive if the device clock ran fast).
+        - ``true_time`` — the wall-clock time corresponding to
+          ``drift_point``. The drift is then computed as
+          ``drift_point − true_time``.
+
+        Internally the method delegates to :meth:`scale_time_index` with
+        ``reference_time=anchor_time``, so timestamps at the anchor are
+        unchanged and the recorded timestamp ``drift_point`` is mapped to
+        ``drift_point − drift``.
+
+        Parameters
+        ----------
+        anchor_time
+            The sync point where the device clock and wall clock agreed.
+        drift_point
+            A second timepoint, expressed in device-clock terms (i.e. as
+            it appears in the recording's timestamps), at which the drift
+            was observed.
+        drift
+            The offset ``device − true`` at ``drift_point``. Positive
+            if the device clock ran fast. Mutually exclusive with
+            ``true_time``.
+        true_time
+            The wall-clock time at ``drift_point``. Mutually exclusive
+            with ``drift``.
+        """
+        if (drift is None) == (true_time is None):
+            raise ValueError(
+                "Specify exactly one of `drift` or `true_time` "
+                "to define the clock offset at `drift_point`"
+            )
+        if drift is None:
+            drift = drift_point - true_time
+        measured_interval = drift_point - anchor_time
+        if measured_interval == pd.Timedelta(0):
+            raise ValueError(
+                "drift_point must differ from anchor_time to determine the drift rate"
+            )
+        scale_factor = (measured_interval - drift) / measured_interval
+        return self.scale_time_index(scale_factor, reference_time=anchor_time)
 
 
 class Channel(TimeSeriesBase):
