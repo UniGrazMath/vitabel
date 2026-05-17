@@ -490,6 +490,7 @@ class TimeSeriesBase:
         self,
         scale_factor: float,
         reference_time: Timestamp | Timedelta | None = None,
+        inplace: bool = False,
     ) -> Self:
         """Rescale the time index linearly about a fixed reference time.
 
@@ -516,29 +517,46 @@ class TimeSeriesBase:
             timestamp where the device clock and wall clock agreed.
             If not specified, the start of the time index is used (for
             relative time indices) or the epoch (for absolute time indices).
+        inplace
+            If ``True``, modify the time index in place and return ``self``.
+            If ``False`` (default), return a corrected copy leaving the
+            original unchanged.
         """
         if scale_factor <= 0:
             raise ValueError(
                 f"Time scale factor must be positive, but got {scale_factor}"
             )
 
-        series = copy(self)
-        # offset already applied to time_index, remove from copy
-        series._offset = pd.Timedelta(0)
+        series = self if inplace else copy(self)
+
+        # Un-bake the offset so it is not scaled along with the recording.
+        # The offset represents a deliberate alignment shift (not a clock-rate
+        # artefact), so it should be re-applied unchanged after scaling.
+        original_offset = series._offset
+        if original_offset != pd.Timedelta(0):
+            series.shift_time_index(-original_offset)
 
         if reference_time is None:
             if series.is_time_absolute():
-                reference_time = pd.Timedelta(0)
+                # Pivot at time_start in wall-clock terms — subtract offset
+                # to express this anchor in the now-unbaked raw coordinates.
+                reference_time = -original_offset
             else:
                 reference_time = series.time_index[0]
-
-        if isinstance(reference_time, Timestamp):
-            reference_time = pd.Timestamp(reference_time) - series.time_start
+        elif isinstance(reference_time, Timestamp):
+            reference_time = pd.Timestamp(reference_time) - series.time_start - original_offset
+        else:
+            # Timedelta — user gave it in effective (offset-inclusive) coords.
+            reference_time = reference_time - original_offset
 
         scaled_index = (
             series.time_index - reference_time
         ) * scale_factor + reference_time
         series.time_index = scaled_index
+
+        # Re-apply the offset (restores _offset to its original value).
+        if original_offset != pd.Timedelta(0):
+            series.shift_time_index(original_offset)
 
         return series
 
@@ -549,6 +567,7 @@ class TimeSeriesBase:
         *,
         drift: Timedelta | None = None,
         true_time: Timestamp | Timedelta | None = None,
+        inplace: bool = False,
     ) -> Self:
         """Correct a linear clock drift from one anchor and one drift observation.
 
@@ -557,6 +576,15 @@ class TimeSeriesBase:
         terms), you know either how far the device clock has drifted or
         what the true time was at that moment. Drift is assumed to
         accumulate linearly between the two observations.
+
+        .. note::
+            Clock drift is a property of a clock, not of an individual
+            channel. Apply this method to **all** channels and labels
+            driven by the same clock — for many devices that is the
+            whole recording, but some (e.g. with OEM modules that bring
+            their own clock) have several clocks. Correcting only some
+            of the affected series risks desynchronising them;
+            correcting unaffected series risks introducing new desync.
 
         Specify the drift at ``drift_point`` in exactly one of two ways:
 
@@ -586,6 +614,10 @@ class TimeSeriesBase:
         true_time
             The wall-clock time at ``drift_point``. Mutually exclusive
             with ``drift``.
+        inplace
+            If ``True``, modify the time index in place and return ``self``.
+            If ``False`` (default), return a corrected copy leaving the
+            original unchanged.
         """
         if (drift is None) == (true_time is None):
             raise ValueError(
@@ -600,7 +632,29 @@ class TimeSeriesBase:
                 "drift_point must differ from anchor_time to determine the drift rate"
             )
         scale_factor = (measured_interval - drift) / measured_interval
-        return self.scale_time_index(scale_factor, reference_time=anchor_time)
+        result = self.scale_time_index(scale_factor, reference_time=anchor_time, inplace=inplace)
+
+        # Record the correction parameters so the transformation is reproducible
+        # when reloading raw data (Channel / Label both carry a metadata dict).
+        if hasattr(self, "metadata") and isinstance(self.metadata, dict):
+            if not inplace:
+                # scale_time_index returned a shallow copy; give it an independent
+                # metadata dict + transformations list before mutating.
+                result.metadata = {**self.metadata}
+                if "transformations" in result.metadata:
+                    result.metadata["transformations"] = list(
+                        result.metadata["transformations"]
+                    )
+            result.metadata.setdefault("transformations", []).append(
+                {
+                    "operation": "correct_clock_drift",
+                    "anchor_time": anchor_time,
+                    "drift_point": drift_point,
+                    "drift": drift,
+                }
+            )
+
+        return result
 
 
 class Channel(TimeSeriesBase):
