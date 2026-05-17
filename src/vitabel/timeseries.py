@@ -490,6 +490,7 @@ class TimeSeriesBase:
         self,
         scale_factor: float,
         reference_time: Timestamp | Timedelta | None = None,
+        inplace: bool = False,
     ) -> Self:
         """Rescale the time index linearly about a fixed reference time.
 
@@ -516,14 +517,18 @@ class TimeSeriesBase:
             timestamp where the device clock and wall clock agreed.
             If not specified, the start of the time index is used (for
             relative time indices) or the epoch (for absolute time indices).
+        inplace
+            If ``True``, modify the time index in place and return ``self``.
+            If ``False`` (default), return a corrected copy leaving the
+            original unchanged.
         """
         if scale_factor <= 0:
             raise ValueError(
                 f"Time scale factor must be positive, but got {scale_factor}"
             )
 
-        series = copy(self)
-        # offset already applied to time_index, remove from copy
+        series = self if inplace else copy(self)
+        # offset is already baked into time_index; absorb it so _offset becomes 0
         series._offset = pd.Timedelta(0)
 
         if reference_time is None:
@@ -549,6 +554,7 @@ class TimeSeriesBase:
         *,
         drift: Timedelta | None = None,
         true_time: Timestamp | Timedelta | None = None,
+        inplace: bool = False,
     ) -> Self:
         """Correct a linear clock drift from one anchor and one drift observation.
 
@@ -595,6 +601,10 @@ class TimeSeriesBase:
         true_time
             The wall-clock time at ``drift_point``. Mutually exclusive
             with ``drift``.
+        inplace
+            If ``True``, modify the time index in place and return ``self``.
+            If ``False`` (default), return a corrected copy leaving the
+            original unchanged.
         """
         if (drift is None) == (true_time is None):
             raise ValueError(
@@ -609,7 +619,7 @@ class TimeSeriesBase:
                 "drift_point must differ from anchor_time to determine the drift rate"
             )
         scale_factor = (measured_interval - drift) / measured_interval
-        return self.scale_time_index(scale_factor, reference_time=anchor_time)
+        return self.scale_time_index(scale_factor, reference_time=anchor_time, inplace=inplace)
 
 
 class Channel(TimeSeriesBase):

@@ -566,6 +566,36 @@ def test_channel_correct_clock_drift_zero_interval_raises():
         channel.correct_clock_drift(anchor, anchor, drift=pd.Timedelta("1s"))
 
 
+def test_channel_scale_time_index_inplace():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    times = [anchor, anchor + pd.Timedelta(seconds=1802.5), drift_point]
+    channel = Channel(name="test", time_index=times)
+    original_id = id(channel)
+
+    result = channel.correct_clock_drift(anchor, drift_point, drift=pd.Timedelta("5s"), inplace=True)
+
+    assert result is channel, "inplace=True must return self"
+    assert id(channel) == original_id
+    corrected_times = list(channel.get_data().time_index)
+    assert corrected_times[0] == anchor
+    assert corrected_times[-1] == anchor + pd.Timedelta(seconds=3600)
+    assert channel.offset == pd.Timedelta(0)
+
+
+def test_channel_scale_time_index_copy_does_not_mutate_original():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    times = [anchor, drift_point]
+    channel = Channel(name="test", time_index=times)
+    original_times = list(channel.get_data().time_index)
+
+    _ = channel.correct_clock_drift(anchor, drift_point, drift=pd.Timedelta("5s"))
+
+    assert list(channel.get_data().time_index) == original_times, \
+        "inplace=False (default) must not mutate the original channel"
+
+
 def test_label_creation():
     label = Label(name="test", time_index=[0, 5, 12])
 
