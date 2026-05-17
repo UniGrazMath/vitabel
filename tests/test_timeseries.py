@@ -498,11 +498,82 @@ def test_channel_scale_time_index_absolute():
     )
     assert isinstance(new_channel, Channel)
     assert new_channel.time_start == channel.time_start
-    assert new_channel.offset == pd.Timedelta(0)
+    assert new_channel.offset == pd.Timedelta("-2h")  # offset preserved, not absorbed
     assert list(new_channel.get_data().time_index) == [
         pd.Timestamp("2020-02-02 12:00:00") + pd.Timedelta(hours=i * 0.5)
         for i in range(-2, 4)
     ]
+
+
+def test_scale_time_index_preserves_offset():
+    times = [pd.Timestamp("2020-02-02 12:00:00") + pd.Timedelta(hours=i) for i in range(4)]
+    channel = Channel(name="test", time_index=times)
+    channel.offset = pd.Timedelta("-1h")
+    effective_before = list(channel.get_data().time_index)
+
+    new_channel = channel.scale_time_index(
+        0.5, reference_time=pd.Timestamp("2020-02-02 12:00:00")
+    )
+
+    assert new_channel.offset == pd.Timedelta("-1h")
+    # Effective times should scale about the reference — offset is not scaled
+    expected = [pd.Timestamp("2020-02-02 12:00:00") + (t - pd.Timestamp("2020-02-02 12:00:00")) * 0.5
+                for t in effective_before]
+    assert list(new_channel.get_data().time_index) == expected
+    # Original is unchanged
+    assert channel.offset == pd.Timedelta("-1h")
+    assert list(channel.get_data().time_index) == effective_before
+
+
+def test_correct_clock_drift_records_metadata():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    drift = pd.Timedelta("5s")
+    channel = Channel(name="test", time_index=[anchor, drift_point])
+
+    corrected = channel.correct_clock_drift(anchor, drift_point, drift=drift)
+
+    assert "transformations" in corrected.metadata
+    entry = corrected.metadata["transformations"][0]
+    assert entry["operation"] == "correct_clock_drift"
+    assert entry["anchor_time"] == anchor
+    assert entry["drift_point"] == drift_point
+    assert entry["drift"] == drift
+    # Original channel metadata is untouched
+    assert "transformations" not in channel.metadata
+
+
+def test_correct_clock_drift_metadata_true_time_form():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    true_time = pd.Timestamp("2020-02-02 13:00:00")
+    channel = Channel(name="test", time_index=[anchor, drift_point])
+
+    corrected = channel.correct_clock_drift(anchor, drift_point, true_time=true_time)
+
+    assert corrected.metadata["transformations"][0]["drift"] == pd.Timedelta("5s")
+
+
+def test_correct_clock_drift_metadata_accumulates():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    channel = Channel(name="test", time_index=[anchor, drift_point])
+
+    once = channel.correct_clock_drift(anchor, drift_point, drift=pd.Timedelta("5s"))
+    twice = once.correct_clock_drift(anchor, drift_point, drift=pd.Timedelta("1s"))
+
+    assert len(twice.metadata["transformations"]) == 2
+    assert len(once.metadata["transformations"]) == 1  # first result unaffected
+
+
+def test_correct_clock_drift_records_metadata_inplace():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    channel = Channel(name="test", time_index=[anchor, drift_point])
+
+    channel.correct_clock_drift(anchor, drift_point, drift=pd.Timedelta("5s"), inplace=True)
+
+    assert len(channel.metadata["transformations"]) == 1
 
 
 def test_channel_correct_clock_drift_with_drift():

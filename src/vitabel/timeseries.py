@@ -528,22 +528,35 @@ class TimeSeriesBase:
             )
 
         series = self if inplace else copy(self)
-        # offset is already baked into time_index; absorb it so _offset becomes 0
-        series._offset = pd.Timedelta(0)
+
+        # Un-bake the offset so it is not scaled along with the recording.
+        # The offset represents a deliberate alignment shift (not a clock-rate
+        # artefact), so it should be re-applied unchanged after scaling.
+        original_offset = series._offset
+        if original_offset != pd.Timedelta(0):
+            series.shift_time_index(-original_offset)
 
         if reference_time is None:
             if series.is_time_absolute():
-                reference_time = pd.Timedelta(0)
+                # Pivot at time_start in wall-clock terms — subtract offset
+                # to express this anchor in the now-unbaked raw coordinates.
+                reference_time = -original_offset
             else:
                 reference_time = series.time_index[0]
-
-        if isinstance(reference_time, Timestamp):
-            reference_time = pd.Timestamp(reference_time) - series.time_start
+        elif isinstance(reference_time, Timestamp):
+            reference_time = pd.Timestamp(reference_time) - series.time_start - original_offset
+        else:
+            # Timedelta — user gave it in effective (offset-inclusive) coords.
+            reference_time = reference_time - original_offset
 
         scaled_index = (
             series.time_index - reference_time
         ) * scale_factor + reference_time
         series.time_index = scaled_index
+
+        # Re-apply the offset (restores _offset to its original value).
+        if original_offset != pd.Timedelta(0):
+            series.shift_time_index(original_offset)
 
         return series
 
@@ -619,7 +632,29 @@ class TimeSeriesBase:
                 "drift_point must differ from anchor_time to determine the drift rate"
             )
         scale_factor = (measured_interval - drift) / measured_interval
-        return self.scale_time_index(scale_factor, reference_time=anchor_time, inplace=inplace)
+        result = self.scale_time_index(scale_factor, reference_time=anchor_time, inplace=inplace)
+
+        # Record the correction parameters so the transformation is reproducible
+        # when reloading raw data (Channel / Label both carry a metadata dict).
+        if hasattr(self, "metadata") and isinstance(self.metadata, dict):
+            if not inplace:
+                # scale_time_index returned a shallow copy; give it an independent
+                # metadata dict + transformations list before mutating.
+                result.metadata = {**self.metadata}
+                if "transformations" in result.metadata:
+                    result.metadata["transformations"] = list(
+                        result.metadata["transformations"]
+                    )
+            result.metadata.setdefault("transformations", []).append(
+                {
+                    "operation": "correct_clock_drift",
+                    "anchor_time": anchor_time,
+                    "drift_point": drift_point,
+                    "drift": drift,
+                }
+            )
+
+        return result
 
 
 class Channel(TimeSeriesBase):
