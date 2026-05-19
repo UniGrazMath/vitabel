@@ -607,6 +607,19 @@ class Vitals:
 
         self.metadata["Recording_files_added"].append(str(filepath))
 
+    #: Mapping of EOlife ``data_timed`` group → vitabel datatype.
+    #: Single-point readings tied to one breath are added as labels; the
+    #: reconstructed continuous waveforms are added as channels.
+    _EOLIFE_GROUP_DATATYPE: dict[str, str] = {
+        "cycle_start":  "label",
+        "insp_end":     "label",
+        "exp_end":      "label",
+        "vi_wave":      "channel",
+        "v_exp":        "channel",
+        "vt_displayed": "channel",
+        "f_displayed":  "channel",
+    }
+
     def add_ventilatory_feedback(
         self,
         filepath: Path | str,
@@ -615,6 +628,24 @@ class Vitals:
         """Add ventilatory feedback from a given data source.
 
         Currently only EOlife export files (exported CSV files) are supported.
+
+        Each ``data_timed`` group is added either as labels or channels following
+        :attr:`_EOLIFE_GROUP_DATATYPE`:
+
+        - ``cycle_start`` / ``insp_end`` / ``exp_end`` → **labels** (single-point
+          readings per breath: ``Cycle number``, ``Ti``, ``Te``, ``Tp`` at breath
+          onset; ``Vi`` at end of inspiration; ``Vt``, ``f``, ``Leakage``,
+          ``Leakage ratio`` at end of expiration).
+        - ``vi_wave`` / ``v_exp`` / ``vt_displayed`` / ``f_displayed`` →
+          **channels** (reconstructed continuous waveforms: ``Vi (displayed)``,
+          ``V_exp``, ``Vt (displayed)``, ``f (displayed)``).
+
+        For each named series, an entry in
+        :data:`~vitabel.utils.stylesheet.DEFAULT_PLOT_STYLE` (if present) is
+        applied as the plotstyle. If the source contains contiguous runs of
+        uncharacterised (NaN-Ti/Te) breaths, an
+        ``"Uncharacterised Breaths"`` :class:`~vitabel.IntervalLabel` is added
+        as a global label.
 
         Parameters
         ----------
@@ -627,13 +658,34 @@ class Vitals:
         if metadata is None:
             metadata = {}
         eolife_export = loading.read_eolife_export(filepath)
-        self.add_data_from_DataFrame(
-            source=eolife_export.data,
-            time_start=eolife_export.recording_start,
-            datatype="channel",
-            metadata=metadata | eolife_export.metadata,
-            column_metadata=eolife_export.column_metadata,
-        )
+
+        for group_name, df in eolife_export.data_timed.items():
+            datatype = self._EOLIFE_GROUP_DATATYPE.get(group_name, "channel")
+            self.add_data_from_DataFrame(
+                source=df,
+                time_start=eolife_export.recording_start,
+                datatype=datatype,
+                metadata=metadata | eolife_export.metadata | {"timing_group": group_name},
+                column_metadata=eolife_export.column_metadata,
+            )
+
+        # Apply default plotstyles to every freshly-added series whose name
+        # has an entry in DEFAULT_PLOT_STYLE. Merge on top of any intrinsic
+        # defaults the series already has (e.g. Labels start with linestyle
+        # / marker / ms), so the user-specified colour wins without losing
+        # the type's own structural defaults.
+        loaded_cols: set[str] = set()
+        for df in eolife_export.data_timed.values():
+            loaded_cols.update(df.columns)
+        for col_name in loaded_cols:
+            ps = DEFAULT_PLOT_STYLE.get(col_name)
+            if not ps:
+                continue
+            for series in self.get_channels(col_name) + self.get_labels(col_name):
+                series.plotstyle = {**series.plotstyle, **ps}
+
+        if eolife_export.eolife_uncharacterised_breaths is not None:
+            self.add_global_label(eolife_export.eolife_uncharacterised_breaths)
 
     def add_vital_db_recording(
         self,
