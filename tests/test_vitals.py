@@ -160,19 +160,21 @@ def test_add_zoll_json(vitabel_example_data_dir):
 
 
 def test_add_stryker_lucas(vitabel_test_data_dir):
-    lifepak_dir = vitabel_test_data_dir
-    file_path = lifepak_dir / "Lucas_file_Lucas.xml"
-    lifepak_recording = Vitals()
-    lifepak_recording.add_defibrillator_recording(file_path)
-    assert lifepak_recording.channels
+    file_path = vitabel_test_data_dir / "Lucas_file_Lucas.xml"
+    recording = Vitals()
+    recording.add_defibrillator_recording(file_path)
+    label_names = [lb.name for lb in recording.labels]
+    assert "cc" in label_names
+    assert isinstance(recording.labels[label_names.index("cc")], Label)
 
 
 def test_add_empty_stryker_lucas(vitabel_test_data_dir):
-    lifepak_recording = Vitals()
-    lifepak_recording.add_defibrillator_recording(
+    recording = Vitals()
+    recording.add_defibrillator_recording(
         vitabel_test_data_dir / "empty_lucas_Lucas.xml"
     )
-    assert not lifepak_recording.channels
+    assert not recording.channels
+    assert not recording.labels
 
 
 def test_add_incomplete_stryker_lucas(vitabel_test_data_dir):
@@ -183,6 +185,230 @@ def test_add_incomplete_stryker_lucas(vitabel_test_data_dir):
     ):
         lifepak_recording = Vitals()
         lifepak_recording.add_defibrillator_recording(file_path)
+
+
+# ---------------------------------------------------------------------------
+# Stryker / LIFEPAK CodeStat XML loader
+# ---------------------------------------------------------------------------
+
+_LP15_CONTINUOUS = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<Report Type="Continuous" Version="1.3">
+  <Patient><PatientID>TEST001</PatientID></Patient>
+  <Device>
+    <Model>LP15</Model>
+    <SerialNumber>LP15TEST001</SerialNumber>
+  </Device>
+  <Events>
+    <Event Type="PowerOn">
+      <AdjustedTime>2024-01-01T10:00:00</AdjustedTime>
+    </Event>
+  </Events>
+  <TotalShocks>1</TotalShocks>
+</Report>
+"""
+
+_LP15_WAVEFORM = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<ECGRecord>
+  <Record>
+    <RecordingDevice>
+      <SerialNumber>LP15TEST001</SerialNumber>
+      <Model>LP15</Model>
+    </RecordingDevice>
+    <RecordData>
+      <Channel>Paddles</Channel>
+      <Waveforms>
+        <XValues>
+          <XOffset>00:00:00.000</XOffset>
+          <StartSample>0</StartSample>
+          <NumberOfSamples>5</NumberOfSamples>
+          <SampleRate unit="Hz">125</SampleRate>
+        </XValues>
+        <YValues unit="mV">
+          <RealValue>
+            <From>10:00:00.000</From>
+            <To>10:00:00.032</To>
+            <Scale>1</Scale>
+            <Data>0,1,2,3,4</Data>
+          </RealValue>
+        </YValues>
+      </Waveforms>
+    </RecordData>
+  </Record>
+</ECGRecord>
+"""
+
+_LP15_CPRE = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<Report Type="CprEventLog">
+  <Events>
+    <Event Type="ChestCompression">
+      <AdjustedTime>2024-01-01T10:01:00.500</AdjustedTime>
+    </Event>
+    <Event Type="ChestCompression">
+      <AdjustedTime>2024-01-01T10:01:01.100</AdjustedTime>
+    </Event>
+    <Event Type="Ventilation">
+      <AdjustedTime>2024-01-01T10:01:30.000</AdjustedTime>
+    </Event>
+    <Event Type="StartCPR">
+      <AdjustedTime>2024-01-01T10:01:00</AdjustedTime>
+    </Event>
+    <Event Type="StopCPR">
+      <AdjustedTime>2024-01-01T10:05:00</AdjustedTime>
+    </Event>
+    <Event Type="Defib">
+      <AdjustedTime>2024-01-01T10:02:00</AdjustedTime>
+      <Values>
+        <Value Type="DefibEnergy">200</Value>
+        <Value Type="DefibVoltageCompImpedance">75</Value>
+      </Values>
+    </Event>
+  </Events>
+</Report>
+"""
+
+_TRUECPR_CPRE = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<CprEventLog>
+  <RecordingDevice>
+    <SerialNumber>TRUECPR001</SerialNumber>
+    <Model>TrueCPR</Model>
+  </RecordingDevice>
+  <AdjustedPowerOn>2024-01-01T10:00:00</AdjustedPowerOn>
+  <Events>
+    <Event Type="DeviceCompression">
+      <AdjustedTime>2024-01-01T10:01:00.500</AdjustedTime>
+      <Values>
+        <Value Type="Depth">50.0</Value>
+        <Value Type="Rate">100.0</Value>
+        <Value Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+    <Event Type="DeviceCompression">
+      <AdjustedTime>2024-01-01T10:01:01.100</AdjustedTime>
+      <Values>
+        <Value Type="Depth">48.5</Value>
+        <Value Type="Rate">98.0</Value>
+        <Value Type="DeletedByUser">No</Value>
+      </Values>
+    </Event>
+  </Events>
+</CprEventLog>
+"""
+
+
+def test_lifepak_full_synthetic():
+    """Synthetic minimal LP15 export: correct channel/label split."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        d = Path(tmpdir)
+        (d / "case_Continuous.xml").write_text(_LP15_CONTINUOUS)
+        (d / "case_Continuous_Waveform.xml").write_text(_LP15_WAVEFORM)
+        (d / "case_CprEventLog.xml").write_text(_LP15_CPRE)
+
+        v = Vitals()
+        v.add_defibrillator_recording(d / "case_Continuous.xml")
+
+    channel_names = [c.name for c in v.channels]
+    label_names = [lb.name for lb in v.labels]
+
+    assert "Paddles" in channel_names
+
+    assert "cc" in label_names
+    assert isinstance(v.labels[label_names.index("cc")], Label)
+    assert len(v.labels[label_names.index("cc")].time_index) == 2
+
+    assert "ventilations" in label_names
+
+    assert "cpr_periods" in label_names
+    assert isinstance(v.labels[label_names.index("cpr_periods")], IntervalLabel)
+    assert len(v.labels[label_names.index("cpr_periods")]) == 1
+
+    assert "defibrillations_DeliveredEnergy" in label_names
+    defib = v.labels[label_names.index("defibrillations_DeliveredEnergy")]
+    assert isinstance(defib, Label)
+    assert defib.data[0] == pytest.approx(200.0)
+
+    assert "defibrillations_Impedance" in label_names
+
+    # no event series may appear as channels
+    for forbidden in ("cc", "ventilations", "cpr_periods", "start_cpr", "stop_cpr"):
+        assert forbidden not in channel_names
+
+
+def test_lifepak_cpreventlog_synthetic():
+    """Synthetic TrueCPR-only export: labels with depth and rate, no channels."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        d = Path(tmpdir)
+        f = d / "truecpr_CprEventLog.xml"
+        f.write_text(_TRUECPR_CPRE)
+
+        v = Vitals()
+        v.add_defibrillator_recording(f)
+
+    assert not v.channels
+
+    label_names = [lb.name for lb in v.labels]
+    assert "cc" in label_names
+    assert len(v.labels[label_names.index("cc")].time_index) == 2
+
+    assert "CompressionDepth" in label_names
+    depth = v.labels[label_names.index("CompressionDepth")]
+    assert isinstance(depth, Label)
+    np.testing.assert_allclose(depth.data, [50.0, 48.5])
+
+    assert "CompressionRate" in label_names
+    rate = v.labels[label_names.index("CompressionRate")]
+    np.testing.assert_allclose(rate.data, [100.0, 98.0])
+
+
+def test_lifepak_missing_cpre_raises(vitabel_test_data_dir):
+    """Missing CprEventLog raises FileNotFoundError for full LIFEPAK export."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        d = Path(tmpdir)
+        (d / "case_Continuous.xml").write_text(_LP15_CONTINUOUS)
+        (d / "case_Continuous_Waveform.xml").write_text(_LP15_WAVEFORM)
+        # CprEventLog intentionally absent
+        with pytest.raises(FileNotFoundError, match="Error when Loading LIFEPAK"):
+            Vitals().add_defibrillator_recording(d / "case_Continuous.xml")
+
+
+def test_add_stryker_lifepak15(vitabel_test_data_dir):
+    """Real LP15 export (LP15.tar.gz): correct channel and label types."""
+    import tarfile
+
+    with tarfile.open(vitabel_test_data_dir / "LP15.tar.gz") as tf:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tf.extractall(tmpdir, filter="data")
+            fp = Path(tmpdir) / "LP15_Continuous.xml"
+            v = Vitals()
+            v.add_defibrillator_recording(fp)
+
+    assert v.channels, "expected at least one waveform channel"
+
+    label_names = [lb.name for lb in v.labels]
+    assert "cc" in label_names
+    assert isinstance(v.labels[label_names.index("cc")], Label)
+    assert "cpr_periods" in label_names
+    assert isinstance(v.labels[label_names.index("cpr_periods")], IntervalLabel)
+    assert "defibrillations_DeliveredEnergy" in label_names
+
+    # events must not leak into channels
+    channel_names = [c.name for c in v.channels]
+    for forbidden in ("cc", "ventilations", "cpr_periods", "start_cpr", "stop_cpr",
+                      "Compressions", "Ventilations", "StartCPR", "StopCPR"):
+        assert forbidden not in channel_names
+
+
+# DATA NOT AVAILABLE FOR PUBLICATION — private patient recordings
+# def test_add_lifepak15_private(vitabel_test_data_dir):
+#     lifepak_dir = vitabel_test_data_dir / "lifepak"
+#     file_path = lifepak_dir / "2022112410042400-LP158890Schwein9-Hup-Sup-ROSC_Continuous.xml"
+#     v = Vitals()
+#     v.add_defibrillator_recording(file_path)
+#     assert v.channels
+#     assert any(lb.name == "cc" for lb in v.labels)
 
 
 # DATA NOT AVAILABLE FOR PUBLICATION
