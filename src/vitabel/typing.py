@@ -50,8 +50,14 @@ class EOLifeRecord:
     Keys:
     - ``"cycle_start"``  — Ti, Te, Tp, Cycle number at breath-onset timestamp.
     - ``"insp_end"``     — Vi at breath-onset + Ti (end of inspiration).
-    - ``"exp_end"``      — Vt, Freq, Leakage, Leakage ratio at breath-onset + Ti + Te
+    - ``"exp_end"``      — Vt at breath-onset + Ti + Te (end of expiration).
+    - ``"leakage"``      — Leakage, Leakage ratio at breath-onset + Ti + Te
                            (end of expiration).
+    - ``"f"``            — Respiratory rate (f) at breath-onset + Ti + Te + Tp
+                           (end of full breath cycle) when all three phases are
+                           present; falls back to next inspiration onset if any of
+                           Ti, Te, or Tp is NaN. Last breath requiring a fallback
+                           but with no successor is omitted.
     - ``"vi_wave"``      — Reconstructed inspiratory volume waveform
                            (``Vi (displayed)``); reproduces the EOlife screen shape.
                            Per-breath anchor points: ``(onset, 0)``,

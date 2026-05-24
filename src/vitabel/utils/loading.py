@@ -2912,7 +2912,7 @@ def read_corpuls(f_corpuls):  # Read Corpuls Data
 def read_eolife_export(eolife_filepath: Path) -> EOLifeRecord:
     """Read an EOlife ventilator export CSV file into an :class:`.EOLifeRecord`.
 
-    Four reconstructed waveform views are produced in ``data_timed``:
+    Five reconstructed waveform views are produced in ``data_timed``:
 
     - ``data_timed["vi_wave"]`` → ``Vi (displayed)``: inspiratory volume waveform
       shown on the EOlife screen — ramps from 0 to Vi during inspiration, then
@@ -3158,8 +3158,11 @@ def read_eolife_export(eolife_filepath: Path) -> EOLifeRecord:
     else:
         _eolife_uncharacterised_breaths_label = None
 
-    df_exp_end = df_data[["Vt", "f", "Leakage", "Leakage ratio"]].copy()
+    df_exp_end = df_data[["Vt"]].copy()
     df_exp_end.index = idx + ti_td + te_td
+
+    df_leakage = df_data[["Leakage", "Leakage ratio"]].copy()
+    df_leakage.index = idx + ti_td + te_td
 
     # Reconstructed volume waveforms.
     #
@@ -3186,6 +3189,21 @@ def read_eolife_export(eolife_filepath: Path) -> EOLifeRecord:
     tp_td = pd.to_timedelta(df_data["Tp"], unit="ms").fillna(pd.Timedelta(0))
     has_ti = df_data["Ti"].notna()
     has_te = df_data["Te"].notna()
+
+    # f: fully characterised breaths (Ti, Te, Tp all present) anchor at
+    # onset + Ti + Te + Tp (full cycle end); any missing phase falls back to
+    # the next inspiration onset. The last breath needing a fallback but having
+    # no successor is dropped (NaT anchor excluded by _f_valid below).
+    has_tp = df_data["Tp"].notna()
+    _f_anchor = pd.Series(idx + ti_td + te_td + tp_td, index=idx)
+    _f_fallback = ~(has_ti & has_te & has_tp)
+    _f_anchor[_f_fallback] = _next_td[_f_fallback]
+    _f_vals = df_data["f"]
+    _f_valid = _f_anchor.notna() & _f_vals.notna()
+    df_f = pd.DataFrame(
+        {"f": _f_vals[_f_valid].values},
+        index=pd.TimedeltaIndex(_f_anchor[_f_valid].values),
+    )
 
     vi_pts: list[tuple] = []
     v_exp_pts: list[tuple] = []
@@ -3339,6 +3357,8 @@ def read_eolife_export(eolife_filepath: Path) -> EOLifeRecord:
         "cycle_start":  df_cycle_start,
         "insp_end":     df_insp_end,
         "exp_end":      df_exp_end,
+        "f":            df_f,
+        "leakage":      df_leakage,
         "vi_wave":      df_vi_wave,
         "v_exp":        df_v_exp,
         "vt_displayed": df_vt_displayed,

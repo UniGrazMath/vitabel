@@ -614,6 +614,8 @@ class Vitals:
         "cycle_start":  "label",
         "insp_end":     "label",
         "exp_end":      "label",
+        "f":            "label",
+        "leakage":      "label",
         "vi_wave":      "channel",
         "v_exp":        "channel",
         "vt_displayed": "channel",
@@ -632,10 +634,12 @@ class Vitals:
         Each ``data_timed`` group is added either as labels or channels following
         :attr:`_EOLIFE_GROUP_DATATYPE`:
 
-        - ``cycle_start`` / ``insp_end`` / ``exp_end`` → **labels** (single-point
-          readings per breath: ``Cycle number``, ``Ti``, ``Te``, ``Tp`` at breath
-          onset; ``Vi`` at end of inspiration; ``Vt``, ``f``, ``Leakage``,
-          ``Leakage ratio`` at end of expiration).
+        - ``cycle_start`` / ``insp_end`` / ``exp_end`` / ``f`` / ``leakage``
+          → **labels** (single-point readings per breath: ``Cycle number``,
+          ``Ti``, ``Te``, ``Tp`` at breath onset; ``Vi`` at end of inspiration;
+          ``Vt`` at end of expiration; ``f`` at end of full breath cycle
+          (``onset + Ti + Te + Tp``), or next inspiration onset when any phase
+          is missing; ``Leakage``, ``Leakage ratio`` at end of expiration).
         - ``vi_wave`` / ``v_exp`` / ``vt_displayed`` / ``f_displayed`` →
           **channels** (reconstructed continuous waveforms: ``Vi (displayed)``,
           ``V_exp``, ``Vt (displayed)``, ``f (displayed)``).
