@@ -12,6 +12,7 @@ import pytest
 
 from vitabel import Vitals, __version__
 from vitabel import Channel, Label, IntervalLabel
+from vitabel.utils import loading
 
 
 def compare_two_dictionaries(dict1, dict2):
@@ -56,6 +57,57 @@ def _write_test_edfplus(path: Path):
     writer.writeAnnotation(5.0, 1.0, "artifact")
     writer.writeAnnotation(8.0, 0.5, "noise")
     writer.close()
+
+
+def _write_synthetic_zoll_csv_pair(base_path: Path) -> tuple[Path, Path]:
+    csv_path = base_path.with_name(base_path.name + "_ecg.txt")
+    xml_path = base_path.with_suffix(".xml")
+
+    rows = []
+    for i in range(3):
+        rows.append(
+            {
+                "Start": 0,
+                " Serial": "AR12345",
+                " DeviceId": 1,
+                " RunNumber": 1,
+                " Date": " 01-01-2024",
+                " Real": f" 12:00:0{i}.000",
+                " Elapsed": i,
+                " X": 0,
+                " EcgVal": i + 1,
+                " EcgStatus": 1,
+                " CapnoVal": 10 + i,
+                " CapnoStatus": 1,
+                " P1Val": 0,
+                " P1Status": 0,
+                " P2Val": 0,
+                " P2Status": 0,
+                " P3Val": 0,
+                " P3Status": 0,
+                " Spo2Val": 95 + i,
+                " Spo2Status": 1,
+                " CprDepth": 0,
+                " CprFrequency": 0,
+                " CprStatus": 0,
+                " CprWaveVal": 0,
+                " FiltEcgVal": 0,
+                " FiltEcgStatus": 0,
+                " Ecg2Val": 0,
+                " Ecg2Status": 0,
+                " Ecg3Val": 0,
+                " Ecg3Status": 0,
+                " Ecg4Val": 0,
+                " Ecg4Status": 0,
+            }
+        )
+
+    pd.DataFrame(rows).to_csv(csv_path, index=False, encoding="utf-16")
+    xml_path.write_text(
+        "<Root><Record><Defibrillator><Serial>AR12345</Serial></Defibrillator></Record></Root>",
+        encoding="utf-8",
+    )
+    return csv_path, xml_path
 
 
 def test_cardio_init():
@@ -157,6 +209,30 @@ def test_add_zoll_json(vitabel_example_data_dir):
 #     cardio_recording.add_defibrillator_recording(file_path)
 #     check_cardio_properties(cardio_recording)
 #     assert cardio_recording.channels
+
+
+def test_read_zoll_csv_without_cpr_data(tmp_path):
+    csv_path, xml_path = _write_synthetic_zoll_csv_pair(tmp_path / "zoll_case")
+
+    pat_dat, data = loading.read_zollcsv(csv_path, xml_path)
+
+    assert "Pads" in data
+    assert "CO2 mmHg, Waveform" in data
+    assert "SpO2 %, Waveform" in data
+    assert "CompDisp" not in data
+    assert "CompRate" not in data
+    assert "Displacement" not in data
+    assert "CompDisp" not in pat_dat["Keys"]["Key"].values
+    assert "CompRate" not in pat_dat["Keys"]["Key"].values
+    assert "Displacement" not in pat_dat["Keys"]["Key"].values
+
+    cardio_recording = Vitals()
+    cardio_recording.add_defibrillator_recording(csv_path)
+    assert sorted(cardio_recording.get_channel_names()) == [
+        "capnography",
+        "ecg_pads",
+        "ppg",
+    ]
 
 
 def test_add_stryker_lucas(vitabel_test_data_dir):
