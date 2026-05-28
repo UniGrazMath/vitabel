@@ -2111,6 +2111,40 @@ def new_names(oldkey):
 
 
 def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
+    """Load a full Stryker/LIFEPAK CodeStat research XML export.
+
+    Parses the three companion files produced by CodeStat's research exporter.
+    Waveform channels (ECG, capnography, impedance, SpO2) and trend vitals
+    (heart rate, etCO2, NIBP, …) are returned in *channel_data* and converted
+    to :class:`~vitabel.Channel` objects by the caller.  Per-compression and
+    per-event data (compressions, ventilations, CPR periods, defibrillations,
+    12-lead acquisition timestamps) are returned in *label_spec_dict* and
+    converted to :class:`~vitabel.Label` / :class:`~vitabel.IntervalLabel`
+    objects by the caller.
+
+    Parameters
+    ----------
+    f_cont
+        Path to ``*_Continuous.xml`` (device metadata, trend vitals, events).
+    f_cont_wv
+        Path to ``*_Continuous_Waveform.xml`` (waveform segments).
+    f_cpre
+        Path to ``*_CprEventLog.xml`` (per-compression and per-event log).
+    further_files
+        Additional XML files found in the export directory (logged only).
+
+    Returns
+    -------
+    pat_dat : dict
+        Recording metadata (``Main data``, ``Keys``, ``Load Log``).
+    channel_data : dict[str, pd.DataFrame]
+        Waveform and trend-vital channels, ready for :class:`~vitabel.Channel`
+        construction.
+    label_spec_dict : dict[str, dict]
+        Event specifications.  Each entry maps a label name to a dict with
+        keys ``"type"`` (``"label"`` or ``"interval_label"``),
+        ``"time_index"``, and optionally ``"data"``.
+    """
     pure_filename = f_cont.stem[: f_cont.stem.rindex("_")]
 
     tree = ET.parse(f_cont)  # LOAD XML FILES
@@ -2134,30 +2168,37 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
     tag = elem.tag
     pcstr = tag[tag.find("{") : tag.find("}") + 1]
     try:  # LOAD MAIN DATA
-        for event in root[1].find(pcstr + "Events"):
+        for event in root.find(pcstr + "Events"):
             if event.attrib["Type"] == "PowerOn":
                 starttime = pd.Timestamp(event.find(pcstr + "AdjustedTime").text)
         serial = (
-            root1[1]
+            root1
             .find(pcstr + "Record")
             .find(pcstr + "RecordingDevice")
             .find(pcstr + "SerialNumber")
             .text
         )
+        model = (
+            root1
+            .find(pcstr + "Record")
+            .find(pcstr + "RecordingDevice")
+            .find(pcstr + "Model")
+            .text
+        )
     except TypeError:
-        event_container = root.find("Events")
-        events = event_container.findall("Event")
+        event_container = root.find(pcstr + "Events")
+        events = event_container.findall(pcstr + "Event")
         for event in events:
             if event.attrib["Type"] == "PowerOn":
-                starttime = pd.Timestamp(event.find("AdjustedTime").text)
-        device_container = root.find("Device")
-        serial = device_container.find("SerialNumber").text
+                starttime = pd.Timestamp(event.find(pcstr + "AdjustedTime").text)
+        device_container = root.find(pcstr + "Device")
+        serial = device_container.find(pcstr + "SerialNumber").text
 
         # TODO: investigate unused variable
         # device_description = device_container.find(
         #     "DeviceDescription"
         # ).text  # should be LP15XXXX
-        model = device_container.find("Model").text  # should be LP15
+        model = device_container.find(pcstr + "Model").text  # should be LP15
 
     # Make one reading function which loads for fielnames and pcstr, try different pctry via try except
     rec_start = ""
@@ -2166,10 +2207,10 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
     channel_info = {}  # LOAD WAVEFORM DATA From Channels
     channel_data = {}
     try:
-        datas = root1[1].find(pcstr + "Record").findall(pcstr + "RecordData")
+        datas = root1.find(pcstr + "Record").findall(pcstr + "RecordData")
     except AttributeError:
-        Record_container = root1.find("Record")
-        datas = Record_container.findall("RecordData")
+        Record_container = root1.find(pcstr + "Record")
+        datas = Record_container.findall(pcstr + "RecordData")
     for record in datas:
         cha_name = lifepak2zoll_name(record.find(pcstr + "Channel").text)
         cha_unit = (
@@ -2291,10 +2332,10 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
 
         trend_data = {}
 
-        events = root2[1].find(pcstr + "Events")
+        events = root2.find(pcstr + "Events")
         if events is None:
-            event_container = root2.find("Events")
-            events = event_container.findall("Event")
+            event_container = root2.find(pcstr + "Events")
+            events = event_container.findall(pcstr + "Event")
 
         for event in events:
             if event.attrib["Type"] == "ChestCompression":
@@ -2317,11 +2358,14 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
                 defibtime = np.append(
                     defibtime, pd.Timestamp(event.find(pcstr + "AdjustedTime").text)
                 )
+                _en, _imp = np.nan, np.nan
                 for defib in event.find(pcstr + "Values").findall(pcstr + "Value"):
                     if defib.attrib["Type"] == "DefibEnergy":
-                        defib_en = np.append(defib_en, int(defib.text))
+                        _en = int(defib.text)
                     if defib.attrib["Type"] == "DefibVoltageCompImpedance":
-                        defib_imp = np.append(defib_imp, int(defib.text))
+                        _imp = int(defib.text)
+                defib_en = np.append(defib_en, _en)
+                defib_imp = np.append(defib_imp, _imp)
             elif event.attrib["Type"] == "12Lead":
                 twelve_lead_ecg_time = np.append(
                     twelve_lead_ecg_time,
@@ -2465,13 +2509,155 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
     channel_info.reset_index(inplace=True)
     channel_info.rename(columns={"index": "Key"}, inplace=True)
     pat_dat = {"Main data": case_info, "Keys": channel_info, "Load Log": ""}
-    data = {
-        **channel_data,
-        **trend_data,
-        **compr_info,
-        **defib_data,
+    label_spec_dict = {}
+    if Compr_Flag:
+        if len(compr) > 0:
+            label_spec_dict["cc"] = {"type": "label", "time_index": compr, "data": None}
+        if len(vent) > 0:
+            label_spec_dict["ventilations"] = {"type": "label", "time_index": vent, "data": None}
+        if len(startcpr) > 0:
+            n_starts, n_stops = len(startcpr), len(stopcpr)
+            if n_starts == n_stops + 1:
+                logger.info(
+                    "CPR period missing final StopCPR event; using recording end as stop."
+                )
+                stopcpr = np.append(stopcpr, pd.Timestamp(rec_stop))
+            elif n_starts != n_stops:
+                logger.warning(
+                    f"CPR start/stop count mismatch ({n_starts}/{n_stops}); "
+                    "CPR periods not imported."
+                )
+                startcpr = np.array([])
+            if len(startcpr) > 0:
+                cpr_times = np.empty(2 * len(startcpr), dtype=object)
+                cpr_times[0::2] = startcpr
+                cpr_times[1::2] = stopcpr
+                label_spec_dict["cpr_periods"] = {
+                    "type": "interval_label", "time_index": cpr_times
+                }
+        if len(twelve_lead_ecg_time) > 0:
+            label_spec_dict["time_12_lead_ecg"] = {
+                "type": "label", "time_index": twelve_lead_ecg_time, "data": None
+            }
+        if len(defibtime) == n_defib and len(defibtime) > 0:
+            label_spec_dict["defibrillations_DeliveredEnergy"] = {
+                "type": "label", "time_index": defibtime, "data": defib_en,
+            }
+            label_spec_dict["defibrillations_Impedance"] = {
+                "type": "label", "time_index": defibtime, "data": defib_imp,
+            }
+    data = {**channel_data, **trend_data}
+    return pat_dat, data, label_spec_dict
+
+
+def read_lifepak_cpreventlog(f_cpre: Path):
+    """Load a standalone Stryker CprEventLog XML (e.g. TrueCPR-only exports).
+
+    Extracts per-compression timestamps, depth (mm), and rate (1/min) from
+    ``DeviceCompression`` events.  Compressions flagged ``DeletedByUser=Yes``
+    are skipped.  No waveform channels are present in this export type;
+    all data is returned as label specifications.
+
+    Parameters
+    ----------
+    f_cpre
+        Path to the standalone ``*_CprEventLog.xml`` file.
+
+    Returns
+    -------
+    pat_dat : dict
+        Recording metadata (``Main data``, ``Keys``, ``Load Log``).
+    channel_data : dict
+        Always empty ``{}`` — no waveform channels in a CprEventLog-only export.
+    label_spec_dict : dict[str, dict]
+        Compression events as label specifications: ``"cc"`` (time-only),
+        ``"CompressionDepth"`` (numeric, mm), ``"CompressionRate"`` (numeric, 1/min).
+    """
+    pure_filename = f_cpre.name.removesuffix("_CprEventLog.xml")
+
+    tree = ET.parse(f_cpre)
+    root = tree.getroot()
+    root_tag = root.tag
+    ns = root_tag.split("}")[0].lstrip("{") if "}" in root_tag else ""
+    pcstr = "{" + ns + "}" if ns else ""
+
+    dev = root.find(pcstr + "RecordingDevice")
+    serial = dev.find(pcstr + "SerialNumber").text
+    model = dev.find(pcstr + "Model").text
+
+    adj_power_on = root.find(pcstr + "AdjustedPowerOn")
+    starttime = pd.Timestamp(adj_power_on.text) if adj_power_on is not None else pd.NaT
+
+    compr_times, depths, rates = [], [], []
+    for event in root.find(pcstr + "Events"):
+        if event.attrib.get("Type") != "DeviceCompression":
+            continue
+        vals = {
+            v.attrib["Type"]: v.text
+            for v in event.find(pcstr + "Values").findall(pcstr + "Value")
+        }
+        if vals.get("DeletedByUser") == "Yes":
+            continue
+        t = pd.Timestamp(event.find(pcstr + "AdjustedTime").text)
+        compr_times.append(t)
+        depths.append(float(vals["Depth"]) if "Depth" in vals else np.nan)
+        rates.append(float(vals["Rate"]) if "Rate" in vals else np.nan)
+
+    compr_times = np.array(compr_times, dtype="datetime64[ns]")
+    rec_start = compr_times[0] if len(compr_times) > 0 else pd.NaT
+    rec_stop = compr_times[-1] if len(compr_times) > 0 else pd.NaT
+
+    compr_info = {"Compressions": pd.Series(compr_times)}
+    depth_df = pd.DataFrame(
+        {"CompressionDepth": depths}, index=compr_times
+    )
+    rate_df = pd.DataFrame(
+        {"CompressionRate": rates}, index=compr_times
+    )
+
+    channel_info = {
+        "Compressions": {
+            "Type": "Event data", "Sample Rate": "None", "Unit": "Timestamp",
+            "Start": rec_start, "Stop": rec_stop, "Length": len(compr_times),
+        },
+        "CompressionDepth": {
+            "Type": "Continuous wave data", "Sample Rate": "None", "Unit": "mm",
+            "Start": rec_start, "Stop": rec_stop, "Length": len(compr_times),
+        },
+        "CompressionRate": {
+            "Type": "Continuous wave data", "Sample Rate": "None", "Unit": "bpm",
+            "Start": rec_start, "Stop": rec_stop, "Length": len(compr_times),
+        },
     }
-    return pat_dat, data
+
+    case_info = {
+        "File ID": pure_filename,
+        "Serial No": serial,
+        "Model": model,
+        "Start time": starttime,
+        "Recording start": pd.Timestamp(rec_start),
+        "Recording end": pd.Timestamp(rec_stop),
+        "Recording Length": pd.Timestamp(rec_stop) - pd.Timestamp(rec_start),
+    }
+    case_info = pd.DataFrame(case_info, index=[0]).T
+    channel_info_df = pd.DataFrame.from_dict(channel_info, orient="index")
+    channel_info_df.reset_index(inplace=True)
+    channel_info_df.rename(columns={"index": "Key"}, inplace=True)
+    pat_dat = {"Main data": case_info, "Keys": channel_info_df, "Load Log": ""}
+    label_spec_dict = {}
+    if len(compr_times) > 0:
+        label_spec_dict["cc"] = {"type": "label", "time_index": compr_times, "data": None}
+        label_spec_dict["CompressionDepth"] = {
+            "type": "label",
+            "time_index": compr_times,
+            "data": np.array(depths, dtype=float),
+        }
+        label_spec_dict["CompressionRate"] = {
+            "type": "label",
+            "time_index": compr_times,
+            "data": np.array(rates, dtype=float),
+        }
+    return pat_dat, {}, label_spec_dict
 
 
 def lifepak2zoll_name(lp):
@@ -2488,6 +2674,31 @@ def lifepak2zoll_name(lp):
 
 
 def read_lucas(f_luc: Path, f_cpre: Path):
+    """Load a Stryker LUCAS mechanical CPR device export.
+
+    Parses ``*_Lucas.xml`` (device metadata, shock events) and the companion
+    ``*_CprEventLog.xml`` (per-compression DeviceCompression events).
+    No waveform channels are present; all data is returned as label
+    specifications.
+
+    Parameters
+    ----------
+    f_luc
+        Path to ``*_Lucas.xml``.
+    f_cpre
+        Path to ``*_CprEventLog.xml``.
+
+    Returns
+    -------
+    pat_dat : dict
+        Recording metadata.  Empty ``{}`` if no compressions were recorded.
+    channel_data : dict
+        Always empty ``{}``.
+    label_spec_dict : dict[str, dict]
+        ``"cc"`` (time-only compressions), ``"defibrillations_DeliveredEnergy"``
+        and ``"defibrillations_Impedance"`` (numeric labels) when defibrillations
+        are present and the count matches the device-reported total.
+    """
     pcstr = ""
     pure_filename = f_luc.name.removesuffix("_Lucas.xml")
 
@@ -2589,11 +2800,20 @@ def read_lucas(f_luc: Path, f_cpre: Path):
     channel_info.reset_index(inplace=True)
     channel_info.rename(columns={"index": "Key"}, inplace=True)
     pat_dat = {"Main data": case_info, "Keys": channel_info, "Load Log": ""}
-    data = {**compr_info, **defib_data}
+    label_spec_dict = {}
     if len(compr) > 0:
-        return pat_dat, data
+        label_spec_dict["cc"] = {"type": "label", "time_index": compr, "data": None}
+    if len(defibtime) > 0 and len(defibtime) == n_defib:
+        label_spec_dict["defibrillations_DeliveredEnergy"] = {
+            "type": "label", "time_index": defibtime, "data": defib_en,
+        }
+        label_spec_dict["defibrillations_Impedance"] = {
+            "type": "label", "time_index": defibtime, "data": defib_imp,
+        }
+    if len(compr) > 0:
+        return pat_dat, {}, label_spec_dict
     else:
-        return {}, {}
+        return {}, {}, {}
 
 
 def read_corpuls(f_corpuls):  # Read Corpuls Data
