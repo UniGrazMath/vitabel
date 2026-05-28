@@ -1339,28 +1339,122 @@ def test_add_eolife_ventilatory_feedback(vitabel_test_data_dir):
         / "eolife_test_file_with_empty_values.csv"
     )
     collection.add_ventilatory_feedback(eolife_file)
-    # Check that at least one channel is present and not empty
-    assert len(collection.channels) == 9
-    assert all(
-        hasattr(channel, "data") and len(channel.data) > 0
-        for channel in collection.channels
-    )
 
-    # Furthermore, check for expected channel names
-    expected_channels = [
-        "Cycle number",
-        "Ti",
-        "Te",
-        "Tp",
-        "Freq",
-        "Vi",
-        "Vt",
-        "Leakage",
-        "Leakage ratio",
-    ]
+    # Reconstructed continuous waveforms → channels.
+    expected_channels = ["Vi (displayed)", "V_exp", "Vt (displayed)"]
     actual_channel_names = [channel.name for channel in collection.channels]
-    assert all(name in actual_channel_names for name in expected_channels)
-    assert max([len(Channel) for Channel in collection.channels]) == 47
+    for name in expected_channels:
+        assert name in actual_channel_names, f"Missing channel: {name}"
+
+    # Single-point per-breath readings → labels.
+    expected_labels = [
+        "Cycle number", "Ti", "Te", "Tp",        # cycle_start
+        "Vi",                                    # insp_end
+        "Vt", "f", "Leakage", "Leakage ratio",   # exp_end
+    ]
+    actual_label_names = [lb.name for lb in collection.data.global_labels]
+    for name in expected_labels:
+        assert name in actual_label_names, f"Missing label: {name}"
+
+    # All loaded series should be non-empty.
+    for ch in collection.channels:
+        assert ch.data is not None and len(ch.data) > 0
+    for name in expected_labels:
+        lb = collection.get_label(name)
+        assert len(lb.time_index) > 0
+
+    # File has two runs of NaN-Ti breaths (row 31 and rows 37–46), so
+    # add_ventilatory_feedback must attach an "Uncharacterised Breaths" global label.
+    assert "Uncharacterised Breaths" in actual_label_names
+    nan_label = collection.get_label("Uncharacterised Breaths")
+    assert isinstance(nan_label, IntervalLabel)
+    assert nan_label.intervals.shape == (2, 2)
+
+    # DEFAULT_PLOT_STYLE entries should be applied to both channels and labels
+    # (labels may add their own keys on top, so we check the defaults are present).
+    from vitabel.utils import DEFAULT_PLOT_STYLE
+    for series, key in [
+        (collection.get_channel("Vi (displayed)"), "Vi (displayed)"),
+        (collection.get_label("Vi"), "Vi"),
+    ]:
+        for k, v in DEFAULT_PLOT_STYLE[key].items():
+            assert series.plotstyle.get(k) == v, f"{key}: {k}={series.plotstyle.get(k)!r} != {v!r}"
+
+
+class TestReadEOlifeExport:
+    """Tests for read_eolife_export — specifically the eolife_uncharacterised_breaths field."""
+
+    @pytest.fixture
+    def eolife_file(self, vitabel_test_data_dir):
+        return (
+            vitabel_test_data_dir
+            / "sample_signals"
+            / "eolife_test_file_with_empty_values.csv"
+        )
+
+    def test_eolife_uncharacterised_breaths_is_interval_label(self, eolife_file):
+        from vitabel.utils.loading import read_eolife_export
+
+        rec = read_eolife_export(eolife_file)
+        assert isinstance(rec.eolife_uncharacterised_breaths, IntervalLabel)
+
+    def test_eolife_uncharacterised_breaths_interval_count(self, eolife_file):
+        """File has row 31 (isolated) and rows 37–46 (run) → 2 intervals."""
+        from vitabel.utils.loading import read_eolife_export
+
+        rec = read_eolife_export(eolife_file)
+        assert rec.eolife_uncharacterised_breaths.intervals.shape == (2, 2)
+
+    def test_eolife_uncharacterised_breaths_interval_boundaries(self, eolife_file):
+        """Each interval must start at the first NaN-Ti breath and end at the
+        next characterised breath onset (or estimated end for a trailing run)."""
+        from vitabel.utils.loading import read_eolife_export
+
+        rec = read_eolife_export(eolife_file)
+        intervals = rec.eolife_uncharacterised_breaths.intervals  # shape (2, 2), absolute Timestamps
+
+        tol = pd.Timedelta(milliseconds=10)
+
+        # Interval 1: row 31 onset → row 32 onset
+        expected_start_1 = rec.recording_start + pd.to_timedelta("00:03:46.30")
+        expected_end_1 = rec.recording_start + pd.to_timedelta("00:03:49.31")
+        assert abs(intervals[0, 0] - expected_start_1) <= tol
+        assert abs(intervals[0, 1] - expected_end_1) <= tol
+
+        # Interval 2: row 37 onset → row 47 onset
+        expected_start_2 = rec.recording_start + pd.to_timedelta("00:03:58.39")
+        expected_end_2 = rec.recording_start + pd.to_timedelta("00:04:28.87")
+        assert abs(intervals[1, 0] - expected_start_2) <= tol
+        assert abs(intervals[1, 1] - expected_end_2) <= tol
+
+    def test_insp_end_has_no_ti_inferred_column(self, eolife_file):
+        """Ti_inferred must not appear as a column — it was replaced by eolife_uncharacterised_breaths."""
+        from vitabel.utils.loading import read_eolife_export
+
+        rec = read_eolife_export(eolife_file)
+        assert "Ti_inferred" not in rec.data_timed["insp_end"].columns
+
+    def test_eolife_uncharacterised_breaths_none_when_all_characterised(self, tmp_path):
+        """When every breath has valid Ti/Te, eolife_uncharacterised_breaths must be None."""
+        from vitabel.utils.loading import read_eolife_export
+
+        csv_content = (
+            "Firstname;Lastname;Age;Date;Time;Patient Type;Patient Size;Mode;"
+            "Training;FrequencyMode;Leakage alarm;EOlife\n"
+            "undefined;undefined;undefined;20/02/25;09:37:00;adult;Medium;"
+            "Continuous;Blind;ERC;ON;23700092\n"
+            "\n"
+            "Cycle number;Time (hh:mm:ss:SS);Ti (ms);Te (ms);Tp (ms);"
+            "Freq (/min);Vi (mL);Vt (mL);Leakage (mL);Leakage ratio (%)\n"
+            "1;00:00:00:00;1050;1390;2520;12;635;635;0;0\n"
+            "2;00:00:04:96;1320;1516;2442;11;655;655;0;0\n"
+            "3;00:00:10:23;1378;1425;2842;10;632;632;0;0\n"
+        )
+        csv_file = tmp_path / "eolife_all_char.csv"
+        csv_file.write_text(csv_content, encoding="latin1")
+
+        rec = read_eolife_export(csv_file)
+        assert rec.eolife_uncharacterised_breaths is None
 
 
 # === Tests for _find_segments_above_threshold helper ===
@@ -2073,3 +2167,77 @@ class TestComputeVentilationVolumes:
             recording.get_label("VTexp_cum").data,
             np.array([0.5]),
         )
+
+
+class TestFDisplayedFirmwareV213:
+    """Regression tests for f(displayed) firmware behaviours documented in
+    ``vitabel.utils.loading.add_ventilatory_feedback``.
+
+    Fixture: EOlife X, serial X0001126, firmware v2.1.3, animal experiment
+    2026-05-13 (authority approval no. 2023-0.288.343).  Expected values
+    derived by simulation and cross-checked against OCR screen-recording
+    ground truth from the same session.
+    """
+
+    FIXTURE = (
+        Path(__file__).parent
+        / "data"
+        / "sample_signals"
+        / "eolife_X0001126_firmware_v2_1_3.csv"
+    )
+
+    @pytest.fixture
+    def case(self):
+        v = Vitals()
+        v.add_ventilatory_feedback(self.FIXTURE)
+        return v
+
+    @staticmethod
+    def _f_at(case, td: pd.Timedelta) -> float:
+        """Step-function forward-fill query of f(displayed) at elapsed time td."""
+        ch = case.get_channel("f (displayed)")
+        ds = ch.get_data()
+        times = pd.DatetimeIndex(ds.time_index)
+        abs_t = case.rec_start() + td
+        pos = int(np.searchsorted(times.asi8, np.int64(abs_t.value), side="right")) - 1
+        if pos < 0:
+            return float("nan")
+        return float(ds.data[pos])
+
+    # ── f > 60 /min → NaN ("--") ─────────────────────────────────────────────
+
+    def test_f_displayed_held_when_rate_exceeds_60(self, case):
+        """Cycle 621 drives the 3-breath mean above 60 /min → device shows "--".
+        The channel holds the last valid value (cycle 620: 34 /min) with no step."""
+        val_before = self._f_at(case, pd.to_timedelta("00:34:28"))  # after cycle-620 trigger
+        val_during = self._f_at(case, pd.to_timedelta("00:34:30"))  # inside NaN window
+        assert val_before == pytest.approx(34.0)
+        assert val_during == pytest.approx(34.0), f"expected held value 34, got {val_during}"
+
+    def test_f_displayed_recovers_after_nan(self, case):
+        """Cycle 622 brings the rolling mean back to 36 /min after the NaN."""
+        val = self._f_at(case, pd.to_timedelta("00:34:33"))
+        assert val == pytest.approx(36.0), f"expected 36 /min after recovery, got {val}"
+
+    # ── Uncharacterised breaths step the display down ─────────────────────────
+
+    def test_f_displayed_before_uncharacterised_run(self, case):
+        """Cycle 709 (characterised, T=3406 ms): buffer=[600,586,3406] → 39 /min."""
+        val = self._f_at(case, pd.to_timedelta("00:37:40"))
+        assert val == pytest.approx(39.0), f"expected 39 /min, got {val}"
+
+    def test_f_displayed_steps_down_after_first_uncharacterised(self, case):
+        """Cycle 710 (NaN Ti/Te, inter-onset≈5990 ms): buffer=[586,3406,5990] → 18 /min.
+        Without the inter-onset fix the channel would hold 39 /min here."""
+        val = self._f_at(case, pd.to_timedelta("00:37:46"))
+        assert val == pytest.approx(18.0), f"expected 18 /min after 1st NaN breath, got {val}"
+
+    def test_f_displayed_steps_down_after_second_uncharacterised(self, case):
+        """Cycle 711 (NaN Ti/Te, inter-onset≈5920 ms): buffer=[3406,5990,5920] → 12 /min."""
+        val = self._f_at(case, pd.to_timedelta("00:37:52"))
+        assert val == pytest.approx(12.0), f"expected 12 /min after 2nd NaN breath, got {val}"
+
+    def test_f_displayed_after_characterised_resumes(self, case):
+        """Cycle 712 (T=5892 ms): buffer=[5990,5920,5892] → 10 /min."""
+        val = self._f_at(case, pd.to_timedelta("00:37:57"))
+        assert val == pytest.approx(10.0), f"expected 10 /min after characterised resumes, got {val}"

@@ -12,6 +12,7 @@ import vitabel
 import vitabel.utils as utils
 
 from vitabel.typing import EOLifeRecord
+from vitabel.utils.stylesheet import DEFAULT_PLOT_STYLE
 
 from pathlib import Path
 from scipy.stats import mode
@@ -2916,48 +2917,114 @@ def read_corpuls(f_corpuls):  # Read Corpuls Data
 
 
 def read_eolife_export(eolife_filepath: Path) -> EOLifeRecord:
-    # EOlife export data are written in csv format
-    # the first three line contain header information on the recording
-    # line 4 contains the heder for the recording data
-    # the rest of the file contains the data
+    """Read an EOlife ventilator export CSV file into an :class:`.EOLifeRecord`.
 
-    header_info = pd.read_csv(
+    Five reconstructed waveform views are produced in ``data_timed``:
+
+    - ``data_timed["vi_wave"]`` → ``Vi (displayed)``: inspiratory volume waveform
+      shown on the EOlife screen — ramps from 0 to Vi during inspiration, then
+      holds at Vi through the expiration and the Tp pause, dropping back to 0
+      only when the next inspiration begins.
+    - ``data_timed["v_exp"]`` → ``V_exp``: graphical representation of the
+      expiratory tidal volume — ramps from 0 at end of inspiration up to Vt at
+      end of expiration, then resets to 0 for the Tp pause. Useful for visual
+      comparison against ``Vi (displayed)`` (leakage detection); this is *not*
+      what the device shows on screen.
+    - ``data_timed["vt_displayed"]`` → ``Vt (displayed)``: step-function
+      reproduction of the numeric Vt readout on the EOlife screen. The value
+      updates at end-of-expiration (``onset + Ti + Te``) for each breath and is
+      held constant until the next update.
+    - ``data_timed["f_displayed"]`` → ``f (displayed)``: step-function
+      reproduction of the numeric respiratory frequency readout on the EOlife
+      screen.  Reverse-engineered from screen-recording ground-truth data
+      captured on an **EOlife X** running **firmware v2.1.3**:
+
+      .. code-block:: none
+
+          f_display = round(60000 / mean(T[K], T[K-1], T[K-2]))
+
+      where ``T[K] = Ti[K] + Te[K] + Tp[K]`` (ms) is the duration of the
+      K-th **characterised** breath cycle.  The display value is a 3-breath
+      rolling mean of cycle durations; it is updated at the **onset of breath
+      K+1** — i.e., at ``onset[K] + T[K]``, which is the moment the EOlife
+      considers expiration fully determined (end of the expiratory pause Tp).
+      The rolling window is seeded with 1 or 2 values for the first two
+      characterised breaths respectively.  For uncharacterised (NaN-Ti/Te)
+      breaths the inter-breath period ``next_onset − onset`` is used as the
+      effective cycle duration and entered into the rolling buffer, with the
+      display step placed at ``next_onset`` (matching the timing convention for
+      characterised breaths).  This ensures the display steps down correctly
+      when a run of rapid short characterised breaths transitions into slower
+      uncharacterised breathing — without this update the buffer would hold a
+      stale high-rate value indefinitely.
+
+      In recent **EOlife X firmware** (verified on v2.1.3) the device replaces
+      the numeric readout with ``"--"`` (not available) whenever the 3-breath
+      rolling mean exceeds **60 /min**.  This parser reproduces that behaviour:
+      ``f (displayed)`` is set to ``NaN`` for any breath where the computed
+      mean rate would exceed 60 /min.  The rolling T-buffer is still updated
+      during those breaths so that the channel recovers correctly once the rate
+      drops back below the threshold.
+
+    The ``Vi (displayed)`` waveform shape and the ``f (displayed)`` step
+    function were reverse-engineered from screen recordings of an **EOlife X**
+    device running **firmware v2.1.3** (animal experiment, session 2026-05-13,
+    authority approval no. 2023-0.288.343).
+    The exact display algorithms are proprietary and not publicly documented;
+    the reconstructions here are validated against captured screen-recording
+    ground truth and may not generalise to other EOlife models or firmware
+    versions.
+
+    ``Vi (displayed)`` and ``Vt (displayed)`` also replace their readout with
+    ``"--"`` under certain conditions (observed in the same firmware version).
+    The mechanism behind this behaviour is distinct from the ``f (displayed)``
+    rate threshold and has not yet been reverse-engineered; those channels do
+    not currently reproduce the ``"--"`` suppression.
+
+    .. note::
+
+        A citable reference for the screen-display waveform logic should be added
+        once the underlying dataset is published.  See GitHub issue #289.
+
+    EOlife export data are written in CSV format.  The first row contains
+    patient/device metadata, the second row is blank, the third row is the data
+    header, and subsequent rows contain one entry per detected breath.
+    """
+
+    # Header row: column names are language-dependent; select by fixed position.
+    # Position: 3=Date, 4=Time, 5=Patient Type, 6=Patient Size, 7=Mode,
+    #           8=Training, 9=FrequencyMode, 10=Leakage alarm, 11=serial number
+    _hdr_raw = pd.read_csv(
         eolife_filepath,
         sep=";",
         header=0,
         nrows=1,
         encoding="latin1",
         na_values=["NA", "Na"],
-        usecols=[
-            "Date",
-            "Time",
-            "Patient Type",
-            "Patient Size",
-            "Mode",
-            "Training",
-            "FrequencyMode",
-            "Leakage alarm",
-            "EOlife",
-        ],
         dtype=str,
     )
+    _h = _hdr_raw.iloc[0]
+    header_info = pd.DataFrame([{
+        "Date":          _h.iloc[3],
+        "Time":          _h.iloc[4],
+        "serial_number": _h.iloc[11],
+        "Patient Type":  _h.iloc[5],
+        "Patient Size":  _h.iloc[6],
+        "Mode":          _h.iloc[7],
+        "Training":      _h.iloc[8],
+        "FrequencyMode": _h.iloc[9],
+        "Leakage alarm": _h.iloc[10],
+    }])
 
     header_info["recording_start"] = pd.to_datetime(
         header_info["Date"] + " " + header_info["Time"], format="%d/%m/%y %H:%M:%S"
-    )
-
-    header_info.drop(columns=["Date", "Time"], inplace=True)
-    header_info.rename(
-        columns={
-            "EOlife": "serial_number",
-        },
-        inplace=True,
     )
 
     recording_start = header_info["recording_start"].iloc[0]
     metadata = (
         header_info[
             [
+                "serial_number",
                 "Patient Type",
                 "Patient Size",
                 "Mode",
@@ -2970,7 +3037,23 @@ def read_eolife_export(eolife_filepath: Path) -> EOLifeRecord:
         .to_dict()
     )
 
-    df_data = pd.read_csv(
+    # Data rows: column names are language-dependent; use fixed positional mapping.
+    # Position: 0=Cycle number, 1=Time, 2=Ti, 3=Te, 4=Tp, 5=f, 6=Vi, 7=Vt,
+    #           8=Leakage, 9=Leakage ratio
+    _DATA_POS = {
+        0: "Cycle number",
+        1: "Time",
+        2: "Ti",
+        3: "Te",
+        4: "Tp",
+        5: "f",
+        6: "Vi",
+        7: "Vt",
+        8: "Leakage",
+        9: "Leakage ratio",
+    }
+
+    _df_raw = pd.read_csv(
         eolife_filepath,
         sep=";",
         decimal=",",
@@ -2978,73 +3061,324 @@ def read_eolife_export(eolife_filepath: Path) -> EOLifeRecord:
         header=0,
         encoding="latin1",
         na_values=["NA", "Na"],
-        usecols=[
-            "Cycle number",
-            "Time (hh:mm:ss:SS)",
-            "Ti (ms)",
-            "Te (ms)",
-            "Tp (ms)",
-            "Freq (/min)",
-            "Vi (mL)",
-            "Vt (mL)",
-            "Leakage (mL)",
-            "Leakage ratio (%)",
-        ],
-        dtype={
-            "Cycle number": int,
-            "Time (hh:mm:ss:SS)": str,
-            "Ti (ms)": "Int64",
-            "Te (ms)": "Int64",
-            "Tp (ms)": "Int64",
-            "Freq (/min)": "Int64",
-            "Vi (mL)": "Int64",
-            "Vt (mL)": "Int64",
-            "Leakage (mL)": "Int64",
-        },
-        converters={
-            "Leakage ratio (%)": lambda x: float(x) / 100
-            if x not in ["Na", "NA"]
-            else None
-        },
+        dtype=str,
     )
 
-    df_data.rename(
-        columns={"Leakage ratio (%)": "Leakage ratio"},
-        inplace=True,
-    )
+    # Extract units from raw column headers (language-independent: text inside "(…)").
+    # "Time" is an internal parsing column and is excluded.
+    units_dict: dict[str, str] = {}
+    for pos, std_name in _DATA_POS.items():
+        if std_name == "Time":
+            continue
+        raw_col = _df_raw.columns[pos]
+        if "(" in raw_col and ")" in raw_col:
+            units_dict[std_name] = raw_col[raw_col.find("(") + 1 : raw_col.find(")")].strip()
+
+    # Select and rename columns to standardized names
+    df_data = _df_raw.iloc[:, list(_DATA_POS.keys())].copy()
+    df_data.columns = list(_DATA_POS.values())
+
+    # Apply dtypes
+    for col in ["Cycle number", "Ti", "Te", "Tp", "f", "Vi", "Vt", "Leakage"]:
+        df_data[col] = pd.array(pd.to_numeric(df_data[col], errors="coerce"), dtype="Int64")
+    df_data["Leakage ratio"] = pd.to_numeric(df_data["Leakage ratio"], errors="coerce") / 100
 
     df_data["timedelta"] = pd.to_timedelta(
-        df_data["Time (hh:mm:ss:SS)"].str.replace(
+        df_data["Time"].str.replace(
             r"(\d{2}):(\d{2}):(\d{2}):(\d{2})",
             r"\1:\2:\3.\4",
             regex=True,
         )
     )
     df_data.set_index("timedelta", inplace=True)
-    df_data.drop(columns=["Time (hh:mm:ss:SS)"], inplace=True)
-
-    # Step 1: Extract units and create a rename + units mapping
-    rename_dict = {}
-    units_dict = {}
-
-    for col in df_data.columns:
-        if "(" in col and ")" in col:
-            name_part = col[: col.find("(")].strip()
-            unit_part = col[col.find("(") + 1 : col.find(")")].strip()
-            rename_dict[col] = name_part
-            units_dict[name_part] = unit_part
-
-    # Step 2: Rename columns
-    df_data.rename(columns=rename_dict, inplace=True)
+    df_data.drop(columns=["Time"], inplace=True)
 
     column_metadata = {k: {"units": v} for k, v in units_dict.items()}
-    metadata = metadata | {"category": "raw", "source": "EOlife"}
+    # Inherit units from Vi/Vt/f for reconstructed waveform columns
+    for src, wave in (
+        ("Vi", "Vi (displayed)"),
+        ("Vt", "Vt (displayed)"),
+        ("f",  "f (displayed)"),
+    ):
+        if src in column_metadata:
+            column_metadata[wave] = column_metadata[src]
+    # Derive device model from serial number prefix (e.g. "EOlife X0001126" → "EOlife X").
+    _serial = str(metadata.get("serial_number", ""))
+    _first_digit = next((i for i, c in enumerate(_serial) if c.isdigit()), 0)
+    _source = _serial[:_first_digit].rstrip() or "EOlife"
+    metadata = metadata | {"category": "raw", "source": _source}
+
+    # Timing-adjusted views: shift each measurement to when it was actually recorded.
+    # Uncharacterised breaths have Ti=NaN and Te=NaN (both absent together — the EOlife
+    # device never exports one without the other); they fall back to breath onset.
+    ti_td = pd.to_timedelta(df_data["Ti"], unit="ms").fillna(pd.Timedelta(0))
+    te_td = pd.to_timedelta(df_data["Te"], unit="ms").fillna(pd.Timedelta(0))
+
+    idx = df_data.index  # TimedeltaIndex (breath onset relative to recording_start)
+
+    df_cycle_start = df_data[["Cycle number", "Ti", "Te", "Tp"]].copy()
+
+    # For uncharacterised breaths place the Vi label at half the breath duration
+    # (same inferred peak used in vi_wave) rather than collapsing to onset.
+    _onset_s = pd.Series(idx.values, index=idx)
+    _next_td = pd.Series(list(idx[1:]) + [pd.NaT], index=idx)
+    _half_dur = ((_next_td - _onset_s) / 2).dt.floor("ns").fillna(pd.Timedelta(0))
+    _has_ti = df_data["Ti"].notna()  # equivalent to has_te — always absent together
+    _ti_label = ti_td.copy()
+    _ti_label[~_has_ti] = _half_dur[~_has_ti]
+
+    df_insp_end = df_data[["Vi"]].copy()
+    df_insp_end.index = idx + _ti_label
+
+    # Build IntervalLabel for contiguous runs of uncharacterised breaths.
+    _nan_mask_vals = (~_has_ti).values
+    _nan_group_intervals: list[tuple] = []
+    _i = 0
+    _n = len(df_data)
+    while _i < _n:
+        if _nan_mask_vals[_i]:
+            _grp_start = idx[_i]
+            _j = _i
+            while _j < _n and _nan_mask_vals[_j]:
+                _j += 1
+            # interval end: next characterised breath onset, or estimated end of last breath
+            if _j < _n:
+                _grp_end = idx[_j]
+            else:
+                _last = _j - 1
+                _grp_end = idx[_last] + _half_dur.iloc[_last] * 2
+            _nan_group_intervals.append((_grp_start.total_seconds(), _grp_end.total_seconds()))
+            _i = _j
+        else:
+            _i += 1
+
+    if _nan_group_intervals:
+        _nan_starts, _nan_ends = zip(*_nan_group_intervals)
+        _eolife_uncharacterised_breaths_label: vitabel.IntervalLabel | None = vitabel.IntervalLabel(
+            name="Uncharacterised Breaths",
+            time_index=np.column_stack([list(_nan_starts), list(_nan_ends)]),
+            time_start=recording_start,
+            time_unit="s",
+            plotstyle=DEFAULT_PLOT_STYLE.get("Uncharacterised Breaths"),
+            metadata={"source": _source, "description": "Breaths with missing Ti/Te characterisation"},
+        )
+    else:
+        _eolife_uncharacterised_breaths_label = None
+
+    df_exp_end = df_data[["Vt"]].copy()
+    df_exp_end.index = idx + ti_td + te_td
+
+    df_leakage = df_data[["Leakage", "Leakage ratio"]].copy()
+    df_leakage.index = idx + ti_td + te_td
+
+    # Reconstructed volume waveforms.
+    #
+    # vi_wave (Vi (displayed)) — reproduces the EOlife screen display. Per breath:
+    #   (onset,              0)     inspiration starts from zero
+    #   (onset + Ti,         Vi)    ramp reaches peak at end of inspiration
+    #   (next_onset − 1ns,   Vi)    Vi is held on the display through Te and
+    #                                the Tp pause, dropping only when the next
+    #                                inspiration begins (the next breath's
+    #                                (onset, 0) point provides the drop).
+    # For the final breath there is no next onset, so the hold extends to
+    # (onset + Ti + Te + Tp) and stays at Vi (no trailing drop).
+    #
+    # v_exp / V_exp — graphical representation of the
+    # expiration: 0 during inspiration, ramps from 0 to Vt across Te, then
+    # resets to 0 for the Tp pause. Mirrors vi_wave's ramp visually but on the
+    # expiratory side; this is *not* what the screen displays.
+    #
+    # vt_displayed (Vt (displayed)) — step function reproducing the numeric Vt
+    # readout on the EOlife screen. The value updates at end-of-expiration for
+    # each valid breath and is held constant until the next update.
+    _INSTANT = pd.Timedelta(nanoseconds=1)
+
+    tp_td = pd.to_timedelta(df_data["Tp"], unit="ms").fillna(pd.Timedelta(0))
+    has_ti = df_data["Ti"].notna()
+    has_te = df_data["Te"].notna()
+
+    # f: fully characterised breaths (Ti, Te, Tp all present) anchor at
+    # onset + Ti + Te + Tp (full cycle end); any missing phase falls back to
+    # the next inspiration onset. The last breath needing a fallback but having
+    # no successor is dropped (NaT anchor excluded by _f_valid below).
+    has_tp = df_data["Tp"].notna()
+    _f_anchor = pd.Series(idx + ti_td + te_td + tp_td, index=idx)
+    _f_fallback = ~(has_ti & has_te & has_tp)
+    _f_anchor[_f_fallback] = _next_td[_f_fallback]
+    _f_vals = df_data["f"]
+    _f_valid = _f_anchor.notna() & _f_vals.notna()
+    df_f = pd.DataFrame(
+        {"f": _f_vals[_f_valid].values},
+        index=pd.TimedeltaIndex(_f_anchor[_f_valid].values),
+    )
+
+    vi_pts: list[tuple] = []
+    v_exp_pts: list[tuple] = []
+    vt_disp_pts: list[tuple] = []
+    f_disp_pts: list[tuple] = []
+    _vt_disp_prev: float | None = None
+    _f_disp_prev: float | None = None
+    _f_disp_T_buffer: list[float] = []   # rolling buffer of last 3 T_total values (ms)
+    _N_F_DISPLAYED = 3
+    _VT_NAN_TIMEOUT = pd.Timedelta(seconds=3)
+    _nan_group_onset: pd.Timestamp | None = None
+
+    for i in range(len(df_data)):
+        onset      = idx[i]
+        ti         = ti_td.iloc[i]
+        te         = te_td.iloc[i]
+        tp         = tp_td.iloc[i]
+        ti_ok      = bool(has_ti.iloc[i])
+        te_ok      = bool(has_te.iloc[i])
+        next_onset = idx[i + 1] if i + 1 < len(df_data) else None
+        vi_val     = float(df_data["Vi"].iloc[i]) if not pd.isna(df_data["Vi"].iloc[i]) else np.nan
+        vt_val     = float(df_data["Vt"].iloc[i]) if not pd.isna(df_data["Vt"].iloc[i]) else np.nan
+
+        # Vi (displayed): ramp to Vi during Ti, then hold through Te + Tp until next inspiration.
+        # For NaN-Ti/Te breaths the zero marker sits at the end of the breath
+        # (next_onset − 1 ns) so the previous Vi holds through the uncharacterised
+        # interval rather than dropping to 0 at its start.
+        if ti_ok:
+            vi_pts.append((onset, 0.0))
+            peak = onset + ti
+            vi_pts.append((peak, vi_val))
+            hold_end = (next_onset - _INSTANT) if next_onset is not None else onset + ti + te + tp
+            if hold_end > peak:
+                vi_pts.append((hold_end, vi_val))
+        elif next_onset is not None:
+            if not pd.isna(vi_val):
+                half = (next_onset - onset) // 2
+                vi_pts.append((onset, 0.0))
+                vi_pts.append((onset + half, vi_val))
+                vi_pts.append((next_onset - _INSTANT, vi_val))
+            else:
+                vi_pts.append((next_onset - _INSTANT, 0.0))
+
+        # Vt: 0 through Ti, ramp 0 → Vt across Te, drop at start of Tp.
+        v_exp_pts.append((onset, 0.0))
+        if ti_ok:
+            v_exp_pts.append((onset + ti, 0.0))
+        if ti_ok and te_ok:
+            exp_end = onset + ti + te
+            # Clamp end to just before next onset to avoid duplicate timestamps when Tp = 0.
+            if next_onset is not None and exp_end >= next_onset:
+                exp_end = next_onset - _INSTANT
+            v_exp_pts.append((exp_end, vt_val))
+            v_exp_pts.append((exp_end + _INSTANT, 0.0))
+
+        # Vt (displayed): step function reproducing the numeric Vt readout.
+        # GT-validated regimes:
+        #   • characterized breath, Vt not NaN  → step at onset + Ti + Te
+        #   • uncharacterised (Ti/Te=NaN), Vt saved (incl. 0)
+        #                                        → step at onset (saved value first)
+        #   • uncharacterised (Ti/Te=NaN), Vt NaN, first in group
+        #                                        → drop to 0 at onset + 3 s
+        #     (EOlife internal ~3 s timeout; only when no Vt was recorded)
+        #   • uncharacterised (Ti/Te=NaN), Vt NaN, subsequent → hold
+        if not ti_ok and not te_ok:
+            is_first = _nan_group_onset is None
+            if is_first:
+                _nan_group_onset = onset
+            if not pd.isna(vt_val):
+                step_t = onset
+                if next_onset is not None and step_t >= next_onset:
+                    step_t = next_onset - _INSTANT
+                if _vt_disp_prev is not None:
+                    vt_disp_pts.append((step_t - _INSTANT, _vt_disp_prev))
+                vt_disp_pts.append((step_t, vt_val))
+                _vt_disp_prev = vt_val
+            elif is_first:
+                step_t = onset + _VT_NAN_TIMEOUT
+                if next_onset is not None and step_t >= next_onset:
+                    step_t = next_onset - _INSTANT
+                if _vt_disp_prev is not None:
+                    vt_disp_pts.append((step_t - _INSTANT, _vt_disp_prev))
+                vt_disp_pts.append((step_t, 0.0))
+                _vt_disp_prev = 0.0
+
+            # f(displayed): uncharacterised breaths still have a real inter-breath
+            # period (next_onset − onset).  Use it as T_eff in the rolling buffer so
+            # that the display steps down when a run of short characterised breaths
+            # transitions back to slower uncharacterised breathing.  Trigger at
+            # next_onset (same timing as characterised breaths: end of the cycle).
+            if next_onset is not None:
+                T_eff_ms = float((next_onset - onset).total_seconds() * 1000)
+                _f_disp_T_buffer.append(T_eff_ms)
+                if len(_f_disp_T_buffer) > _N_F_DISPLAYED:
+                    _f_disp_T_buffer.pop(0)
+                f_disp_raw = round(60000.0 / (sum(_f_disp_T_buffer) / len(_f_disp_T_buffer)))
+                f_disp_val = float(f_disp_raw) if f_disp_raw <= 60 else np.nan
+                trigger_t = next_onset
+                if _f_disp_prev is not None:
+                    f_disp_pts.append((trigger_t - _INSTANT, _f_disp_prev))
+                f_disp_pts.append((trigger_t, f_disp_val))
+                _f_disp_prev = f_disp_val
+        else:
+            _nan_group_onset = None
+            if not pd.isna(vt_val):
+                step_t = onset + ti + te
+                if next_onset is not None and step_t >= next_onset:
+                    step_t = next_onset - _INSTANT
+                if _vt_disp_prev is not None:
+                    vt_disp_pts.append((step_t - _INSTANT, _vt_disp_prev))
+                vt_disp_pts.append((step_t, vt_val))
+                _vt_disp_prev = vt_val
+
+            # f (displayed): 3-breath rolling mean of T_total, updated at
+            # onset + T_total (= start of next breath = end of expiratory pause).
+            # EOlife shows "--" (not available) when the averaged rate exceeds
+            # 60 /min; the T_buffer is still updated so recovery is correct.
+            T_ms = float((ti + te + tp).total_seconds() * 1000)
+            _f_disp_T_buffer.append(T_ms)
+            if len(_f_disp_T_buffer) > _N_F_DISPLAYED:
+                _f_disp_T_buffer.pop(0)
+            f_disp_raw = round(60000.0 / (sum(_f_disp_T_buffer) / len(_f_disp_T_buffer)))
+            f_disp_val = float(f_disp_raw) if f_disp_raw <= 60 else np.nan
+            trigger_t = onset + ti + te + tp
+            if _f_disp_prev is not None:
+                f_disp_pts.append((trigger_t - _INSTANT, _f_disp_prev))
+            f_disp_pts.append((trigger_t, f_disp_val))
+            _f_disp_prev = f_disp_val
+
+    # Trailing zero for v_exp (Vi (displayed) trail handled in-loop: holds at last Vi).
+    if len(df_data) > 0:
+        last = len(df_data) - 1
+        if has_ti.iloc[last] and has_te.iloc[last]:
+            trail = idx[last] + ti_td.iloc[last] + te_td.iloc[last] + tp_td.iloc[last]
+            v_exp_pts.append((trail, 0.0))
+
+    def _wave_df(pts: list[tuple], col: str) -> pd.DataFrame:
+        if pts:
+            times, vals = zip(*pts)
+            return pd.DataFrame(
+                {col: list(vals)}, index=pd.TimedeltaIndex(list(times))
+            ).sort_index()
+        return pd.DataFrame({col: pd.Series(dtype=float)}, index=pd.TimedeltaIndex([]))
+
+    df_vi_wave      = _wave_df(vi_pts,      "Vi (displayed)")
+    df_v_exp        = _wave_df(v_exp_pts,   "V_exp")
+    df_vt_displayed = _wave_df(vt_disp_pts, "Vt (displayed)")
+    df_f_displayed  = _wave_df(f_disp_pts,  "f (displayed)")
+
+    data_timed = {
+        "cycle_start":  df_cycle_start,
+        "insp_end":     df_insp_end,
+        "exp_end":      df_exp_end,
+        "f":            df_f,
+        "leakage":      df_leakage,
+        "vi_wave":      df_vi_wave,
+        "v_exp":        df_v_exp,
+        "vt_displayed": df_vt_displayed,
+        "f_displayed":  df_f_displayed,
+    }
 
     return EOLifeRecord(
         data=df_data,
         recording_start=recording_start,
         metadata=metadata,
         column_metadata=column_metadata,
+        data_timed=data_timed,
+        eolife_uncharacterised_breaths=_eolife_uncharacterised_breaths_label,
     )
 
 
