@@ -817,6 +817,180 @@ class Channel(TimeSeriesBase):
             label.shift_time_index(delta_t=delta_t, time_unit=time_unit)
         return super().shift_time_index(delta_t, time_unit)
 
+    def scale_time_index(
+        self,
+        scale_factor: float,
+        reference_time: Timestamp | Timedelta | None = None,
+        inplace: bool = False,
+        move_attached_labels: bool = True,
+    ) -> Self:
+        """Rescale the channel time index linearly about a fixed reference time.
+
+        Parameters
+        ----------
+        scale_factor
+            The factor to scale the time index by.
+        reference_time
+            The fixed point of the scaling.
+        inplace
+            If ``True``, modify the time index in place and return ``self``.
+        move_attached_labels
+            If ``True`` (default), apply the same transformation to labels
+            attached to this channel, preserving their alignment. Global
+            labels are not affected.
+
+        Notes
+        -----
+        The channel offset is treated as an alignment shift, not a
+        clock-rate artefact. Therefore the offset value is preserved and
+        only the underlying time index is rescaled.
+
+        If your goal is to correct a device clock that ran too fast or
+        too slow, use :meth:`correct_clock_drift` or call this method
+        with a scale factor derived from two synchronisation points.
+        When correcting a full recording, apply the same correction to
+        every channel and global label driven by the affected clock.
+        """
+        result = TimeSeriesBase.scale_time_index(
+            self, scale_factor, reference_time=reference_time, inplace=inplace
+        )
+
+        if not self.labels:
+            return result
+        if not move_attached_labels:
+            if not inplace:
+                result.labels = list(self.labels)
+            return result
+
+        label_reference_time = reference_time
+        if label_reference_time is None and not self.is_empty():
+            label_reference_time = self.time_start if self.is_time_absolute() else self.time_index[0]
+
+        if inplace:
+            labels = self.labels
+        else:
+            result.labels = []
+            for label in self.labels:
+                if isinstance(label, IntervalLabel):
+                    cloned_label = IntervalLabel.from_dict(label.to_dict())
+                else:
+                    cloned_label = Label.from_dict(label.to_dict())
+                cloned_label.attach_to(result)
+            labels = result.labels
+
+        for label in labels:
+            TimeSeriesBase.scale_time_index(
+                label,
+                scale_factor,
+                reference_time=label_reference_time,
+                inplace=True,
+            )
+
+        return result
+
+    def correct_clock_drift(
+        self,
+        anchor_time: Timestamp | Timedelta,
+        drift_point: Timestamp | Timedelta,
+        *,
+        drift: Timedelta | None = None,
+        true_time: Timestamp | Timedelta | None = None,
+        inplace: bool = False,
+        move_attached_labels: bool = True,
+    ) -> Self:
+        """Correct a linear clock drift for this channel.
+
+        Parameters
+        ----------
+        anchor_time
+            The sync point where the device clock and wall clock agreed.
+        drift_point
+            The second observation time in device-clock terms.
+        drift
+            The offset ``device − true`` at ``drift_point``.
+        true_time
+            The wall-clock time at ``drift_point``.
+        inplace
+            If ``True``, modify the time index in place and return ``self``.
+        move_attached_labels
+            If ``True`` (default), apply the same correction to labels
+            attached to this channel, preserving their alignment. Global
+            labels are not affected.
+
+        Notes
+        -----
+        The channel offset is treated as an alignment shift, not a
+        clock-rate artefact. Therefore the offset value is preserved and
+        only the underlying time index is rescaled.
+
+        Use this method when you know one anchor where device time and
+        true time agreed and one later observation of the drift. When
+        correcting a full recording, apply the same correction to every
+        channel and global label driven by the affected clock.
+        """
+        if (drift is None) == (true_time is None):
+            raise ValueError(
+                "Specify exactly one of `drift` or `true_time` "
+                "to define the clock offset at `drift_point`"
+            )
+        if drift is None:
+            drift = drift_point - true_time
+        measured_interval = drift_point - anchor_time
+        if measured_interval == pd.Timedelta(0):
+            raise ValueError(
+                "drift_point must differ from anchor_time to determine the drift rate"
+            )
+        scale_factor = (measured_interval - drift) / measured_interval
+        result = TimeSeriesBase.scale_time_index(
+            self, scale_factor, reference_time=anchor_time, inplace=inplace
+        )
+
+        if hasattr(self, "metadata") and isinstance(self.metadata, dict):
+            if not inplace:
+                result.metadata = {**self.metadata}
+                if "transformations" in result.metadata:
+                    result.metadata["transformations"] = list(
+                        result.metadata["transformations"]
+                    )
+            result.metadata.setdefault("transformations", []).append(
+                {
+                    "operation": "correct_clock_drift",
+                    "anchor_time": anchor_time,
+                    "drift_point": drift_point,
+                    "drift": drift,
+                }
+            )
+
+        if not self.labels:
+            return result
+        if not move_attached_labels:
+            if not inplace:
+                result.labels = list(self.labels)
+            return result
+
+        if inplace:
+            labels = self.labels
+        else:
+            result.labels = []
+            for label in self.labels:
+                if isinstance(label, IntervalLabel):
+                    cloned_label = IntervalLabel.from_dict(label.to_dict())
+                else:
+                    cloned_label = Label.from_dict(label.to_dict())
+                cloned_label.attach_to(result)
+            labels = result.labels
+
+        for label in labels:
+            TimeSeriesBase.correct_clock_drift(
+                label,
+                anchor_time,
+                drift_point,
+                drift=drift,
+                inplace=True,
+            )
+
+        return result
+
     def truncate(
         self,
         start_time: Timestamp | Timedelta | None = None,

@@ -667,6 +667,63 @@ def test_channel_scale_time_index_copy_does_not_mutate_original():
         "inplace=False (default) must not mutate the original channel"
 
 
+def test_channel_scale_time_index_moves_attached_labels_by_default():
+    channel = Channel(name="test", time_index=[0, 10], data=[1, 2])
+    label = Label(name="attached", time_index=[5])
+    channel.attach_label(label)
+
+    scaled = channel.scale_time_index(2.0)
+
+    assert list(scaled.numeric_time()) == [0, 20]
+    assert list(scaled.labels[0].numeric_time()) == [10]
+    assert scaled.labels[0] is not label
+    assert scaled.labels[0].anchored_channel is scaled
+    assert list(channel.labels[0].numeric_time()) == [5]
+
+
+def test_channel_scale_time_index_can_leave_attached_labels_unchanged():
+    channel = Channel(name="test", time_index=[0, 10], data=[1, 2])
+    label = Label(name="attached", time_index=[5])
+    channel.attach_label(label)
+
+    scaled = channel.scale_time_index(2.0, move_attached_labels=False)
+
+    assert list(scaled.numeric_time()) == [0, 20]
+    assert scaled.labels[0] is label
+    assert list(scaled.labels[0].numeric_time()) == [5]
+
+
+def test_channel_correct_clock_drift_moves_attached_labels_by_default():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    channel = Channel(name="test", time_index=[anchor, drift_point], data=[1, 2])
+    label = Label(name="attached", time_index=[anchor + pd.Timedelta(seconds=1802.5)])
+    channel.attach_label(label)
+
+    corrected = channel.correct_clock_drift(
+        anchor, drift_point, drift=pd.Timedelta("5s")
+    )
+
+    assert corrected.labels[0].get_data().time_index[0] == anchor + pd.Timedelta(seconds=1800)
+    assert corrected.labels[0].anchored_channel is corrected
+    assert label.get_data().time_index[0] == anchor + pd.Timedelta(seconds=1802.5)
+
+
+def test_channel_correct_clock_drift_inplace_moves_attached_labels():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    channel = Channel(name="test", time_index=[anchor, drift_point], data=[1, 2])
+    label = Label(name="attached", time_index=[anchor + pd.Timedelta(seconds=1802.5)])
+    channel.attach_label(label)
+
+    channel.correct_clock_drift(
+        anchor, drift_point, drift=pd.Timedelta("5s"), inplace=True
+    )
+
+    assert label.get_data().time_index[0] == anchor + pd.Timedelta(seconds=1800)
+    assert label.anchored_channel is channel
+
+
 def test_label_creation():
     label = Label(name="test", time_index=[0, 5, 12])
 
