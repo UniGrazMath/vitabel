@@ -89,9 +89,8 @@ worked examples, and full API references. Start here:
 
 ### 🧾 Citing vitabel
 
-Simon Orlob, Wolfgang J. Kern, Benjamin Hackl, Jan Wnent, Jan-Thorsten Gräsner, Martin Holler  
-**Vitabel: Bridging Clinical Expertise and the Machine Learning Pipeline in Critical Care**.
-PREPRINT (Version 1), 29 September 2025. Research Square. <https://doi.org/10.21203/rs.3.rs-7227195/v1>
+Simon Orlob, Wolfgang J. Kern, Benjamin Hackl, Jan Wnent, Jan-Thorsten Gräsner, Martin Holler\
+**Vitabel: A Python Framework for Visualizing and Labelling High-Resolution Physiological Data for Critical Care Machine Learning.** J Med Syst 50, 92 (2026). [10.1007/s10916-026-02417-x](https://doi.org/10.1007/s10916-026-02417-x)
 
 ### 🛠️ Development
 
