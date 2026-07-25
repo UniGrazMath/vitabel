@@ -49,6 +49,7 @@ case.plot_interactive(
 :maxdepth: 3
 quickstart
 examples
+loaders/stryker_lifepak
 development
 bibliography
 ```

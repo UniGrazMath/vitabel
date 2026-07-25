@@ -422,14 +422,21 @@ class Vitals:
           from the device in two files, ``filename_ecg.txt`` and ``filename.xml``,
           where ``filename`` can be arbitrary. Both files are assumed to be in the
           same directory. Pass the path to ``filename_ecg.txt`` to import the data.
-        * **Stryker LIFEPAK 15:** Data needs to be exported to XML in *Stryker's
-          CodeStat Software*. To load the data, we require at least the files
-          ``filename_Continuous.xml``, ``filename_Continuous_Waveform.xml``, and
-          ``filename_CprEventLog.xml``, where ``filename`` is an arbitrary prefix.
+        * **Stryker LIFEPAK 12 / 15 / LP1000:** Data needs to be exported to XML
+          in *Stryker's CodeStat Software*. To load the data, we require at least
+          the files ``filename_Continuous.xml``, ``filename_Continuous_Waveform.xml``,
+          and ``filename_CprEventLog.xml``, where ``filename`` is an arbitrary prefix.
           All files are assumed to be in the same directory. Pass the path
           to ``filename_Continuous.xml`` to import the data.
+          Waveform channels (ECG, capnography, impedance, …) are added as
+          :class:`.Channel` objects; CPR events (compressions, ventilations, CPR
+          periods, defibrillations, 12-lead timestamps) are added as global
+          :class:`.Label` / :class:`.IntervalLabel` objects.
+        * **Stryker TrueCPR (CPR-device-only):** Pass the standalone
+          ``filename_CprEventLog.xml``.  A warning is emitted and only
+          compression timestamps, depth, and rate are added as global labels.
         * **Stryker LUCAS:** Data needs to be exported to XML in *Stryker's CodeStat
-          Software*. We require at leas the files ``filename_Lucas.xml`` and
+          Software*. We require at least the files ``filename_Lucas.xml`` and
           ``filename_CprEventLog.xml``, where ``filename`` is an arbitrary prefix.
           Both files are assumed to be in the same directory. Pass the path to
           ``filename_Lucas.xml`` to import the data.
@@ -467,6 +474,7 @@ class Vitals:
 
         logger.info(f"Endings {fileend_c}")
 
+        label_specs = {}
         if ".json" in fileend_c:
             pat_dat, dats = loading.read_zolljson(filepath)
             dats = rename_channels(dats, constants.zoll2channelnames_dict)
@@ -505,7 +513,7 @@ class Vitals:
                     )
 
                 else:
-                    pat_dat, dats = loading.read_lifepak(
+                    pat_dat, dats, label_specs = loading.read_lifepak(
                         fp1, fp2, fp3, further_files=further_files
                     )
                     dats = rename_channels(dats, constants.LP2channelnames_dict)
@@ -521,14 +529,23 @@ class Vitals:
                     )
 
                 else:
-                    pat_dat, dats = loading.read_lucas(fp1, fp2)
+                    pat_dat, dats, label_specs = loading.read_lucas(fp1, fp2)
                     dats = rename_channels(dats, constants.LP2channelnames_dict)
 
-                if dats:
+                if dats or label_specs:
                     logger.info(f"LUCAS-File: {str(filename)} successfully read!")
                 else:
                     logger.warning(f"LUCAS-File: {str(filename)} is empty!")
                     return None
+
+            elif "_CprEventLog" in filename:
+                logger.warning(
+                    f"Loading {filename} as CPR-event-only recording (no waveform data). "
+                    "Pass a *_Continuous.xml file to load the full LIFEPAK recording."
+                )
+                pat_dat, dats, label_specs = loading.read_lifepak_cpreventlog(filepath)
+                dats = rename_channels(dats, constants.LP2channelnames_dict)
+                logger.info(f"CprEventLog-File: {str(filename)} successfully read!")
 
             else:
                 pat_dat, dats = loading.read_zollxml(
@@ -606,6 +623,28 @@ class Vitals:
                     self.data.add_channel(chan)
 
         self.metadata["Recording_files_added"].append(str(filepath))
+
+        for name, spec in label_specs.items():
+            if not len(spec["time_index"]):
+                continue
+            if spec["type"] == "label":
+                lbl = Label(
+                    name=name,
+                    time_index=spec["time_index"],
+                    data=spec.get("data"),
+                    plotstyle=DEFAULT_PLOT_STYLE.get(name),
+                    metadata=metadata,
+                )
+            elif spec["type"] == "interval_label":
+                lbl = IntervalLabel(
+                    name=name,
+                    time_index=spec["time_index"],
+                    plotstyle=DEFAULT_PLOT_STYLE.get(name),
+                    metadata=metadata,
+                )
+            else:
+                continue
+            self.data.add_global_label(lbl)
 
     def add_ventilatory_feedback(
         self,
