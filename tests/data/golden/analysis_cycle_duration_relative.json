@@ -1,0 +1,58 @@
+{
+ "mode": "values",
+ "generated_with": {
+  "git_commit": "f6afd34707881b1cf82bab75520f5e355061b399",
+  "vitabel": "0.1.1",
+  "numpy": "2.5.1",
+  "pandas": "3.0.3",
+  "python": "3.13.2",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O"
+ },
+ "summary": [
+  {
+   "class": "IntervalLabel",
+   "name": "cc_periods",
+   "len": 3,
+   "time_unit": "s",
+   "time_start": null,
+   "offset": "0 days 00:00:00",
+   "first_entry": {
+    "timedelta": "0 days 00:00:00",
+    "ns": 0
+   },
+   "last_entry": {
+    "timedelta": "0 days 00:01:21.200000",
+    "ns": 81200000000
+   },
+   "time_index_unit": "ns",
+   "time": {
+    "n": 6,
+    "unit": "ns",
+    "sha256": "4e34d1c691bfdc39d013cefe092dc60f3b35f3763616d7bd1691953e099ff62e",
+    "values": [
+     0,
+     18000000000,
+     27368421053,
+     40000000000,
+     55568421053,
+     81200000000
+    ]
+   },
+   "data": null,
+   "metadata": {
+    "creator": "automatic",
+    "creation_date": "<volatile>",
+    "method": "cycle_duration_analysis"
+   },
+   "plotstyle": {
+    "label": "CC Periods",
+    "color": "lightsteelblue",
+    "alpha": 0.6
+   },
+   "text_data": null,
+   "anchored_channel": "cc",
+   "plot_type": "box",
+   "annotation_preset_type": null
+  }
+ ]
+}

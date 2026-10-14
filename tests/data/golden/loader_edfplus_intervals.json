@@ -1,0 +1,204 @@
+{
+ "mode": "exact",
+ "generated_with": {
+  "git_commit": "f6afd34707881b1cf82bab75520f5e355061b399",
+  "vitabel": "0.1.1",
+  "numpy": "2.5.1",
+  "pandas": "3.0.3",
+  "python": "3.13.2",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O"
+ },
+ "summary": {
+  "channels": [
+   {
+    "class": "Channel",
+    "name": "sig",
+    "len": 12,
+    "time_unit": "s",
+    "time_start": "2024-01-01 12:00:00",
+    "offset": "0 days 00:00:00",
+    "first_entry": "2024-01-01 12:00:00",
+    "last_entry": "2024-01-01 12:00:11",
+    "time_index_unit": "ns",
+    "time": {
+     "n": 12,
+     "unit": "ns",
+     "sha256": "690f27558e5cfadf826b06391ce08df784239f0dd30fca0ae6841516588d6753",
+     "values": [
+      0,
+      1000000000,
+      2000000000,
+      3000000000,
+      4000000000,
+      5000000000,
+      6000000000,
+      7000000000,
+      8000000000,
+      9000000000,
+      10000000000,
+      11000000000
+     ]
+    },
+    "data": {
+     "n": 12,
+     "dtype_kind": "f",
+     "sha256": "81be03d426f08599c28a404768a5c7a6ca12d813f3bc24b3b57b7e651896a0ea",
+     "nan_count": 0,
+     "min": 1.5259021896696422e-05,
+     "max": 1.0,
+     "mean": 0.5000076295109483,
+     "std": 0.49999237048905165,
+     "values": [
+      1.5259021896696422e-05,
+      1.0,
+      1.5259021896696422e-05,
+      1.0,
+      1.5259021896696422e-05,
+      1.0,
+      1.5259021896696422e-05,
+      1.0,
+      1.5259021896696422e-05,
+      1.0,
+      1.5259021896696422e-05,
+      1.0
+     ]
+    },
+    "metadata": {
+     "source": "EDF+",
+     "category": "raw",
+     "units": "uV",
+     "source_device": "",
+     "transducer": "",
+     "prefilter": "",
+     "sample_rate": 1.0,
+     "physical_min": -1.0,
+     "physical_max": 1.0,
+     "digital_min": -32768,
+     "digital_max": 32767,
+     "samples_in_datarecord": 1,
+     "reserved": null
+    },
+    "plotstyle": {},
+    "labels": [],
+    "attached_labels": []
+   }
+  ],
+  "global_labels": [
+   {
+    "class": "IntervalLabel",
+    "name": "EDF+ Interval: artifact",
+    "len": 2,
+    "time_unit": "s",
+    "time_start": "2024-01-01 12:00:00",
+    "offset": "0 days 00:00:00",
+    "first_entry": "2024-01-01 12:00:01",
+    "last_entry": "2024-01-01 12:00:06",
+    "time_index_unit": "ns",
+    "time": {
+     "n": 4,
+     "unit": "ns",
+     "sha256": "2b125e6fcacfce0142b83f33692a265a051b91eced98e9c209641e66837cbd77",
+     "values": [
+      1000000000,
+      3500000000,
+      5000000000,
+      6000000000
+     ]
+    },
+    "data": null,
+    "metadata": {
+     "source": "EDF+",
+     "category": "annotation",
+     "annotation_type": "interval",
+     "durations": [
+      2.5,
+      1.0
+     ]
+    },
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": {
+     "n": 2,
+     "dtype_kind": "O",
+     "sha256": "ee3b88bdad86322429cc8fb7af64154f4042692bb26c88d940bc35ec41223279",
+     "values": [
+      "artifact",
+      "artifact"
+     ]
+    },
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "annotation_preset_type": null
+   },
+   {
+    "class": "IntervalLabel",
+    "name": "EDF+ Interval: noise",
+    "len": 1,
+    "time_unit": "s",
+    "time_start": "2024-01-01 12:00:00",
+    "offset": "0 days 00:00:00",
+    "first_entry": "2024-01-01 12:00:08",
+    "last_entry": "2024-01-01 12:00:08.500000",
+    "time_index_unit": "ns",
+    "time": {
+     "n": 2,
+     "unit": "ns",
+     "sha256": "c74dea1857fb5e028ee77cebee63a295b0daaa1558e0b626e022d42bdaec826b",
+     "values": [
+      8000000000,
+      8500000000
+     ]
+    },
+    "data": null,
+    "metadata": {
+     "source": "EDF+",
+     "category": "annotation",
+     "annotation_type": "interval",
+     "durations": [
+      0.5
+     ]
+    },
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": {
+     "n": 1,
+     "dtype_kind": "O",
+     "sha256": "e0d4f0c233bcf131aef70d0a94f929c279e7c537df4e95cfb1445607f01141ec",
+     "values": [
+      "noise"
+     ]
+    },
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "annotation_preset_type": null
+   }
+  ],
+  "metadata": {
+   "Recording_files_added": [
+    "interval_annotations.edf"
+   ],
+   "source": "EDF+",
+   "category": "raw",
+   "file": "interval_annotations.edf",
+   "technician": "",
+   "recording_additional": "",
+   "patient_name": "X",
+   "patient_code": "",
+   "patient_additional": "",
+   "admincode": "",
+   "sex": "",
+   "birthdate": "",
+   "equipment": "",
+   "n_signals": 1,
+   "recording_start": "2024-01-01 12:00:00",
+   "data_record_duration_s": 1.0,
+   "n_data_records": 12
+  }
+ }
+}

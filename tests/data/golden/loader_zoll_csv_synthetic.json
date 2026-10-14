@@ -1,0 +1,158 @@
+{
+ "mode": "exact",
+ "generated_with": {
+  "git_commit": "f6afd34707881b1cf82bab75520f5e355061b399",
+  "vitabel": "0.1.1",
+  "numpy": "2.5.1",
+  "pandas": "3.0.3",
+  "python": "3.13.2",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O"
+ },
+ "summary": {
+  "channels": [
+   {
+    "class": "Channel",
+    "name": "ecg_pads",
+    "len": 2,
+    "time_unit": "s",
+    "time_start": "2024-01-01 12:00:00",
+    "offset": "0 days 00:00:00",
+    "first_entry": "2024-01-01 12:00:00",
+    "last_entry": "2024-01-01 12:00:01",
+    "time_index_unit": "ns",
+    "time": {
+     "n": 2,
+     "unit": "ns",
+     "sha256": "35566b14626a47bcda220d16eb894ce5456dcfa3bbbf691273fd49e0d3e65a38",
+     "values": [
+      0,
+      1000000000
+     ]
+    },
+    "data": {
+     "n": 2,
+     "dtype_kind": "i",
+     "sha256": "dc91ce9a50ddc828740aa26743716897fdb2bb64f1db662fe263a59be56145ae",
+     "nan_count": 0,
+     "min": 1.0,
+     "max": 2.0,
+     "mean": 1.5,
+     "std": 0.5,
+     "values": [
+      1.0,
+      2.0
+     ]
+    },
+    "metadata": {
+     "Serial No": "AR12345",
+     "source": "ZOLL - X Series"
+    },
+    "plotstyle": {
+     "color": "green",
+     "label": "ECG (Pads)",
+     "alpha": 0.6
+    },
+    "labels": [],
+    "attached_labels": []
+   },
+   {
+    "class": "Channel",
+    "name": "capnography",
+    "len": 2,
+    "time_unit": "s",
+    "time_start": "2024-01-01 12:00:00",
+    "offset": "0 days 00:00:00",
+    "first_entry": "2024-01-01 12:00:00",
+    "last_entry": "2024-01-01 12:00:01",
+    "time_index_unit": "ns",
+    "time": {
+     "n": 2,
+     "unit": "ns",
+     "sha256": "35566b14626a47bcda220d16eb894ce5456dcfa3bbbf691273fd49e0d3e65a38",
+     "values": [
+      0,
+      1000000000
+     ]
+    },
+    "data": {
+     "n": 2,
+     "dtype_kind": "i",
+     "sha256": "a515fea0d77db3376ce09fa9c641c453165cd72c75e02f55a8fb72190edd0338",
+     "nan_count": 0,
+     "min": 10.0,
+     "max": 11.0,
+     "mean": 10.5,
+     "std": 0.5,
+     "values": [
+      10.0,
+      11.0
+     ]
+    },
+    "metadata": {
+     "Serial No": "AR12345",
+     "source": "ZOLL - X Series"
+    },
+    "plotstyle": {
+     "color": "goldenrod",
+     "label": "Capnography",
+     "alpha": 0.8
+    },
+    "labels": [],
+    "attached_labels": []
+   },
+   {
+    "class": "Channel",
+    "name": "ppg",
+    "len": 2,
+    "time_unit": "s",
+    "time_start": "2024-01-01 12:00:00",
+    "offset": "0 days 00:00:00",
+    "first_entry": "2024-01-01 12:00:00",
+    "last_entry": "2024-01-01 12:00:01",
+    "time_index_unit": "ns",
+    "time": {
+     "n": 2,
+     "unit": "ns",
+     "sha256": "35566b14626a47bcda220d16eb894ce5456dcfa3bbbf691273fd49e0d3e65a38",
+     "values": [
+      0,
+      1000000000
+     ]
+    },
+    "data": {
+     "n": 2,
+     "dtype_kind": "i",
+     "sha256": "bb90d67ba86899d99d5e2ff1529e84ff42cea5afaf13675f927d381f548569bf",
+     "nan_count": 0,
+     "min": 95.0,
+     "max": 96.0,
+     "mean": 95.5,
+     "std": 0.5,
+     "values": [
+      95.0,
+      96.0
+     ]
+    },
+    "metadata": {
+     "Serial No": "AR12345",
+     "source": "ZOLL - X Series"
+    },
+    "plotstyle": {
+     "color": "darkcyan",
+     "label": "Photoplethysmography",
+     "alpha": 0.6,
+     "linestyle": "-",
+     "marker": ""
+    },
+    "labels": [],
+    "attached_labels": []
+   }
+  ],
+  "global_labels": [],
+  "metadata": {
+   "Recording_files_added": [
+    "zoll_case_ecg.txt"
+   ]
+  }
+ }
+}

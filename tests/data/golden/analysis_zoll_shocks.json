@@ -1,0 +1,40 @@
+{
+ "mode": "values",
+ "generated_with": {
+  "git_commit": "f6afd34707881b1cf82bab75520f5e355061b399",
+  "vitabel": "0.1.1",
+  "numpy": "2.5.1",
+  "pandas": "3.0.3",
+  "python": "3.13.2",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O"
+ },
+ "summary": {
+  "columns": [
+   "Nr",
+   "DefaultEnergy",
+   "DeliveredEnergy",
+   "Impedance",
+   "Current"
+  ],
+  "index": [
+   "1970-01-01 07:36:54.645000"
+  ],
+  "data": {
+   "Nr": [
+    1.0
+   ],
+   "DefaultEnergy": [
+    150.0
+   ],
+   "DeliveredEnergy": [
+    178.8
+   ],
+   "Impedance": [
+    89.3
+   ],
+   "Current": [
+    7.9
+   ]
+  }
+ }
+}

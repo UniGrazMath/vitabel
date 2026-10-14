@@ -1,16 +1,16 @@
 import shutil
-from datetime import datetime
-from pathlib import Path
 
 import json
 import numpy as np
 import pandas as pd
-import pyedflib
 import pytest
 
 from vitabel import Vitals, __version__
 from vitabel import Channel, Label, IntervalLabel
 from vitabel.utils import loading
+
+from tests.builders import write_synthetic_zoll_csv_pair, write_test_edfplus
+from tests.golden import assert_matches_golden, summarize_series
 
 
 def compare_two_dictionaries(dict1, dict2):
@@ -29,83 +29,6 @@ def compare_two_dictionaries(dict1, dict2):
                     return compare_two_dictionaries(dict1, dict2)
                 else:
                     return dict1[key] == dict2[key]
-
-
-def _write_test_edfplus(path: Path):
-    writer = pyedflib.EdfWriter(
-        str(path), 1, file_type=pyedflib.FILETYPE_EDFPLUS
-    )
-    writer.setStartdatetime(datetime(2024, 1, 1, 12, 0, 0))
-    writer.setSignalHeader(
-        0,
-        {
-            "label": "sig",
-            "dimension": "uV",
-            "sample_frequency": 1,
-            "physical_min": -1,
-            "physical_max": 1,
-            "digital_min": -32768,
-            "digital_max": 32767,
-            "transducer": "",
-            "prefilter": "",
-        },
-    )
-    writer.writeSamples([np.array([0.0, 1.0] * 6, dtype=float)])
-    writer.writeAnnotation(1.0, 2.5, "artifact")
-    writer.writeAnnotation(5.0, 1.0, "artifact")
-    writer.writeAnnotation(8.0, 0.5, "noise")
-    writer.close()
-
-
-def _write_synthetic_zoll_csv_pair(base_path: Path) -> tuple[Path, Path]:
-    csv_path = base_path.with_name(base_path.name + "_ecg.txt")
-    xml_path = base_path.with_suffix(".xml")
-
-    rows = []
-    for i in range(3):
-        rows.append(
-            {
-                "Start": 0,
-                " Serial": "AR12345",
-                " DeviceId": 1,
-                " RunNumber": 1,
-                " Date": " 01-01-2024",
-                " Real": f" 12:00:0{i}.000",
-                " Elapsed": i,
-                " X": 0,
-                " EcgVal": i + 1,
-                " EcgStatus": 1,
-                " CapnoVal": 10 + i,
-                " CapnoStatus": 1,
-                " P1Val": 0,
-                " P1Status": 0,
-                " P2Val": 0,
-                " P2Status": 0,
-                " P3Val": 0,
-                " P3Status": 0,
-                " Spo2Val": 95 + i,
-                " Spo2Status": 1,
-                " CprDepth": 0,
-                " CprFrequency": 0,
-                " CprStatus": 0,
-                " CprWaveVal": 0,
-                " FiltEcgVal": 0,
-                " FiltEcgStatus": 0,
-                " Ecg2Val": 0,
-                " Ecg2Status": 0,
-                " Ecg3Val": 0,
-                " Ecg3Status": 0,
-                " Ecg4Val": 0,
-                " Ecg4Status": 0,
-            }
-        )
-
-    pd.DataFrame(rows).to_csv(csv_path, index=False, encoding="utf-16")
-    xml_path.write_text(
-        "<Root><Record><Defibrillator><Serial>AR12345</Serial></Defibrillator></Record></Root>",
-        encoding="utf-8",
-    )
-    return csv_path, xml_path
 
 
 def test_cardio_init():
@@ -194,7 +117,7 @@ def test_add_zoll_json(zoll_vitals):
 
 
 def test_read_zoll_csv_without_cpr_data(tmp_path):
-    csv_path, xml_path = _write_synthetic_zoll_csv_pair(tmp_path / "zoll_case")
+    csv_path, xml_path = write_synthetic_zoll_csv_pair(tmp_path / "zoll_case")
 
     pat_dat, data = loading.read_zollcsv(csv_path, xml_path)
 
@@ -274,7 +197,7 @@ def test_add_edfplus(edf_sample_path):
 
 def test_add_edfplus_interval_annotations(tmp_path):
     f_path = tmp_path / "interval_annotations.edf"
-    _write_test_edfplus(f_path)
+    write_test_edfplus(f_path)
 
     case = Vitals()
     case.add_edfplus(f_path)
@@ -952,6 +875,7 @@ def test_create_shock_information_DataFrame():
     assert "impedance" in shocks.columns
 
 
+@pytest.mark.golden
 def test_etco2_and_ventilation_detection(vitabel_test_data_dir):
     co_df = pd.read_csv(
         vitabel_test_data_dir / "sample_signals" / "Capnography.csv.bz2"
@@ -999,7 +923,13 @@ def test_etco2_and_ventilation_detection(vitabel_test_data_dir):
         ],
     )
 
+    assert_matches_golden(
+        "analysis_etco2_capnography_absolute_threshold_4_4",
+        [summarize_series(label) for label in cardio_object.labels],
+        mode="values",
+    )
 
+@pytest.mark.golden
 def test_etco2_and_ventilation_detection_threshold_mode(vitabel_test_data_dir):
     file_path = vitabel_test_data_dir / "sample_signals" / "Capnography.csv.bz2"
     co_df = pd.read_csv(file_path)
@@ -1017,7 +947,13 @@ def test_etco2_and_ventilation_detection_threshold_mode(vitabel_test_data_dir):
     assert "ventilations_from_capnography" in cardio_object.get_label_names()
     assert "etco2_from_capnography" in cardio_object.get_label_names()
 
+    assert_matches_golden(
+        "analysis_etco2_capnography_absolute_threshold_mode",
+        [summarize_series(label) for label in cardio_object.labels],
+        mode="values",
+    )
 
+@pytest.mark.golden
 def test_etco2_and_ventilation_detection_relative_time(vitabel_test_data_dir):
     file_path = vitabel_test_data_dir / "sample_signals" / "Capnography.csv.bz2"
     co_df = pd.read_csv(file_path)
@@ -1031,7 +967,13 @@ def test_etco2_and_ventilation_detection_relative_time(vitabel_test_data_dir):
     assert "ventilations_from_capnography" in cardio_object.get_label_names()
     assert "etco2_from_capnography" in cardio_object.get_label_names()
 
+    assert_matches_golden(
+        "analysis_etco2_capnography_relative_default",
+        [summarize_series(label) for label in cardio_object.labels],
+        mode="values",
+    )
 
+@pytest.mark.golden
 def test_cycle_duration_analysis_absolute(vitabel_test_data_dir):
     len_pause_range = [0, 10, 10, 5, 1]
     n_compressions_range = np.asarray([30, 20, 2, 20, 20])
@@ -1068,7 +1010,13 @@ def test_cycle_duration_analysis_absolute(vitabel_test_data_dir):
 
     assert (cc_periods == periods_test).all()
 
+    assert_matches_golden(
+        "analysis_cycle_duration_absolute",
+        [summarize_series(label) for label in cardio_object.labels],
+        mode="values",
+    )
 
+@pytest.mark.golden
 def test_cycle_duration_analysis_relative():
     len_pause_range = [0, 10, 10, 5, 1]
     n_compressions_range = np.asarray([30, 20, 2, 20, 20])
@@ -1089,7 +1037,13 @@ def test_cycle_duration_analysis_relative():
     assert cardio_object.labels
     assert "cc_periods" in cardio_object.get_label_names()
 
+    assert_matches_golden(
+        "analysis_cycle_duration_relative",
+        [summarize_series(label) for label in cardio_object.labels],
+        mode="values",
+    )
 
+@pytest.mark.golden
 def test_acceleration_CC_period_dection_absolute(vitabel_test_data_dir):
     file_path = vitabel_test_data_dir / "sample_signals" / "Accelerometer.csv.bz2"
     co_df = pd.read_csv(file_path)
@@ -1117,7 +1071,13 @@ def test_acceleration_CC_period_dection_absolute(vitabel_test_data_dir):
 
     assert (cc_periods == periods_test).all()
 
+    assert_matches_golden(
+        "analysis_cc_periods_acc_absolute",
+        [summarize_series(label) for label in cardio_object.labels],
+        mode="values",
+    )
 
+@pytest.mark.golden
 def test_acceleration_CC_period_dection_relative(vitabel_test_data_dir):
     file_path = vitabel_test_data_dir / "sample_signals" / "Accelerometer.csv.bz2"
     co_df = pd.read_csv(file_path)
@@ -1130,7 +1090,13 @@ def test_acceleration_CC_period_dection_relative(vitabel_test_data_dir):
     assert cardio_object.labels
     assert "cc_periods" in cardio_object.get_label_names()
 
+    assert_matches_golden(
+        "analysis_cc_periods_acc_relative",
+        [summarize_series(label) for label in cardio_object.labels],
+        mode="values",
+    )
 
+@pytest.mark.golden
 def test_rosc_detection_absolute_time(vitabel_test_data_dir):
     file_path1 = vitabel_test_data_dir / "sample_signals" / "Accelerometer.csv.bz2"
     co_df = pd.read_csv(file_path1)
@@ -1154,7 +1120,13 @@ def test_rosc_detection_absolute_time(vitabel_test_data_dir):
     cardio_object.predict_circulation()
     assert cardio_object.labels
 
+    assert_matches_golden(
+        "analysis_rosc_absolute",
+        [summarize_series(label) for label in cardio_object.labels],
+        mode="values",
+    )
 
+@pytest.mark.golden
 def test_rosc_detection_relative_time(vitabel_test_data_dir):
     file_path1 = vitabel_test_data_dir / "sample_signals" / "Accelerometer.csv.bz2"
     co_df = pd.read_csv(file_path1)
@@ -1174,6 +1146,11 @@ def test_rosc_detection_relative_time(vitabel_test_data_dir):
     cardio_object.predict_circulation()
     assert cardio_object.labels
 
+    assert_matches_golden(
+        "analysis_rosc_relative",
+        [summarize_series(label) for label in cardio_object.labels],
+        mode="values",
+    )
 
 def test_real_evaluation(zoll_vitals_copy):
     cardio_recording = zoll_vitals_copy
@@ -1203,6 +1180,7 @@ def test_analysis_exception_for_missing_data(caplog):
     assert len(cardio_recording.labels) == 0
 
 
+@pytest.mark.golden
 def test_area_under_threshold_computation():
     vital_case = Vitals()
 
@@ -1238,6 +1216,16 @@ def test_area_under_threshold_computation():
         threshold_metric.duration_under_threshold - pd.Timedelta(hours=1)
     ) <= pd.Timedelta(microseconds=1)
 
+    assert_matches_golden(
+        "analysis_area_under_threshold_synthetic",
+        {
+            f"{source}_{threshold}": vital_case.area_under_threshold(
+                source=source, threshold=threshold
+            )
+            for source, threshold in [("0", 10), ("0", 100), ("1", 0), ("1", 0.5)]
+        },
+        mode="values",
+    )
 
 def test_add_eolife_ventilatory_feedback(vitabel_test_data_dir):
     """Test loading EOlife ventilatory feedback CSV file."""
