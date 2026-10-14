@@ -1,7 +1,7 @@
 {
  "mode": "values",
  "generated_with": {
-  "git_commit": "f6afd34707881b1cf82bab75520f5e355061b399",
+  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -15,15 +15,35 @@
     "name": "airflow",
     "len": 23518,
     "time_unit": "ms",
-    "time_start": "2023-01-11 12:12:37.997000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:37.997000",
-    "last_entry": "2023-01-11 12:14:37.994000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:37.997000",
+     "ns": 1673439157997000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:37.997000",
+     "ns": 1673439157997000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:37.994000",
+     "ns": 1673439277994000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 23518,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "269d8303b830de88d6b895362dfd8ab6579787b26a7c9260c5355cfd5c1105b6",
+     "min": 0,
+     "max": 119997000000,
      "samples": [
       0,
       473000000,
@@ -284,6 +304,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 23518,
      "dtype_kind": "f",
      "sha256": "d27c6f364236e39154accf5b880eaa386cabce3903d3021ce7cd895b3addb9c9",
@@ -563,15 +584,35 @@
     "name": "airway_pressure",
     "len": 59103,
     "time_unit": "ms",
-    "time_start": "2023-01-11 12:12:37.995000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:37.995000",
-    "last_entry": "2023-01-11 12:14:37.994000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:37.995000",
+     "ns": 1673439157995000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:37.995000",
+     "ns": 1673439157995000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:37.994000",
+     "ns": 1673439277994000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 59103,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "ab4c8027bf0d611de0374a8557e979cc263c4f57d8e58e944b317d6cc3ee753d",
+     "min": 0,
+     "max": 119999000000,
      "samples": [
       0,
       460000000,
@@ -832,6 +873,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 59103,
      "dtype_kind": "f",
      "sha256": "1012a7c4c0530d67f31d62b2d10cc7fbcedac7b58c760c0756f17276f2e64f59",
@@ -1111,15 +1153,35 @@
     "name": "Flow Interpolated",
     "len": 71640,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:37.997000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:37.997000",
-    "last_entry": "2023-01-11 12:14:37.994000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:37.997000",
+     "ns": 1673439157997000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:37.997000",
+     "ns": 1673439157997000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:37.994000",
+     "ns": 1673439277994000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 71640,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "dfbf99a31c3258ae0d63ce690485be382a7b58d573ab4f929b45caa361d4bd69",
+     "min": 0,
+     "max": 119997000000,
      "samples": [
       0,
       464000000,
@@ -1380,6 +1442,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 71640,
      "dtype_kind": "f",
      "sha256": "ff33c08d891aa8e45f090ca375ec2fbc27093eef1c5ac368134c5c0e0e08ddc8",
@@ -1661,15 +1724,35 @@
     "name": "Pressure Interpolated",
     "len": 71640,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:37.997000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:37.997000",
-    "last_entry": "2023-01-11 12:14:37.994000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:37.997000",
+     "ns": 1673439157997000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:37.997000",
+     "ns": 1673439157997000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:37.994000",
+     "ns": 1673439277994000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 71640,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "dfbf99a31c3258ae0d63ce690485be382a7b58d573ab4f929b45caa361d4bd69",
+     "min": 0,
+     "max": 119997000000,
      "samples": [
       0,
       464000000,
@@ -1930,6 +2013,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 71640,
      "dtype_kind": "f",
      "sha256": "59f8fda817ffb1910f2927e7958a6d0cbe3c2c7c48e89f0eb45a3a3bb58318f4",
@@ -2213,15 +2297,35 @@
       "name": "Maximal Inspiratory Airway Pressure",
       "len": 20,
       "time_unit": "s",
-      "time_start": "2023-01-11 12:12:40.117000",
-      "offset": "0 days 00:00:00",
-      "first_entry": "2023-01-11 12:12:40.117000",
-      "last_entry": "2023-01-11 12:14:33.626000",
+      "time_start": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:12:40.117000",
+       "ns": 1673439160117000000
+      },
+      "offset": {
+       "kind": "timedelta",
+       "repr": "0 days 00:00:00",
+       "ns": 0
+      },
+      "first_entry": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:12:40.117000",
+       "ns": 1673439160117000000
+      },
+      "last_entry": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:14:33.626000",
+       "ns": 1673439273626000000
+      },
       "time_index_unit": "ns",
       "time": {
+       "kind": "time_array",
+       "dtype": "timedelta64",
        "n": 20,
-       "unit": "ns",
+       "nat_count": 0,
        "sha256": "837a143cbe39ef4872db1cca84c721558395564308936e9d2b27237850249da8",
+       "min": 0,
+       "max": 113509000000,
        "values": [
         0,
         5625000000,
@@ -2246,6 +2350,7 @@
        ]
       },
       "data": {
+       "kind": "numeric_array",
        "n": 20,
        "dtype_kind": "f",
        "sha256": "96b3a0b6d003d6f673add21be8d901c47d8950301ba4444279c51368fa106a95",
@@ -2298,15 +2403,35 @@
       "name": "Minimal Inspiratory Airway Pressure",
       "len": 20,
       "time_unit": "s",
-      "time_start": "2023-01-11 12:12:38.860841487",
-      "offset": "0 days 00:00:00",
-      "first_entry": "2023-01-11 12:12:38.860841487",
-      "last_entry": "2023-01-11 12:14:32.917499999",
+      "time_start": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:12:38.860841487",
+       "ns": 1673439158860841487
+      },
+      "offset": {
+       "kind": "timedelta",
+       "repr": "0 days 00:00:00",
+       "ns": 0
+      },
+      "first_entry": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:12:38.860841487",
+       "ns": 1673439158860841487
+      },
+      "last_entry": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:14:32.917499999",
+       "ns": 1673439272917499999
+      },
       "time_index_unit": "ns",
       "time": {
+       "kind": "time_array",
+       "dtype": "timedelta64",
        "n": 20,
-       "unit": "ns",
+       "nat_count": 0,
        "sha256": "d3e6a03e95c194f001c9262d7e6e0746f918d41b23e7fbd4aabe0264238e0456",
+       "min": 0,
+       "max": 114056658512,
        "values": [
         0,
         6097491846,
@@ -2331,6 +2456,7 @@
        ]
       },
       "data": {
+       "kind": "numeric_array",
        "n": 20,
        "dtype_kind": "f",
        "sha256": "fde702361d60589c374ee8eda6b0f912cb0391bfb07bb8b286c02511af7a3a6b",
@@ -2385,15 +2511,35 @@
     "name": "Product Flow Pressure",
     "len": 71640,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:37.997000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:37.997000",
-    "last_entry": "2023-01-11 12:14:37.994000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:37.997000",
+     "ns": 1673439157997000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:37.997000",
+     "ns": 1673439157997000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:37.994000",
+     "ns": 1673439277994000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 71640,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "dfbf99a31c3258ae0d63ce690485be382a7b58d573ab4f929b45caa361d4bd69",
+     "min": 0,
+     "max": 119997000000,
      "samples": [
       0,
       464000000,
@@ -2654,6 +2800,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 71640,
      "dtype_kind": "f",
      "sha256": "5613a9b065d27bd6d660a26765936f65b4a44c037cbbdf73bd9f9c40da34c5de",
@@ -2937,15 +3084,35 @@
     "name": "Slope Pressure",
     "len": 71640,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:37.997000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:37.997000",
-    "last_entry": "2023-01-11 12:14:37.994000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:37.997000",
+     "ns": 1673439157997000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:37.997000",
+     "ns": 1673439157997000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:37.994000",
+     "ns": 1673439277994000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 71640,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "dfbf99a31c3258ae0d63ce690485be382a7b58d573ab4f929b45caa361d4bd69",
+     "min": 0,
+     "max": 119997000000,
      "samples": [
       0,
       464000000,
@@ -3206,6 +3373,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 71640,
      "dtype_kind": "f",
      "sha256": "c1bdd9e9bab8acbcfb3bbbe063a1a33eec5e2bb947c8f74bf4149e3b6b18bdb5",
@@ -3483,15 +3651,35 @@
     "name": "Product negative Flow Pressures Slope",
     "len": 71640,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:37.997000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:37.997000",
-    "last_entry": "2023-01-11 12:14:37.994000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:37.997000",
+     "ns": 1673439157997000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:37.997000",
+     "ns": 1673439157997000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:37.994000",
+     "ns": 1673439277994000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 71640,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "dfbf99a31c3258ae0d63ce690485be382a7b58d573ab4f929b45caa361d4bd69",
+     "min": 0,
+     "max": 119997000000,
      "samples": [
       0,
       464000000,
@@ -3752,6 +3940,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 71640,
      "dtype_kind": "f",
      "sha256": "32d5f4fcbae55b0d68888376459d6e1b1b4deebdad42187d48df8b4a58ad9ca4",
@@ -4035,15 +4224,35 @@
     "name": "Volume",
     "len": 68077,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:38.860841487",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:38.860841487",
-    "last_entry": "2023-01-11 12:14:32.917000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:38.860841487",
+     "ns": 1673439158860841487
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:38.860841487",
+     "ns": 1673439158860841487
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:32.917000",
+     "ns": 1673439272917000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 68077,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "f3d856bd93dddbccb40a760177742a6fc14c14df576841c6f505a9abbe06c4d5",
+     "min": 0,
+     "max": 114056158513,
      "samples": [
       0,
       442158513,
@@ -4304,6 +4513,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 68077,
      "dtype_kind": "f",
      "sha256": "c1aeff5ffca8a64454f85d6b9e5badf56282bcdd7f21cc3cee7e67db33878393",
@@ -4589,15 +4799,35 @@
       "name": "VTinsp",
       "len": 19,
       "time_unit": "s",
-      "time_start": "2023-01-11 12:12:40.224869595",
-      "offset": "0 days 00:00:00",
-      "first_entry": "2023-01-11 12:12:40.224869595",
-      "last_entry": "2023-01-11 12:14:28.250000",
+      "time_start": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:12:40.224869595",
+       "ns": 1673439160224869595
+      },
+      "offset": {
+       "kind": "timedelta",
+       "repr": "0 days 00:00:00",
+       "ns": 0
+      },
+      "first_entry": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:12:40.224869595",
+       "ns": 1673439160224869595
+      },
+      "last_entry": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:14:28.250000",
+       "ns": 1673439268250000000
+      },
       "time_index_unit": "ns",
       "time": {
+       "kind": "time_array",
+       "dtype": "timedelta64",
        "n": 19,
-       "unit": "ns",
+       "nat_count": 0,
        "sha256": "775b98abaa94ac9459fe41194c232ce745e6b4f1e88012245a82e5fc38abb237",
+       "min": 0,
+       "max": 108025130405,
        "values": [
         0,
         5695191637,
@@ -4621,6 +4851,7 @@
        ]
       },
       "data": {
+       "kind": "numeric_array",
        "n": 19,
        "dtype_kind": "f",
        "sha256": "c4f9d48d689b2c8e3d5b4efa83d9c147d3a5f9aee3eaf2f5b27040a3cff177c2",
@@ -4672,15 +4903,35 @@
       "name": "Delta VT",
       "len": 19,
       "time_unit": "s",
-      "time_start": "2023-01-11 12:12:44.958333333",
-      "offset": "0 days 00:00:00",
-      "first_entry": "2023-01-11 12:12:44.958333333",
-      "last_entry": "2023-01-11 12:14:32.917499999",
+      "time_start": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:12:44.958333333",
+       "ns": 1673439164958333333
+      },
+      "offset": {
+       "kind": "timedelta",
+       "repr": "0 days 00:00:00",
+       "ns": 0
+      },
+      "first_entry": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:12:44.958333333",
+       "ns": 1673439164958333333
+      },
+      "last_entry": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:14:32.917499999",
+       "ns": 1673439272917499999
+      },
       "time_index_unit": "ns",
       "time": {
+       "kind": "time_array",
+       "dtype": "timedelta64",
        "n": 19,
-       "unit": "ns",
+       "nat_count": 0,
        "sha256": "6cb74c13bdc3f0858ab6210415638ab114a8ffd1018abb68199abf211c53e931",
+       "min": 0,
+       "max": 107959166666,
        "values": [
         0,
         5913844986,
@@ -4704,6 +4955,7 @@
        ]
       },
       "data": {
+       "kind": "numeric_array",
        "n": 19,
        "dtype_kind": "f",
        "sha256": "1b5fd18a9431f03dad5415745bce8aecd64f24d0afc1394bc443bddfe9913ead",
@@ -4757,15 +5009,35 @@
     "name": "Inspiratory Volume",
     "len": 66248,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:38.860841487",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:38.860841487",
-    "last_entry": "2023-01-11 12:14:29.894000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:38.860841487",
+     "ns": 1673439158860841487
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:38.860841487",
+     "ns": 1673439158860841487
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:29.894000",
+     "ns": 1673439269894000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 66248,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "7124197d818c8cb5bddfd38b0bee37ecc6085aee992ef802a17d332b34339615",
+     "min": 0,
+     "max": 111033158513,
      "samples": [
       0,
       429158513,
@@ -5026,6 +5298,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 66248,
      "dtype_kind": "f",
      "sha256": "b2e3c41be91f60ec30c9cab765bb234ed9efcc1f71977d4f76422809f8f7952a",
@@ -5309,15 +5582,35 @@
     "name": "Expiratory Volume",
     "len": 68031,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:38.860841487",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:38.860841487",
-    "last_entry": "2023-01-11 12:14:35.890000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:38.860841487",
+     "ns": 1673439158860841487
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:38.860841487",
+     "ns": 1673439158860841487
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:35.890000",
+     "ns": 1673439275890000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 68031,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "c4b33df01c2c9ea3cb41a3c63a82d7f31a1890b2997d8078356a3558fc5e7a38",
+     "min": 0,
+     "max": 117029158513,
      "samples": [
       0,
       442158513,
@@ -5578,6 +5871,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 68031,
      "dtype_kind": "f",
      "sha256": "dedd6676856b88efe3a24957fc0074c96a99513c0480e929f7171817b6852fda",
@@ -5862,15 +6156,35 @@
       "name": "VTexp",
       "len": 18,
       "time_unit": "s",
-      "time_start": "2023-01-11 12:12:44.202499991",
-      "offset": "0 days 00:00:00",
-      "first_entry": "2023-01-11 12:12:44.202499991",
-      "last_entry": "2023-01-11 12:14:26.887000",
+      "time_start": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:12:44.202499991",
+       "ns": 1673439164202499991
+      },
+      "offset": {
+       "kind": "timedelta",
+       "repr": "0 days 00:00:00",
+       "ns": 0
+      },
+      "first_entry": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:12:44.202499991",
+       "ns": 1673439164202499991
+      },
+      "last_entry": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:14:26.887000",
+       "ns": 1673439266887000000
+      },
       "time_index_unit": "ns",
       "time": {
+       "kind": "time_array",
+       "dtype": "timedelta64",
        "n": 18,
-       "unit": "ns",
+       "nat_count": 0,
        "sha256": "44104d7dd675db78db20ff617f0206008c117c4a114a577d61f994636fc572b0",
+       "min": 0,
+       "max": 102684500009,
        "values": [
         0,
         5307786976,
@@ -5893,6 +6207,7 @@
        ]
       },
       "data": {
+       "kind": "numeric_array",
        "n": 18,
        "dtype_kind": "f",
        "sha256": "9cb9a762bfaaf59ed9c48ac5b177ef22c0b095bc0268d79274eba09a3f038d44",
@@ -5945,15 +6260,35 @@
     "name": "Cumulative Inspiratory Volume",
     "len": 68077,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:38.860841487",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:38.860841487",
-    "last_entry": "2023-01-11 12:14:32.917000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:38.860841487",
+     "ns": 1673439158860841487
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:38.860841487",
+     "ns": 1673439158860841487
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:32.917000",
+     "ns": 1673439272917000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 68077,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "f3d856bd93dddbccb40a760177742a6fc14c14df576841c6f505a9abbe06c4d5",
+     "min": 0,
+     "max": 114056158513,
      "samples": [
       0,
       442158513,
@@ -6214,6 +6549,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 68077,
      "dtype_kind": "f",
      "sha256": "57715cc4f550a0cc26827bde390bd34057ef786a58fb50f241885c7a75688c94",
@@ -6498,15 +6834,35 @@
       "name": "VTinsp_cum",
       "len": 19,
       "time_unit": "s",
-      "time_start": "2023-01-11 12:12:44.958000",
-      "offset": "0 days 00:00:00",
-      "first_entry": "2023-01-11 12:12:44.958000",
-      "last_entry": "2023-01-11 12:14:32.917000",
+      "time_start": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:12:44.958000",
+       "ns": 1673439164958000000
+      },
+      "offset": {
+       "kind": "timedelta",
+       "repr": "0 days 00:00:00",
+       "ns": 0
+      },
+      "first_entry": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:12:44.958000",
+       "ns": 1673439164958000000
+      },
+      "last_entry": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:14:32.917000",
+       "ns": 1673439272917000000
+      },
       "time_index_unit": "ns",
       "time": {
+       "kind": "time_array",
+       "dtype": "timedelta64",
        "n": 19,
-       "unit": "ns",
+       "nat_count": 0,
        "sha256": "4454f6252ffe9d38b8cd58c7cecd113707e2098722ee6aedcdc85b98745b02f5",
+       "min": 0,
+       "max": 107959000000,
        "values": [
         0,
         5911333350,
@@ -6530,6 +6886,7 @@
        ]
       },
       "data": {
+       "kind": "numeric_array",
        "n": 19,
        "dtype_kind": "f",
        "sha256": "89830bc1417d66fe78224e3458c1fa357f04b8b991495ca41c830a722e81be4b",
@@ -6583,15 +6940,35 @@
     "name": "Cumulative Expiratory Volume",
     "len": 68077,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:38.860841487",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:38.860841487",
-    "last_entry": "2023-01-11 12:14:32.917000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:38.860841487",
+     "ns": 1673439158860841487
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:38.860841487",
+     "ns": 1673439158860841487
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:32.917000",
+     "ns": 1673439272917000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 68077,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "f3d856bd93dddbccb40a760177742a6fc14c14df576841c6f505a9abbe06c4d5",
+     "min": 0,
+     "max": 114056158513,
      "samples": [
       0,
       442158513,
@@ -6852,6 +7229,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 68077,
      "dtype_kind": "f",
      "sha256": "9e5d8aefb54c71c328c697001c7b3e3b06e3df3505ef5bdaab9038e754648a48",
@@ -7136,15 +7514,35 @@
       "name": "VTexp_cum",
       "len": 19,
       "time_unit": "s",
-      "time_start": "2023-01-11 12:12:44.202499991",
-      "offset": "0 days 00:00:00",
-      "first_entry": "2023-01-11 12:12:44.202499991",
-      "last_entry": "2023-01-11 12:14:31.943500",
+      "time_start": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:12:44.202499991",
+       "ns": 1673439164202499991
+      },
+      "offset": {
+       "kind": "timedelta",
+       "repr": "0 days 00:00:00",
+       "ns": 0
+      },
+      "first_entry": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:12:44.202499991",
+       "ns": 1673439164202499991
+      },
+      "last_entry": {
+       "kind": "timestamp",
+       "repr": "2023-01-11 12:14:31.943500",
+       "ns": 1673439271943500000
+      },
       "time_index_unit": "ns",
       "time": {
+       "kind": "time_array",
+       "dtype": "timedelta64",
        "n": 19,
-       "unit": "ns",
+       "nat_count": 0,
        "sha256": "a689b4dd0be1d30154c5665dc0fd56696d9cdcfeb9daf757b6e8dd676f2752a4",
+       "min": 0,
+       "max": 107741000009,
        "values": [
         0,
         6668500009,
@@ -7168,6 +7566,7 @@
        ]
       },
       "data": {
+       "kind": "numeric_array",
        "n": 19,
        "dtype_kind": "f",
        "sha256": "9998b94dee87ce66ba2c5a7c8d46ae99b502590f81496e55e1b478cbc9b3ee23",
@@ -7223,15 +7622,35 @@
     "name": "Inspiration Begin",
     "len": 20,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:38.860841487",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:38.860841487",
-    "last_entry": "2023-01-11 12:14:32.917499999",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:38.860841487",
+     "ns": 1673439158860841487
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:38.860841487",
+     "ns": 1673439158860841487
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:32.917499999",
+     "ns": 1673439272917499999
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 20,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "d3e6a03e95c194f001c9262d7e6e0746f918d41b23e7fbd4aabe0264238e0456",
+     "min": 0,
+     "max": 114056658512,
      "values": [
       0,
       6097491846,
@@ -7283,15 +7702,35 @@
     "name": "Expiration Begin",
     "len": 20,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:41.881000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:41.881000",
-    "last_entry": "2023-01-11 12:14:35.892000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:41.881000",
+     "ns": 1673439161881000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:41.881000",
+     "ns": 1673439161881000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:35.892000",
+     "ns": 1673439275892000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 20,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "12d51e279440eddec94ad63f86ea894cc1a192d4fc14e36f64f0b3e791813138",
+     "min": 0,
+     "max": 114011000000,
      "values": [
       0,
       5994000000,
@@ -7343,15 +7782,35 @@
     "name": "Inspiration",
     "len": 20,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:38.860841487",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:38.860841487",
-    "last_entry": "2023-01-11 12:14:35.892000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:38.860841487",
+     "ns": 1673439158860841487
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:38.860841487",
+     "ns": 1673439158860841487
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:35.892000",
+     "ns": 1673439275892000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 40,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "2875561cdda105f3e31f5bcee8e20029104b5cabcfd47a1b7b2ab9be2c923b5e",
+     "min": 0,
+     "max": 117031158513,
      "values": [
       0,
       3020158513,
@@ -7412,15 +7871,35 @@
     "name": "Expiration",
     "len": 19,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:41.881000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:41.881000",
-    "last_entry": "2023-01-11 12:14:32.917499999",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:41.881000",
+     "ns": 1673439161881000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:41.881000",
+     "ns": 1673439161881000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:32.917499999",
+     "ns": 1673439272917499999
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 38,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "05c881da8240e226ca616b36e38c01904c80de9cec33e0dda619a37b17723fa9",
+     "min": 0,
+     "max": 111036499999,
      "values": [
       0,
       3077333333,
@@ -7479,15 +7958,35 @@
     "name": "Inspiratory Time",
     "len": 20,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:41.881000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:41.881000",
-    "last_entry": "2023-01-11 12:14:35.892000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:41.881000",
+     "ns": 1673439161881000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:41.881000",
+     "ns": 1673439161881000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:35.892000",
+     "ns": 1673439275892000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 20,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "12d51e279440eddec94ad63f86ea894cc1a192d4fc14e36f64f0b3e791813138",
+     "min": 0,
+     "max": 114011000000,
      "values": [
       0,
       5994000000,
@@ -7512,6 +8011,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 20,
      "dtype_kind": "f",
      "sha256": "2520aa55af399c1583d20a25c972fd439bc25c3bda4736f6485db3a04847356a",
@@ -7562,15 +8062,35 @@
     "name": "Expiratory Time",
     "len": 19,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:44.958333333",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:44.958333333",
-    "last_entry": "2023-01-11 12:14:32.917499999",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:44.958333333",
+     "ns": 1673439164958333333
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:44.958333333",
+     "ns": 1673439164958333333
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:32.917499999",
+     "ns": 1673439272917499999
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 19,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "6cb74c13bdc3f0858ab6210415638ab114a8ffd1018abb68199abf211c53e931",
+     "min": 0,
+     "max": 107959166666,
      "values": [
       0,
       5913844986,
@@ -7594,6 +8114,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 19,
      "dtype_kind": "f",
      "sha256": "8f638dba53b0a1a42d3996f5b5fbc763a3c54ce19e4038f6169d67be6f9f0af0",
@@ -7643,15 +8164,35 @@
     "name": "Respiratory Rate",
     "len": 19,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:44.958333333",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:44.958333333",
-    "last_entry": "2023-01-11 12:14:32.917499999",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:44.958333333",
+     "ns": 1673439164958333333
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:44.958333333",
+     "ns": 1673439164958333333
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:32.917499999",
+     "ns": 1673439272917499999
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 19,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "6cb74c13bdc3f0858ab6210415638ab114a8ffd1018abb68199abf211c53e931",
+     "min": 0,
+     "max": 107959166666,
      "values": [
       0,
       5913844986,
@@ -7675,6 +8216,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 19,
      "dtype_kind": "f",
      "sha256": "59da414eb00c68b4b63fd29322286abc4401bc8d55077e8b302f0aca0cddbfdf",
@@ -7726,15 +8268,35 @@
     "name": "Inspiratory Reverse Airflow",
     "len": 146,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:57.630672311",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:57.630672311",
-    "last_entry": "2023-01-11 12:14:28.444500",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:57.630672311",
+     "ns": 1673439177630672311
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:57.630672311",
+     "ns": 1673439177630672311
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:28.444500",
+     "ns": 1673439268444500000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 292,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "ad70477ce376b8fc171ffc5fc58d21e4bcc47223b287cf264df5c4e396f37506",
+     "min": 0,
+     "max": 90813827689,
      "values": [
       0,
       43176854,
@@ -8049,15 +8611,35 @@
     "name": "Expiratory Reverse Airflow",
     "len": 64,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:49.510286967",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:49.510286967",
-    "last_entry": "2023-01-11 12:13:50.862181795",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:49.510286967",
+     "ns": 1673439169510286967
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:49.510286967",
+     "ns": 1673439169510286967
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:13:50.862181795",
+     "ns": 1673439230862181795
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 128,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "f237556e79397bec787f30ecdb53135249cfd6ed83903dbd0045de74f6ab42ea",
+     "min": 0,
+     "max": 61351894828,
      "values": [
       0,
       943380128,
@@ -8208,15 +8790,35 @@
     "name": "Inspiratory Reverse Airflow Segment Volume",
     "len": 146,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:57.673849165",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:57.673849165",
-    "last_entry": "2023-01-11 12:14:28.444500",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:57.673849165",
+     "ns": 1673439177673849165
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:57.673849165",
+     "ns": 1673439177673849165
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:28.444500",
+     "ns": 1673439268444500000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 146,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "a857b534457009f04afd90642eb69b851c502ff9e29a7604a8f6b9d0bd30a54e",
+     "min": 0,
+     "max": 90770650835,
      "values": [
       0,
       648141243,
@@ -8367,6 +8969,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 146,
      "dtype_kind": "f",
      "sha256": "f3b1537a67fae338a71ab4b16de3f295adafc5c1f9addc5237c76afb0e729823",
@@ -8543,15 +9146,35 @@
     "name": "Expiratory Reverse Airflow Segment Volume",
     "len": 64,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:50.453667095",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:50.453667095",
-    "last_entry": "2023-01-11 12:13:50.862181795",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:50.453667095",
+     "ns": 1673439170453667095
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:50.453667095",
+     "ns": 1673439170453667095
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:13:50.862181795",
+     "ns": 1673439230862181795
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 64,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "892f41927116b3a8e6fad8bceec310f80d289d5bae4364379c607ce90b138da8",
+     "min": 0,
+     "max": 60408514700,
      "values": [
       0,
       415666255,
@@ -8620,6 +9243,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 64,
      "dtype_kind": "f",
      "sha256": "c6b9d1bc3300cbc19c562441429bb630f53df374af50940889db41793c72ed08",
@@ -8714,15 +9338,35 @@
     "name": "Inspiratory Reverse Airflow Sum per Inspiration",
     "len": 20,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:41.881000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:41.881000",
-    "last_entry": "2023-01-11 12:14:35.892000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:41.881000",
+     "ns": 1673439161881000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:41.881000",
+     "ns": 1673439161881000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:35.892000",
+     "ns": 1673439275892000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 20,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "12d51e279440eddec94ad63f86ea894cc1a192d4fc14e36f64f0b3e791813138",
+     "min": 0,
+     "max": 114011000000,
      "values": [
       0,
       5994000000,
@@ -8747,6 +9391,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 20,
      "dtype_kind": "f",
      "sha256": "68e8a19dfc96139132bcba298fa6d376417a7875363cf542bccfd1648d4a90e3",
@@ -8797,15 +9442,35 @@
     "name": "Expiratory Reverse Airflow Sum per Expiration",
     "len": 19,
     "time_unit": "s",
-    "time_start": "2023-01-11 12:12:44.958333333",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 12:12:44.958333333",
-    "last_entry": "2023-01-11 12:14:32.917499999",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:44.958333333",
+     "ns": 1673439164958333333
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:12:44.958333333",
+     "ns": 1673439164958333333
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 12:14:32.917499999",
+     "ns": 1673439272917499999
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 19,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "6cb74c13bdc3f0858ab6210415638ab114a8ffd1018abb68199abf211c53e931",
+     "min": 0,
+     "max": 107959166666,
      "values": [
       0,
       5913844986,
@@ -8829,6 +9494,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 19,
      "dtype_kind": "f",
      "sha256": "01b1aec52ff3c60913a301966a52cab073eb9a378e0f5badf76d726e180ab3a7",

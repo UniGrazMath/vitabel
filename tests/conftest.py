@@ -11,6 +11,8 @@ from pathlib import Path
 
 from vitabel import Vitals
 
+from tests import golden
+
 
 TEST_DATA_DIR: Path = Path(__file__).parent / "data"
 EXAMPLE_DATA_DIR: Path = Path(__file__).parent.parent / "examples" / "data"
@@ -31,6 +33,17 @@ def vitabel_test_data_dir():
 @pytest.fixture
 def vitabel_example_data_dir():
     return EXAMPLE_DATA_DIR
+
+
+@pytest.fixture(autouse=True)
+def _golden_test_context(request):
+    """Make the current test (and whether it is marked as golden test)
+    known to :func:`tests.golden.assert_matches_golden`."""
+    token = golden.CURRENT_TEST.set(
+        (request.node.nodeid, request.node.get_closest_marker("golden") is not None)
+    )
+    yield
+    golden.CURRENT_TEST.reset(token)
 
 
 @pytest.fixture

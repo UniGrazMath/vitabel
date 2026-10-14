@@ -1,7 +1,7 @@
 {
  "mode": "exact",
  "generated_with": {
-  "git_commit": "f6afd34707881b1cf82bab75520f5e355061b399",
+  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -15,20 +15,41 @@
     "name": "defibrillations_Nr",
     "len": 1,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:36:54.645000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:36:54.645000",
-    "last_entry": "1970-01-01 07:36:54.645000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:36:54.645000",
+     "ns": 27414645000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:36:54.645000",
+     "ns": 27414645000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:36:54.645000",
+     "ns": 27414645000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 1,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+     "min": 0,
+     "max": 0,
      "values": [
       0
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 1,
      "dtype_kind": "i",
      "sha256": "6c3c396ed6b5c36dcae172271f462051b1266b851e92df3deea8ac65478fd712",
@@ -62,20 +83,41 @@
     "name": "defibrillations_DefaultEnergy",
     "len": 1,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:36:54.645000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:36:54.645000",
-    "last_entry": "1970-01-01 07:36:54.645000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:36:54.645000",
+     "ns": 27414645000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:36:54.645000",
+     "ns": 27414645000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:36:54.645000",
+     "ns": 27414645000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 1,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+     "min": 0,
+     "max": 0,
      "values": [
       0
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 1,
      "dtype_kind": "i",
      "sha256": "069aa8e35b07e1bb7fca08dfc625031b32ac80ff75079ae084fef630edf71f8e",
@@ -109,20 +151,41 @@
     "name": "defibrillations_DeliveredEnergy",
     "len": 1,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:36:54.645000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:36:54.645000",
-    "last_entry": "1970-01-01 07:36:54.645000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:36:54.645000",
+     "ns": 27414645000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:36:54.645000",
+     "ns": 27414645000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:36:54.645000",
+     "ns": 27414645000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 1,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+     "min": 0,
+     "max": 0,
      "values": [
       0
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 1,
      "dtype_kind": "f",
      "sha256": "d9569e61419c4392929e04c9965268748f32900a51f3f852c3a1be196492b34a",
@@ -156,20 +219,41 @@
     "name": "defibrillations_Impedance",
     "len": 1,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:36:54.645000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:36:54.645000",
-    "last_entry": "1970-01-01 07:36:54.645000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:36:54.645000",
+     "ns": 27414645000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:36:54.645000",
+     "ns": 27414645000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:36:54.645000",
+     "ns": 27414645000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 1,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+     "min": 0,
+     "max": 0,
      "values": [
       0
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 1,
      "dtype_kind": "f",
      "sha256": "582df585f3857dfb1a7b10828bc8c42a3f7437e2f3659637e0d3424ec0e0921a",
@@ -195,20 +279,41 @@
     "name": "defibrillations_Current",
     "len": 1,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:36:54.645000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:36:54.645000",
-    "last_entry": "1970-01-01 07:36:54.645000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:36:54.645000",
+     "ns": 27414645000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:36:54.645000",
+     "ns": 27414645000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:36:54.645000",
+     "ns": 27414645000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 1,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+     "min": 0,
+     "max": 0,
      "values": [
       0
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 1,
      "dtype_kind": "f",
      "sha256": "f1a060eaf6a52f8e37e97da3173356a6c2216914dc878ce4e5ae13c3ca838765",
@@ -234,15 +339,35 @@
     "name": "capnography",
     "len": 450750,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:28:47.423000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:28:47.423000",
-    "last_entry": "1970-01-01 08:29:08.415000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:28:47.423000",
+     "ns": 26927423000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:28:47.423000",
+     "ns": 26927423000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 08:29:08.415000",
+     "ns": 30548415000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 450750,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "a57ecf2bc116e268988570dac867b17249618404958fad5a337a261720562921",
+     "min": 0,
+     "max": 3620992000000,
      "samples": [
       0,
       14136000000,
@@ -503,6 +628,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 450750,
      "dtype_kind": "f",
      "sha256": "b9e25fc009d6ae40599b3ae47a85ca3510c0d21604acb9034e7524dfc91cb7a1",
@@ -787,15 +913,35 @@
     "name": "cpr_acceleration",
     "len": 1027500,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:23:46.419000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:23:46.419000",
-    "last_entry": "1970-01-01 08:32:22.415000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:23:46.419000",
+     "ns": 26626419000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:23:46.419000",
+     "ns": 26626419000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 08:32:22.415000",
+     "ns": 30742415000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 1027500,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "34c3f05ac843177b8a75d0fd4e0d0dbff5b322c388e26370d16900c1f2ce646a",
+     "min": 0,
+     "max": 4115996000000,
      "samples": [
       0,
       16116000000,
@@ -1056,6 +1202,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 1027500,
      "dtype_kind": "i",
      "sha256": "917a21cf114706eb1fc8d6e9d1f64be450e6e343671c35fd26e26676a024eb3e",
@@ -1340,15 +1487,35 @@
     "name": "ecg_filtered",
     "len": 966000,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:23:56.419000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:23:56.419000",
-    "last_entry": "1970-01-01 08:28:20.415000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:23:56.419000",
+     "ns": 26636419000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:23:56.419000",
+     "ns": 26636419000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 08:28:20.415000",
+     "ns": 30500415000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 966000,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "d1fa29af2032a23217948b5747f8e67956fe71993287d1a52e4c5622b4199404",
+     "min": 0,
+     "max": 3863996000000,
      "samples": [
       0,
       15152000000,
@@ -1609,6 +1776,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 966000,
      "dtype_kind": "f",
      "sha256": "9df197cf7f712d15ff356ae5039b9e46db01c517b4643d6f49c11367340f20eb",
@@ -1893,15 +2061,35 @@
     "name": "ecg_pads",
     "len": 1020750,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:23:47.419000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:23:47.419000",
-    "last_entry": "1970-01-01 08:31:56.415000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:23:47.419000",
+     "ns": 26627419000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:23:47.419000",
+     "ns": 26627419000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 08:31:56.415000",
+     "ns": 30716415000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 1020750,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "8e0ec29c1b76e4a206f516cc3cebf6def186735213da6609a5ebf8ac97b3d422",
+     "min": 0,
+     "max": 4088996000000,
      "samples": [
       0,
       16008000000,
@@ -2162,6 +2350,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 1020750,
      "dtype_kind": "f",
      "sha256": "e3bd1fa3dc19ef39bdf0dbf645f15620cc25790af6a6e31eb5a3b7e94f8721f1",
@@ -2446,15 +2635,35 @@
     "name": "impedance",
     "len": 510000,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:23:47.423000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:23:47.423000",
-    "last_entry": "1970-01-01 08:31:56.415000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:23:47.423000",
+     "ns": 26627423000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:23:47.423000",
+     "ns": 26627423000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 08:31:56.415000",
+     "ns": 30716415000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 510000,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "f6ca99d83e50b0b2e351fa016ce703e6b19ce8d21fad27db26f70e7505df5b43",
+     "min": 0,
+     "max": 4088992000000,
      "samples": [
       0,
       15992000000,
@@ -2715,6 +2924,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 510000,
      "dtype_kind": "i",
      "sha256": "2088893b57ebae30a64133ee8d9982d53d83de2c5a0ec686a40e646d969beef0",
@@ -2999,15 +3209,35 @@
     "name": "ppg",
     "len": 31875,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:24:08.415000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:24:08.415000",
-    "last_entry": "1970-01-01 07:28:23.407000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:24:08.415000",
+     "ns": 26648415000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:24:08.415000",
+     "ns": 26648415000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:28:23.407000",
+     "ns": 26903407000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 31875,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "e7f561c256efb9cdf6e334b1b249eb50256b7312a15769e5bf7995e54abfa878",
+     "min": 0,
+     "max": 254992000000,
      "samples": [
       0,
       992000000,
@@ -3268,6 +3498,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 31875,
      "dtype_kind": "i",
      "sha256": "1b64fc3061d58adeb05f09cf08463c79658df086f381c73554ee035e436e65e0",
@@ -3554,15 +3785,35 @@
     "name": "heart_rate",
     "len": 180,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:23:57.904000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:23:57.904000",
-    "last_entry": "1970-01-01 08:31:25.361000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:23:57.904000",
+     "ns": 26637904000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:23:57.904000",
+     "ns": 26637904000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 08:31:25.361000",
+     "ns": 30685361000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 180,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "063230780d153413aeb8713b50d2e620ec7ab0145dcf2e958449dd1eae6748f4",
+     "min": 0,
+     "max": 4047457000000,
      "values": [
       0,
       2262000000,
@@ -3747,6 +3998,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 180,
      "dtype_kind": "i",
      "sha256": "3225bae9f74c41062c9bffcead1f88951d70fd49adb537ba1f6b4740b821bd44",
@@ -3957,15 +4209,35 @@
     "name": "spo2",
     "len": 142,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:24:15.490000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:24:15.490000",
-    "last_entry": "1970-01-01 08:28:55.522000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:24:15.490000",
+     "ns": 26655490000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:24:15.490000",
+     "ns": 26655490000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 08:28:55.522000",
+     "ns": 30535522000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 142,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "996151404020db3482db17c7c20fe0a2d01bc391eb962191a3b79ce175bafaf3",
+     "min": 0,
+     "max": 3880032000000,
      "values": [
       0,
       14638000000,
@@ -4112,6 +4384,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 142,
      "dtype_kind": "i",
      "sha256": "7d8f3f6706fb5c61498d1244cd940498e8a0febd8e1b672682c52fee93a6c9c1",
@@ -4278,15 +4551,35 @@
     "name": "mean_inspired_co2",
     "len": 163,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:28:59.760000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:28:59.760000",
-    "last_entry": "1970-01-01 08:28:55.522000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:28:59.760000",
+     "ns": 26939760000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:28:59.760000",
+     "ns": 26939760000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 08:28:55.522000",
+     "ns": 30535522000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 163,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "336b3691eda7e6c334139d764fdb4ad5c1d47f1246b447579c6b4471e853ad96",
+     "min": 0,
+     "max": 3595762000000,
      "values": [
       0,
       29989000000,
@@ -4454,6 +4747,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 163,
      "dtype_kind": "i",
      "sha256": "1379f423739d33ce98d504e2fd6df370ea1860264a05a31b3163aa72991bd118",
@@ -4647,15 +4941,35 @@
     "name": "etco2",
     "len": 163,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:28:59.760000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:28:59.760000",
-    "last_entry": "1970-01-01 08:28:55.522000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:28:59.760000",
+     "ns": 26939760000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:28:59.760000",
+     "ns": 26939760000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 08:28:55.522000",
+     "ns": 30535522000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 163,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "336b3691eda7e6c334139d764fdb4ad5c1d47f1246b447579c6b4471e853ad96",
+     "min": 0,
+     "max": 3595762000000,
      "values": [
       0,
       29989000000,
@@ -4823,6 +5137,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 163,
      "dtype_kind": "i",
      "sha256": "15aa3dc2e601429362f0fbf2408ab20ed0c397259fa0b2848654ede56cd08fb8",
@@ -5017,15 +5332,35 @@
     "name": "respiratory_rate",
     "len": 162,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:28:59.760000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:28:59.760000",
-    "last_entry": "1970-01-01 08:28:55.522000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:28:59.760000",
+     "ns": 26939760000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:28:59.760000",
+     "ns": 26939760000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 08:28:55.522000",
+     "ns": 30535522000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 162,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "955eebc114a3229a75b5c015f7611133a7afab3dfd2eff35b7cfe88e4963cfcb",
+     "min": 0,
+     "max": 3595762000000,
      "values": [
       0,
       29989000000,
@@ -5192,6 +5527,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 162,
      "dtype_kind": "i",
      "sha256": "468b746135f7f773cb7f47c62a5f1a87063fa3648175daa0a2af4918831b74ca",
@@ -5384,15 +5720,35 @@
     "name": "nibp_map",
     "len": 11,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:35:45",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:35:45",
-    "last_entry": "1970-01-01 08:27:30",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:35:45",
+     "ns": 27345000000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:35:45",
+     "ns": 27345000000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 08:27:30",
+     "ns": 30450000000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 11,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "e7907aaca3fa48d395efdaadbb03f269fe15c47f8ac63a40f5b889b586f2f5b9",
+     "min": 0,
+     "max": 3105000000000,
      "values": [
       0,
       611000000000,
@@ -5408,6 +5764,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 11,
      "dtype_kind": "i",
      "sha256": "399c9e59c5902ed156d0dadac4244f1b5f93827d3fb094d33394222189a8548d",
@@ -5449,15 +5806,35 @@
     "name": "nibp_sys",
     "len": 11,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:35:45",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:35:45",
-    "last_entry": "1970-01-01 08:27:30",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:35:45",
+     "ns": 27345000000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:35:45",
+     "ns": 27345000000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 08:27:30",
+     "ns": 30450000000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 11,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "e7907aaca3fa48d395efdaadbb03f269fe15c47f8ac63a40f5b889b586f2f5b9",
+     "min": 0,
+     "max": 3105000000000,
      "values": [
       0,
       611000000000,
@@ -5473,6 +5850,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 11,
      "dtype_kind": "i",
      "sha256": "99eae15d95df6bdf9ffd01209a24163b57691b69675e0f4591a56dd28d7a8d87",
@@ -5514,15 +5892,35 @@
     "name": "nibp_dia",
     "len": 11,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:35:45",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:35:45",
-    "last_entry": "1970-01-01 08:27:30",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:35:45",
+     "ns": 27345000000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:35:45",
+     "ns": 27345000000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 08:27:30",
+     "ns": 30450000000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 11,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "e7907aaca3fa48d395efdaadbb03f269fe15c47f8ac63a40f5b889b586f2f5b9",
+     "min": 0,
+     "max": 3105000000000,
      "values": [
       0,
       611000000000,
@@ -5538,6 +5936,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 11,
      "dtype_kind": "i",
      "sha256": "9b62a0ad37c0e7810401f26df7915401ff4133ed96f50fb16b96250c5d7ab2b1",
@@ -5579,15 +5978,35 @@
     "name": "temperature_1",
     "len": 159,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:36:29.204000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:36:29.204000",
-    "last_entry": "1970-01-01 08:36:25.062000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:36:29.204000",
+     "ns": 27389204000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:36:29.204000",
+     "ns": 27389204000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 08:36:25.062000",
+     "ns": 30985062000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 159,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "05b260f61949a2609fc539928dd5909eb69d41a97da65f139b38e5260f5d77a3",
+     "min": 0,
+     "max": 3595858000000,
      "values": [
       0,
       14831000000,
@@ -5751,6 +6170,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 159,
      "dtype_kind": "f",
      "sha256": "0f292f189155fd39371084f9efaed0fabdf7a76308835c48abe2800222fdc83a",
@@ -5934,15 +6354,35 @@
     "name": "cc_depth",
     "len": 2555,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:23:47.622000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:23:47.622000",
-    "last_entry": "1970-01-01 08:32:10.548000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:23:47.622000",
+     "ns": 26627622000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:23:47.622000",
+     "ns": 26627622000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 08:32:10.548000",
+     "ns": 30730548000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 2555,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "1e0a03c3327b12f39593853c54cf58feacd2b71d4b8aa174211a560c358e638c",
+     "min": 0,
+     "max": 4102926000000,
      "values": [
       0,
       3876000000,
@@ -8502,6 +8942,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 2555,
      "dtype_kind": "f",
      "sha256": "fd5c08ec87fd15ed12ae065a30116201d187f6332d9d48172aea935da8daf18f",
@@ -11087,15 +11528,35 @@
     "name": "cc_release_velocity",
     "len": 2555,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:23:47.622000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:23:47.622000",
-    "last_entry": "1970-01-01 08:32:10.548000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:23:47.622000",
+     "ns": 26627622000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:23:47.622000",
+     "ns": 26627622000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 08:32:10.548000",
+     "ns": 30730548000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 2555,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "1e0a03c3327b12f39593853c54cf58feacd2b71d4b8aa174211a560c358e638c",
+     "min": 0,
+     "max": 4102926000000,
      "values": [
       0,
       3876000000,
@@ -13655,6 +14116,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 2555,
      "dtype_kind": "i",
      "sha256": "39acb747d28956cd2382b705ebdf0b003198280fbab56c420880d789bdc90948",
@@ -16240,15 +16702,35 @@
     "name": "cc_rate",
     "len": 2555,
     "time_unit": "s",
-    "time_start": "1970-01-01 07:23:47.622000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "1970-01-01 07:23:47.622000",
-    "last_entry": "1970-01-01 08:32:10.548000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:23:47.622000",
+     "ns": 26627622000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 07:23:47.622000",
+     "ns": 26627622000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "1970-01-01 08:32:10.548000",
+     "ns": 30730548000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 2555,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "1e0a03c3327b12f39593853c54cf58feacd2b71d4b8aa174211a560c358e638c",
+     "min": 0,
+     "max": 4102926000000,
      "values": [
       0,
       3876000000,
@@ -18808,6 +19290,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 2555,
      "dtype_kind": "i",
      "sha256": "ac66437332d37370503bd5661512f851f60c5d316e4d0ed2856cb7e16117a5bb",

@@ -1,7 +1,7 @@
 {
  "mode": "values",
  "generated_with": {
-  "git_commit": "f6afd34707881b1cf82bab75520f5e355061b399",
+  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -14,15 +14,35 @@
    "name": "rosc_prediction",
    "len": 759,
    "time_unit": "s",
-   "time_start": "1970-01-01 07:23:46.419000",
-   "offset": "0 days 00:00:00",
-   "first_entry": "1970-01-01 07:32:02.151000",
-   "last_entry": "1970-01-01 08:31:50.415000",
+   "time_start": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 07:23:46.419000",
+    "ns": 26626419000000
+   },
+   "offset": {
+    "kind": "timedelta",
+    "repr": "0 days 00:00:00",
+    "ns": 0
+   },
+   "first_entry": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 07:32:02.151000",
+    "ns": 27122151000000
+   },
+   "last_entry": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 08:31:50.415000",
+    "ns": 30710415000000
+   },
    "time_index_unit": "ns",
    "time": {
+    "kind": "time_array",
+    "dtype": "timedelta64",
     "n": 759,
-    "unit": "ns",
+    "nat_count": 0,
     "sha256": "7a3b4ab1332e9c3e57c6f392c85c61710dc435f41b314a7c462a85e07a58868d",
+    "min": 495732000000,
+    "max": 4083996000000,
     "values": [
      495732000000,
      497732000000,
@@ -786,6 +806,7 @@
     ]
    },
    "data": {
+    "kind": "numeric_array",
     "n": 759,
     "dtype_kind": "f",
     "sha256": "5ca6d71e65af91c30e9d58d32657b030078092ec2e90506351b4ebdc6fbadc6c",
@@ -1577,15 +1598,35 @@
    "name": "rosc_probability",
    "len": 759,
    "time_unit": "s",
-   "time_start": "1970-01-01 07:23:46.419000",
-   "offset": "0 days 00:00:00",
-   "first_entry": "1970-01-01 07:32:02.151000",
-   "last_entry": "1970-01-01 08:31:50.415000",
+   "time_start": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 07:23:46.419000",
+    "ns": 26626419000000
+   },
+   "offset": {
+    "kind": "timedelta",
+    "repr": "0 days 00:00:00",
+    "ns": 0
+   },
+   "first_entry": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 07:32:02.151000",
+    "ns": 27122151000000
+   },
+   "last_entry": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 08:31:50.415000",
+    "ns": 30710415000000
+   },
    "time_index_unit": "ns",
    "time": {
+    "kind": "time_array",
+    "dtype": "timedelta64",
     "n": 759,
-    "unit": "ns",
+    "nat_count": 0,
     "sha256": "7a3b4ab1332e9c3e57c6f392c85c61710dc435f41b314a7c462a85e07a58868d",
+    "min": 495732000000,
+    "max": 4083996000000,
     "values": [
      495732000000,
      497732000000,
@@ -2349,6 +2390,7 @@
     ]
    },
    "data": {
+    "kind": "numeric_array",
     "n": 759,
     "dtype_kind": "f",
     "sha256": "8300c00824f5424cebc58f597b80fce4dc93cd202dca898a8836cf6e1c10e5ad",
@@ -3142,15 +3184,35 @@
    "name": "rosc_decision_function",
    "len": 759,
    "time_unit": "s",
-   "time_start": "1970-01-01 07:23:46.419000",
-   "offset": "0 days 00:00:00",
-   "first_entry": "1970-01-01 07:32:02.151000",
-   "last_entry": "1970-01-01 08:31:50.415000",
+   "time_start": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 07:23:46.419000",
+    "ns": 26626419000000
+   },
+   "offset": {
+    "kind": "timedelta",
+    "repr": "0 days 00:00:00",
+    "ns": 0
+   },
+   "first_entry": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 07:32:02.151000",
+    "ns": 27122151000000
+   },
+   "last_entry": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 08:31:50.415000",
+    "ns": 30710415000000
+   },
    "time_index_unit": "ns",
    "time": {
+    "kind": "time_array",
+    "dtype": "timedelta64",
     "n": 759,
-    "unit": "ns",
+    "nat_count": 0,
     "sha256": "7a3b4ab1332e9c3e57c6f392c85c61710dc435f41b314a7c462a85e07a58868d",
+    "min": 495732000000,
+    "max": 4083996000000,
     "values": [
      495732000000,
      497732000000,
@@ -3914,6 +3976,7 @@
     ]
    },
    "data": {
+    "kind": "numeric_array",
     "n": 759,
     "dtype_kind": "f",
     "sha256": "301ba1a5286ca02de7d328a098635fff69ad2c65a8ae04e84b77126cb73f1ef3",
@@ -4705,15 +4768,35 @@
    "name": "etco2_from_capnography",
    "len": 534,
    "time_unit": "s",
-   "time_start": "1970-01-01 07:28:50.919000",
-   "offset": "0 days 00:00:00",
-   "first_entry": "1970-01-01 07:28:50.919000",
-   "last_entry": "1970-01-01 08:29:07.167000",
+   "time_start": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 07:28:50.919000",
+    "ns": 26930919000000
+   },
+   "offset": {
+    "kind": "timedelta",
+    "repr": "0 days 00:00:00",
+    "ns": 0
+   },
+   "first_entry": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 07:28:50.919000",
+    "ns": 26930919000000
+   },
+   "last_entry": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 08:29:07.167000",
+    "ns": 30547167000000
+   },
    "time_index_unit": "ns",
    "time": {
+    "kind": "time_array",
+    "dtype": "timedelta64",
     "n": 534,
-    "unit": "ns",
+    "nat_count": 0,
     "sha256": "d37cd344b9b5ff0eedeb3a13f7eb9594ab0295469b2e72a9e970699f9cc42055",
+    "min": 0,
+    "max": 3616248000000,
     "values": [
      0,
      2752000000,
@@ -5252,6 +5335,7 @@
     ]
    },
    "data": {
+    "kind": "numeric_array",
     "n": 534,
     "dtype_kind": "f",
     "sha256": "de007c9c98b29edabe13d279d16f47c9afa4e15ba37f9b5394abbe2c3358a28a",
@@ -5821,15 +5905,35 @@
    "name": "ventilations_from_capnography",
    "len": 534,
    "time_unit": "s",
-   "time_start": "1970-01-01 07:28:48.903000",
-   "offset": "0 days 00:00:00",
-   "first_entry": "1970-01-01 07:28:48.903000",
-   "last_entry": "1970-01-01 08:29:05.543000",
+   "time_start": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 07:28:48.903000",
+    "ns": 26928903000000
+   },
+   "offset": {
+    "kind": "timedelta",
+    "repr": "0 days 00:00:00",
+    "ns": 0
+   },
+   "first_entry": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 07:28:48.903000",
+    "ns": 26928903000000
+   },
+   "last_entry": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 08:29:05.543000",
+    "ns": 30545543000000
+   },
    "time_index_unit": "ns",
    "time": {
+    "kind": "time_array",
+    "dtype": "timedelta64",
     "n": 534,
-    "unit": "ns",
+    "nat_count": 0,
     "sha256": "f1c9b9b54d89c00ab68a862967beb6c87bdd14881f1715d79326f85a516a6e52",
+    "min": 0,
+    "max": 3616640000000,
     "values": [
      0,
      3040000000,
@@ -6392,15 +6496,35 @@
    "name": "cc_periods",
    "len": 37,
    "time_unit": "s",
-   "time_start": "1970-01-01 07:23:47.622000",
-   "offset": "0 days 00:00:00",
-   "first_entry": "1970-01-01 07:23:50.961000",
-   "last_entry": "1970-01-01 08:24:37.726000",
+   "time_start": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 07:23:47.622000",
+    "ns": 26627622000000
+   },
+   "offset": {
+    "kind": "timedelta",
+    "repr": "0 days 00:00:00",
+    "ns": 0
+   },
+   "first_entry": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 07:23:50.961000",
+    "ns": 26630961000000
+   },
+   "last_entry": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 08:24:37.726000",
+    "ns": 30277726000000
+   },
    "time_index_unit": "ns",
    "time": {
+    "kind": "time_array",
+    "dtype": "timedelta64",
     "n": 74,
-    "unit": "ns",
+    "nat_count": 0,
     "sha256": "6b5ece756ad191a4334c244f05b4f67de348babdb06ec8c63a506c5bcd032d2d",
+    "min": 3339000000,
+    "max": 3650104000000,
     "values": [
      3339000000,
      10246000000,

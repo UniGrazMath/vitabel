@@ -1,7 +1,7 @@
 {
  "mode": "exact",
  "generated_with": {
-  "git_commit": "f6afd34707881b1cf82bab75520f5e355061b399",
+  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -15,15 +15,35 @@
     "name": "cc",
     "len": 249,
     "time_unit": "s",
-    "time_start": "2023-01-11 13:10:37.140000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 13:10:37.140000",
-    "last_entry": "2023-01-11 13:13:44.730000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 13:10:37.140000",
+     "ns": 1673442637140000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 13:10:37.140000",
+     "ns": 1673442637140000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 13:13:44.730000",
+     "ns": 1673442824730000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 249,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "030e8f53d826ccd7a21a8a79d85194259a3505521acab2c2e87f9ace445aa0f9",
+     "min": 0,
+     "max": 187590000000,
      "values": [
       0,
       580000000,

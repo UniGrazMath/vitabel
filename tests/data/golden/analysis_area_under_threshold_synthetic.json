@@ -1,7 +1,7 @@
 {
  "mode": "values",
  "generated_with": {
-  "git_commit": "f6afd34707881b1cf82bab75520f5e355061b399",
+  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -17,7 +17,8 @@
     "unit": "minutes \u00d7 value units"
    },
    "duration_under_threshold": {
-    "timedelta": "0 days 00:00:00",
+    "kind": "timedelta",
+    "repr": "0 days 00:00:00",
     "ns": 0
    },
    "time_weighted_average_under_threshold": {
@@ -26,7 +27,8 @@
     "unit": "value units"
    },
    "observational_interval_duration": {
-    "timedelta": "0 days 02:00:00",
+    "kind": "timedelta",
+    "repr": "0 days 02:00:00",
     "ns": 7200000000000
    }
   },
@@ -38,7 +40,8 @@
     "unit": "minutes \u00d7 value units"
    },
    "duration_under_threshold": {
-    "timedelta": "0 days 02:00:00",
+    "kind": "timedelta",
+    "repr": "0 days 02:00:00",
     "ns": 7200000000000
    },
    "time_weighted_average_under_threshold": {
@@ -47,7 +50,8 @@
     "unit": "value units"
    },
    "observational_interval_duration": {
-    "timedelta": "0 days 02:00:00",
+    "kind": "timedelta",
+    "repr": "0 days 02:00:00",
     "ns": 7200000000000
    }
   },
@@ -59,7 +63,8 @@
     "unit": "minutes \u00d7 value units"
    },
    "duration_under_threshold": {
-    "timedelta": "0 days 01:00:00.000000500",
+    "kind": "timedelta",
+    "repr": "0 days 01:00:00.000000500",
     "ns": 3600000000500
    },
    "time_weighted_average_under_threshold": {
@@ -68,7 +73,8 @@
     "unit": "value units"
    },
    "observational_interval_duration": {
-    "timedelta": "0 days 02:00:00",
+    "kind": "timedelta",
+    "repr": "0 days 02:00:00",
     "ns": 7200000000000
    }
   },
@@ -80,7 +86,8 @@
     "unit": "minutes \u00d7 value units"
    },
    "duration_under_threshold": {
-    "timedelta": "0 days 01:14:50.909091250",
+    "kind": "timedelta",
+    "repr": "0 days 01:14:50.909091250",
     "ns": 4490909091250
    },
    "time_weighted_average_under_threshold": {
@@ -89,7 +96,8 @@
     "unit": "value units"
    },
    "observational_interval_duration": {
-    "timedelta": "0 days 02:00:00",
+    "kind": "timedelta",
+    "repr": "0 days 02:00:00",
     "ns": 7200000000000
    }
   }

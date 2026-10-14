@@ -1,7 +1,7 @@
 {
  "mode": "exact",
  "generated_with": {
-  "git_commit": "f6afd34707881b1cf82bab75520f5e355061b399",
+  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -15,15 +15,35 @@
     "name": "channel",
     "len": 4,
     "time_unit": "s",
-    "time_start": "2024-01-01 00:00:00",
-    "offset": "0 days 00:00:00.250000",
-    "first_entry": "2024-01-01 00:00:00.250000",
-    "last_entry": "2024-01-01 00:00:02.250000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2024-01-01 00:00:00",
+     "ns": 1704067200000000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00.250000",
+     "ns": 250000000
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2024-01-01 00:00:00.250000",
+     "ns": 1704067200250000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2024-01-01 00:00:02.250000",
+     "ns": 1704067202250000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 4,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "fe43eb2061daad16647d2f0d4f020cc79ef5391216af44e175851b3b1b68ec02",
+     "min": 250000000,
+     "max": 2250000000,
      "values": [
       250000000,
       750000000,
@@ -32,6 +52,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 4,
      "dtype_kind": "f",
      "sha256": "16f0ede0636570244e938b5670836bb47fd066e6207c2fe13352abc1ff80a2b6",
@@ -58,21 +79,42 @@
       "name": "label",
       "len": 2,
       "time_unit": "s",
-      "time_start": "2024-01-01 00:00:00.100000",
-      "offset": "0 days 00:00:00",
-      "first_entry": "2024-01-01 00:00:00.100000",
-      "last_entry": "2024-01-01 00:00:01.500000",
+      "time_start": {
+       "kind": "timestamp",
+       "repr": "2024-01-01 00:00:00.100000",
+       "ns": 1704067200100000000
+      },
+      "offset": {
+       "kind": "timedelta",
+       "repr": "0 days 00:00:00",
+       "ns": 0
+      },
+      "first_entry": {
+       "kind": "timestamp",
+       "repr": "2024-01-01 00:00:00.100000",
+       "ns": 1704067200100000000
+      },
+      "last_entry": {
+       "kind": "timestamp",
+       "repr": "2024-01-01 00:00:01.500000",
+       "ns": 1704067201500000000
+      },
       "time_index_unit": "ns",
       "time": {
+       "kind": "time_array",
+       "dtype": "timedelta64",
        "n": 2,
-       "unit": "ns",
+       "nat_count": 0,
        "sha256": "2203df63e4e5a6bb4875309aa11b3dfbff620d94df73063dcf0bb73517da4756",
+       "min": 0,
+       "max": 1400000000,
        "values": [
         0,
         1400000000
        ]
       },
       "data": {
+       "kind": "numeric_array",
        "n": 2,
        "dtype_kind": "f",
        "sha256": "dbb2bd0445462b6d8f4d01f51c2c0c250f407dc2c4a03822e295b7ec3256dd9c",
@@ -93,6 +135,7 @@
        "linestyle": "none"
       },
       "text_data": {
+       "kind": "text_array",
        "n": 2,
        "dtype_kind": "O",
        "sha256": "df14bf1df5b1b943b5f00292dc45b64cffa2e73f3b4355983de394be4497405e",
@@ -115,21 +158,42 @@
     "name": "interval label",
     "len": 1,
     "time_unit": "s",
-    "time_start": "2024-01-01 00:00:00.500000",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2024-01-01 00:00:00.500000",
-    "last_entry": "2024-01-01 00:00:01.500000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2024-01-01 00:00:00.500000",
+     "ns": 1704067200500000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2024-01-01 00:00:00.500000",
+     "ns": 1704067200500000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2024-01-01 00:00:01.500000",
+     "ns": 1704067201500000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 2,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "35566b14626a47bcda220d16eb894ce5456dcfa3bbbf691273fd49e0d3e65a38",
+     "min": 0,
+     "max": 1000000000,
      "values": [
       0,
       1000000000
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 1,
      "dtype_kind": "f",
      "sha256": "161f4c0b1a18a0501127332c387e782b5acc10c6c7a9f7e494c1e3394c49bad5",

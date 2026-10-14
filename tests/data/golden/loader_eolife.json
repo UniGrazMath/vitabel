@@ -1,7 +1,7 @@
 {
  "mode": "exact",
  "generated_with": {
-  "git_commit": "f6afd34707881b1cf82bab75520f5e355061b399",
+  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -15,15 +15,35 @@
     "name": "Cycle number",
     "len": 47,
     "time_unit": "s",
-    "time_start": "2025-02-20 09:37:00",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2025-02-20 09:37:00",
-    "last_entry": "2025-02-20 09:41:28.870000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:37:00",
+     "ns": 1740044220000000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:37:00",
+     "ns": 1740044220000000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:41:28.870000",
+     "ns": 1740044488870000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 47,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "eda9c585a4c38fc7fb7dca7cd17c6b44e4051ecb80f675e5efdfdcb0540f7048",
+     "min": 0,
+     "max": 268870000000,
      "values": [
       0,
       4960000000,
@@ -75,6 +95,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 47,
      "dtype_kind": "i",
      "sha256": "dfb9b25356504c29ef1af3765381af384be58ea4c3f1f5b70f79e989825ea30a",
@@ -152,15 +173,35 @@
     "name": "Ti",
     "len": 36,
     "time_unit": "s",
-    "time_start": "2025-02-20 09:37:00",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2025-02-20 09:37:00",
-    "last_entry": "2025-02-20 09:41:28.870000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:37:00",
+     "ns": 1740044220000000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:37:00",
+     "ns": 1740044220000000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:41:28.870000",
+     "ns": 1740044488870000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 36,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "a67c8b8dc164e0c6606b6d51cb7b8faf2206a5644cc1bad64d7dffb8021208a5",
+     "min": 0,
+     "max": 268870000000,
      "values": [
       0,
       4960000000,
@@ -201,6 +242,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 36,
      "dtype_kind": "i",
      "sha256": "86b233a9d88c8f80006b9fb9d0d82fd9a6344726de9eb7449268e757907a242f",
@@ -268,15 +310,35 @@
     "name": "Te",
     "len": 36,
     "time_unit": "s",
-    "time_start": "2025-02-20 09:37:00",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2025-02-20 09:37:00",
-    "last_entry": "2025-02-20 09:41:28.870000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:37:00",
+     "ns": 1740044220000000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:37:00",
+     "ns": 1740044220000000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:41:28.870000",
+     "ns": 1740044488870000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 36,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "a67c8b8dc164e0c6606b6d51cb7b8faf2206a5644cc1bad64d7dffb8021208a5",
+     "min": 0,
+     "max": 268870000000,
      "values": [
       0,
       4960000000,
@@ -317,6 +379,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 36,
      "dtype_kind": "i",
      "sha256": "0f5aedf4c6d1604dacc085fbe2ed49db2521ad1ab31454041eabd8e45b088cc1",
@@ -384,15 +447,35 @@
     "name": "Tp",
     "len": 36,
     "time_unit": "s",
-    "time_start": "2025-02-20 09:37:00",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2025-02-20 09:37:00",
-    "last_entry": "2025-02-20 09:41:28.870000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:37:00",
+     "ns": 1740044220000000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:37:00",
+     "ns": 1740044220000000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:41:28.870000",
+     "ns": 1740044488870000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 36,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "a67c8b8dc164e0c6606b6d51cb7b8faf2206a5644cc1bad64d7dffb8021208a5",
+     "min": 0,
+     "max": 268870000000,
      "values": [
       0,
       4960000000,
@@ -433,6 +516,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 36,
      "dtype_kind": "i",
      "sha256": "ba33ee3bd49b92240ae5af262e26279f5f58c2de0680a7b934e059f1271b6db4",
@@ -500,15 +584,35 @@
     "name": "Freq",
     "len": 46,
     "time_unit": "s",
-    "time_start": "2025-02-20 09:37:00",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2025-02-20 09:37:00",
-    "last_entry": "2025-02-20 09:41:28.870000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:37:00",
+     "ns": 1740044220000000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:37:00",
+     "ns": 1740044220000000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:41:28.870000",
+     "ns": 1740044488870000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 46,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "dfbbb2f46b0b209c2736a7f2191d69cd308140bc35dd73d12d269553a46b1ddb",
+     "min": 0,
+     "max": 268870000000,
      "values": [
       0,
       4960000000,
@@ -559,6 +663,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 46,
      "dtype_kind": "i",
      "sha256": "522451e0192f2bf50a03480536dbdcb42c9b430df82d41f2e46ef3a88509bb0f",
@@ -636,15 +741,35 @@
     "name": "Vi",
     "len": 47,
     "time_unit": "s",
-    "time_start": "2025-02-20 09:37:00",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2025-02-20 09:37:00",
-    "last_entry": "2025-02-20 09:41:28.870000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:37:00",
+     "ns": 1740044220000000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:37:00",
+     "ns": 1740044220000000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:41:28.870000",
+     "ns": 1740044488870000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 47,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "eda9c585a4c38fc7fb7dca7cd17c6b44e4051ecb80f675e5efdfdcb0540f7048",
+     "min": 0,
+     "max": 268870000000,
      "values": [
       0,
       4960000000,
@@ -696,6 +821,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 47,
      "dtype_kind": "i",
      "sha256": "0b9783699d55035a0ae3f84d8067f7f5d83256da2abfb0ed4550d15c2ca28446",
@@ -774,15 +900,35 @@
     "name": "Vt",
     "len": 47,
     "time_unit": "s",
-    "time_start": "2025-02-20 09:37:00",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2025-02-20 09:37:00",
-    "last_entry": "2025-02-20 09:41:28.870000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:37:00",
+     "ns": 1740044220000000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:37:00",
+     "ns": 1740044220000000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:41:28.870000",
+     "ns": 1740044488870000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 47,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "eda9c585a4c38fc7fb7dca7cd17c6b44e4051ecb80f675e5efdfdcb0540f7048",
+     "min": 0,
+     "max": 268870000000,
      "values": [
       0,
       4960000000,
@@ -834,6 +980,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 47,
      "dtype_kind": "i",
      "sha256": "4dfef5d3837ddd50023cbcc539205a3620e46a302d9b8134e199a9e734bfbafa",
@@ -912,15 +1059,35 @@
     "name": "Leakage",
     "len": 47,
     "time_unit": "s",
-    "time_start": "2025-02-20 09:37:00",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2025-02-20 09:37:00",
-    "last_entry": "2025-02-20 09:41:28.870000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:37:00",
+     "ns": 1740044220000000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:37:00",
+     "ns": 1740044220000000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:41:28.870000",
+     "ns": 1740044488870000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 47,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "eda9c585a4c38fc7fb7dca7cd17c6b44e4051ecb80f675e5efdfdcb0540f7048",
+     "min": 0,
+     "max": 268870000000,
      "values": [
       0,
       4960000000,
@@ -972,6 +1139,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 47,
      "dtype_kind": "i",
      "sha256": "dce77cb1b5d3070c46e3c3c91d2cfad81bd6133d34e830cd7ebd0358de5462cc",
@@ -1050,15 +1218,35 @@
     "name": "Leakage ratio",
     "len": 47,
     "time_unit": "s",
-    "time_start": "2025-02-20 09:37:00",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2025-02-20 09:37:00",
-    "last_entry": "2025-02-20 09:41:28.870000",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:37:00",
+     "ns": 1740044220000000000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:37:00",
+     "ns": 1740044220000000000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2025-02-20 09:41:28.870000",
+     "ns": 1740044488870000000
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 47,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "eda9c585a4c38fc7fb7dca7cd17c6b44e4051ecb80f675e5efdfdcb0540f7048",
+     "min": 0,
+     "max": 268870000000,
      "values": [
       0,
       4960000000,
@@ -1110,6 +1298,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 47,
      "dtype_kind": "f",
      "sha256": "af202cad65cc353afb8bc861154c9137aee3d3a32de09aef28c5d09f02d837d3",

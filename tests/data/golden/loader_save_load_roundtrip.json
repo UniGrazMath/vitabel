@@ -1,7 +1,7 @@
 {
  "mode": "exact",
  "generated_with": {
-  "git_commit": "f6afd34707881b1cf82bab75520f5e355061b399",
+  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -15,15 +15,35 @@
     "name": "IBP1",
     "len": 178641,
     "time_unit": "s",
-    "time_start": "2023-01-11 13:10:37.540275",
-    "offset": "0 days 00:00:01.500000",
-    "first_entry": "2023-01-11 13:10:39.040275",
-    "last_entry": "2023-01-11 13:40:25.450275086",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 13:10:37.540275",
+     "ns": 1673442637540275000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:01.500000",
+     "ns": 1500000000
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 13:10:39.040275",
+     "ns": 1673442639040275000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 13:40:25.450275086",
+     "ns": 1673444425450275086
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 178641,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "14bbb3dcaf9b12bf82c288849f261eb59c163533416a20483b1bff4aaafbe5b1",
+     "min": 1500000000,
+     "max": 1787910000086,
      "samples": [
       1500000000,
       8500000000,
@@ -284,6 +304,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 178641,
      "dtype_kind": "f",
      "sha256": "d7b8c24be0b2f1d5901d6ce6a8ed1e1aac024503d9baee7dca023a3a0660ce77",
@@ -581,15 +602,35 @@
     "name": "PLETH",
     "len": 178641,
     "time_unit": "s",
-    "time_start": "2023-01-11 13:10:37.540275",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 13:10:37.540275",
-    "last_entry": "2023-01-11 13:40:23.950275086",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 13:10:37.540275",
+     "ns": 1673442637540275000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 13:10:37.540275",
+     "ns": 1673442637540275000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 13:40:23.950275086",
+     "ns": 1673444423950275086
+    },
     "time_index_unit": "ns",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 178641,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "9d4460256e5472a85fe7d106511a837b143dca414ef4963e2656e1824a24cadf",
+     "min": 0,
+     "max": 1786410000086,
      "samples": [
       0,
       7000000000,
@@ -850,6 +891,7 @@
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 178641,
      "dtype_kind": "f",
      "sha256": "e0ca917bfdd48ebeb3135911b7aa3199541dde259a128d479f95a25216018dea",
@@ -1149,21 +1191,42 @@
     "name": "intervals",
     "len": 1,
     "time_unit": "s",
-    "time_start": "2023-01-11 13:10:39.040275",
-    "offset": "0 days 00:00:00",
-    "first_entry": "2023-01-11 13:10:39.040275",
-    "last_entry": "2023-01-11 13:10:49.040275",
+    "time_start": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 13:10:39.040275",
+     "ns": 1673442639040275000
+    },
+    "offset": {
+     "kind": "timedelta",
+     "repr": "0 days 00:00:00",
+     "ns": 0
+    },
+    "first_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 13:10:39.040275",
+     "ns": 1673442639040275000
+    },
+    "last_entry": {
+     "kind": "timestamp",
+     "repr": "2023-01-11 13:10:49.040275",
+     "ns": 1673442649040275000
+    },
     "time_index_unit": "s",
     "time": {
+     "kind": "time_array",
+     "dtype": "timedelta64",
      "n": 2,
-     "unit": "ns",
+     "nat_count": 0,
      "sha256": "23232cbe846e053f069643bcfc484ebb870f1ad35351083cad39f14e75aade52",
+     "min": 0,
+     "max": 10000000000,
      "values": [
       0,
       10000000000
      ]
     },
     "data": {
+     "kind": "numeric_array",
      "n": 1,
      "dtype_kind": "f",
      "sha256": "6c3c396ed6b5c36dcae172271f462051b1266b851e92df3deea8ac65478fd712",
@@ -1183,6 +1246,7 @@
      "linestyle": "none"
     },
     "text_data": {
+     "kind": "text_array",
      "n": 1,
      "dtype_kind": "O",
      "sha256": "72f1e703251fa57f8324cba88c4f7b009508daae368aa72e14651056588c24e7",

@@ -1,7 +1,7 @@
 {
  "mode": "exact",
  "generated_with": {
-  "git_commit": "f6afd34707881b1cf82bab75520f5e355061b399",
+  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -16,15 +16,35 @@
      "name": "signal a",
      "len": 50,
      "time_unit": "s",
-     "time_start": "2024-03-01 08:00:00",
-     "offset": "0 days 00:00:00",
-     "first_entry": "2024-03-01 08:00:00",
-     "last_entry": "2024-03-01 08:00:12.250000",
+     "time_start": {
+      "kind": "timestamp",
+      "repr": "2024-03-01 08:00:00",
+      "ns": 1709280000000000000
+     },
+     "offset": {
+      "kind": "timedelta",
+      "repr": "0 days 00:00:00",
+      "ns": 0
+     },
+     "first_entry": {
+      "kind": "timestamp",
+      "repr": "2024-03-01 08:00:00",
+      "ns": 1709280000000000000
+     },
+     "last_entry": {
+      "kind": "timestamp",
+      "repr": "2024-03-01 08:00:12.250000",
+      "ns": 1709280012250000000
+     },
      "time_index_unit": "ns",
      "time": {
+      "kind": "time_array",
+      "dtype": "timedelta64",
       "n": 50,
-      "unit": "ns",
+      "nat_count": 0,
       "sha256": "728b407a48aff7d9c6c1eac70e6d3d9728bf75d715cce042a09d0a294452c240",
+      "min": 0,
+      "max": 12250000000,
       "values": [
        0,
        250000000,
@@ -79,6 +99,7 @@
       ]
      },
      "data": {
+      "kind": "numeric_array",
       "n": 50,
       "dtype_kind": "f",
       "sha256": "42e9a014f93ee28891ab1f08e9127a773573ae8fe2fd0eda50fa1f826a77ede2",
@@ -153,15 +174,35 @@
      "name": "signal b",
      "len": 40,
      "time_unit": "s",
-     "time_start": "2024-03-01 08:00:00",
-     "offset": "0 days 00:00:00",
-     "first_entry": "2024-03-01 08:00:00",
-     "last_entry": "2024-03-01 08:00:12.250000",
+     "time_start": {
+      "kind": "timestamp",
+      "repr": "2024-03-01 08:00:00",
+      "ns": 1709280000000000000
+     },
+     "offset": {
+      "kind": "timedelta",
+      "repr": "0 days 00:00:00",
+      "ns": 0
+     },
+     "first_entry": {
+      "kind": "timestamp",
+      "repr": "2024-03-01 08:00:00",
+      "ns": 1709280000000000000
+     },
+     "last_entry": {
+      "kind": "timestamp",
+      "repr": "2024-03-01 08:00:12.250000",
+      "ns": 1709280012250000000
+     },
      "time_index_unit": "ns",
      "time": {
+      "kind": "time_array",
+      "dtype": "timedelta64",
       "n": 40,
-      "unit": "ns",
+      "nat_count": 0,
       "sha256": "48ffae87a7bbdf51c307ebeef4e4e6f9c52ca911f59a20c0ae2a9f7b00366e8d",
+      "min": 0,
+      "max": 12250000000,
       "values": [
        0,
        250000000,
@@ -206,6 +247,7 @@
       ]
      },
      "data": {
+      "kind": "numeric_array",
       "n": 40,
       "dtype_kind": "f",
       "sha256": "a977fa89a64c6f9b34167d47d9f4107897a448fd4d71a60f4c6c0e74b1d2b9fc",
@@ -269,15 +311,35 @@
      "name": "dict channel",
      "len": 5,
      "time_unit": "s",
-     "time_start": "2024-03-01 08:00:00",
-     "offset": "0 days 00:00:00",
-     "first_entry": "2024-03-01 08:00:00",
-     "last_entry": "2024-03-01 08:00:04",
+     "time_start": {
+      "kind": "timestamp",
+      "repr": "2024-03-01 08:00:00",
+      "ns": 1709280000000000000
+     },
+     "offset": {
+      "kind": "timedelta",
+      "repr": "0 days 00:00:00",
+      "ns": 0
+     },
+     "first_entry": {
+      "kind": "timestamp",
+      "repr": "2024-03-01 08:00:00",
+      "ns": 1709280000000000000
+     },
+     "last_entry": {
+      "kind": "timestamp",
+      "repr": "2024-03-01 08:00:04",
+      "ns": 1709280004000000000
+     },
      "time_index_unit": "ns",
      "time": {
+      "kind": "time_array",
+      "dtype": "timedelta64",
       "n": 5,
-      "unit": "ns",
+      "nat_count": 0,
       "sha256": "6142e6c5152d1bf8354210a83a3ed585522ee615deb6541baea29d559dfa6d29",
+      "min": 0,
+      "max": 4000000000,
       "values": [
        0,
        1000000000,
@@ -287,6 +349,7 @@
       ]
      },
      "data": {
+      "kind": "numeric_array",
       "n": 5,
       "dtype_kind": "f",
       "sha256": "6e7e65f121d43ef964a485243ab2aecb44aeef35ba0f29d726e89b78061f307c",
@@ -317,15 +380,35 @@
      "name": "label b",
      "len": 40,
      "time_unit": "s",
-     "time_start": "2024-03-01 08:00:00",
-     "offset": "0 days 00:00:00",
-     "first_entry": "2024-03-01 08:00:00",
-     "last_entry": "2024-03-01 08:00:12.250000",
+     "time_start": {
+      "kind": "timestamp",
+      "repr": "2024-03-01 08:00:00",
+      "ns": 1709280000000000000
+     },
+     "offset": {
+      "kind": "timedelta",
+      "repr": "0 days 00:00:00",
+      "ns": 0
+     },
+     "first_entry": {
+      "kind": "timestamp",
+      "repr": "2024-03-01 08:00:00",
+      "ns": 1709280000000000000
+     },
+     "last_entry": {
+      "kind": "timestamp",
+      "repr": "2024-03-01 08:00:12.250000",
+      "ns": 1709280012250000000
+     },
      "time_index_unit": "ns",
      "time": {
+      "kind": "time_array",
+      "dtype": "timedelta64",
       "n": 40,
-      "unit": "ns",
+      "nat_count": 0,
       "sha256": "48ffae87a7bbdf51c307ebeef4e4e6f9c52ca911f59a20c0ae2a9f7b00366e8d",
+      "min": 0,
+      "max": 12250000000,
       "values": [
        0,
        250000000,
@@ -370,6 +453,7 @@
       ]
      },
      "data": {
+      "kind": "numeric_array",
       "n": 40,
       "dtype_kind": "f",
       "sha256": "a977fa89a64c6f9b34167d47d9f4107897a448fd4d71a60f4c6c0e74b1d2b9fc",
@@ -438,15 +522,35 @@
      "name": "dict label",
      "len": 3,
      "time_unit": "s",
-     "time_start": "2024-03-01 08:00:01",
-     "offset": "0 days 00:00:00",
-     "first_entry": "2024-03-01 08:00:01",
-     "last_entry": "2024-03-01 08:00:05",
+     "time_start": {
+      "kind": "timestamp",
+      "repr": "2024-03-01 08:00:01",
+      "ns": 1709280001000000000
+     },
+     "offset": {
+      "kind": "timedelta",
+      "repr": "0 days 00:00:00",
+      "ns": 0
+     },
+     "first_entry": {
+      "kind": "timestamp",
+      "repr": "2024-03-01 08:00:01",
+      "ns": 1709280001000000000
+     },
+     "last_entry": {
+      "kind": "timestamp",
+      "repr": "2024-03-01 08:00:05",
+      "ns": 1709280005000000000
+     },
      "time_index_unit": "ns",
      "time": {
+      "kind": "time_array",
+      "dtype": "timedelta64",
       "n": 3,
-      "unit": "ns",
+      "nat_count": 0,
       "sha256": "c8a99374fbb606a65cd1c07c1bf4df2e2e222fe22f2a1db895d82c21e8974ed2",
+      "min": 0,
+      "max": 4000000000,
       "values": [
        0,
        2000000000,
@@ -454,6 +558,7 @@
       ]
      },
      "data": {
+      "kind": "numeric_array",
       "n": 3,
       "dtype_kind": "f",
       "sha256": "dacc3e6fa04b58efcd61bef0393827d52873f4ccfd8b1742498c25ca421da2c0",
@@ -493,20 +598,30 @@
      "len": 20,
      "time_unit": "s",
      "time_start": null,
-     "offset": "0 days 00:00:00",
+     "offset": {
+      "kind": "timedelta",
+      "repr": "0 days 00:00:00",
+      "ns": 0
+     },
      "first_entry": {
-      "timedelta": "0 days 00:00:00",
+      "kind": "timedelta",
+      "repr": "0 days 00:00:00",
       "ns": 0
      },
      "last_entry": {
-      "timedelta": "0 days 00:00:09.500000",
+      "kind": "timedelta",
+      "repr": "0 days 00:00:09.500000",
       "ns": 9500000000
      },
      "time_index_unit": "ns",
      "time": {
+      "kind": "time_array",
+      "dtype": "timedelta64",
       "n": 20,
-      "unit": "ns",
+      "nat_count": 0,
       "sha256": "4da0a96d31d6e96f63a7fddbb845d49c52e6848d40cdd9547e704520179682f5",
+      "min": 0,
+      "max": 9500000000,
       "values": [
        0,
        500000000,
@@ -531,6 +646,7 @@
       ]
      },
      "data": {
+      "kind": "numeric_array",
       "n": 20,
       "dtype_kind": "f",
       "sha256": "1c9b1843703f24caad907e8dfce8852f226533135fcc6c0268960ec7890b04ff",

@@ -237,6 +237,7 @@ def test_add_nonexistent_file(vitabel_test_data_dir):
     ):
         cardio_object.add_defibrillator_recording(recording_path)
 
+
 def test_add_edfplus(edf_sample_path):
     case = Vitals()
     case.add_edfplus(edf_sample_path)
@@ -1061,6 +1062,7 @@ def test_etco2_and_ventilation_detection(vitabel_test_data_dir):
         mode="values",
     )
 
+
 @pytest.mark.golden
 def test_etco2_and_ventilation_detection_threshold_mode(vitabel_test_data_dir):
     file_path = vitabel_test_data_dir / "sample_signals" / "Capnography.csv.bz2"
@@ -1085,6 +1087,7 @@ def test_etco2_and_ventilation_detection_threshold_mode(vitabel_test_data_dir):
         mode="values",
     )
 
+
 @pytest.mark.golden
 def test_etco2_and_ventilation_detection_relative_time(vitabel_test_data_dir):
     file_path = vitabel_test_data_dir / "sample_signals" / "Capnography.csv.bz2"
@@ -1104,6 +1107,7 @@ def test_etco2_and_ventilation_detection_relative_time(vitabel_test_data_dir):
         [summarize_series(label) for label in cardio_object.labels],
         mode="values",
     )
+
 
 @pytest.mark.golden
 def test_cycle_duration_analysis_absolute(vitabel_test_data_dir):
@@ -1148,6 +1152,7 @@ def test_cycle_duration_analysis_absolute(vitabel_test_data_dir):
         mode="values",
     )
 
+
 @pytest.mark.golden
 def test_cycle_duration_analysis_relative():
     len_pause_range = [0, 10, 10, 5, 1]
@@ -1174,6 +1179,7 @@ def test_cycle_duration_analysis_relative():
         [summarize_series(label) for label in cardio_object.labels],
         mode="values",
     )
+
 
 @pytest.mark.golden
 def test_acceleration_CC_period_dection_absolute(vitabel_test_data_dir):
@@ -1209,6 +1215,7 @@ def test_acceleration_CC_period_dection_absolute(vitabel_test_data_dir):
         mode="values",
     )
 
+
 @pytest.mark.golden
 def test_acceleration_CC_period_dection_relative(vitabel_test_data_dir):
     file_path = vitabel_test_data_dir / "sample_signals" / "Accelerometer.csv.bz2"
@@ -1227,6 +1234,7 @@ def test_acceleration_CC_period_dection_relative(vitabel_test_data_dir):
         [summarize_series(label) for label in cardio_object.labels],
         mode="values",
     )
+
 
 @pytest.mark.golden
 def test_rosc_detection_absolute_time(vitabel_test_data_dir):
@@ -1258,6 +1266,7 @@ def test_rosc_detection_absolute_time(vitabel_test_data_dir):
         mode="values",
     )
 
+
 @pytest.mark.golden
 def test_rosc_detection_relative_time(vitabel_test_data_dir):
     file_path1 = vitabel_test_data_dir / "sample_signals" / "Accelerometer.csv.bz2"
@@ -1283,6 +1292,7 @@ def test_rosc_detection_relative_time(vitabel_test_data_dir):
         [summarize_series(label) for label in cardio_object.labels],
         mode="values",
     )
+
 
 def test_real_evaluation(zoll_vitals_copy):
     cardio_recording = zoll_vitals_copy
@@ -1358,6 +1368,7 @@ def test_area_under_threshold_computation():
         },
         mode="values",
     )
+
 
 def test_add_eolife_ventilatory_feedback(vitabel_test_data_dir):
     """Test loading EOlife ventilatory feedback CSV file."""

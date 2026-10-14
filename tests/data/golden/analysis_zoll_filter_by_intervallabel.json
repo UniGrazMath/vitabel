@@ -1,7 +1,7 @@
 {
  "mode": "values",
  "generated_with": {
-  "git_commit": "f6afd34707881b1cf82bab75520f5e355061b399",
+  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -14,15 +14,35 @@
    "name": "etco2_from_capnography",
    "len": 211,
    "time_unit": "s",
-   "time_start": "1970-01-01 07:28:50.919000",
-   "offset": "0 days 00:00:00",
-   "first_entry": "1970-01-01 07:28:50.919000",
-   "last_entry": "1970-01-01 08:24:34.063000",
+   "time_start": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 07:28:50.919000",
+    "ns": 26930919000000
+   },
+   "offset": {
+    "kind": "timedelta",
+    "repr": "0 days 00:00:00",
+    "ns": 0
+   },
+   "first_entry": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 07:28:50.919000",
+    "ns": 26930919000000
+   },
+   "last_entry": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 08:24:34.063000",
+    "ns": 30274063000000
+   },
    "time_index_unit": "ns",
    "time": {
+    "kind": "time_array",
+    "dtype": "timedelta64",
     "n": 211,
-    "unit": "ns",
+    "nat_count": 0,
     "sha256": "11f59d88e23535b10bfbe0ec604c6c6132ef036c076c665949eb707806ab6ca5",
+    "min": 0,
+    "max": 3343144000000,
     "values": [
      0,
      2752000000,
@@ -238,6 +258,7 @@
     ]
    },
    "data": {
+    "kind": "numeric_array",
     "n": 211,
     "dtype_kind": "f",
     "sha256": "d8ee10251c7fc077bae8effdce10fe7a5da0549bcb7093226e687b6f26e6439a",
@@ -484,15 +505,35 @@
    "name": "etco2_from_capnography",
    "len": 323,
    "time_unit": "s",
-   "time_start": "1970-01-01 07:32:04.927000",
-   "offset": "0 days 00:00:00",
-   "first_entry": "1970-01-01 07:32:04.927000",
-   "last_entry": "1970-01-01 08:29:07.167000",
+   "time_start": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 07:32:04.927000",
+    "ns": 27124927000000
+   },
+   "offset": {
+    "kind": "timedelta",
+    "repr": "0 days 00:00:00",
+    "ns": 0
+   },
+   "first_entry": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 07:32:04.927000",
+    "ns": 27124927000000
+   },
+   "last_entry": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 08:29:07.167000",
+    "ns": 30547167000000
+   },
    "time_index_unit": "ns",
    "time": {
+    "kind": "time_array",
+    "dtype": "timedelta64",
     "n": 323,
-    "unit": "ns",
+    "nat_count": 0,
     "sha256": "169cb2d4fc8978ea24509db232ab520cc46435c036076b0290db1ec4cc3c16c2",
+    "min": 0,
+    "max": 3422240000000,
     "values": [
      0,
      4816000000,
@@ -820,6 +861,7 @@
     ]
    },
    "data": {
+    "kind": "numeric_array",
     "n": 323,
     "dtype_kind": "f",
     "sha256": "f2b783226b0764272fe868af9a34855735ef6e156e141dcc9703c29fdeedb495",
@@ -1178,15 +1220,35 @@
    "name": "capnography",
    "len": 164404,
    "time_unit": "s",
-   "time_start": "1970-01-01 07:28:47.423000",
-   "offset": "0 days 00:00:00",
-   "first_entry": "1970-01-01 07:28:47.423000",
-   "last_entry": "1970-01-01 08:24:37.719000",
+   "time_start": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 07:28:47.423000",
+    "ns": 26927423000000
+   },
+   "offset": {
+    "kind": "timedelta",
+    "repr": "0 days 00:00:00",
+    "ns": 0
+   },
+   "first_entry": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 07:28:47.423000",
+    "ns": 26927423000000
+   },
+   "last_entry": {
+    "kind": "timestamp",
+    "repr": "1970-01-01 08:24:37.719000",
+    "ns": 30277719000000
+   },
    "time_index_unit": "ns",
    "time": {
+    "kind": "time_array",
+    "dtype": "timedelta64",
     "n": 164404,
-    "unit": "ns",
+    "nat_count": 0,
     "sha256": "62598113c013674864039c25e60153e21c121c590fc47bfc15f8203db63fe0bc",
+    "min": 0,
+    "max": 3350296000000,
     "samples": [
      0,
      5152000000,
@@ -1447,6 +1509,7 @@
     ]
    },
    "data": {
+    "kind": "numeric_array",
     "n": 164404,
     "dtype_kind": "f",
     "sha256": "eb2e1e43f4d04d7ae0b43ffd319a7abd51421064c3fc354c3cb07d4070a5d7d9",

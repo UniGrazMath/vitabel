@@ -1,7 +1,7 @@
 {
  "mode": "values",
  "generated_with": {
-  "git_commit": "f6afd34707881b1cf82bab75520f5e355061b399",
+  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -14,15 +14,35 @@
    "name": "etco2_from_capnography",
    "len": 328,
    "time_unit": "s",
-   "time_start": "2024-01-01 00:47:38.688000",
-   "offset": "0 days 00:00:00",
-   "first_entry": "2024-01-01 00:47:38.688000",
-   "last_entry": "2024-01-01 01:05:09.664000",
+   "time_start": {
+    "kind": "timestamp",
+    "repr": "2024-01-01 00:47:38.688000",
+    "ns": 1704070058688000000
+   },
+   "offset": {
+    "kind": "timedelta",
+    "repr": "0 days 00:00:00",
+    "ns": 0
+   },
+   "first_entry": {
+    "kind": "timestamp",
+    "repr": "2024-01-01 00:47:38.688000",
+    "ns": 1704070058688000000
+   },
+   "last_entry": {
+    "kind": "timestamp",
+    "repr": "2024-01-01 01:05:09.664000",
+    "ns": 1704071109664000000
+   },
    "time_index_unit": "ns",
    "time": {
+    "kind": "time_array",
+    "dtype": "timedelta64",
     "n": 328,
-    "unit": "ns",
+    "nat_count": 0,
     "sha256": "7d61df647a130951af2361d19ff298d48c3ea492aadba401eb14f0f70a58d3c0",
+    "min": 0,
+    "max": 1050976000000,
     "values": [
      0,
      1496000000,
@@ -355,6 +375,7 @@
     ]
    },
    "data": {
+    "kind": "numeric_array",
     "n": 328,
     "dtype_kind": "f",
     "sha256": "e2c7848c523670f983c7bbee5381db0904da304ac8dc3c674f99db9d552c9b57",
@@ -718,15 +739,35 @@
    "name": "ventilations_from_capnography",
    "len": 328,
    "time_unit": "s",
-   "time_start": "2024-01-01 00:47:38.536000",
-   "offset": "0 days 00:00:00",
-   "first_entry": "2024-01-01 00:47:38.536000",
-   "last_entry": "2024-01-01 01:05:08.992000",
+   "time_start": {
+    "kind": "timestamp",
+    "repr": "2024-01-01 00:47:38.536000",
+    "ns": 1704070058536000000
+   },
+   "offset": {
+    "kind": "timedelta",
+    "repr": "0 days 00:00:00",
+    "ns": 0
+   },
+   "first_entry": {
+    "kind": "timestamp",
+    "repr": "2024-01-01 00:47:38.536000",
+    "ns": 1704070058536000000
+   },
+   "last_entry": {
+    "kind": "timestamp",
+    "repr": "2024-01-01 01:05:08.992000",
+    "ns": 1704071108992000000
+   },
    "time_index_unit": "ns",
    "time": {
+    "kind": "time_array",
+    "dtype": "timedelta64",
     "n": 328,
-    "unit": "ns",
+    "nat_count": 0,
     "sha256": "64cf9fafc7e517a4ef1d7e9f02b63d3ad474a53242df9f115e64e33f0a292733",
+    "min": 0,
+    "max": 1050456000000,
     "values": [
      0,
      1504000000,

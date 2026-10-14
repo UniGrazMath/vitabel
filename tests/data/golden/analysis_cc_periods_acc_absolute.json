@@ -1,7 +1,7 @@
 {
  "mode": "values",
  "generated_with": {
-  "git_commit": "f6afd34707881b1cf82bab75520f5e355061b399",
+  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -14,15 +14,35 @@
    "name": "cc_periods",
    "len": 55,
    "time_unit": "s",
-   "time_start": "2024-01-01 00:00:00",
-   "offset": "0 days 00:00:00",
-   "first_entry": "2024-01-01 00:12:13.340000",
-   "last_entry": "2024-01-01 01:34:23.892000",
+   "time_start": {
+    "kind": "timestamp",
+    "repr": "2024-01-01 00:00:00",
+    "ns": 1704067200000000000
+   },
+   "offset": {
+    "kind": "timedelta",
+    "repr": "0 days 00:00:00",
+    "ns": 0
+   },
+   "first_entry": {
+    "kind": "timestamp",
+    "repr": "2024-01-01 00:12:13.340000",
+    "ns": 1704067933340000000
+   },
+   "last_entry": {
+    "kind": "timestamp",
+    "repr": "2024-01-01 01:34:23.892000",
+    "ns": 1704072863892000000
+   },
    "time_index_unit": "ns",
    "time": {
+    "kind": "time_array",
+    "dtype": "timedelta64",
     "n": 110,
-    "unit": "ns",
+    "nat_count": 0,
     "sha256": "c0175f5c75849fc6588f90a7c0f358f40a072233eff67b2442c8527d8c8a232b",
+    "min": 733340000000,
+    "max": 5663892000000,
     "values": [
      733340000000,
      799672000000,

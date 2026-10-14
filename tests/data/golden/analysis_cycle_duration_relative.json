@@ -1,7 +1,7 @@
 {
  "mode": "values",
  "generated_with": {
-  "git_commit": "f6afd34707881b1cf82bab75520f5e355061b399",
+  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -15,20 +15,30 @@
    "len": 3,
    "time_unit": "s",
    "time_start": null,
-   "offset": "0 days 00:00:00",
+   "offset": {
+    "kind": "timedelta",
+    "repr": "0 days 00:00:00",
+    "ns": 0
+   },
    "first_entry": {
-    "timedelta": "0 days 00:00:00",
+    "kind": "timedelta",
+    "repr": "0 days 00:00:00",
     "ns": 0
    },
    "last_entry": {
-    "timedelta": "0 days 00:01:21.200000",
+    "kind": "timedelta",
+    "repr": "0 days 00:01:21.200000",
     "ns": 81200000000
    },
    "time_index_unit": "ns",
    "time": {
+    "kind": "time_array",
+    "dtype": "timedelta64",
     "n": 6,
-    "unit": "ns",
+    "nat_count": 0,
     "sha256": "4e34d1c691bfdc39d013cefe092dc60f3b35f3763616d7bd1691953e099ff62e",
+    "min": 0,
+    "max": 81200000000,
     "values": [
      0,
      18000000000,

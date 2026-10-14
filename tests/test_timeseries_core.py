@@ -169,6 +169,7 @@ def _assert_same_time_start(time_start, expected):
     assert time_start.tz is None
 
 
+@pytest.mark.golden
 def test_construction_golden():
     """Pins the resulting time index (including its unit), time start and
     offset for all non-failing construction cases."""
@@ -484,6 +485,7 @@ class TestGetTimeMaskEdgeCases:
         assert data.time_index[0] == ABSOLUTE_START + pd.Timedelta(seconds=11)
 
 
+@pytest.mark.golden
 def test_interval_label_get_data_golden():
     relative = IntervalLabel(
         "relative",
@@ -531,6 +533,7 @@ def _record(steps: list, description: str, series):
     steps.append({"step": description, "series": summarize_series(series)})
 
 
+@pytest.mark.golden
 def test_channel_mutations_golden():
     steps = []
     for time_start in [None, ABSOLUTE_START]:
@@ -571,6 +574,7 @@ def test_channel_mutations_golden():
     assert_matches_golden("timeseries_channel_mutations", steps)
 
 
+@pytest.mark.golden
 def test_label_mutations_golden():
     steps = []
     for time_start in [None, ABSOLUTE_START]:
@@ -612,6 +616,7 @@ def test_label_mutations_golden():
     assert_matches_golden("timeseries_label_mutations", steps)
 
 
+@pytest.mark.golden
 def test_interval_label_mutations_golden():
     steps = []
     for time_start in [None, ABSOLUTE_START]:
