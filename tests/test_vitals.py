@@ -78,6 +78,32 @@ def test_add_defibrillator_lifepak15(lifepak_vitals):
     assert len(lifepak_vitals.metadata["Recording_files_added"]) == 1
 
 
+def test_add_defibrillator_lifepak15_keeps_constants_unchanged(
+    lifepak_dir, tmp_path, caplog
+):
+    from vitabel.utils import constants
+
+    # inject a trend data type that is not known yet
+    for path in lifepak_dir.iterdir():
+        shutil.copy(path, tmp_path)
+    event_log = tmp_path / "LP15_CprEventLog.xml"
+    event_log.write_text(
+        event_log.read_text(encoding="utf-8").replace(
+            'Type="SharedSyncMode"', 'Type="UnknownTrendType"', 1
+        ),
+        encoding="utf-8",
+    )
+
+    known_trend_data = list(constants.LP15_all_trend_data)
+    for _ in range(2):
+        caplog.clear()
+        Vitals().add_defibrillator_recording(tmp_path / "LP15_Continuous.xml")
+        # warned about for every loaded file ...
+        assert "New trend data type found: UnknownTrendType" in caplog.text
+    # ... without modifying the module-level list of known types
+    assert constants.LP15_all_trend_data == known_trend_data
+
+
 def test_add_incomplete_defibrillator_lifepak15(lifepak_dir, tmp_path):
     shutil.copy(lifepak_dir / "LP15_Continuous.xml", tmp_path)
     with pytest.raises(

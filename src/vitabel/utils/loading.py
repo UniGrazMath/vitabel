@@ -2290,6 +2290,8 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
         twelve_lead_ecg_time = np.array([])
 
         trend_data = {}
+        # local copy: the list of known trend types must not be modified globally
+        known_trend_data = list(utils.LP15_all_trend_data)
 
         events = root2[1].find(pcstr + "Events")
         if events is None:
@@ -2332,9 +2334,9 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
                 if event.find(pcstr + "Values").findall(pcstr + "Value"):
                     for value in event.find(pcstr + "Values").findall(pcstr + "Value"):
                         channel = value.attrib["Type"]
-                        if channel not in utils.LP15_all_trend_data:
+                        if channel not in known_trend_data:
                             logger.warning(f"New trend data type found: {channel}")
-                            utils.LP15_all_trend_data.append(channel)
+                            known_trend_data.append(channel)
                         elif channel in utils.LP15_collected_trend_data:
                             if channel not in trend_data:
                                 trend_data[channel] = {"timestamp": [], channel: []}
