@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import base64
 import datetime
+import functools
+import importlib.resources
 import io
 import joblib
 import json
@@ -928,6 +930,23 @@ def data_filter(
     return X, X_background, y
 
 
+@functools.cache
+def _load_circulation_model():
+    """Load the (pre-trained) classification model and the corresponding
+    scaler used by :func:`predict_circulation` from the package assets.
+
+    Returns
+    -------
+    A tuple ``(model, scaler)``.
+    """
+    asset_dir = importlib.resources.files("vitabel") / "assets"
+    with (asset_dir / "circ-classification_model.joblib").open("rb") as fd:
+        model = joblib.load(fd)
+    with (asset_dir / "circ-classification_scaler.joblib").open("rb") as fd:
+        scaler = joblib.load(fd)
+    return model, scaler
+
+
 def predict_circulation(erg):
     acc_features = [
         "Acc Amp",
@@ -1015,9 +1034,7 @@ def predict_circulation(erg):
     # print(f"Xn {Xn.shape}")
 
     # Load model and scaler
-    asset_dir = Path(__file__).parent.parent / "assets"
-    svc = joblib.load(asset_dir / "circ-classification_model.joblib")
-    scaler = joblib.load(asset_dir / "circ-classification_scaler.joblib")
+    svc, scaler = _load_circulation_model()
     # Apply scaler
     Xn = scaler.transform(Xn)
     X = scaler.transform(X)
