@@ -54,6 +54,38 @@ def _format_duration(seconds: float) -> str:
     return f"{seconds * 1e6:.0f} µs"
 
 
+def _bench_ventilation(minutes: float, record) -> None:
+    data_dir = REPO_ROOT / "examples" / "data"
+    source = Vitals()
+    common = dict(time_start=pd.Timestamp(1970, 1, 1), time_unit="ms")
+    source.add_data_from_csv(data_dir / "flow.csv.bz2", index_col="timestamp", **common)
+    source.add_data_from_csv(
+        data_dir / "p1.csv.bz2",
+        index_col=0,
+        names=["airway_pressure", "temperature_1"],
+        **common,
+    )
+    flow = source.get_channel("airflow")
+    start = flow.first_entry
+    stop = start + pd.Timedelta(minutes=minutes)
+    flow = flow.truncate(start, stop)
+    pressure = source.get_channel("airway_pressure").truncate(start, stop)
+
+    recording = Vitals()
+    recording.add_channel(flow)
+    recording.add_channel(pressure)
+    record(
+        f"Vitals.compute_respiratory_phases() ({minutes:g} min)",
+        lambda: recording.compute_respiratory_phases(
+            flow, pressure, add_intermediate_channels=True
+        ),
+    )
+    record(
+        f"Vitals.compute_ventilation_volumes() ({minutes:g} min)",
+        recording.compute_ventilation_volumes,
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--minutes", type=float, default=120.0)
@@ -61,6 +93,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repeat", type=int, default=5, help="repeats for fast ops")
     parser.add_argument(
         "--zoll", action="store_true", help="also benchmark loading the ZOLL example"
+    )
+    parser.add_argument(
+        "--ventilation",
+        type=float,
+        default=None,
+        metavar="MINUTES",
+        help=(
+            "also benchmark respiratory phase detection and ventilation volumes "
+            "on the given number of minutes of the animal lab example data"
+        ),
     )
     parser.add_argument("--output", type=Path, help="also write the table to a file")
     args = parser.parse_args(argv)
@@ -148,6 +190,9 @@ def main(argv: list[str] | None = None) -> int:
                 "Vitals.add_defibrillator_recording() (ZOLL example)",
                 lambda: Vitals().add_defibrillator_recording(zoll_path),
             )
+
+    if args.ventilation is not None:
+        _bench_ventilation(args.ventilation, record)
 
     header = [
         f"Benchmark: {n_samples:,} samples ({args.minutes:g} min @ {args.rate:g} Hz)",
