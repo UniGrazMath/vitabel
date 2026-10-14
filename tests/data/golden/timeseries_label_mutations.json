@@ -1,0 +1,1211 @@
+{
+ "mode": "exact",
+ "generated_with": {
+  "git_commit": "f136567d086037a81d1da7798573d0e110caa5c4",
+  "vitabel": "0.1.1",
+  "numpy": "2.5.1",
+  "pandas": "3.0.3",
+  "python": "3.13.2",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O"
+ },
+ "summary": [
+  {
+   "step": "relative: initial",
+   "series": {
+    "class": "Label",
+    "name": "label",
+    "len": 3,
+    "time_unit": "s",
+    "time_start": null,
+    "offset": "0 days 00:00:00",
+    "first_entry": {
+     "timedelta": "0 days 00:00:01",
+     "ns": 1000000000
+    },
+    "last_entry": {
+     "timedelta": "0 days 00:00:03",
+     "ns": 3000000000
+    },
+    "time_index_unit": "ns",
+    "time": {
+     "n": 3,
+     "unit": "ns",
+     "sha256": "3f6c6382ffc49b77194998daefb3f8c72f907b999bdaf4108200c2b94f759e42",
+     "values": [
+      1000000000,
+      2000000000,
+      3000000000
+     ]
+    },
+    "data": {
+     "n": 3,
+     "dtype_kind": "f",
+     "sha256": "a68de4b5e96a60c8ceb3c7b7ef93461725bdbbff3516b136585a743b5c0ec664",
+     "nan_count": 0,
+     "min": 1.0,
+     "max": 3.0,
+     "mean": 2.0,
+     "std": 0.816496580927726,
+     "values": [
+      1.0,
+      2.0,
+      3.0
+     ]
+    },
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": null,
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "relative: add in the middle",
+   "series": {
+    "class": "Label",
+    "name": "label",
+    "len": 4,
+    "time_unit": "s",
+    "time_start": null,
+    "offset": "0 days 00:00:00",
+    "first_entry": {
+     "timedelta": "0 days 00:00:01",
+     "ns": 1000000000
+    },
+    "last_entry": {
+     "timedelta": "0 days 00:00:03",
+     "ns": 3000000000
+    },
+    "time_index_unit": "ns",
+    "time": {
+     "n": 4,
+     "unit": "ns",
+     "sha256": "6ca2cf5c6f3a57fd33b0a8e45bad906167dabb64d95bf6584b211951724620d0",
+     "values": [
+      1000000000,
+      2000000000,
+      2500000000,
+      3000000000
+     ]
+    },
+    "data": {
+     "n": 4,
+     "dtype_kind": "f",
+     "sha256": "36937d321d5ed216f40bd8fedf1be100214cd5085bd2cf3486449f090ac71cb5",
+     "nan_count": 0,
+     "min": 1.0,
+     "max": 3.0,
+     "mean": 2.125,
+     "std": 0.739509972887452,
+     "values": [
+      1.0,
+      2.0,
+      2.5,
+      3.0
+     ]
+    },
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": null,
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "relative: add before first (with text)",
+   "series": {
+    "class": "Label",
+    "name": "label",
+    "len": 5,
+    "time_unit": "s",
+    "time_start": null,
+    "offset": "0 days 00:00:00",
+    "first_entry": {
+     "timedelta": "0 days 00:00:00.250000",
+     "ns": 250000000
+    },
+    "last_entry": {
+     "timedelta": "0 days 00:00:03",
+     "ns": 3000000000
+    },
+    "time_index_unit": "ns",
+    "time": {
+     "n": 5,
+     "unit": "ns",
+     "sha256": "945d1ce06ae31f861338a73aff31c398f79a4240b042a2788b94018542381585",
+     "values": [
+      250000000,
+      1000000000,
+      2000000000,
+      2500000000,
+      3000000000
+     ]
+    },
+    "data": {
+     "n": 5,
+     "dtype_kind": "f",
+     "sha256": "55305626ed2c68357700588838ee6cac5d4b99ebca13af0ef89c7f384b55ad2f",
+     "nan_count": 1,
+     "min": 1.0,
+     "max": 3.0,
+     "mean": 2.125,
+     "std": 0.739509972887452,
+     "values": [
+      NaN,
+      1.0,
+      2.0,
+      2.5,
+      3.0
+     ]
+    },
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": {
+     "n": 5,
+     "dtype_kind": "O",
+     "sha256": "0edd2d8145c0a9eaed3c3190c18d8de250af686459b22a48adba6d31bc1393f7",
+     "values": [
+      "early",
+      null,
+      null,
+      null,
+      null
+     ]
+    },
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "relative: add value and text",
+   "series": {
+    "class": "Label",
+    "name": "label",
+    "len": 6,
+    "time_unit": "s",
+    "time_start": null,
+    "offset": "0 days 00:00:00",
+    "first_entry": {
+     "timedelta": "0 days 00:00:00.125000",
+     "ns": 125000000
+    },
+    "last_entry": {
+     "timedelta": "0 days 00:00:03",
+     "ns": 3000000000
+    },
+    "time_index_unit": "ns",
+    "time": {
+     "n": 6,
+     "unit": "ns",
+     "sha256": "6bb47a09263e38a83c9c7a7c2265798d81b30b43abb3d453f2e575b415b777b5",
+     "values": [
+      125000000,
+      250000000,
+      1000000000,
+      2000000000,
+      2500000000,
+      3000000000
+     ]
+    },
+    "data": {
+     "n": 6,
+     "dtype_kind": "f",
+     "sha256": "f233e17b787ff57a183cce9ae4d39aefb0a7d3989712ccf0fd11f98ff3d8ccfc",
+     "nan_count": 1,
+     "min": 0.5,
+     "max": 3.0,
+     "mean": 1.8,
+     "std": 0.9273618495495703,
+     "values": [
+      0.5,
+      NaN,
+      1.0,
+      2.0,
+      2.5,
+      3.0
+     ]
+    },
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": {
+     "n": 6,
+     "dtype_kind": "O",
+     "sha256": "383224dbc52baae4cdb2cc02279b46fdb5a98014416e86f9116a29e9522c20ee",
+     "values": [
+      "earliest",
+      "early",
+      null,
+      null,
+      null,
+      null
+     ]
+    },
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "relative: remove first",
+   "series": {
+    "class": "Label",
+    "name": "label",
+    "len": 5,
+    "time_unit": "s",
+    "time_start": null,
+    "offset": "0 days 00:00:00",
+    "first_entry": {
+     "timedelta": "0 days 00:00:00.250000",
+     "ns": 250000000
+    },
+    "last_entry": {
+     "timedelta": "0 days 00:00:03",
+     "ns": 3000000000
+    },
+    "time_index_unit": "ns",
+    "time": {
+     "n": 5,
+     "unit": "ns",
+     "sha256": "945d1ce06ae31f861338a73aff31c398f79a4240b042a2788b94018542381585",
+     "values": [
+      250000000,
+      1000000000,
+      2000000000,
+      2500000000,
+      3000000000
+     ]
+    },
+    "data": {
+     "n": 5,
+     "dtype_kind": "f",
+     "sha256": "55305626ed2c68357700588838ee6cac5d4b99ebca13af0ef89c7f384b55ad2f",
+     "nan_count": 1,
+     "min": 1.0,
+     "max": 3.0,
+     "mean": 2.125,
+     "std": 0.739509972887452,
+     "values": [
+      NaN,
+      1.0,
+      2.0,
+      2.5,
+      3.0
+     ]
+    },
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": {
+     "n": 5,
+     "dtype_kind": "O",
+     "sha256": "0edd2d8145c0a9eaed3c3190c18d8de250af686459b22a48adba6d31bc1393f7",
+     "values": [
+      "early",
+      null,
+      null,
+      null,
+      null
+     ]
+    },
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "relative: remove in the middle",
+   "series": {
+    "class": "Label",
+    "name": "label",
+    "len": 4,
+    "time_unit": "s",
+    "time_start": null,
+    "offset": "0 days 00:00:00",
+    "first_entry": {
+     "timedelta": "0 days 00:00:00.250000",
+     "ns": 250000000
+    },
+    "last_entry": {
+     "timedelta": "0 days 00:00:03",
+     "ns": 3000000000
+    },
+    "time_index_unit": "ns",
+    "time": {
+     "n": 4,
+     "unit": "ns",
+     "sha256": "097ef5984e243b6af7fc00791937e02dfc86d850e815d8cae79cb1f6ee3d3490",
+     "values": [
+      250000000,
+      1000000000,
+      2000000000,
+      3000000000
+     ]
+    },
+    "data": {
+     "n": 4,
+     "dtype_kind": "f",
+     "sha256": "d51994bb64cbf8f898bb9268f2c57ab1dc8f2f8d26fcd6253032ac63e6048ade",
+     "nan_count": 1,
+     "min": 1.0,
+     "max": 3.0,
+     "mean": 2.0,
+     "std": 0.816496580927726,
+     "values": [
+      NaN,
+      1.0,
+      2.0,
+      3.0
+     ]
+    },
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": {
+     "n": 4,
+     "dtype_kind": "O",
+     "sha256": "13a4c8c832a82b224ca8d6f2e28ec7df7cb7754aa6dc8c1df225db6bc23c30d2",
+     "values": [
+      "early",
+      null,
+      null,
+      null
+     ]
+    },
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "relative: shift by 1s",
+   "series": {
+    "class": "Label",
+    "name": "label",
+    "len": 4,
+    "time_unit": "s",
+    "time_start": null,
+    "offset": "0 days 00:00:01",
+    "first_entry": {
+     "timedelta": "0 days 00:00:01.250000",
+     "ns": 1250000000
+    },
+    "last_entry": {
+     "timedelta": "0 days 00:00:04",
+     "ns": 4000000000
+    },
+    "time_index_unit": "ns",
+    "time": {
+     "n": 4,
+     "unit": "ns",
+     "sha256": "7e4af1975f3076fd25dc001abd36786291c697199134770115f212ef04ff41db",
+     "values": [
+      1250000000,
+      2000000000,
+      3000000000,
+      4000000000
+     ]
+    },
+    "data": {
+     "n": 4,
+     "dtype_kind": "f",
+     "sha256": "d51994bb64cbf8f898bb9268f2c57ab1dc8f2f8d26fcd6253032ac63e6048ade",
+     "nan_count": 1,
+     "min": 1.0,
+     "max": 3.0,
+     "mean": 2.0,
+     "std": 0.816496580927726,
+     "values": [
+      NaN,
+      1.0,
+      2.0,
+      3.0
+     ]
+    },
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": {
+     "n": 4,
+     "dtype_kind": "O",
+     "sha256": "13a4c8c832a82b224ca8d6f2e28ec7df7cb7754aa6dc8c1df225db6bc23c30d2",
+     "values": [
+      "early",
+      null,
+      null,
+      null
+     ]
+    },
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "relative: truncated",
+   "series": {
+    "class": "Label",
+    "name": "label",
+    "len": 2,
+    "time_unit": "s",
+    "time_start": null,
+    "offset": "0 days 00:00:00",
+    "first_entry": {
+     "timedelta": "0 days 00:00:02",
+     "ns": 2000000000
+    },
+    "last_entry": {
+     "timedelta": "0 days 00:00:03",
+     "ns": 3000000000
+    },
+    "time_index_unit": "ns",
+    "time": {
+     "n": 2,
+     "unit": "ns",
+     "sha256": "411947963c2f99f2a6c426aa3502317084a556c07430fbecdad700f938240458",
+     "values": [
+      2000000000,
+      3000000000
+     ]
+    },
+    "data": {
+     "n": 2,
+     "dtype_kind": "f",
+     "sha256": "dc91ce9a50ddc828740aa26743716897fdb2bb64f1db662fe263a59be56145ae",
+     "nan_count": 0,
+     "min": 1.0,
+     "max": 2.0,
+     "mean": 1.5,
+     "std": 0.5,
+     "values": [
+      1.0,
+      2.0
+     ]
+    },
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": {
+     "n": 2,
+     "dtype_kind": "O",
+     "sha256": "6d9695b0f6f0de8c737c15a199b1658001af6e4ef0d756109efffbd0c69ad4c9",
+     "values": [
+      null,
+      null
+     ]
+    },
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "relative: all removed",
+   "series": {
+    "class": "Label",
+    "name": "label",
+    "len": 0,
+    "time_unit": "s",
+    "time_start": null,
+    "offset": "0 days 00:00:01",
+    "first_entry": null,
+    "last_entry": null,
+    "time_index_unit": "ns",
+    "time": {
+     "n": 0,
+     "unit": "ns",
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "values": []
+    },
+    "data": null,
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": null,
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "absolute: initial",
+   "series": {
+    "class": "Label",
+    "name": "label",
+    "len": 3,
+    "time_unit": "s",
+    "time_start": "2024-01-01 12:00:01",
+    "offset": "0 days 00:00:00",
+    "first_entry": "2024-01-01 12:00:01",
+    "last_entry": "2024-01-01 12:00:03",
+    "time_index_unit": "ns",
+    "time": {
+     "n": 3,
+     "unit": "ns",
+     "sha256": "a40b3a4dcc43623154c2057c40068c20142e2a4b7c455dd2e12f34903bea2e32",
+     "values": [
+      0,
+      1000000000,
+      2000000000
+     ]
+    },
+    "data": {
+     "n": 3,
+     "dtype_kind": "f",
+     "sha256": "a68de4b5e96a60c8ceb3c7b7ef93461725bdbbff3516b136585a743b5c0ec664",
+     "nan_count": 0,
+     "min": 1.0,
+     "max": 3.0,
+     "mean": 2.0,
+     "std": 0.816496580927726,
+     "values": [
+      1.0,
+      2.0,
+      3.0
+     ]
+    },
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": null,
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "absolute: add in the middle",
+   "series": {
+    "class": "Label",
+    "name": "label",
+    "len": 4,
+    "time_unit": "s",
+    "time_start": "2024-01-01 12:00:01",
+    "offset": "0 days 00:00:00",
+    "first_entry": "2024-01-01 12:00:01",
+    "last_entry": "2024-01-01 12:00:03",
+    "time_index_unit": "ns",
+    "time": {
+     "n": 4,
+     "unit": "ns",
+     "sha256": "775eca06ec9fbf5098958379d7f036031a4f01904fbdac50d69ba0ea5fd5a0d2",
+     "values": [
+      0,
+      1000000000,
+      1500000000,
+      2000000000
+     ]
+    },
+    "data": {
+     "n": 4,
+     "dtype_kind": "f",
+     "sha256": "36937d321d5ed216f40bd8fedf1be100214cd5085bd2cf3486449f090ac71cb5",
+     "nan_count": 0,
+     "min": 1.0,
+     "max": 3.0,
+     "mean": 2.125,
+     "std": 0.739509972887452,
+     "values": [
+      1.0,
+      2.0,
+      2.5,
+      3.0
+     ]
+    },
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": null,
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "absolute: add before first (with text)",
+   "series": {
+    "class": "Label",
+    "name": "label",
+    "len": 5,
+    "time_unit": "s",
+    "time_start": "2024-01-01 12:00:00.250000",
+    "offset": "0 days 00:00:00",
+    "first_entry": "2024-01-01 12:00:00.250000",
+    "last_entry": "2024-01-01 12:00:03",
+    "time_index_unit": "ns",
+    "time": {
+     "n": 5,
+     "unit": "ns",
+     "sha256": "9be5128258fbdc8f1fe046963dc134b4746e5c18052482fb2b90b3870a625f7d",
+     "values": [
+      0,
+      750000000,
+      1750000000,
+      2250000000,
+      2750000000
+     ]
+    },
+    "data": {
+     "n": 5,
+     "dtype_kind": "f",
+     "sha256": "55305626ed2c68357700588838ee6cac5d4b99ebca13af0ef89c7f384b55ad2f",
+     "nan_count": 1,
+     "min": 1.0,
+     "max": 3.0,
+     "mean": 2.125,
+     "std": 0.739509972887452,
+     "values": [
+      NaN,
+      1.0,
+      2.0,
+      2.5,
+      3.0
+     ]
+    },
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": {
+     "n": 5,
+     "dtype_kind": "O",
+     "sha256": "0edd2d8145c0a9eaed3c3190c18d8de250af686459b22a48adba6d31bc1393f7",
+     "values": [
+      "early",
+      null,
+      null,
+      null,
+      null
+     ]
+    },
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "absolute: add value and text",
+   "series": {
+    "class": "Label",
+    "name": "label",
+    "len": 6,
+    "time_unit": "s",
+    "time_start": "2024-01-01 12:00:00.125000",
+    "offset": "0 days 00:00:00",
+    "first_entry": "2024-01-01 12:00:00.125000",
+    "last_entry": "2024-01-01 12:00:03",
+    "time_index_unit": "ns",
+    "time": {
+     "n": 6,
+     "unit": "ns",
+     "sha256": "a85acdea6947307d2cee6eb228114069d80c83e6a534578ba190ceb1a4b0156d",
+     "values": [
+      0,
+      125000000,
+      875000000,
+      1875000000,
+      2375000000,
+      2875000000
+     ]
+    },
+    "data": {
+     "n": 6,
+     "dtype_kind": "f",
+     "sha256": "f233e17b787ff57a183cce9ae4d39aefb0a7d3989712ccf0fd11f98ff3d8ccfc",
+     "nan_count": 1,
+     "min": 0.5,
+     "max": 3.0,
+     "mean": 1.8,
+     "std": 0.9273618495495703,
+     "values": [
+      0.5,
+      NaN,
+      1.0,
+      2.0,
+      2.5,
+      3.0
+     ]
+    },
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": {
+     "n": 6,
+     "dtype_kind": "O",
+     "sha256": "383224dbc52baae4cdb2cc02279b46fdb5a98014416e86f9116a29e9522c20ee",
+     "values": [
+      "earliest",
+      "early",
+      null,
+      null,
+      null,
+      null
+     ]
+    },
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "absolute: remove first",
+   "series": {
+    "class": "Label",
+    "name": "label",
+    "len": 5,
+    "time_unit": "s",
+    "time_start": "2024-01-01 12:00:00.250000",
+    "offset": "0 days 00:00:00",
+    "first_entry": "2024-01-01 12:00:00.250000",
+    "last_entry": "2024-01-01 12:00:03",
+    "time_index_unit": "ns",
+    "time": {
+     "n": 5,
+     "unit": "ns",
+     "sha256": "9be5128258fbdc8f1fe046963dc134b4746e5c18052482fb2b90b3870a625f7d",
+     "values": [
+      0,
+      750000000,
+      1750000000,
+      2250000000,
+      2750000000
+     ]
+    },
+    "data": {
+     "n": 5,
+     "dtype_kind": "f",
+     "sha256": "55305626ed2c68357700588838ee6cac5d4b99ebca13af0ef89c7f384b55ad2f",
+     "nan_count": 1,
+     "min": 1.0,
+     "max": 3.0,
+     "mean": 2.125,
+     "std": 0.739509972887452,
+     "values": [
+      NaN,
+      1.0,
+      2.0,
+      2.5,
+      3.0
+     ]
+    },
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": {
+     "n": 5,
+     "dtype_kind": "O",
+     "sha256": "0edd2d8145c0a9eaed3c3190c18d8de250af686459b22a48adba6d31bc1393f7",
+     "values": [
+      "early",
+      null,
+      null,
+      null,
+      null
+     ]
+    },
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "absolute: remove in the middle",
+   "series": {
+    "class": "Label",
+    "name": "label",
+    "len": 4,
+    "time_unit": "s",
+    "time_start": "2024-01-01 12:00:00.250000",
+    "offset": "0 days 00:00:00",
+    "first_entry": "2024-01-01 12:00:00.250000",
+    "last_entry": "2024-01-01 12:00:03",
+    "time_index_unit": "ns",
+    "time": {
+     "n": 4,
+     "unit": "ns",
+     "sha256": "c0e5b0fec684c2dd32933208f82e80c720fbae56bda3ab5ec12df6c528460afe",
+     "values": [
+      0,
+      750000000,
+      1750000000,
+      2750000000
+     ]
+    },
+    "data": {
+     "n": 4,
+     "dtype_kind": "f",
+     "sha256": "d51994bb64cbf8f898bb9268f2c57ab1dc8f2f8d26fcd6253032ac63e6048ade",
+     "nan_count": 1,
+     "min": 1.0,
+     "max": 3.0,
+     "mean": 2.0,
+     "std": 0.816496580927726,
+     "values": [
+      NaN,
+      1.0,
+      2.0,
+      3.0
+     ]
+    },
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": {
+     "n": 4,
+     "dtype_kind": "O",
+     "sha256": "13a4c8c832a82b224ca8d6f2e28ec7df7cb7754aa6dc8c1df225db6bc23c30d2",
+     "values": [
+      "early",
+      null,
+      null,
+      null
+     ]
+    },
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "absolute: shift by 1s",
+   "series": {
+    "class": "Label",
+    "name": "label",
+    "len": 4,
+    "time_unit": "s",
+    "time_start": "2024-01-01 12:00:00.250000",
+    "offset": "0 days 00:00:01",
+    "first_entry": "2024-01-01 12:00:01.250000",
+    "last_entry": "2024-01-01 12:00:04",
+    "time_index_unit": "ns",
+    "time": {
+     "n": 4,
+     "unit": "ns",
+     "sha256": "6e09d27fd2f0391e61f04141168e5ba5773b96f3d52c9b1517e4e6686a2bf466",
+     "values": [
+      1000000000,
+      1750000000,
+      2750000000,
+      3750000000
+     ]
+    },
+    "data": {
+     "n": 4,
+     "dtype_kind": "f",
+     "sha256": "d51994bb64cbf8f898bb9268f2c57ab1dc8f2f8d26fcd6253032ac63e6048ade",
+     "nan_count": 1,
+     "min": 1.0,
+     "max": 3.0,
+     "mean": 2.0,
+     "std": 0.816496580927726,
+     "values": [
+      NaN,
+      1.0,
+      2.0,
+      3.0
+     ]
+    },
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": {
+     "n": 4,
+     "dtype_kind": "O",
+     "sha256": "13a4c8c832a82b224ca8d6f2e28ec7df7cb7754aa6dc8c1df225db6bc23c30d2",
+     "values": [
+      "early",
+      null,
+      null,
+      null
+     ]
+    },
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "absolute: truncated",
+   "series": {
+    "class": "Label",
+    "name": "label",
+    "len": 2,
+    "time_unit": "s",
+    "time_start": "2024-01-01 12:00:02",
+    "offset": "0 days 00:00:00",
+    "first_entry": "2024-01-01 12:00:02",
+    "last_entry": "2024-01-01 12:00:03",
+    "time_index_unit": "ns",
+    "time": {
+     "n": 2,
+     "unit": "ns",
+     "sha256": "35566b14626a47bcda220d16eb894ce5456dcfa3bbbf691273fd49e0d3e65a38",
+     "values": [
+      0,
+      1000000000
+     ]
+    },
+    "data": {
+     "n": 2,
+     "dtype_kind": "f",
+     "sha256": "dc91ce9a50ddc828740aa26743716897fdb2bb64f1db662fe263a59be56145ae",
+     "nan_count": 0,
+     "min": 1.0,
+     "max": 2.0,
+     "mean": 1.5,
+     "std": 0.5,
+     "values": [
+      1.0,
+      2.0
+     ]
+    },
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": {
+     "n": 2,
+     "dtype_kind": "O",
+     "sha256": "6d9695b0f6f0de8c737c15a199b1658001af6e4ef0d756109efffbd0c69ad4c9",
+     "values": [
+      null,
+      null
+     ]
+    },
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "absolute: all removed",
+   "series": {
+    "class": "Label",
+    "name": "label",
+    "len": 0,
+    "time_unit": "s",
+    "time_start": null,
+    "offset": "0 days 00:00:01",
+    "first_entry": null,
+    "last_entry": null,
+    "time_index_unit": "ns",
+    "time": {
+     "n": 0,
+     "unit": "ns",
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "values": []
+    },
+    "data": null,
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": null,
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "empty: initial",
+   "series": {
+    "class": "Label",
+    "name": "empty",
+    "len": 0,
+    "time_unit": "s",
+    "time_start": null,
+    "offset": "0 days 00:00:00",
+    "first_entry": null,
+    "last_entry": null,
+    "time_index_unit": "ns",
+    "time": {
+     "n": 0,
+     "unit": "ns",
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "values": []
+    },
+    "data": null,
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": null,
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "empty: add absolute",
+   "series": {
+    "class": "Label",
+    "name": "empty",
+    "len": 1,
+    "time_unit": "s",
+    "time_start": "2024-01-01 12:00:05",
+    "offset": "0 days 00:00:00",
+    "first_entry": "2024-01-01 12:00:05",
+    "last_entry": "2024-01-01 12:00:05",
+    "time_index_unit": "ns",
+    "time": {
+     "n": 1,
+     "unit": "ns",
+     "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+     "values": [
+      0
+     ]
+    },
+    "data": {
+     "n": 1,
+     "dtype_kind": "f",
+     "sha256": "6c3c396ed6b5c36dcae172271f462051b1266b851e92df3deea8ac65478fd712",
+     "nan_count": 0,
+     "min": 1.0,
+     "max": 1.0,
+     "mean": 1.0,
+     "std": 0.0,
+     "values": [
+      1.0
+     ]
+    },
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": null,
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  },
+  {
+   "step": "empty: add earlier",
+   "series": {
+    "class": "Label",
+    "name": "empty",
+    "len": 2,
+    "time_unit": "s",
+    "time_start": "2024-01-01 12:00:01",
+    "offset": "0 days 00:00:00",
+    "first_entry": "2024-01-01 12:00:01",
+    "last_entry": "2024-01-01 12:00:05",
+    "time_index_unit": "ns",
+    "time": {
+     "n": 2,
+     "unit": "ns",
+     "sha256": "ee17bd56dc5beae8c6140c9e3aab0ad5b0874ac1937ae135696f862fa03bc7bf",
+     "values": [
+      0,
+      4000000000
+     ]
+    },
+    "data": {
+     "n": 2,
+     "dtype_kind": "f",
+     "sha256": "9268b051ba6a96aea257eeb250cd5b236571933b55ff8fde1d3e3370b4cb243b",
+     "nan_count": 0,
+     "min": 1.0,
+     "max": 2.0,
+     "mean": 1.5,
+     "std": 0.5,
+     "values": [
+      2.0,
+      1.0
+     ]
+    },
+    "metadata": {},
+    "plotstyle": {
+     "marker": "o",
+     "ms": 5,
+     "linestyle": "none"
+    },
+    "text_data": null,
+    "anchored_channel": null,
+    "plot_type": "combined",
+    "vline_text_source": "text_data",
+    "annotation_preset_type": null
+   }
+  }
+ ]
+}

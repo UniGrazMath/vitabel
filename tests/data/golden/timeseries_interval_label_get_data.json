@@ -1,0 +1,285 @@
+{
+ "mode": "exact",
+ "generated_with": {
+  "git_commit": "f136567d086037a81d1da7798573d0e110caa5c4",
+  "vitabel": "0.1.1",
+  "numpy": "2.5.1",
+  "pandas": "3.0.3",
+  "python": "3.13.2",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O"
+ },
+ "summary": {
+  "relative None None": {
+   "intervals": [
+    [
+     {
+      "timedelta": "0 days 00:00:00",
+      "ns": 0
+     },
+     {
+      "timedelta": "0 days 00:00:02",
+      "ns": 2000000000
+     }
+    ],
+    [
+     {
+      "timedelta": "0 days 00:00:01",
+      "ns": 1000000000
+     },
+     {
+      "timedelta": "0 days 00:00:05",
+      "ns": 5000000000
+     }
+    ],
+    [
+     {
+      "timedelta": "0 days 00:00:06",
+      "ns": 6000000000
+     },
+     {
+      "timedelta": "0 days 00:00:07",
+      "ns": 7000000000
+     }
+    ],
+    [
+     {
+      "timedelta": "0 days 00:00:10",
+      "ns": 10000000000
+     },
+     {
+      "timedelta": "0 days 00:00:20",
+      "ns": 20000000000
+     }
+    ]
+   ],
+   "data": [
+    1.0,
+    2.0,
+    3.0,
+    4.0
+   ],
+   "text_data": [
+    "a",
+    "b",
+    "c",
+    "d"
+   ]
+  },
+  "relative 1.5 6.5": {
+   "intervals": [
+    [
+     {
+      "timedelta": "0 days 00:00:00",
+      "ns": 0
+     },
+     {
+      "timedelta": "0 days 00:00:02",
+      "ns": 2000000000
+     }
+    ],
+    [
+     {
+      "timedelta": "0 days 00:00:01",
+      "ns": 1000000000
+     },
+     {
+      "timedelta": "0 days 00:00:05",
+      "ns": 5000000000
+     }
+    ],
+    [
+     {
+      "timedelta": "0 days 00:00:06",
+      "ns": 6000000000
+     },
+     {
+      "timedelta": "0 days 00:00:07",
+      "ns": 7000000000
+     }
+    ]
+   ],
+   "data": [
+    1.0,
+    2.0,
+    3.0
+   ],
+   "text_data": [
+    "a",
+    "b",
+    "c"
+   ]
+  },
+  "relative 2.5 4.0": {
+   "intervals": [
+    [
+     {
+      "timedelta": "0 days 00:00:01",
+      "ns": 1000000000
+     },
+     {
+      "timedelta": "0 days 00:00:05",
+      "ns": 5000000000
+     }
+    ]
+   ],
+   "data": [
+    2.0
+   ],
+   "text_data": [
+    "b"
+   ]
+  },
+  "relative 12.0 15.0": {
+   "intervals": [
+    [
+     {
+      "timedelta": "0 days 00:00:10",
+      "ns": 10000000000
+     },
+     {
+      "timedelta": "0 days 00:00:20",
+      "ns": 20000000000
+     }
+    ]
+   ],
+   "data": [
+    4.0
+   ],
+   "text_data": [
+    "d"
+   ]
+  },
+  "relative 30.0 40.0": {
+   "intervals": [],
+   "data": null,
+   "text_data": null
+  },
+  "relative None 1.0": {
+   "intervals": [
+    [
+     {
+      "timedelta": "0 days 00:00:00",
+      "ns": 0
+     },
+     {
+      "timedelta": "0 days 00:00:02",
+      "ns": 2000000000
+     }
+    ],
+    [
+     {
+      "timedelta": "0 days 00:00:01",
+      "ns": 1000000000
+     },
+     {
+      "timedelta": "0 days 00:00:05",
+      "ns": 5000000000
+     }
+    ]
+   ],
+   "data": [
+    1.0,
+    2.0
+   ],
+   "text_data": [
+    "a",
+    "b"
+   ]
+  },
+  "relative 6.5 None": {
+   "intervals": [
+    [
+     {
+      "timedelta": "0 days 00:00:06",
+      "ns": 6000000000
+     },
+     {
+      "timedelta": "0 days 00:00:07",
+      "ns": 7000000000
+     }
+    ],
+    [
+     {
+      "timedelta": "0 days 00:00:10",
+      "ns": 10000000000
+     },
+     {
+      "timedelta": "0 days 00:00:20",
+      "ns": 20000000000
+     }
+    ]
+   ],
+   "data": [
+    3.0,
+    4.0
+   ],
+   "text_data": [
+    "c",
+    "d"
+   ]
+  },
+  "absolute None None": {
+   "intervals": [
+    [
+     "2024-01-01 12:00:00",
+     "2024-01-01 12:00:02"
+    ],
+    [
+     "2024-01-01 12:00:05",
+     "2024-01-01 12:00:09"
+    ]
+   ],
+   "data": null,
+   "text_data": null
+  },
+  "absolute 1.5 6.5": {
+   "intervals": [
+    [
+     "2024-01-01 12:00:00",
+     "2024-01-01 12:00:02"
+    ],
+    [
+     "2024-01-01 12:00:05",
+     "2024-01-01 12:00:09"
+    ]
+   ],
+   "data": null,
+   "text_data": null
+  },
+  "absolute 2.5 4.0": {
+   "intervals": [],
+   "data": null,
+   "text_data": null
+  },
+  "absolute 12.0 15.0": {
+   "intervals": [],
+   "data": null,
+   "text_data": null
+  },
+  "absolute 30.0 40.0": {
+   "intervals": [],
+   "data": null,
+   "text_data": null
+  },
+  "absolute None 1.0": {
+   "intervals": [
+    [
+     "2024-01-01 12:00:00",
+     "2024-01-01 12:00:02"
+    ]
+   ],
+   "data": null,
+   "text_data": null
+  },
+  "absolute 6.5 None": {
+   "intervals": [
+    [
+     "2024-01-01 12:00:05",
+     "2024-01-01 12:00:09"
+    ]
+   ],
+   "data": null,
+   "text_data": null
+  }
+ }
+}
