@@ -412,7 +412,9 @@ class Vitals:
     ### Data import
     ###
 
-    def add_defibrillator_recording(self, filepath: Path | str, metadata={}) -> None:
+    def add_defibrillator_recording(
+        self, filepath: Path | str, metadata: dict[str, Any] | None = None
+    ) -> None:
         """Add the (defibrillator) recording to the cardio object.
 
         Imports from the following defibrillator device families are supported:
@@ -449,8 +451,10 @@ class Vitals:
             description above to see, depending on the device type, which
             file path should be passed.
         metadata
-            Metadata to be added to the imported data.
+            Metadata to be added to the imported data. The passed dictionary
+            is not modified.
         """
+        metadata = dict(metadata) if metadata is not None else {}
         filepath = Path(filepath)
         if not filepath.exists():
             raise FileNotFoundError("File not found in directory. Check path!")

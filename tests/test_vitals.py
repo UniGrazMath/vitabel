@@ -148,6 +148,29 @@ def test_add_stryker_lucas(vitabel_test_data_dir):
     assert lifepak_recording.channels
 
 
+def test_add_defibrillator_recording_metadata_is_not_shared(
+    vitabel_test_data_dir, tmp_path
+):
+    user_metadata = {"case": "test case"}
+    lucas_recording = Vitals()
+    lucas_recording.add_defibrillator_recording(
+        vitabel_test_data_dir / "Lucas_file_Lucas.xml", metadata=user_metadata
+    )
+    assert user_metadata == {"case": "test case"}
+    assert lucas_recording.channels[0].metadata == {
+        "case": "test case",
+        "Serial No": "0000X000",
+        "source": "LUCAS3",
+    }
+
+    # loading another recording must not see metadata of the previous one
+    csv_path, _ = write_synthetic_zoll_csv_pair(tmp_path / "zoll_case")
+    zoll_recording = Vitals()
+    zoll_recording.add_defibrillator_recording(csv_path)
+    assert all("case" not in channel.metadata for channel in zoll_recording.channels)
+    assert Vitals.add_defibrillator_recording.__defaults__ == (None,)
+
+
 def test_add_empty_stryker_lucas(vitabel_test_data_dir):
     lifepak_recording = Vitals()
     lifepak_recording.add_defibrillator_recording(
