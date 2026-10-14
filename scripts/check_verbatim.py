@@ -10,10 +10,13 @@ differences that are irrelevant for a pure move:
 - qualified names that are only spelled differently because of changed imports
   (configurable via ``--rename``; e.g. ``vitabel.Channel`` -> ``Channel``),
 - optionally: a method that has been turned into a module-level function
-  (``--method-to-function`` / ``--self-name``), and docstrings
+  (``--method-to-function`` / ``--self-name``; for plain methods ``self`` is
+  dropped or renamed, for static methods the ``@staticmethod`` decorator is
+  removed; class methods are not supported), and docstrings
   (``--ignore-docstrings``).
 
-Any other difference is reported as a unified diff of the normalized code,
+Decorators are part of the comparison (except for the explicitly requested
+method-to-function conversion). Any other difference is reported as a unified diff of the normalized code,
 and the script exits with a non-zero status.
 
 Examples
@@ -231,28 +234,67 @@ def _strip_docstring(body: list[ast.stmt]) -> list[ast.stmt]:
     return body
 
 
+class ConversionError(ValueError):
+    """Raised if a requested method-to-function conversion is not applicable."""
+
+
+def _convert_method_to_function(
+    node: ast.FunctionDef | ast.AsyncFunctionDef, self_name: str | None
+) -> str | None:
+    """Adapt (in place) the definition of a method for a comparison with a
+    module-level function. Returns the name ``self`` is to be renamed to.
+
+    - plain methods: the ``self`` parameter is dropped (``self_name`` is
+      ``None``), or kept and renamed to ``self_name``;
+    - static methods: the ``@staticmethod`` decorator is removed, the
+      parameters are kept (``self_name`` must not be given);
+    - class methods are not supported.
+    """
+    decorators = [_dotted_name(decorator) for decorator in node.decorator_list]
+    if "classmethod" in decorators:
+        raise ConversionError("converting a classmethod to a function is not supported")
+    if "staticmethod" in decorators:
+        if self_name is not None:
+            raise ConversionError("a staticmethod has no 'self' parameter to rename")
+        node.decorator_list = [
+            decorator
+            for decorator in node.decorator_list
+            if _dotted_name(decorator) != "staticmethod"
+        ]
+        return None
+
+    if not node.args.args or node.args.args[0].arg != "self":
+        raise ConversionError("the method has no 'self' parameter")
+    if self_name is None:
+        node.args.args = node.args.args[1:]
+        return None
+    return self_name
+
+
 def normalize(
     definition: Definition,
     renames: list[tuple[str, str]],
     method_to_function: str | None,
     ignore_docstrings: bool,
 ) -> ast.FunctionDef | ast.AsyncFunctionDef:
-    """Return a normalized copy of the function definition."""
+    """Return a normalized copy of the function definition.
+
+    Decorators (including ``staticmethod`` / ``classmethod``) are part of the
+    comparison, except for an explicitly requested method-to-function
+    conversion (``method_to_function`` not ``None``; the empty string means
+    that ``self`` is dropped, otherwise it is renamed).
+    """
     node = copy.deepcopy(definition.node)
     node.name = "_"
-    node.decorator_list = [
-        decorator
-        for decorator in node.decorator_list
-        if _dotted_name(decorator) not in ("staticmethod", "classmethod")
-    ]
 
     self_name = None
-    if definition.is_method and method_to_function is not None:
-        if method_to_function == "":
-            # the first argument (self) is dropped entirely
-            node.args.args = node.args.args[1:]
-        else:
-            self_name = method_to_function
+    if method_to_function is not None:
+        if not definition.is_method:
+            raise ConversionError(
+                f"{definition.qualname} is not a method, but a method-to-function "
+                "conversion was requested"
+            )
+        self_name = _convert_method_to_function(node, method_to_function or None)
 
     if ignore_docstrings:
         node.body = _strip_docstring(node.body)
@@ -375,8 +417,22 @@ def main(argv: list[str] | None = None) -> int:
         method_to_function = args.self_name
         if method_to_function is None and args.method_to_function:
             method_to_function = ""
-        diff = compare(old, new, renames, method_to_function, args.ignore_docstrings)
         location = f"{old.path}::{old.qualname} -> {new.path}::{new.qualname}"
+        if method_to_function is not None and new.is_method:
+            print(
+                f"ERROR {location}: a method-to-function conversion was "
+                "requested, but the new definition is a method"
+            )
+            failures += 1
+            continue
+        try:
+            diff = compare(
+                old, new, renames, method_to_function, args.ignore_docstrings
+            )
+        except ConversionError as exc:
+            print(f"ERROR {location}: {exc}")
+            failures += 1
+            continue
         if diff:
             failures += 1
             print(f"DIFF  {location}")
