@@ -92,6 +92,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--rate", type=float, default=500.0, help="sampling rate (Hz)")
     parser.add_argument("--repeat", type=int, default=5, help="repeats for fast ops")
     parser.add_argument(
+        "--save-channels",
+        type=int,
+        default=4,
+        help="number of channels for the multi-channel save/load benchmark",
+    )
+    parser.add_argument(
         "--zoll", action="store_true", help="also benchmark loading the ZOLL example"
     )
     parser.add_argument(
@@ -155,6 +161,11 @@ def main(argv: list[str] | None = None) -> int:
             ),
             repeat=args.repeat,
         )
+    record(
+        "Channel.get_data(), full range",
+        lambda: channel.get_data(),
+        repeat=args.repeat,
+    )
     full_resolution = pd.Timedelta(minutes=args.minutes) / 1000
     record(
         "Channel.get_data(), full range, resolution=range/1000",
@@ -171,13 +182,20 @@ def main(argv: list[str] | None = None) -> int:
 
     with tempfile.TemporaryDirectory() as tmpdir:
         path = Path(tmpdir) / "vitals.json"
-        recording = Vitals()
-        recording.add_channel(channel)
-        record("Vitals.save_data() (1 channel)", lambda: recording.save_data(path))
-        record(
-            "Vitals.load_data() (1 channel)",
-            lambda: Vitals().load_data(path),
-        )
+        for n_channels in (1, args.save_channels):
+            recording = Vitals()
+            for index in range(n_channels):
+                recording.add_channel(
+                    Channel(f"ecg {index}", seconds, data, time_start=time_start)
+                )
+            record(
+                f"Vitals.save_data() ({n_channels} channels)",
+                lambda recording=recording: recording.save_data(path),
+            )
+            record(
+                f"Vitals.load_data() ({n_channels} channels)",
+                lambda: Vitals().load_data(path),
+            )
 
         if args.zoll:
             zoll_path = Path(tmpdir) / "ZOLL_test_case.json"
