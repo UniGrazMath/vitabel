@@ -142,6 +142,8 @@ def test_add_zoll_json(zoll_vitals):
         "temperature_1",
     ]
     assert all(not channel.is_empty() for channel in cardio_recording.channels)
+    # the raw imported data is not kept around
+    assert not hasattr(cardio_recording, "dats")
 
 
 def test_read_zoll_csv_without_cpr_data(tmp_path):

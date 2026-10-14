@@ -571,7 +571,6 @@ class Vitals:
                 metadata["source"] = pat_dat["Main data"].loc["Model"].iloc[0]
 
         # Convert the data into channels and add to the channel class.
-        self.dats = dats
         for channel_name in dats:
             if len(dats[channel_name].index) >= 1:
                 if isinstance(dats[channel_name], pd.DataFrame):
