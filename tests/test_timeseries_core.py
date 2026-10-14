@@ -11,6 +11,7 @@ ones against golden files or explicitly pinned values.
 from __future__ import annotations
 
 import logging
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -114,6 +115,19 @@ def _construction_cases() -> dict[str, dict]:
 CONSTRUCTION_CASES = list(_construction_cases())
 
 
+def _constructible_cases() -> list[str]:
+    cases = []
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        for case, kwargs in _construction_cases().items():
+            try:
+                TimeSeriesBase(**kwargs)
+            except Exception:  # noqa: BLE001
+                continue
+            cases.append(case)
+    return cases
+
+
 def _outcome(func, *args, **kwargs):
     try:
         return "ok", func(*args, **kwargs)
@@ -205,12 +219,11 @@ def test_construction_matches_reference_randomized(n_samples):
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("case", CONSTRUCTION_CASES)
+@pytest.mark.filterwarnings("ignore:Could not infer format")
+@pytest.mark.parametrize("case", _constructible_cases())
 @pytest.mark.parametrize("time_unit", ["s", "ms", "min", "h"])
 def test_numeric_time_matches_reference(case, time_unit):
-    status, series = _outcome(TimeSeriesBase, **_construction_cases()[case])
-    if status == "error":
-        pytest.skip("construction fails for this case")
+    series = TimeSeriesBase(**_construction_cases()[case])
     expected = reference_impl.numeric_time(series.time_index, time_unit)
     result = series.numeric_time(time_unit)
     assert isinstance(result, np.ndarray)

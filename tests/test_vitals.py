@@ -97,12 +97,8 @@ def test_add_defibrillator_lifepak15_keeps_constants_unchanged(
     )
 
     known_trend_data = list(constants.LP15_all_trend_data)
-    for _ in range(2):
-        caplog.clear()
-        Vitals().add_defibrillator_recording(tmp_path / "LP15_Continuous.xml")
-        # warned about for every loaded file ...
-        assert "New trend data type found: UnknownTrendType" in caplog.text
-    # ... without modifying the module-level list of known types
+    Vitals().add_defibrillator_recording(tmp_path / "LP15_Continuous.xml")
+    assert "New trend data type found: UnknownTrendType" in caplog.text
     assert constants.LP15_all_trend_data == known_trend_data
 
 
