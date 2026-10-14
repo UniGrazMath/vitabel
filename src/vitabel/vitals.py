@@ -1262,7 +1262,7 @@ class Vitals:
         with open(path, "w") as fd:
             json.dump(json_dict, fd, cls=NumpyEncoder)
 
-    def load_data(self, path: Path | str, check_channel_hash=True):
+    def load_data(self, path: Path | str, check_channel_hash: bool = True):
         """
         Loads all Channels and Labels from a previously saved JSON file.
 
@@ -1270,6 +1270,12 @@ class Vitals:
         ----------
         path
             The Path of the channel data.
+        check_channel_hash
+            Whether to compare the hash of the loaded channel data with the
+            hash stored in the file (see :meth:`save_data`). A mismatch, which
+            indicates that the data has been modified outside of vitabel,
+            results in a warning. Defaults to ``True``; pass ``False`` to skip
+            the (potentially expensive) check.
         """
         from vitabel import __version__
 
@@ -1278,8 +1284,6 @@ class Vitals:
             json_dict = json.load(fd)
         self.metadata = json_dict["metadata"]
         self.data = TimeDataCollection.from_dict(json_dict["data"])
-        saved_hash = json_dict["hash"]
-        channel_hash = self.data.channel_data_hash()
         vitabel_version = json_dict["metadata"].get("vitabel version", "unknown")
         if vitabel_version != "unknown" and __version__ != vitabel_version:
             logger.warning(
@@ -1288,16 +1292,21 @@ class Vitals:
                 "This may lead to compatibility issues."
             )
 
-        if check_channel_hash:
-            saved_hash = channel_hash
+        saved_hash = json_dict.get("hash")
+        if check_channel_hash and saved_hash is not None:
+            channel_hash = self.data.channel_data_hash()
             if channel_hash != saved_hash:
-                raise ValueError(
-                    "The hash value has changed, which indicates that the data "
-                    "has been modified outside of the Vitals class. Aborting loading. "
-                    "Pass check_channel_hash=False to ignore this check."
+                version_note = (
+                    f" The file was saved with vitabel {vitabel_version}."
+                    if vitabel_version not in ("unknown", __version__)
+                    else ""
                 )
-
-            # Add Offsets from metadata labels the channel json contains the raw data, without offset correction
+                logger.warning(
+                    f"The channel data loaded from {path} does not match the hash "
+                    "stored in the file, which indicates that the data has been "
+                    f"modified outside of vitabel.{version_note} Pass "
+                    "check_channel_hash=False to skip this check."
+                )
 
     # ---------------------------------------------------------------------------------------------------------------------------------------------
     # ----------------------------------------------- Retrieve data -------------------------------------------------------------------------------------------------

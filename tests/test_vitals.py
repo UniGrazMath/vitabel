@@ -1,3 +1,4 @@
+import logging
 import shutil
 
 import json
@@ -8,6 +9,7 @@ import pytest
 from vitabel import Vitals, __version__
 from vitabel import Channel, Label, IntervalLabel
 from vitabel.utils import loading
+from vitabel.utils.helpers import compress_array, decompress_array
 
 from tests.builders import write_synthetic_zoll_csv_pair, write_test_edfplus
 from tests.golden import assert_matches_golden, summarize_series
@@ -893,6 +895,89 @@ def test_saving_and_loading_with_offset(tmpdir):
         2020, 4, 13, 3, 48, 0
     )
     assert vital_case.data == loaded_case.data
+
+
+def _recordings_for_hash_check(test_data_dir) -> dict[str, Vitals]:
+    absolute = Vitals()
+    absolute.add_channel(
+        Channel(
+            "absolute",
+            time_index=np.arange(1000) / 250,
+            data=np.random.default_rng(1).normal(size=1000),
+            time_start=pd.Timestamp("2024-01-01 10:00:00.123456"),
+        )
+    )
+    relative = Vitals()
+    channel = Channel(
+        "relative",
+        time_index=np.arange(500) * 0.004,
+        data=np.random.default_rng(2).normal(size=500),
+    )
+    relative.add_channel(channel)
+    channel.offset = 1.2345
+    vitaldb = Vitals()
+    vitaldb.add_vital_db_recording(test_data_dir / "vital_file.vit")
+    lucas = Vitals()
+    lucas.add_defibrillator_recording(test_data_dir / "Lucas_file_Lucas.xml")
+    return {
+        "absolute": absolute,
+        "relative_with_offset": relative,
+        "vitaldb": vitaldb,
+        "lucas": lucas,
+    }
+
+
+@pytest.mark.parametrize(
+    "case", ["absolute", "relative_with_offset", "vitaldb", "lucas"]
+)
+def test_load_data_hash_check_round_trip(vitabel_test_data_dir, tmp_path, case, caplog):
+    recording = _recordings_for_hash_check(vitabel_test_data_dir)[case]
+    path = tmp_path / "recording.json"
+    recording.save_data(path)
+    with caplog.at_level(logging.WARNING, logger="vitabel"):
+        Vitals().load_data(path)
+    assert "does not match the hash" not in caplog.text
+
+
+def test_load_data_hash_check_detects_modified_data(
+    vitabel_test_data_dir, tmp_path, caplog
+):
+    recording = _recordings_for_hash_check(vitabel_test_data_dir)["absolute"]
+    path = tmp_path / "recording.json"
+    recording.save_data(path)
+    content = json.loads(path.read_text())
+    channel_data = decompress_array(content["data"]["channels"][0]["data"])
+    channel_data[0] += 1
+    content["data"]["channels"][0]["data"] = compress_array(channel_data)
+    path.write_text(json.dumps(content))
+
+    with caplog.at_level(logging.WARNING, logger="vitabel"):
+        loaded = Vitals()
+        loaded.load_data(path)
+    assert "does not match the hash" in caplog.text
+    assert loaded.get_channel("absolute").data[0] == pytest.approx(
+        recording.get_channel("absolute").data[0] + 1
+    )
+
+    caplog.clear()
+    with caplog.at_level(logging.WARNING, logger="vitabel"):
+        Vitals().load_data(path, check_channel_hash=False)
+    assert "does not match the hash" not in caplog.text
+
+
+def test_load_data_without_hash(vitabel_test_data_dir, tmp_path, caplog):
+    recording = _recordings_for_hash_check(vitabel_test_data_dir)["absolute"]
+    path = tmp_path / "recording.json"
+    recording.save_data(path)
+    content = json.loads(path.read_text())
+    del content["hash"]
+    path.write_text(json.dumps(content))
+
+    with caplog.at_level(logging.WARNING, logger="vitabel"):
+        loaded = Vitals()
+        loaded.load_data(path)
+    assert "does not match the hash" not in caplog.text
+    assert loaded.get_channel_names() == ["absolute"]
 
 
 def test_create_shock_information_DataFrame():
