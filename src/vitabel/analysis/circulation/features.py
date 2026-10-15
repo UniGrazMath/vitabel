@@ -644,7 +644,9 @@ def ekg_acc_corr1(acctime, acc, ekg, nperse=1000, window=""):  # Compute Feature
             else:
                 acc_ensemble = np.vstack([acc_ensemble, ac1])
     else:
-        acc_ensemble = np.random.randn(5, 120)
+        # no beats detected: random noise as placeholder (as in the training
+        # data of the model), with a fixed seed for reproducible results
+        acc_ensemble = np.random.default_rng(0).standard_normal((5, 120))
     spec_ent_acc = _spectral_entropy_welch(acc, sf=250, normalize=True)
 
     ac_f = acc_feature(acc, acc_ensemble)
