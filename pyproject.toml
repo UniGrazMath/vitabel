@@ -55,6 +55,9 @@ dev = [
 [tool.pytest.ini_options]
 addopts = ["--cov=vitabel", "--cov-report=term-missing", "--mpl", "--mpl-baseline-path=tests/data"]
 testpaths = ["tests"]
+markers = [
+    "golden: compares results against golden files in tests/data/golden (see tests/golden.py)",
+]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F403"]

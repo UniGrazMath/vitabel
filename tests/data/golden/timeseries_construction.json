@@ -1,0 +1,396 @@
+{
+ "mode": "exact",
+ "generated_with": {
+  "git_commit": "d06a36a107341709c093093f8e052cd2d0be763a",
+  "vitabel": "0.1.1",
+  "numpy": "2.5.1",
+  "pandas": "3.0.3",
+  "python": "3.13.2",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O"
+ },
+ "summary": {
+  "float_list": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:00.500000",
+    "0 days 00:00:01.250000",
+    "0 days 00:00:03"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": null,
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "int_list": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:01",
+    "0 days 00:00:02",
+    "0 days 00:00:03"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": null,
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "float_array_with_nan": {
+   "time_index": [
+    "0 days 00:00:00",
+    "NaT",
+    "0 days 00:00:02",
+    "0 days 00:00:03.500000"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": null,
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "int_array": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:01",
+    "0 days 00:00:02",
+    "0 days 00:00:03",
+    "0 days 00:00:04"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": null,
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "float_array_ms": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:00.001500",
+    "0 days 00:00:00.003000"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": null,
+   "offset": "0 days 00:00:00",
+   "time_unit": "ms"
+  },
+  "float_array_min": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:01:30",
+    "0 days 00:03:00"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": null,
+   "offset": "0 days 00:00:00",
+   "time_unit": "min"
+  },
+  "numeric_offset": {
+   "time_index": [
+    "0 days 00:00:02.500000",
+    "0 days 00:00:03.500000"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": null,
+   "offset": "0 days 00:00:02.500000",
+   "time_unit": "s"
+  },
+  "timedelta_offset": {
+   "time_index": [
+    "-1 days +23:59:59",
+    "0 days 00:00:00"
+   ],
+   "time_index_dtype": "timedelta64[us]",
+   "time_start": null,
+   "offset": "-1 days +23:59:59",
+   "time_unit": "s"
+  },
+  "relative_with_time_start": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:01",
+    "0 days 00:00:02"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": "2024-01-01 12:00:00",
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "relative_with_string_time_start": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:01"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": "2024-01-01 12:00:00",
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "relative_with_tzaware_time_start": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:01"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": "2024-01-01 12:00:00",
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "datetime64_ns_array": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:00.250000",
+    "0 days 00:00:00.500000",
+    "0 days 00:00:00.750000"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": "2024-01-01 12:00:00",
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "datetime64_ms_array": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:00.250000",
+    "0 days 00:00:00.500000",
+    "0 days 00:00:00.750000"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": "2024-01-01 12:00:00",
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "datetime64_s_array": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:05"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": "2024-01-01 12:00:00",
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "datetime_index": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:00.250000",
+    "0 days 00:00:00.500000",
+    "0 days 00:00:00.750000"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": "2024-01-01 12:00:00",
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "datetime_index_tzaware": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:00.250000",
+    "0 days 00:00:00.500000",
+    "0 days 00:00:00.750000"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": "2024-01-01 12:00:00",
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "timestamp_list": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:00.250000",
+    "0 days 00:00:00.500000",
+    "0 days 00:00:00.750000"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": "2024-01-01 12:00:00",
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "datetime64_with_offset": {
+   "time_index": [
+    "0 days 00:00:01",
+    "0 days 00:00:01.250000",
+    "0 days 00:00:01.500000",
+    "0 days 00:00:01.750000"
+   ],
+   "time_index_dtype": "timedelta64[us]",
+   "time_start": "2024-01-01 12:00:00",
+   "offset": "0 days 00:00:01",
+   "time_unit": "s"
+  },
+  "datetime64_with_nat_first": {
+   "time_index": [
+    "NaT",
+    "NaT",
+    "NaT"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": "NaT",
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "timedelta64_ns_array": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:01",
+    "0 days 00:00:02"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": null,
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "timedelta64_ms_array": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:01.500000",
+    "0 days 00:00:03"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": null,
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "timedelta_index": {
+   "time_index": [
+    "0 days 00:00:01",
+    "0 days 00:00:02",
+    "0 days 00:00:03"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": null,
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "timedelta_list": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:01",
+    "0 days 00:00:02"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": null,
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "timestamp_strings": {
+   "error": "ValueError",
+   "message": "The time data could not be parsed to timestamps or timedeltas"
+  },
+  "timedelta_strings": {
+   "error": "ValueError",
+   "message": "The time data could not be parsed to timestamps or timedeltas"
+  },
+  "timestamp_strings_uniform": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:01"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": "2024-01-01 12:00:00",
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "timedelta_strings_uniform": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:01",
+    "0 days 00:00:02.500000"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": "0001-01-01 00:00:00",
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "none_first": {
+   "time_index": [
+    "NaT",
+    "0 days 00:00:01",
+    "0 days 00:00:02"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": null,
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "nat_first_timestamps": {
+   "time_index": [
+    "NaT",
+    "NaT",
+    "NaT"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": "NaT",
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "empty_list": {
+   "time_index": [],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": null,
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "empty_float_array": {
+   "time_index": [],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": null,
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "empty_datetime64_array": {
+   "time_index": [],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": null,
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "empty_timedelta64_array": {
+   "time_index": [],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": null,
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "all_nan": {
+   "time_index": [
+    "NaT",
+    "NaT"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": null,
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "series_of_floats": {
+   "time_index": [
+    "0 days 00:00:00",
+    "0 days 00:00:01",
+    "0 days 00:00:02"
+   ],
+   "time_index_dtype": "timedelta64[ns]",
+   "time_start": null,
+   "offset": "0 days 00:00:00",
+   "time_unit": "s"
+  },
+  "mixed_types": {
+   "error": "TypeError",
+   "message": "unsupported operand type(s) for -: 'float' and 'Timestamp'"
+  },
+  "mixed_timestamp_timedelta": {
+   "error": "ValueError",
+   "message": "All time data must be of the same type or numeric, but found 0 days 00:00:01 (<class 'pandas.Timedelta'>) instead of <class 'pandas.Timestamp'>"
+  },
+  "absolute_with_time_start": {
+   "error": "ValueError",
+   "message": "time_start cannot be passed if time data is absolute"
+  },
+  "unparsable_strings": {
+   "error": "ValueError",
+   "message": "The time data could not be parsed to timestamps or timedeltas"
+  },
+  "two_dimensional": {
+   "error": "ValueError",
+   "message": "time_index must be a 1D array, got shape (2, 2)"
+  },
+  "unsupported_type": {
+   "error": "ValueError",
+   "message": "The time data type <class 'object'> is not supported"
+  }
+ }
+}

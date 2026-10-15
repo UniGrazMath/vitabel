@@ -43,6 +43,43 @@ logger: logging.Logger = logging.getLogger("vitabel")
 """Global package logger."""
 
 
+DATA_HASH_VERSION = 2
+"""Version of the format of :meth:`Channel.data_hash`, stored in saved files.
+
+Version 2 hashes the raw content of the arrays. (Version 1, not stored in
+files, hashed compressed arrays, which made the hash platform dependent.)
+"""
+
+
+def _hash_json_default(obj: Any) -> Any:
+    """Shared JSON conversion for hashing and saved metadata, without
+    platform-dependent compressed arrays."""
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    if isinstance(obj, (pd.DatetimeIndex, pd.TimedeltaIndex)):
+        # Strings preserve nanosecond precision and timestamp UTC offsets.
+        return obj.astype(str).tolist()
+    return NumpyEncoder().default(obj)
+
+
+def _update_hash_with_array(hasher, array: npt.ArrayLike | None) -> None:
+    """Add the content of an array (dtype, shape, and values) to a hash."""
+    if array is None:
+        hasher.update(b"none;")
+        return
+    array = np.asarray(array)
+    if array.dtype.kind in "biufcmM":
+        array = np.ascontiguousarray(array.astype(array.dtype.newbyteorder("<")))
+        hasher.update(f"{array.dtype.str};{array.shape};".encode())
+        hasher.update(array.tobytes())
+    else:
+        hasher.update(f"object;{array.shape};".encode())
+        hasher.update(
+            json.dumps(array.tolist(), default=_hash_json_default).encode("utf-8")
+        )
+    hasher.update(b";")
+
+
 def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
     """Summarizes basic information about a list of time series data.
 
@@ -624,18 +661,28 @@ class Channel(TimeSeriesBase):
         return f"{self.__class__.__name__}({self.name})"
 
     def data_hash(self) -> str:
-        """Return a hash representing the data and the metadata of this channel."""
-        data = {
+        """Return a hash representing the data and the metadata of this channel.
+
+        The hash only depends on the content (name, time and data values,
+        metadata, time start, time unit, offset), and is independent of the
+        platform. See :data:`DATA_HASH_VERSION`.
+        """
+        hasher = hashlib.sha256()
+        header = {
             "name": self.name,
-            "time_index": self.numeric_time(),
-            "data": None if self.data is None else np.asarray(self.data),
             "metadata": self.metadata,
             "time_start": str(self.time_start) if self.time_start is not None else None,
             "time_unit": self.time_unit,
             "offset": self.offset / pd.to_timedelta(1, unit=self.time_unit),
         }
-        data_buffer = json.dumps(data, cls=NumpyEncoder, sort_keys=True).encode("utf-8")
-        return hashlib.sha256(data_buffer).hexdigest()
+        hasher.update(
+            json.dumps(header, default=_hash_json_default, sort_keys=True).encode(
+                "utf-8"
+            )
+        )
+        for array in (self.numeric_time(), self.data):
+            _update_hash_with_array(hasher, array)
+        return hasher.hexdigest()
 
     def attach_label(self, label: Label):
         """Attach a label to this channel.
@@ -724,8 +771,11 @@ class Channel(TimeSeriesBase):
         return truncated_channel
 
     def to_dict(self) -> dict[str, Any]:
-        """Construct a serializable dictionary that represents
-        this channel."""
+        """Construct a serializable dictionary that represents this channel.
+
+        Metadata uses the same plain JSON representation as :meth:`data_hash`;
+        the original metadata is not modified.
+        """
         numeric_offset = self.offset / pd.to_timedelta(1, unit=self.time_unit)
         numeric_time = self.numeric_time() - numeric_offset
 
@@ -738,7 +788,9 @@ class Channel(TimeSeriesBase):
             "offset": numeric_offset,
             "labels": [label.to_dict() for label in self.labels],
             "plotstyle": self.plotstyle,
-            "metadata": self.metadata,
+            "metadata": json.loads(
+                json.dumps(self.metadata, default=_hash_json_default)
+            ),
         }
 
     def to_csv(

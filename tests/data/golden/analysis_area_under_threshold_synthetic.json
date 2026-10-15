@@ -1,0 +1,105 @@
+{
+ "mode": "values",
+ "generated_with": {
+  "git_commit": "d06a36a107341709c093093f8e052cd2d0be763a",
+  "vitabel": "0.1.1",
+  "numpy": "2.5.1",
+  "pandas": "3.0.3",
+  "python": "3.13.2",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O"
+ },
+ "summary": {
+  "0_10": {
+   "__dataclass__": "ThresholdMetrics",
+   "area_under_threshold": {
+    "__dataclass__": "Metric",
+    "value": 0.0,
+    "unit": "minutes \u00d7 value units"
+   },
+   "duration_under_threshold": {
+    "__kind__": "timedelta",
+    "repr": "0 days 00:00:00",
+    "ns": 0
+   },
+   "time_weighted_average_under_threshold": {
+    "__dataclass__": "Metric",
+    "value": 0.0,
+    "unit": "value units"
+   },
+   "observational_interval_duration": {
+    "__kind__": "timedelta",
+    "repr": "0 days 02:00:00",
+    "ns": 7200000000000
+   }
+  },
+  "0_100": {
+   "__dataclass__": "ThresholdMetrics",
+   "area_under_threshold": {
+    "__dataclass__": "Metric",
+    "value": 6960.0,
+    "unit": "minutes \u00d7 value units"
+   },
+   "duration_under_threshold": {
+    "__kind__": "timedelta",
+    "repr": "0 days 02:00:00",
+    "ns": 7200000000000
+   },
+   "time_weighted_average_under_threshold": {
+    "__dataclass__": "Metric",
+    "value": 58.0,
+    "unit": "value units"
+   },
+   "observational_interval_duration": {
+    "__kind__": "timedelta",
+    "repr": "0 days 02:00:00",
+    "ns": 7200000000000
+   }
+  },
+  "1_0": {
+   "__dataclass__": "ThresholdMetrics",
+   "area_under_threshold": {
+    "__dataclass__": "Metric",
+    "value": 45.1515151625,
+    "unit": "minutes \u00d7 value units"
+   },
+   "duration_under_threshold": {
+    "__kind__": "timedelta",
+    "repr": "0 days 01:00:00.000000500",
+    "ns": 3600000000500
+   },
+   "time_weighted_average_under_threshold": {
+    "__dataclass__": "Metric",
+    "value": 0.3762626263541667,
+    "unit": "value units"
+   },
+   "observational_interval_duration": {
+    "__kind__": "timedelta",
+    "repr": "0 days 02:00:00",
+    "ns": 7200000000000
+   }
+  },
+  "1_0.5": {
+   "__dataclass__": "ThresholdMetrics",
+   "area_under_threshold": {
+    "__dataclass__": "Metric",
+    "value": 78.86363637811667,
+    "unit": "minutes \u00d7 value units"
+   },
+   "duration_under_threshold": {
+    "__kind__": "timedelta",
+    "repr": "0 days 01:14:50.909091250",
+    "ns": 4490909091250
+   },
+   "time_weighted_average_under_threshold": {
+    "__dataclass__": "Metric",
+    "value": 0.6571969698176389,
+    "unit": "value units"
+   },
+   "observational_interval_duration": {
+    "__kind__": "timedelta",
+    "repr": "0 days 02:00:00",
+    "ns": 7200000000000
+   }
+  }
+ }
+}
