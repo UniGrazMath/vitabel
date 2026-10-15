@@ -215,6 +215,113 @@ def test_construction_matches_reference_randomized(n_samples):
         assert series.offset == ref_offset
 
 
+def _typed_construction_inputs(rng: np.random.Generator) -> list[dict]:
+    """Typed-array inputs (fast paths of the constructor), with missing values
+    at random positions (including the first one), several units, time zones,
+    and container types."""
+    n_samples = int(rng.choice([1, 2, 7, 300]))
+    seconds = np.sort(rng.uniform(-100, 3600, n_samples))
+    missing = rng.random(n_samples) < 0.1
+    if rng.random() < 0.3:
+        missing[0] = True
+
+    floats = seconds.copy()
+    floats[missing] = np.nan
+    ints = np.round(seconds * 1000).astype(np.int64)
+
+    inputs = [
+        dict(time_index=floats),
+        dict(time_index=floats.astype(np.float32)),
+        dict(time_index=ints, time_unit="ms"),
+        dict(time_index=np.abs(ints).astype(np.uint32), time_unit="ms"),
+        dict(time_index=pd.Index(floats)),
+        dict(time_index=pd.Series(floats)),
+        dict(time_index=pd.Series(ints, index=np.arange(n_samples) + 10)),
+    ]
+    for unit in ["s", "ms", "us", "ns"]:
+        timedeltas = pd.to_timedelta(seconds, unit="s").as_unit(unit).to_numpy().copy()
+        timedeltas[missing] = np.timedelta64("NaT", unit)
+        datetimes = (ABSOLUTE_START + pd.to_timedelta(seconds, unit="s")).as_unit(unit)
+        datetimes = datetimes.to_numpy().copy()
+        datetimes[missing] = np.datetime64("NaT", unit)
+        inputs += [
+            dict(time_index=timedeltas),
+            dict(time_index=pd.TimedeltaIndex(timedeltas)),
+            dict(time_index=datetimes),
+            dict(time_index=pd.DatetimeIndex(datetimes)),
+            dict(time_index=pd.DatetimeIndex(datetimes).tz_localize("Europe/Vienna")),
+            dict(time_index=pd.Series(pd.DatetimeIndex(datetimes).tz_localize("UTC"))),
+            dict(time_index=pd.Series(datetimes)),
+            # error: absolute data with time_start
+            dict(time_index=datetimes, time_start=ABSOLUTE_START),
+        ]
+    offsets = [None, 1.5, pd.Timedelta(1, "s"), pd.Timedelta(seconds=1)]
+    for kwargs in inputs:
+        kwargs["offset"] = offsets[int(rng.integers(len(offsets)))]
+        if "time_start" not in kwargs and rng.random() < 0.3:
+            kwargs["time_start"] = ABSOLUTE_START
+    return inputs
+
+
+@pytest.mark.parametrize("seed", range(10))
+def test_construction_matches_reference_typed_arrays(seed):
+    rng = np.random.default_rng(seed)
+    for kwargs in _typed_construction_inputs(rng):
+        expected_status, expected = _outcome(reference_impl.parse_time_index, **kwargs)
+        status, series = _outcome(TimeSeriesBase, **kwargs)
+        assert status == expected_status, (kwargs, series, expected)
+        if status == "error":
+            assert series == expected
+            continue
+        ref_index, ref_start, ref_offset, ref_unit = expected
+        assert type(series.time_index) is type(ref_index), kwargs
+        assert series.time_index.dtype == ref_index.dtype, kwargs
+        assert series.time_index.equals(ref_index), kwargs
+        _assert_same_time_start(series.time_start, ref_start)
+        assert series.offset == ref_offset
+        assert series.time_unit == ref_unit
+
+
+@pytest.mark.parametrize(
+    "time_index",
+    [
+        np.array([np.nan, np.nan]),
+        np.array(["NaT", "NaT"], dtype="M8[ns]"),
+        np.array(["NaT"], dtype="m8[s]"),
+        pd.DatetimeIndex([pd.NaT, pd.NaT]).tz_localize("UTC"),
+        np.array([True, False]),
+        np.array([1 + 1j, 2 + 0j]),
+        pd.array([0.0, None], dtype="Float64"),
+        np.array([], dtype=float),
+        pd.DatetimeIndex([]).tz_localize("UTC"),
+    ],
+    ids=[
+        "all_nan",
+        "all_nat_datetime",
+        "all_nat_timedelta",
+        "all_nat_tzaware",
+        "bool",
+        "complex",
+        "nullable_float",
+        "empty_float",
+        "empty_tzaware",
+    ],
+)
+def test_construction_matches_reference_typed_edge_cases(time_index):
+    """Typed arrays that are not handled by the constructor fast paths."""
+    expected_status, expected = _outcome(reference_impl.parse_time_index, time_index)
+    status, series = _outcome(TimeSeriesBase, time_index)
+    assert status == expected_status, (series, expected)
+    if status == "error":
+        assert series == expected
+        return
+    ref_index, ref_start, _, _ = expected
+    assert type(series.time_index) is type(ref_index)
+    assert series.time_index.dtype == ref_index.dtype
+    assert series.time_index.equals(ref_index)
+    _assert_same_time_start(series.time_start, ref_start)
+
+
 # ---------------------------------------------------------------------------
 # numeric_time and data_hash
 # ---------------------------------------------------------------------------
