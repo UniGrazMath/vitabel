@@ -11,8 +11,6 @@ import pandas as pd
 import scipy.signal as sgn
 import logging
 
-import vitaldb
-from collections import defaultdict
 from copy import deepcopy
 from typing import Any, Literal
 
@@ -58,7 +56,7 @@ from vitabel.io.edf import read_edfplus
 from vitabel.io.eolife import read_eolife_export
 from vitabel.io.lifepak import read_lifepak
 from vitabel.io.lucas import read_lucas
-from vitabel.io.vitaldb import _track_to_timeseries
+from vitabel.io.vitaldb import assign_vitaldb_labels, read_vitaldb_tracks
 from vitabel.io.zoll import read_zollcsv, read_zolljson, read_zollxml
 from vitabel.typing import (
     Timedelta,
@@ -656,56 +654,26 @@ class Vitals:
         ----------
         filepath
             The path to the recording. Must be a ``*.vit`` file.
+        metadata
+            Metadata of the imported channels and labels. Defaults to
+            ``{"source": "VitalDB-Recording"}``.
+
+        String tracks are imported as labels and attached to the channels
+        they belong to, see :func:`.io.vitaldb.assign_vitaldb_labels`.
         """
-        if metadata is None:
-            metadata = {"source": "VitalDB-Recording"}
+        channels, labels = read_vitaldb_tracks(filepath, metadata=metadata)
+        for channel in channels:
+            self.add_channel(channel)
 
-        if isinstance(filepath, str):
-            filepath = Path(filepath)
-        if not filepath.exists():
-            raise ValueError(f"The path '{filepath}' does not exist.")
-        vit = vitaldb.VitalFile(str(filepath))
-
-        timeseries_list = [  # convert all tracks in Channel or Label
-            _track_to_timeseries(vit, track_name=track_name, metadata=metadata)
-            for track_name in vit.get_track_names()
-        ]
-        labels = []
-        for ts in timeseries_list:
-            if isinstance(ts, Channel):
-                self.add_channel(ts)
-            elif isinstance(ts, Label):
-                labels.append(ts)
-
-        # NOTE: the following logic is based on observations not on in depth research of vitaldb source code
-        # example channel names:'PUMP2_RATE', 'PUMP2_CONC', 'PUMP2_PRES', 'PUMP2_REMAIN', 'PUMP2_VOL',
-        # corresponding label names: 'PUMP2_DRUG', 'PUMP2_RATE_UNIT','PUMP2_CONC_UNIT'
-        # rule 1: if qualifier was added and as such the trailing label_name matches a channel_name the label will be attached
-        # rule 2: for labels not attached by the previous rule, if the trailing label_name string matches several chanel_names substrings it will be attached to each of them
-        # rule 3: all remaing will be added as global label
-        split_label_names = {
-            ln: ln.rsplit("_", 1)[0] if "_" in ln else ln
-            for ln in [label.name for label in labels]
-        }
-
-        split_channel_names = defaultdict(set)
-        for cn in self.get_channel_names():
-            prefix = cn.rsplit("_", 1)[0] if "_" in cn else cn
-            split_channel_names[prefix].add(cn)
-
-        for label in labels:  # rule 1
-            short_ln = split_label_names[label.name]
-            if short_ln in self.get_channel_names():
-                label.rename(label.name.rsplit("_", 1)[1])
-                for channel in self.get_channels(short_ln):
+        attachments, global_labels = assign_vitaldb_labels(
+            labels, self.get_channel_names()
+        )
+        for label, channel_names in attachments:
+            for channel_name in channel_names:
+                for channel in self.get_channels(channel_name):
                     channel.attach_label(label)
-            elif short_ln in split_channel_names:  # rule 2
-                label.rename(label.name.rsplit("_", 1)[1])
-                for channel_name in split_channel_names[short_ln]:
-                    for channel in self.get_channels(channel_name):
-                        channel.attach_label(label)
-            else:  # rule 3
-                self.add_global_label(label)
+        for label in global_labels:
+            self.add_global_label(label)
 
         self.metadata["Recording_files_added"].append(str(filepath))
 
