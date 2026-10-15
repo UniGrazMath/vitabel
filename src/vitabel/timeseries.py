@@ -523,6 +523,22 @@ class TimeSeriesBase:
             adjacent to (but outside of) the start and stop times; useful
             for plotting. Defaults to ``False``.
         """
+        return self._time_mask_by_comparison(
+            start=start,
+            stop=stop,
+            resolution=resolution,
+            include_adjacent=include_adjacent,
+        )
+
+    def _time_mask_by_comparison(
+        self,
+        start: Timestamp | Timedelta | float | None = None,
+        stop: Timestamp | Timedelta | float | None = None,
+        resolution: Timedelta | float | str | None = None,
+        include_adjacent: bool = False,
+    ) -> npt.NDArray[np.bool_]:
+        """Implementation of :meth:`get_time_mask` that compares every time
+        point with the bounds. Works for unsorted time indices and NaT."""
         if self.is_empty():
             return np.array([], dtype=bool)
 
