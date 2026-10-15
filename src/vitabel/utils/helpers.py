@@ -38,6 +38,21 @@ from vitabel.utils.signal import (  # noqa: F401 (partially re-exported)
 if TYPE_CHECKING:
     from vitabel.typing import TimeUnitChoices
 
+_LAZY_EXPORTS: dict[str, str] = {
+    "rename_channels": "vitabel.io._common",
+}
+"""Names that have moved to other subpackages, mapped to their new module.
+They are re-exported lazily (on attribute access) for backward compatibility,
+to avoid importing these subpackages (and import cycles) when importing
+``vitabel.utils``."""
+
+
+def __getattr__(name: str):
+    if name in _LAZY_EXPORTS:
+        return getattr(importlib.import_module(_LAZY_EXPORTS[name]), name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 __all__ = [
     "deriv",
     "integrate",
@@ -45,7 +60,7 @@ __all__ = [
     "av_mean",
     "predict_circulation",
     "area_under_threshold",
-    "rename_channels",
+    "rename_channels",  # noqa: F822 (lazy re-export)
     "NumpyEncoder",
     "determine_gaps_in_recording",
     "linear_interpolate_gaps_in_recording",
@@ -1036,39 +1051,6 @@ def area_under_threshold(
         ),
         observational_interval_duration=observational_interval_duration_value,
     )
-
-
-def rename_channels(dats, new_name_dict):
-    old_keys = list(dats.keys()).copy()
-    for key in old_keys:
-        if key not in ["Keys", "Main data", "Load Log"] and key in new_name_dict:
-            if isinstance(dats[key], pd.DataFrame):
-                dats[new_name_dict[key]] = dats[key].rename(
-                    {key: new_name_dict[key]}, axis=1
-                )
-            else:
-                dats[new_name_dict[key]] = dats[key].rename({key: new_name_dict[key]})
-
-            if key != new_name_dict[key]:
-                dats.pop(key)
-    return dats
-
-
-def _argb_int_to_plotstyle(color_int: int):
-    """Converts an ARGB color integer to a plotstyle dictionary with color as rgba.
-
-    color_int
-        The ARGB color integer to convert.
-    """
-    if not color_int == 4294967295 and isinstance(color_int, int):
-        # not transparrent white
-        a = (color_int >> 24) & 0xFF
-        r = (color_int >> 16) & 0xFF
-        g = (color_int >> 8) & 0xFF
-        b = color_int & 0xFF
-        rgba = (r / 255.0, g / 255.0, b / 255.0, a / 255.0)
-        return {"color": rgba}
-    return None
 
 
 def convert_two_alternating_list(df):
