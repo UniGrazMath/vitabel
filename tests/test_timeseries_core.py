@@ -284,6 +284,10 @@ def test_data_hash_does_not_depend_on_compressed_encoding(monkeypatch):
     monkeypatch.setattr(np, "savez_compressed", fail)
     channel = _hash_channels()["absolute_with_offset"]
     channel.metadata["array"] = np.arange(3)
+    channel.metadata["timestamps"] = pd.date_range(
+        "2024-01-01 12:00:00.123456789", periods=3, freq="ns"
+    )
+    channel.metadata["timedeltas"] = pd.timedelta_range("1ns", periods=3, freq="ns")
     assert len(channel.data_hash()) == 64
 
 

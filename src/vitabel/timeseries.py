@@ -52,10 +52,13 @@ files, hashed compressed arrays, which made the hash platform dependent.)
 
 
 def _hash_json_default(obj: Any) -> Any:
-    """JSON conversion for hashing: arrays are converted to lists (instead
-    of compressed binary data, whose encoding is platform dependent)."""
+    """Shared JSON conversion for hashing and saved metadata, without
+    platform-dependent compressed arrays."""
     if isinstance(obj, np.ndarray):
         return obj.tolist()
+    if isinstance(obj, (pd.DatetimeIndex, pd.TimedeltaIndex)):
+        # Strings preserve nanosecond precision and timestamp UTC offsets.
+        return obj.astype(str).tolist()
     return NumpyEncoder().default(obj)
 
 
@@ -768,8 +771,11 @@ class Channel(TimeSeriesBase):
         return truncated_channel
 
     def to_dict(self) -> dict[str, Any]:
-        """Construct a serializable dictionary that represents
-        this channel."""
+        """Construct a serializable dictionary that represents this channel.
+
+        Metadata uses the same plain JSON representation as :meth:`data_hash`;
+        the original metadata is not modified.
+        """
         numeric_offset = self.offset / pd.to_timedelta(1, unit=self.time_unit)
         numeric_time = self.numeric_time() - numeric_offset
 
@@ -782,7 +788,9 @@ class Channel(TimeSeriesBase):
             "offset": numeric_offset,
             "labels": [label.to_dict() for label in self.labels],
             "plotstyle": self.plotstyle,
-            "metadata": self.metadata,
+            "metadata": json.loads(
+                json.dumps(self.metadata, default=_hash_json_default)
+            ),
         }
 
     def to_csv(
