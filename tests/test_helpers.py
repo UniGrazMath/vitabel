@@ -23,19 +23,19 @@ def test_match_object():
     assert not match_object(container, metadata={"name": "test", "x": 42})
 
 
-def test_load_circulation_model():
+def testload_circulation_model():
     import importlib.resources
 
     import numpy as np
 
-    from vitabel.analysis.circulation.model import _load_circulation_model
+    from vitabel.analysis.circulation.model import load_circulation_model
 
     asset_dir = importlib.resources.files("vitabel") / "assets"
     assert (asset_dir / "circ-classification_model.joblib").is_file()
     assert (asset_dir / "circ-classification_scaler.joblib").is_file()
 
-    model, scaler = _load_circulation_model()
-    assert _load_circulation_model()[0] is model  # cached
+    model, scaler = load_circulation_model()
+    assert load_circulation_model()[0] is model  # cached
     n_features = scaler.n_features_in_
     features = scaler.transform(np.zeros((2, n_features)))
     assert features.shape == (2, n_features)
