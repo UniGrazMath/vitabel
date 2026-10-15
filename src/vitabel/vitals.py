@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 import logging
 
-from copy import deepcopy
 from typing import Any, Literal
 
 from IPython.display import display
@@ -29,7 +28,6 @@ from vitabel.timeseries import (
     Label,
     IntervalLabel,
     TimeDataCollection,
-    TimeSeriesBase,
     _timeseries_list_info,
 )
 from vitabel.analysis.circulation.rosc import find_ROSC_2, predict_rosc
@@ -40,6 +38,7 @@ from vitabel.analysis.cpr.compressions import (
     cc_periods_from_compressions,
     convert_two_alternating_list,
 )
+from vitabel.analysis.intervals import filter_by_intervallabel
 from vitabel.analysis.threshold import area_under_threshold
 from vitabel.utils.serialization import NumpyEncoder
 from vitabel.utils.signal import (
@@ -2659,58 +2658,14 @@ class Vitals:
         -------
         Channel | Label
             The filtered channel or label.
+
+        See :func:`.analysis.intervals.filter_by_intervallabel`.
         """
-
-        if not isinstance(channel_or_label_to_filter, (Channel, Label)):
-            raise ValueError(
-                f"The specified channel_or_label_to_filter {channel_or_label_to_filter} is neither a "
-                "Channel nor a Label"
-            )
-        if not isinstance(filter_by, IntervalLabel):
-            raise ValueError(
-                f"The specified filter_by {filter_by} is not an IntervalLabel"
-            )
-
-        # Get timestamps and the data of the channel or label
-        channel_or_label_to_filter = deepcopy(channel_or_label_to_filter)
-
-        # early return for empty
-        if len(channel_or_label_to_filter) == 0:
-            return channel_or_label_to_filter
-
-        object_data = channel_or_label_to_filter.get_data()
-        if isinstance(channel_or_label_to_filter, IntervalLabel):
-            filter_mask = filter_by.contains_time(
-                channel_or_label_to_filter.intervals,
-                include_start=start_inclusive,
-                include_end=end_inclusive,
-                interval_require_full_containment=full_cover,
-            )
-        else:
-            filter_mask = filter_by.contains_time(
-                object_data.time_index.to_numpy(),
-                include_start=start_inclusive,
-                include_end=end_inclusive,
-            )
-
-        if invert:
-            filter_mask = ~filter_mask
-
-        filtered_time_index = object_data.time_index[filter_mask]
-        filtered_time_index = filtered_time_index.ravel()
-
-        # Filter the given Channel or Label
-        TS = TimeSeriesBase(filtered_time_index - channel_or_label_to_filter.offset)
-        new_index = TS.time_index
-        new_start = TS.time_start
-        channel_or_label_to_filter.time_index = new_index
-        channel_or_label_to_filter.time_start = new_start
-
-        if object_data.data is not None and len(object_data.data) > 0:
-            channel_or_label_to_filter.data = object_data.data[filter_mask]
-
-        if object_data.text_data is not None and len(object_data.text_data) > 0:
-            assert isinstance(channel_or_label_to_filter, Label)
-            channel_or_label_to_filter.text_data = object_data.text_data[filter_mask]
-
-        return channel_or_label_to_filter
+        return filter_by_intervallabel(
+            channel_or_label_to_filter,
+            filter_by,
+            invert=invert,
+            start_inclusive=start_inclusive,
+            end_inclusive=end_inclusive,
+            full_cover=full_cover,
+        )
