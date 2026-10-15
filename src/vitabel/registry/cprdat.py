@@ -16,8 +16,9 @@ import numpy as np
 import pandas as pd
 
 from vitabel.analysis.cpr.compressions import CCF_minute, convert_two_alternating_list
-from vitabel.analysis.circulation.rosc import find_ROSC_2
-from vitabel.timeseries import IntervalLabel
+from vitabel.analysis.circulation.rosc import find_ROSC_2, predict_rosc
+from vitabel.analysis.ventilation.capnography import detect_etco2_and_ventilations
+from vitabel.timeseries import IntervalLabel, Label
 from vitabel.utils.signal import gaussian_kernel_regression_point
 
 logger = logging.getLogger("vitabel")
@@ -65,6 +66,66 @@ def _cc_periods(vitals, channel, compute) -> tuple:
     return intervals[:, 0], intervals[:, 1]
 
 
+LABEL_DIFFERENCE_WARNING = 0.1
+"""Relative difference (of the number of entries, or of the median value)
+above which existing labels are reported as differing from the ones computed
+by the registry analysis."""
+
+
+def _relative_difference(a: float, b: float) -> float:
+    scale = max(abs(a), abs(b))
+    return abs(a - b) / scale if scale > 0 else 0.0
+
+
+def _label_difference(existing: Label, computed: Label) -> str | None:
+    """Describe a strong difference between two labels, or ``None``.
+
+    Only summary values are compared (number of entries, median value):
+    different methods may mark different points of the same event (e.g.,
+    of a breath), so the time points themselves are not comparable.
+    """
+    if _relative_difference(len(existing), len(computed)) > LABEL_DIFFERENCE_WARNING:
+        return f"{len(existing)} instead of {len(computed)} entries"
+    if (
+        existing.data is not None
+        and computed.data is not None
+        and len(existing.data) > 0
+        and len(computed.data) > 0
+    ):
+        existing_median = float(np.nanmedian(existing.data))
+        computed_median = float(np.nanmedian(computed.data))
+        if (
+            _relative_difference(existing_median, computed_median)
+            > LABEL_DIFFERENCE_WARNING
+        ):
+            return f"median {existing_median:g} instead of {computed_median:g}"
+    return None
+
+
+def _attach_or_compare(vitals, computed: list[Label], attach) -> dict[str, Label]:
+    """Attach labels computed by the registry analysis to the recording,
+    unless it already contains labels with the same names (e.g., from an
+    earlier call, or computed with other parameters). Existing labels are
+    kept, and a warning is logged if they differ strongly from the computed
+    ones. Returns the computed labels by name; the analysis always uses
+    these."""
+    existing_names = set(vitals.get_label_names())
+    for label in computed:
+        if label.name not in existing_names:
+            attach(label)
+            continue
+        for existing in vitals.get_labels(label.name):
+            difference = _label_difference(existing, label)
+            if difference is not None:
+                logger.warning(
+                    f"The recording already contains a label '{label.name}' "
+                    f"that differs from the one computed for the registry "
+                    f"analysis ({difference}). The analysis uses its own "
+                    "result; the existing label is kept."
+                )
+    return {label.name: label for label in computed}
+
+
 def make_cprdat_analysis(vitals, model="") -> dict:
     """Automatically analyses a defibrillator recording and and returns a dictionary with all derived information.
     This functions is used in the German Resuscitation Registry to generate a case timeline as interactive visualisation.
@@ -72,6 +133,14 @@ def make_cprdat_analysis(vitals, model="") -> dict:
     Like the other analysis methods of :class:`.Vitals`, the analyses required
     for this (chest compression periods, etCO₂ and ventilations, ROSC
     prediction) add their results as labels to the given recording.
+
+    etCO₂ / ventilations (threshold method) and the ROSC prediction are always
+    computed by this function. If the recording already contains labels with
+    the same names (e.g., from an earlier call, or computed with the default
+    ``filter`` method of :meth:`.Vitals.compute_etco2_and_ventilations`), they
+    are kept, and a warning is logged if they differ strongly (by more than
+    10% in the number of entries or the median value). Existing chest
+    compression periods (``cc_periods``) are used as they are.
     """
 
     gaussian_kernel_regression = np.vectorize(
@@ -221,11 +290,29 @@ def make_cprdat_analysis(vitals, model="") -> dict:
 
     cprdat_analysis["chest_compression_analysis"] = chest_compression_analysis
 
+    # labels computed here; used instead of labels with the same name in the
+    # recording (see _attach_or_compare)
+    own_labels: dict[str, Label] = {}
     if "capnography" in vitals.get_channel_names():
-        vitals.compute_etco2_and_ventilations(mode="threshold")
+        capnography = vitals.get_channel("capnography")
+        own_labels |= _attach_or_compare(
+            vitals,
+            detect_etco2_and_ventilations(
+                capnography, mode="threshold", breath_threshold=2, etco2_threshold=3
+            )
+            or [],
+            attach=capnography.attach_label,
+        )
+
+    def own_or_existing(name: str):
+        if name in own_labels:
+            return own_labels[name]
+        return vitals.get_channel_or_label(name)
+
+    ventilations = None
     if "ventilations_from_capnography" in vitals.get_label_names():
         ventilations, x = _time_and_data(
-            vitals.get_label("ventilations_from_capnography")
+            own_or_existing("ventilations_from_capnography")
         )
         ventilations = np.array(
             [(c - vitals.rec_start()).total_seconds() * 1000 for c in ventilations]
@@ -258,7 +345,7 @@ def make_cprdat_analysis(vitals, model="") -> dict:
 
         minute_analysis["CCF"] = CCF_minute(t_start, t_stop, CC_starts, CC_stops)
 
-        if "ventilations_from_capnography" in vitals.get_label_names():
+        if ventilations is not None:
             ventilations_cond = (ventilations >= t_start) & (ventilations < t_stop)
             ventilations_min = np.array(ventilations[ventilations_cond])
             if len(ventilations_min) > 3:
@@ -352,11 +439,23 @@ def make_cprdat_analysis(vitals, model="") -> dict:
         registry_time_points["ZINTUB"] = None
 
     if {"cpr_acceleration", "ecg_pads"} <= set(vitals.get_channel_names()):
-        vitals.predict_circulation()
+        # as in Vitals.predict_circulation
+        cpr_acceleration = vitals.get_channel("cpr_acceleration")
+        if "cc_periods" not in vitals.get_label_names():
+            vitals.find_CC_periods_acc(accelerometer_channel=cpr_acceleration)
+        own_labels |= _attach_or_compare(
+            vitals,
+            predict_rosc(
+                cpr_acceleration,
+                vitals.get_channel("ecg_pads"),
+                vitals.data.get_label("cc_periods"),
+            ),
+            attach=vitals.data.add_global_label,
+        )
 
     if len(CC_starts) > 0:
         if "rosc_probability" in vitals.get_label_names():
-            rosctime, roscdata = _time_and_data(vitals.get_label("rosc_probability"))
+            rosctime, roscdata = _time_and_data(own_or_existing("rosc_probability"))
             pred_time = np.array(
                 [(c - vitals.rec_start()).total_seconds() * 1000 for c in rosctime]
             )
@@ -500,7 +599,7 @@ def make_cprdat_analysis(vitals, model="") -> dict:
     ]
 
     for key in vitals.get_channel_or_label_names():
-        keychannel = vitals.get_channel_or_label(key)
+        keychannel = own_or_existing(key)
         keytime, keydata = _time_and_data(keychannel)
         if isinstance(keychannel, IntervalLabel):
             # time span from the start of the first to the end of the last interval
@@ -564,7 +663,7 @@ def make_cprdat_analysis(vitals, model="") -> dict:
     # compute necessary rates for plotting
     all_channel_names = [chan["name"] for chan in channels]
     if "ventilations_from_capnography" in all_channel_names:
-        ventchannel = vitals.get_channel_or_label("ventilations_from_capnography")
+        ventchannel = own_or_existing("ventilations_from_capnography")
         venttime, ventdata = _time_and_data(ventchannel)
         venttime = [(c - vitals.rec_start()).total_seconds() * 1000 for c in venttime]
         vent_rate = [60000 / (b - a) for a, b in zip(venttime[:-1], venttime[1:])]
@@ -578,7 +677,7 @@ def make_cprdat_analysis(vitals, model="") -> dict:
         channels.append(chan)
 
     if "etco2_from_capnography" in all_channel_names:
-        etco2_channel = vitals.get_channel_or_label("etco2_from_capnography")
+        etco2_channel = own_or_existing("etco2_from_capnography")
         etco2_time, etco2_data = _time_and_data(etco2_channel)
         etco2_time = [
             (c - vitals.rec_start()).total_seconds() * 1000 for c in etco2_time
