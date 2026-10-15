@@ -1,7 +1,7 @@
 {
  "mode": "exact",
  "generated_with": {
-  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
+  "git_commit": "d06a36a107341709c093093f8e052cd2d0be763a",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -18,24 +18,27 @@
     "time_unit": "s",
     "time_start": null,
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "last_entry": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:04",
      "ns": 4000000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      6
+     ],
      "n": 6,
      "nat_count": 0,
      "sha256": "1016a3959c3de0658f97989645af0df9159e28d5a3ab66c17fa1ea7e221c68bb",
@@ -51,7 +54,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      6
+     ],
      "n": 6,
      "dtype_kind": "f",
      "sha256": "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0",
@@ -83,24 +89,27 @@
     "time_unit": "s",
     "time_start": null,
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:01.500000",
      "ns": 1500000000
     },
     "first_entry": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:01.500000",
      "ns": 1500000000
     },
     "last_entry": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:05.500000",
      "ns": 5500000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      6
+     ],
      "n": 6,
      "nat_count": 0,
      "sha256": "d48f4a4ae9f89246c795d6716e06dadfc13cf49f5855dadbbc5a2e4a1da8a460",
@@ -116,7 +125,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      6
+     ],
      "n": 6,
      "dtype_kind": "f",
      "sha256": "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0",
@@ -148,24 +160,27 @@
     "time_unit": "s",
     "time_start": null,
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:01.250000",
      "ns": 1250000000
     },
     "first_entry": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:01.250000",
      "ns": 1250000000
     },
     "last_entry": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:05.250000",
      "ns": 5250000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      6
+     ],
      "n": 6,
      "nat_count": 0,
      "sha256": "d1f5c4ddca692c7605fab572ecf763afd5b842a9343787d20616fdf60aad21eb",
@@ -181,7 +196,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      6
+     ],
      "n": 6,
      "dtype_kind": "f",
      "sha256": "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0",
@@ -213,24 +231,27 @@
     "time_unit": "s",
     "time_start": null,
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:10",
      "ns": 10000000000
     },
     "first_entry": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:10",
      "ns": 10000000000
     },
     "last_entry": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:14",
      "ns": 14000000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      6
+     ],
      "n": 6,
      "nat_count": 0,
      "sha256": "437604f88d74bfdc3f146b3e5df0f6b648a1049bec45043afa0152d3fbff83fd",
@@ -246,7 +267,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      6
+     ],
      "n": 6,
      "dtype_kind": "f",
      "sha256": "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0",
@@ -278,24 +302,27 @@
     "time_unit": "s",
     "time_start": null,
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:10",
      "ns": 10000000000
     },
     "last_entry": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:18",
      "ns": 18000000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      6
+     ],
      "n": 6,
      "nat_count": 0,
      "sha256": "300b50a1a8c878df0b36c46103891f4ec9ed2910fa5255884691cd2d1cbd4481",
@@ -311,7 +338,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      6
+     ],
      "n": 6,
      "dtype_kind": "f",
      "sha256": "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0",
@@ -343,24 +373,27 @@
     "time_unit": "s",
     "time_start": null,
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:10.500000",
      "ns": 10500000000
     },
     "last_entry": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:12.500000",
      "ns": 12500000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      6
+     ],
      "n": 6,
      "nat_count": 0,
      "sha256": "3ad315a88d4a7b26c524eda1ff611e2c8ed865c39b33755e4339831a0f3e20a6",
@@ -376,7 +409,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      6
+     ],
      "n": 6,
      "dtype_kind": "f",
      "sha256": "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0",
@@ -408,24 +444,27 @@
     "time_unit": "s",
     "time_start": null,
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:11",
      "ns": 11000000000
     },
     "last_entry": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:12",
      "ns": 12000000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      3
+     ],
      "n": 3,
      "nat_count": 0,
      "sha256": "60023dc99b3f9bbcac84dbc8adfd54fc0910e0d8c045a9de76c5fd54784eec23",
@@ -438,7 +477,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      3
+     ],
      "n": 3,
      "dtype_kind": "f",
      "sha256": "56fcc26564632ce3e423387f0c91a3038388fcb2ab6811ac4dcbd75a403abb24",
@@ -466,29 +508,32 @@
     "len": 6,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:00",
      "ns": 1704110400000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:00",
      "ns": 1704110400000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:04",
      "ns": 1704110404000000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      6
+     ],
      "n": 6,
      "nat_count": 0,
      "sha256": "1016a3959c3de0658f97989645af0df9159e28d5a3ab66c17fa1ea7e221c68bb",
@@ -504,7 +549,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      6
+     ],
      "n": 6,
      "dtype_kind": "f",
      "sha256": "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0",
@@ -535,29 +583,32 @@
     "len": 6,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:00",
      "ns": 1704110400000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:01.500000",
      "ns": 1500000000
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:01.500000",
      "ns": 1704110401500000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:05.500000",
      "ns": 1704110405500000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      6
+     ],
      "n": 6,
      "nat_count": 0,
      "sha256": "d48f4a4ae9f89246c795d6716e06dadfc13cf49f5855dadbbc5a2e4a1da8a460",
@@ -573,7 +624,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      6
+     ],
      "n": 6,
      "dtype_kind": "f",
      "sha256": "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0",
@@ -604,29 +658,32 @@
     "len": 6,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:00",
      "ns": 1704110400000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:01.250000",
      "ns": 1250000000
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:01.250000",
      "ns": 1704110401250000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:05.250000",
      "ns": 1704110405250000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      6
+     ],
      "n": 6,
      "nat_count": 0,
      "sha256": "d1f5c4ddca692c7605fab572ecf763afd5b842a9343787d20616fdf60aad21eb",
@@ -642,7 +699,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      6
+     ],
      "n": 6,
      "dtype_kind": "f",
      "sha256": "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0",
@@ -673,29 +733,32 @@
     "len": 6,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:00",
      "ns": 1704110400000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:10",
      "ns": 10000000000
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:10",
      "ns": 1704110410000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:14",
      "ns": 1704110414000000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      6
+     ],
      "n": 6,
      "nat_count": 0,
      "sha256": "437604f88d74bfdc3f146b3e5df0f6b648a1049bec45043afa0152d3fbff83fd",
@@ -711,7 +774,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      6
+     ],
      "n": 6,
      "dtype_kind": "f",
      "sha256": "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0",
@@ -742,29 +808,32 @@
     "len": 6,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:00",
      "ns": 1704110400000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:20",
      "ns": 1704110420000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:28",
      "ns": 1704110428000000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      6
+     ],
      "n": 6,
      "nat_count": 0,
      "sha256": "8cf7b82074e5a7218bc153debdc79a3955b0618f5ee03155265a98b9e5cb6da9",
@@ -780,7 +849,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      6
+     ],
      "n": 6,
      "dtype_kind": "f",
      "sha256": "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0",
@@ -811,29 +883,32 @@
     "len": 6,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:00",
      "ns": 1704110400000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:10.500000",
      "ns": 1704110410500000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:12.500000",
      "ns": 1704110412500000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      6
+     ],
      "n": 6,
      "nat_count": 0,
      "sha256": "3ad315a88d4a7b26c524eda1ff611e2c8ed865c39b33755e4339831a0f3e20a6",
@@ -849,7 +924,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      6
+     ],
      "n": 6,
      "dtype_kind": "f",
      "sha256": "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0",
@@ -880,29 +958,32 @@
     "len": 3,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:11",
      "ns": 1704110411000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:11",
      "ns": 1704110411000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:12",
      "ns": 1704110412000000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      3
+     ],
      "n": 3,
      "nat_count": 0,
      "sha256": "e65235da64d14636a939f15d29b6091fe6d8d7462238e8f650ad068b6246a5f2",
@@ -915,7 +996,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      3
+     ],
      "n": 3,
      "dtype_kind": "f",
      "sha256": "56fcc26564632ce3e423387f0c91a3038388fcb2ab6811ac4dcbd75a403abb24",

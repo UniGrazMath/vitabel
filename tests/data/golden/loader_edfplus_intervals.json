@@ -1,7 +1,7 @@
 {
  "mode": "exact",
  "generated_with": {
-  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
+  "git_commit": "d06a36a107341709c093093f8e052cd2d0be763a",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -16,29 +16,32 @@
     "len": 12,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:00",
      "ns": 1704110400000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:00",
      "ns": 1704110400000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:11",
      "ns": 1704110411000000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      12
+     ],
      "n": 12,
      "nat_count": 0,
      "sha256": "690f27558e5cfadf826b06391ce08df784239f0dd30fca0ae6841516588d6753",
@@ -60,7 +63,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      12
+     ],
      "n": 12,
      "dtype_kind": "f",
      "sha256": "81be03d426f08599c28a404768a5c7a6ca12d813f3bc24b3b57b7e651896a0ea",
@@ -111,29 +117,32 @@
     "len": 2,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:00",
      "ns": 1704110400000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:01",
      "ns": 1704110401000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:06",
      "ns": 1704110406000000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      4
+     ],
      "n": 4,
      "nat_count": 0,
      "sha256": "2b125e6fcacfce0142b83f33692a265a051b91eced98e9c209641e66837cbd77",
@@ -162,7 +171,10 @@
      "linestyle": "none"
     },
     "text_data": {
-     "kind": "text_array",
+     "__kind__": "text_array",
+     "shape": [
+      2
+     ],
      "n": 2,
      "dtype_kind": "O",
      "sha256": "ee3b88bdad86322429cc8fb7af64154f4042692bb26c88d940bc35ec41223279",
@@ -181,29 +193,32 @@
     "len": 1,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:00",
      "ns": 1704110400000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:08",
      "ns": 1704110408000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:08.500000",
      "ns": 1704110408500000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      2
+     ],
      "n": 2,
      "nat_count": 0,
      "sha256": "c74dea1857fb5e028ee77cebee63a295b0daaa1558e0b626e022d42bdaec826b",
@@ -229,7 +244,10 @@
      "linestyle": "none"
     },
     "text_data": {
-     "kind": "text_array",
+     "__kind__": "text_array",
+     "shape": [
+      1
+     ],
      "n": 1,
      "dtype_kind": "O",
      "sha256": "e0d4f0c233bcf131aef70d0a94f929c279e7c537df4e95cfb1445607f01141ec",
@@ -260,7 +278,7 @@
    "equipment": "",
    "n_signals": 1,
    "recording_start": {
-    "kind": "timestamp",
+    "__kind__": "timestamp",
     "repr": "2024-01-01 12:00:00",
     "ns": 1704110400000000000
    },

@@ -1,7 +1,7 @@
 {
  "mode": "values",
  "generated_with": {
-  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
+  "git_commit": "d06a36a107341709c093093f8e052cd2d0be763a",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -17,7 +17,7 @@
     "unit": "minutes \u00d7 value units"
    },
    "duration_under_threshold": {
-    "kind": "timedelta",
+    "__kind__": "timedelta",
     "repr": "0 days 00:00:00",
     "ns": 0
    },
@@ -27,7 +27,7 @@
     "unit": "value units"
    },
    "observational_interval_duration": {
-    "kind": "timedelta",
+    "__kind__": "timedelta",
     "repr": "0 days 02:00:00",
     "ns": 7200000000000
    }
@@ -40,7 +40,7 @@
     "unit": "minutes \u00d7 value units"
    },
    "duration_under_threshold": {
-    "kind": "timedelta",
+    "__kind__": "timedelta",
     "repr": "0 days 02:00:00",
     "ns": 7200000000000
    },
@@ -50,7 +50,7 @@
     "unit": "value units"
    },
    "observational_interval_duration": {
-    "kind": "timedelta",
+    "__kind__": "timedelta",
     "repr": "0 days 02:00:00",
     "ns": 7200000000000
    }
@@ -63,7 +63,7 @@
     "unit": "minutes \u00d7 value units"
    },
    "duration_under_threshold": {
-    "kind": "timedelta",
+    "__kind__": "timedelta",
     "repr": "0 days 01:00:00.000000500",
     "ns": 3600000000500
    },
@@ -73,7 +73,7 @@
     "unit": "value units"
    },
    "observational_interval_duration": {
-    "kind": "timedelta",
+    "__kind__": "timedelta",
     "repr": "0 days 02:00:00",
     "ns": 7200000000000
    }
@@ -86,7 +86,7 @@
     "unit": "minutes \u00d7 value units"
    },
    "duration_under_threshold": {
-    "kind": "timedelta",
+    "__kind__": "timedelta",
     "repr": "0 days 01:14:50.909091250",
     "ns": 4490909091250
    },
@@ -96,7 +96,7 @@
     "unit": "value units"
    },
    "observational_interval_duration": {
-    "kind": "timedelta",
+    "__kind__": "timedelta",
     "repr": "0 days 02:00:00",
     "ns": 7200000000000
    }

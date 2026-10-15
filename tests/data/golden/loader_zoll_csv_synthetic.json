@@ -1,7 +1,7 @@
 {
  "mode": "exact",
  "generated_with": {
-  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
+  "git_commit": "d06a36a107341709c093093f8e052cd2d0be763a",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -16,29 +16,32 @@
     "len": 2,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:00",
      "ns": 1704110400000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:00",
      "ns": 1704110400000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:01",
      "ns": 1704110401000000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      2
+     ],
      "n": 2,
      "nat_count": 0,
      "sha256": "35566b14626a47bcda220d16eb894ce5456dcfa3bbbf691273fd49e0d3e65a38",
@@ -50,18 +53,21 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      2
+     ],
      "n": 2,
      "dtype_kind": "i",
-     "sha256": "dc91ce9a50ddc828740aa26743716897fdb2bb64f1db662fe263a59be56145ae",
+     "sha256": "0c730b69905c5ef7a4ca5269f72365400bde2dd2c04eaf9bbb3d1c4a265a0131",
      "nan_count": 0,
-     "min": 1.0,
-     "max": 2.0,
+     "min": 1,
+     "max": 2,
      "mean": 1.5,
      "std": 0.5,
      "values": [
-      1.0,
-      2.0
+      1,
+      2
      ]
     },
     "metadata": {
@@ -82,29 +88,32 @@
     "len": 2,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:00",
      "ns": 1704110400000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:00",
      "ns": 1704110400000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:01",
      "ns": 1704110401000000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      2
+     ],
      "n": 2,
      "nat_count": 0,
      "sha256": "35566b14626a47bcda220d16eb894ce5456dcfa3bbbf691273fd49e0d3e65a38",
@@ -116,18 +125,21 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      2
+     ],
      "n": 2,
      "dtype_kind": "i",
-     "sha256": "a515fea0d77db3376ce09fa9c641c453165cd72c75e02f55a8fb72190edd0338",
+     "sha256": "b71ba5fb265ccd916eb5e253e08264f75f65053c56cc970a1507a1e71c00b15e",
      "nan_count": 0,
-     "min": 10.0,
-     "max": 11.0,
+     "min": 10,
+     "max": 11,
      "mean": 10.5,
      "std": 0.5,
      "values": [
-      10.0,
-      11.0
+      10,
+      11
      ]
     },
     "metadata": {
@@ -148,29 +160,32 @@
     "len": 2,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:00",
      "ns": 1704110400000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:00",
      "ns": 1704110400000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2024-01-01 12:00:01",
      "ns": 1704110401000000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      2
+     ],
      "n": 2,
      "nat_count": 0,
      "sha256": "35566b14626a47bcda220d16eb894ce5456dcfa3bbbf691273fd49e0d3e65a38",
@@ -182,18 +197,21 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      2
+     ],
      "n": 2,
      "dtype_kind": "i",
-     "sha256": "bb90d67ba86899d99d5e2ff1529e84ff42cea5afaf13675f927d381f548569bf",
+     "sha256": "c563a9ad2960f436eff0e9f3e6403e3d41e43bf0ed2f1ca8d1a92ee484688e20",
      "nan_count": 0,
-     "min": 95.0,
-     "max": 96.0,
+     "min": 95,
+     "max": 96,
      "mean": 95.5,
      "std": 0.5,
      "values": [
-      95.0,
-      96.0
+      95,
+      96
      ]
     },
     "metadata": {

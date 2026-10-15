@@ -1,7 +1,7 @@
 {
  "mode": "exact",
  "generated_with": {
-  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
+  "git_commit": "d06a36a107341709c093093f8e052cd2d0be763a",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -11,8 +11,12 @@
  "summary": {
   "relative None None": {
    "intervals": {
-    "kind": "time_array",
+    "__kind__": "time_array",
     "dtype": "timedelta64",
+    "shape": [
+     4,
+     2
+    ],
     "n": 8,
     "nat_count": 0,
     "sha256": "b5d65ab09b50f3b8d7184308048895687f3139776407cf2e20e2c4052350dbfd",
@@ -30,7 +34,10 @@
     ]
    },
    "data": {
-    "kind": "numeric_array",
+    "__kind__": "numeric_array",
+    "shape": [
+     4
+    ],
     "n": 4,
     "dtype_kind": "f",
     "sha256": "6bab56d2f81d4b5a2dbf102bf6a6ff7d5211a475fc5f97813f977e8ba714b07d",
@@ -55,8 +62,12 @@
   },
   "relative 1.5 6.5": {
    "intervals": {
-    "kind": "time_array",
+    "__kind__": "time_array",
     "dtype": "timedelta64",
+    "shape": [
+     3,
+     2
+    ],
     "n": 6,
     "nat_count": 0,
     "sha256": "dd3537e054e0cf7683e6f1116123522c031b7186b43a1d87ab29063adcc2440c",
@@ -72,7 +83,10 @@
     ]
    },
    "data": {
-    "kind": "numeric_array",
+    "__kind__": "numeric_array",
+    "shape": [
+     3
+    ],
     "n": 3,
     "dtype_kind": "f",
     "sha256": "a68de4b5e96a60c8ceb3c7b7ef93461725bdbbff3516b136585a743b5c0ec664",
@@ -95,8 +109,12 @@
   },
   "relative 2.5 4.0": {
    "intervals": {
-    "kind": "time_array",
+    "__kind__": "time_array",
     "dtype": "timedelta64",
+    "shape": [
+     1,
+     2
+    ],
     "n": 2,
     "nat_count": 0,
     "sha256": "90883160d2dbec150a3edf155ae6b5fed698f402d12ef880ade07a726b63bc0d",
@@ -108,7 +126,10 @@
     ]
    },
    "data": {
-    "kind": "numeric_array",
+    "__kind__": "numeric_array",
+    "shape": [
+     1
+    ],
     "n": 1,
     "dtype_kind": "f",
     "sha256": "3f710ac088db33363087de2b9a657541fe5447821debaa9fe5cbd538eb1a5f29",
@@ -127,8 +148,12 @@
   },
   "relative 12.0 15.0": {
    "intervals": {
-    "kind": "time_array",
+    "__kind__": "time_array",
     "dtype": "timedelta64",
+    "shape": [
+     1,
+     2
+    ],
     "n": 2,
     "nat_count": 0,
     "sha256": "c11fe6a26e2eb5d620cc9228e3537eb02f772c2760beebc815a81ecfdbf09f64",
@@ -140,7 +165,10 @@
     ]
    },
    "data": {
-    "kind": "numeric_array",
+    "__kind__": "numeric_array",
+    "shape": [
+     1
+    ],
     "n": 1,
     "dtype_kind": "f",
     "sha256": "400c52dd5bd0047d64c0582af027b387a7938a64283d0d4f727331140cb6462c",
@@ -159,8 +187,12 @@
   },
   "relative 30.0 40.0": {
    "intervals": {
-    "kind": "time_array",
+    "__kind__": "time_array",
     "dtype": "timedelta64",
+    "shape": [
+     0,
+     2
+    ],
     "n": 0,
     "nat_count": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -171,8 +203,12 @@
   },
   "relative None 1.0": {
    "intervals": {
-    "kind": "time_array",
+    "__kind__": "time_array",
     "dtype": "timedelta64",
+    "shape": [
+     2,
+     2
+    ],
     "n": 4,
     "nat_count": 0,
     "sha256": "3d3effcbbae927f2743db7bb6c8a4c39fa7ba22e0f7c300d3f5f2e2c3edb8282",
@@ -186,7 +222,10 @@
     ]
    },
    "data": {
-    "kind": "numeric_array",
+    "__kind__": "numeric_array",
+    "shape": [
+     2
+    ],
     "n": 2,
     "dtype_kind": "f",
     "sha256": "dc91ce9a50ddc828740aa26743716897fdb2bb64f1db662fe263a59be56145ae",
@@ -207,8 +246,12 @@
   },
   "relative 6.5 None": {
    "intervals": {
-    "kind": "time_array",
+    "__kind__": "time_array",
     "dtype": "timedelta64",
+    "shape": [
+     2,
+     2
+    ],
     "n": 4,
     "nat_count": 0,
     "sha256": "7d5a23053d6a61289e2fa8a184af72a965c6377c93dcfaeadc65f2e378258c0e",
@@ -222,7 +265,10 @@
     ]
    },
    "data": {
-    "kind": "numeric_array",
+    "__kind__": "numeric_array",
+    "shape": [
+     2
+    ],
     "n": 2,
     "dtype_kind": "f",
     "sha256": "bed9efba025f2da91e4ece76e380f86ca1cd1765aea7f5bb87f607b547061efa",
@@ -243,8 +289,12 @@
   },
   "absolute None None": {
    "intervals": {
-    "kind": "time_array",
+    "__kind__": "time_array",
     "dtype": "datetime64",
+    "shape": [
+     2,
+     2
+    ],
     "n": 4,
     "nat_count": 0,
     "sha256": "7d99a488482ec8a073752dce959b2138687774dd61ab50ae0f12629f03e6347c",
@@ -262,8 +312,12 @@
   },
   "absolute 1.5 6.5": {
    "intervals": {
-    "kind": "time_array",
+    "__kind__": "time_array",
     "dtype": "datetime64",
+    "shape": [
+     2,
+     2
+    ],
     "n": 4,
     "nat_count": 0,
     "sha256": "7d99a488482ec8a073752dce959b2138687774dd61ab50ae0f12629f03e6347c",
@@ -281,8 +335,12 @@
   },
   "absolute 2.5 4.0": {
    "intervals": {
-    "kind": "time_array",
+    "__kind__": "time_array",
     "dtype": "datetime64",
+    "shape": [
+     0,
+     2
+    ],
     "n": 0,
     "nat_count": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -293,8 +351,12 @@
   },
   "absolute 12.0 15.0": {
    "intervals": {
-    "kind": "time_array",
+    "__kind__": "time_array",
     "dtype": "datetime64",
+    "shape": [
+     0,
+     2
+    ],
     "n": 0,
     "nat_count": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -305,8 +367,12 @@
   },
   "absolute 30.0 40.0": {
    "intervals": {
-    "kind": "time_array",
+    "__kind__": "time_array",
     "dtype": "datetime64",
+    "shape": [
+     0,
+     2
+    ],
     "n": 0,
     "nat_count": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -317,8 +383,12 @@
   },
   "absolute None 1.0": {
    "intervals": {
-    "kind": "time_array",
+    "__kind__": "time_array",
     "dtype": "datetime64",
+    "shape": [
+     1,
+     2
+    ],
     "n": 2,
     "nat_count": 0,
     "sha256": "4da16dae9aa0fabb290058e5acb9dfbb713e2537705eb430f74651f17ab6a727",
@@ -334,8 +404,12 @@
   },
   "absolute 6.5 None": {
    "intervals": {
-    "kind": "time_array",
+    "__kind__": "time_array",
     "dtype": "datetime64",
+    "shape": [
+     1,
+     2
+    ],
     "n": 2,
     "nat_count": 0,
     "sha256": "a92706ab2ed394a9c5a385cf1d982b5eebf2f05e151f9e9c31712dcbcbb0c912",

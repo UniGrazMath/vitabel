@@ -1,7 +1,7 @@
 {
  "mode": "exact",
  "generated_with": {
-  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
+  "git_commit": "d06a36a107341709c093093f8e052cd2d0be763a",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -16,29 +16,32 @@
     "len": 120000,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "nat_count": 0,
      "sha256": "e804314798d56f110ad70f53eb97c0b1b41481f1f353c4557427786ee8d4c9c0",
@@ -304,7 +307,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "dtype_kind": "f",
      "sha256": "d49ba951df9a91dc17aad07bc4ec6f30906f3e52e3ab8d1633a88b7e04aa22b1",
@@ -597,29 +603,32 @@
     "len": 120000,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "nat_count": 0,
      "sha256": "e804314798d56f110ad70f53eb97c0b1b41481f1f353c4557427786ee8d4c9c0",
@@ -885,7 +894,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "dtype_kind": "f",
      "sha256": "0c1ff53de971a09f4bfe2eaa443f36e4c7f4ca917c6696b0438d3a4ff28109ec",
@@ -1178,29 +1190,32 @@
     "len": 120000,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "nat_count": 0,
      "sha256": "e804314798d56f110ad70f53eb97c0b1b41481f1f353c4557427786ee8d4c9c0",
@@ -1466,7 +1481,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "dtype_kind": "f",
      "sha256": "0d536a6999d35f04354f3c40795de6f8301556a63d1db033018cc6789efa135b",
@@ -1759,29 +1777,32 @@
     "len": 120000,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "nat_count": 0,
      "sha256": "e804314798d56f110ad70f53eb97c0b1b41481f1f353c4557427786ee8d4c9c0",
@@ -2047,7 +2068,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "dtype_kind": "f",
      "sha256": "fb1d05f39096cd5a994b2717612fcb4edd3b7bb09f35cd3b7e7159beeb8c2591",
@@ -2340,29 +2364,32 @@
     "len": 120000,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "nat_count": 0,
      "sha256": "e804314798d56f110ad70f53eb97c0b1b41481f1f353c4557427786ee8d4c9c0",
@@ -2628,7 +2655,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "dtype_kind": "f",
      "sha256": "362cb5dca1da403e92d2f3f0122eca5387b500dd0e8c8bb670865a1fe9a55288",
@@ -2921,29 +2951,32 @@
     "len": 120000,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "nat_count": 0,
      "sha256": "e804314798d56f110ad70f53eb97c0b1b41481f1f353c4557427786ee8d4c9c0",
@@ -3209,7 +3242,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "dtype_kind": "f",
      "sha256": "69c57dc60c6d70809f47ac6836b6360431bc805c168d8beae5b0d0331f6cc4d2",
@@ -3502,29 +3538,32 @@
     "len": 120000,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "nat_count": 0,
      "sha256": "e804314798d56f110ad70f53eb97c0b1b41481f1f353c4557427786ee8d4c9c0",
@@ -3790,7 +3829,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "dtype_kind": "f",
      "sha256": "071a2418f5198bda90be0ed84705515ce4613d2a67ed600de2ab41e5ac03b51d",
@@ -4083,29 +4125,32 @@
     "len": 120000,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "nat_count": 0,
      "sha256": "e804314798d56f110ad70f53eb97c0b1b41481f1f353c4557427786ee8d4c9c0",
@@ -4371,7 +4416,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "dtype_kind": "f",
      "sha256": "2fb42c18df0b7858a616328dbb46b057086819dff73d19f51370a992dd0ef6b4",
@@ -4664,29 +4712,32 @@
     "len": 120000,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "nat_count": 0,
      "sha256": "e804314798d56f110ad70f53eb97c0b1b41481f1f353c4557427786ee8d4c9c0",
@@ -4952,7 +5003,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "dtype_kind": "f",
      "sha256": "1411cf205fb30b8da9a698dc44f795ff46f286c12d259a9696c0ece18a4af3d8",
@@ -5245,29 +5299,32 @@
     "len": 120000,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "nat_count": 0,
      "sha256": "e804314798d56f110ad70f53eb97c0b1b41481f1f353c4557427786ee8d4c9c0",
@@ -5533,7 +5590,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "dtype_kind": "f",
      "sha256": "06a3942ad27386b9ad151582ae161040326722fa21f11a3737e3915441d96b30",
@@ -5826,29 +5886,32 @@
     "len": 120000,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "nat_count": 0,
      "sha256": "e804314798d56f110ad70f53eb97c0b1b41481f1f353c4557427786ee8d4c9c0",
@@ -6114,7 +6177,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      120000
+     ],
      "n": 120000,
      "dtype_kind": "f",
      "sha256": "5b2fdd6bde53153fd765c055921dccdc27e321040d7861ced41186912c2ff2dd",
@@ -6409,29 +6475,32 @@
     "len": 2,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:44:02",
      "ns": 1260449042000000000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2009-12-10 12:54:02",
      "ns": 1260449642000000000
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      2
+     ],
      "n": 2,
      "nat_count": 0,
      "sha256": "9e0a993382e6a5e3b2f1e3dc000fcf4ddb50f1c942ee461d93926be06349b765",
@@ -6454,7 +6523,10 @@
      "linestyle": "none"
     },
     "text_data": {
-     "kind": "text_array",
+     "__kind__": "text_array",
+     "shape": [
+      2
+     ],
      "n": 2,
      "dtype_kind": "O",
      "sha256": "816e5f5c639b4dba8a1dcc312752f23c649d9b6a106db4deb50afeccbc584fbc",
@@ -6487,7 +6559,7 @@
    "equipment": "test generator",
    "n_signals": 11,
    "recording_start": {
-    "kind": "timestamp",
+    "__kind__": "timestamp",
     "repr": "2009-12-10 12:44:02",
     "ns": 1260449042000000000
    },

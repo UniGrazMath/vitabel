@@ -1,7 +1,7 @@
 {
  "mode": "values",
  "generated_with": {
-  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
+  "git_commit": "d06a36a107341709c093093f8e052cd2d0be763a",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -16,24 +16,27 @@
    "time_unit": "s",
    "time_start": null,
    "offset": {
-    "kind": "timedelta",
+    "__kind__": "timedelta",
     "repr": "0 days 00:00:00",
     "ns": 0
    },
    "first_entry": {
-    "kind": "timedelta",
+    "__kind__": "timedelta",
     "repr": "0 days 00:22:33.408000",
     "ns": 1353408000000
    },
    "last_entry": {
-    "kind": "timedelta",
+    "__kind__": "timedelta",
     "repr": "0 days 01:05:12.144000",
     "ns": 3912144000000
    },
    "time_index_unit": "ns",
    "time": {
-    "kind": "time_array",
+    "__kind__": "time_array",
     "dtype": "timedelta64",
+    "shape": [
+     606
+    ],
     "n": 606,
     "nat_count": 0,
     "sha256": "31863bbac70ebf2e686cfa926db453e73de66a20a0cc330fc56aab678a02e313",
@@ -649,7 +652,10 @@
     ]
    },
    "data": {
-    "kind": "numeric_array",
+    "__kind__": "numeric_array",
+    "shape": [
+     606
+    ],
     "n": 606,
     "dtype_kind": "f",
     "sha256": "e067c4cfc7d7480aab90a5acd770c61f4f2dbbc205ac846e721c559e44348dd0",
@@ -1293,24 +1299,27 @@
    "time_unit": "s",
    "time_start": null,
    "offset": {
-    "kind": "timedelta",
+    "__kind__": "timedelta",
     "repr": "0 days 00:00:00",
     "ns": 0
    },
    "first_entry": {
-    "kind": "timedelta",
+    "__kind__": "timedelta",
     "repr": "0 days 00:22:32.560000",
     "ns": 1352560000000
    },
    "last_entry": {
-    "kind": "timedelta",
+    "__kind__": "timedelta",
     "repr": "0 days 01:10:17.112000",
     "ns": 4217112000000
    },
    "time_index_unit": "ns",
    "time": {
-    "kind": "time_array",
+    "__kind__": "time_array",
     "dtype": "timedelta64",
+    "shape": [
+     607
+    ],
     "n": 607,
     "nat_count": 0,
     "sha256": "fb5b3ee536808cd0eb746184e7cd590402e22c568842b0f423423d2726b296d8",

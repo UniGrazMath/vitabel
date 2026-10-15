@@ -5,9 +5,12 @@ labels (or other results) into JSON-compatible dictionaries and compare them
 against reference files stored in ``tests/data/golden``.
 
 Summaries are *self-describing*: arrays, timestamps, and timedeltas are
-represented by dictionaries with a ``"kind"`` key (``"numeric_array"``,
+represented by dictionaries with a ``"__kind__"`` key (``"numeric_array"``,
 ``"text_array"``, ``"time_array"``, ``"timestamp"``, ``"timedelta"``), and the
 comparison rules depend on this kind -- never on the name of a key alone.
+Arrays record their shape (compared exactly), integer arrays keep their
+integer values (no conversion to float), and dictionaries to be summarized
+(e.g., metadata) must not contain the ``"__kind__"`` key themselves.
 
 Two comparison modes are supported:
 
@@ -93,6 +96,19 @@ autouse fixture in ``tests/conftest.py``."""
 
 Mode = Literal["exact", "values"]
 
+KIND_KEY = "__kind__"
+"""Key of the schema tag in summary dictionaries."""
+
+
+class _Tagged(dict):
+    """A summary dictionary carrying a schema tag (``KIND_KEY``). Only
+    instances of this class may contain the tag key; user dictionaries
+    containing it are rejected by :func:`jsonable`."""
+
+
+def _tagged(kind: str, **fields: Any) -> _Tagged:
+    return _Tagged({KIND_KEY: kind, **fields})
+
 
 # ---------------------------------------------------------------------------
 # Summaries
@@ -118,19 +134,24 @@ def jsonable(obj: Any) -> Any:
         timedelta = pd.Timedelta(obj)
         if pd.isna(timedelta):
             return None
-        return {"kind": "timedelta", "repr": str(timedelta), "ns": int(timedelta.value)}
+        return _tagged("timedelta", repr=str(timedelta), ns=int(timedelta.value))
     if isinstance(obj, (datetime.date, np.datetime64)):
         timestamp = pd.Timestamp(obj)
         if pd.isna(timestamp):
             return None
-        return {
-            "kind": "timestamp",
-            "repr": str(timestamp),
-            "ns": int(timestamp.as_unit("ns").value),
-        }
+        return _tagged(
+            "timestamp", repr=str(timestamp), ns=int(timestamp.as_unit("ns").value)
+        )
     if isinstance(obj, np.generic):
         return jsonable(obj.item())
+    if isinstance(obj, _Tagged):
+        return obj  # generated summary; already JSON-compatible
     if isinstance(obj, dict):
+        if KIND_KEY in obj:
+            raise ValueError(
+                f"dictionaries to be summarized must not contain the key "
+                f"{KIND_KEY!r}, which is reserved for summary schema tags"
+            )
         return {str(key): jsonable(value) for key, value in obj.items()}
     if isinstance(obj, (list, tuple, set, frozenset)):
         items = [jsonable(item) for item in obj]
@@ -172,16 +193,40 @@ def summarize_array(values: Any) -> dict[str, Any] | None:
     if array.dtype.kind in "mM":
         return summarize_time_array(array)
 
-    if array.dtype.kind in "biuf":
+    if array.dtype.kind in "biu":
+        # integers (and booleans) keep their exact integer values
+        as_int = array.astype(np.uint64 if array.dtype.kind == "u" else np.int64)
+        as_int = as_int.ravel()
+        summary = _tagged(
+            "numeric_array",
+            shape=list(array.shape),
+            n=int(array.size),
+            dtype_kind=array.dtype.kind,
+            sha256=_sha256(as_int),
+            nan_count=0,
+        )
+        if as_int.size > 0:
+            summary["min"] = int(as_int.min())
+            summary["max"] = int(as_int.max())
+            summary["mean"] = float(as_int.mean())
+            summary["std"] = float(as_int.std())
+        if array.size <= FULL_ARRAY_LIMIT:
+            summary["values"] = as_int.tolist()
+        else:
+            summary["samples"] = as_int[_evenly_spaced_indices(array.size)].tolist()
+        return summary
+
+    if array.dtype.kind == "f":
         as_float = array.astype(np.float64).ravel()
         finite = as_float[np.isfinite(as_float)]
-        summary: dict[str, Any] = {
-            "kind": "numeric_array",
-            "n": int(array.size),
-            "dtype_kind": array.dtype.kind,
-            "sha256": _sha256(as_float),
-            "nan_count": int(np.isnan(as_float).sum()),
-        }
+        summary = _tagged(
+            "numeric_array",
+            shape=list(array.shape),
+            n=int(array.size),
+            dtype_kind=array.dtype.kind,
+            sha256=_sha256(as_float),
+            nan_count=int(np.isnan(as_float).sum()),
+        )
         if finite.size > 0:
             summary["min"] = float(finite.min())
             summary["max"] = float(finite.max())
@@ -194,14 +239,15 @@ def summarize_array(values: Any) -> dict[str, Any] | None:
         return summary
 
     as_text = [None if _is_missing(value) else str(value) for value in array.ravel()]
-    summary = {
-        "kind": "text_array",
-        "n": int(array.size),
-        "dtype_kind": array.dtype.kind,
-        "sha256": hashlib.sha256(
+    summary = _tagged(
+        "text_array",
+        shape=list(array.shape),
+        n=int(array.size),
+        dtype_kind=array.dtype.kind,
+        sha256=hashlib.sha256(
             json.dumps(as_text, ensure_ascii=False).encode("utf-8")
         ).hexdigest(),
-    }
+    )
     if array.size <= FULL_ARRAY_LIMIT:
         summary["values"] = as_text
     return summary
@@ -228,13 +274,14 @@ def summarize_time_array(values: Any) -> dict[str, Any]:
             for value, missing in zip(as_int[selection], is_nat[selection])
         ]
 
-    summary: dict[str, Any] = {
-        "kind": "time_array",
-        "dtype": dtype,
-        "n": int(as_int.size),
-        "nat_count": int(is_nat.sum()),
-        "sha256": _sha256(as_int),
-    }
+    summary = _tagged(
+        "time_array",
+        dtype=dtype,
+        shape=list(array.shape),
+        n=int(as_int.size),
+        nat_count=int(is_nat.sum()),
+        sha256=_sha256(as_int),
+    )
     if valid.size > 0:
         summary["min"] = int(valid.min())
         summary["max"] = int(valid.max())
@@ -397,8 +444,8 @@ def _compare(
                 f"{path}: keys differ (missing: {sorted(missing)}, "
                 f"unexpected: {sorted(extra)})"
             )
-        kind = expected.get("kind")
-        if kind != actual.get("kind"):
+        kind = expected.get(KIND_KEY)
+        if kind != actual.get(KIND_KEY):
             kind = None
         for key in sorted(expected.keys() & actual.keys()):
             field_policy = _field_policy(kind, key, mode)

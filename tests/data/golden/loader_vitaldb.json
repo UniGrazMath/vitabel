@@ -1,7 +1,7 @@
 {
  "mode": "exact",
  "generated_with": {
-  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
+  "git_commit": "d06a36a107341709c093093f8e052cd2d0be763a",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -16,29 +16,32 @@
     "len": 178641,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2023-01-11 13:10:37.540275",
      "ns": 1673442637540275000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2023-01-11 13:10:37.540275",
      "ns": 1673442637540275000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2023-01-11 13:40:23.950275086",
      "ns": 1673444423950275086
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      178641
+     ],
      "n": 178641,
      "nat_count": 0,
      "sha256": "9d4460256e5472a85fe7d106511a837b143dca414ef4963e2656e1824a24cadf",
@@ -304,7 +307,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      178641
+     ],
      "n": 178641,
      "dtype_kind": "f",
      "sha256": "d7b8c24be0b2f1d5901d6ce6a8ed1e1aac024503d9baee7dca023a3a0660ce77",
@@ -603,29 +609,32 @@
     "len": 178641,
     "time_unit": "s",
     "time_start": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2023-01-11 13:10:37.540275",
      "ns": 1673442637540275000
     },
     "offset": {
-     "kind": "timedelta",
+     "__kind__": "timedelta",
      "repr": "0 days 00:00:00",
      "ns": 0
     },
     "first_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2023-01-11 13:10:37.540275",
      "ns": 1673442637540275000
     },
     "last_entry": {
-     "kind": "timestamp",
+     "__kind__": "timestamp",
      "repr": "2023-01-11 13:40:23.950275086",
      "ns": 1673444423950275086
     },
     "time_index_unit": "ns",
     "time": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "timedelta64",
+     "shape": [
+      178641
+     ],
      "n": 178641,
      "nat_count": 0,
      "sha256": "9d4460256e5472a85fe7d106511a837b143dca414ef4963e2656e1824a24cadf",
@@ -891,7 +900,10 @@
      ]
     },
     "data": {
-     "kind": "numeric_array",
+     "__kind__": "numeric_array",
+     "shape": [
+      178641
+     ],
      "n": 178641,
      "dtype_kind": "f",
      "sha256": "e0ca917bfdd48ebeb3135911b7aa3199541dde259a128d479f95a25216018dea",

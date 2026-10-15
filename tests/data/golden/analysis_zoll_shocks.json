@@ -1,7 +1,7 @@
 {
  "mode": "values",
  "generated_with": {
-  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
+  "git_commit": "d06a36a107341709c093093f8e052cd2d0be763a",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -17,8 +17,11 @@
    "Current"
   ],
   "index": {
-   "kind": "time_array",
+   "__kind__": "time_array",
    "dtype": "datetime64",
+   "shape": [
+    1
+   ],
    "n": 1,
    "nat_count": 0,
    "sha256": "02b8bb11721f67090ef7a161e55f2f3d91251085fbf9ea6e5db19c7d9086d8c8",
@@ -30,7 +33,10 @@
   },
   "data": {
    "Nr": {
-    "kind": "numeric_array",
+    "__kind__": "numeric_array",
+    "shape": [
+     1
+    ],
     "n": 1,
     "dtype_kind": "f",
     "sha256": "6c3c396ed6b5c36dcae172271f462051b1266b851e92df3deea8ac65478fd712",
@@ -44,7 +50,10 @@
     ]
    },
    "DefaultEnergy": {
-    "kind": "numeric_array",
+    "__kind__": "numeric_array",
+    "shape": [
+     1
+    ],
     "n": 1,
     "dtype_kind": "f",
     "sha256": "069aa8e35b07e1bb7fca08dfc625031b32ac80ff75079ae084fef630edf71f8e",
@@ -58,7 +67,10 @@
     ]
    },
    "DeliveredEnergy": {
-    "kind": "numeric_array",
+    "__kind__": "numeric_array",
+    "shape": [
+     1
+    ],
     "n": 1,
     "dtype_kind": "f",
     "sha256": "d9569e61419c4392929e04c9965268748f32900a51f3f852c3a1be196492b34a",
@@ -72,7 +84,10 @@
     ]
    },
    "Impedance": {
-    "kind": "numeric_array",
+    "__kind__": "numeric_array",
+    "shape": [
+     1
+    ],
     "n": 1,
     "dtype_kind": "f",
     "sha256": "582df585f3857dfb1a7b10828bc8c42a3f7437e2f3659637e0d3424ec0e0921a",
@@ -86,7 +101,10 @@
     ]
    },
    "Current": {
-    "kind": "numeric_array",
+    "__kind__": "numeric_array",
+    "shape": [
+     1
+    ],
     "n": 1,
     "dtype_kind": "f",
     "sha256": "f1a060eaf6a52f8e37e97da3173356a6c2216914dc878ce4e5ae13c3ca838765",

@@ -1,7 +1,7 @@
 {
  "mode": "values",
  "generated_with": {
-  "git_commit": "0ea5e54d82dc68c87efba5e233708863fc30876b",
+  "git_commit": "d06a36a107341709c093093f8e052cd2d0be763a",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -14,8 +14,11 @@
    "inspiration": {
     "__dataclass__": "PhaseData",
     "onsets_above_threshold": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "datetime64",
+     "shape": [
+      119
+     ],
      "n": 119,
      "nat_count": 0,
      "sha256": "22ce4ef39cae9ba62bb5378122be96eca61f66ccf5e7455afcc9a4feddfaed4f",
@@ -144,8 +147,11 @@
      ]
     },
     "filtered_onsets_above_threshold": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "datetime64",
+     "shape": [
+      55
+     ],
      "n": 55,
      "nat_count": 0,
      "sha256": "cb12cc1d4c7836036ae3dbad316873b7edcbd49bdf78f860d5db7bc4a815922d",
@@ -210,8 +216,11 @@
      ]
     },
     "candidates": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "datetime64",
+     "shape": [
+      41
+     ],
      "n": 41,
      "nat_count": 0,
      "sha256": "2bd13383d29fd1d65164a11f031a6f7bc8dab924d075822782f261a676957a35",
@@ -262,8 +271,11 @@
      ]
     },
     "begins": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "datetime64",
+     "shape": [
+      20
+     ],
      "n": 20,
      "nat_count": 0,
      "sha256": "e3ab532c2d45d32c28256d25a3b6a85a7f376c6322bd223862985c6865a916d7",
@@ -295,240 +307,240 @@
     "intervals": [
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:12:38.860841487",
        "ns": 1673439158860841487
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:12:41.881000",
        "ns": 1673439161881000000
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:12:44.958333333",
        "ns": 1673439164958333333
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:12:47.875000",
        "ns": 1673439167875000000
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:12:50.872178319",
        "ns": 1673439170872178319
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:12:53.862000",
        "ns": 1673439173862000000
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:12:56.865173670",
        "ns": 1673439176865173670
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:12:59.854000",
        "ns": 1673439179854000000
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:02.947158430",
        "ns": 1673439182947158430
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:05.886000",
        "ns": 1673439185886000000
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:08.861703534",
        "ns": 1673439188861703534
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:11.885000",
        "ns": 1673439191885000000
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:14.880865347",
        "ns": 1673439194880865347
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:17.839000",
        "ns": 1673439197839000000
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:20.846085604",
        "ns": 1673439200846085604
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:23.884192745",
        "ns": 1673439203884192745
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:26.879333333",
        "ns": 1673439206879333333
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:29.887000",
        "ns": 1673439209887000000
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:32.891499999",
        "ns": 1673439212891499999
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:35.892000",
        "ns": 1673439215892000000
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:38.939397779",
        "ns": 1673439218939397779
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:41.893000",
        "ns": 1673439221893000000
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:44.879008370",
        "ns": 1673439224879008370
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:47.886000",
        "ns": 1673439227886000000
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:50.882994836",
        "ns": 1673439230882994836
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:53.887000",
        "ns": 1673439233887000000
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:56.874815791",
        "ns": 1673439236874815791
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:59.887000",
        "ns": 1673439239887000000
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:02.876625275",
        "ns": 1673439242876625275
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:05.886000",
        "ns": 1673439245886000000
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:08.883759691",
        "ns": 1673439248883759691
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:11.899000",
        "ns": 1673439251899000000
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:14.879623231",
        "ns": 1673439254879623231
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:17.882000",
        "ns": 1673439257882000000
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:20.880094277",
        "ns": 1673439260880094277
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:23.894000",
        "ns": 1673439263894000000
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:26.887119894",
        "ns": 1673439266887119894
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:29.894000",
        "ns": 1673439269894000000
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:32.917499999",
        "ns": 1673439272917499999
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:35.892000",
        "ns": 1673439275892000000
       }
@@ -539,8 +551,11 @@
    "expiration": {
     "__dataclass__": "PhaseData",
     "onsets_above_threshold": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "datetime64",
+     "shape": [
+      224
+     ],
      "n": 224,
      "nat_count": 0,
      "sha256": "95daee17c9fd30dfcdf47b691090440701be24cb4ba9f8431dc82ce1995ab157",
@@ -774,8 +789,11 @@
      ]
     },
     "filtered_onsets_above_threshold": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "datetime64",
+     "shape": [
+      76
+     ],
      "n": 76,
      "nat_count": 0,
      "sha256": "144becec937c7f6bbc1daafc06a9b86ae70945197d884ebdf8182d144926de88",
@@ -861,8 +879,11 @@
      ]
     },
     "candidates": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "datetime64",
+     "shape": [
+      75
+     ],
      "n": 75,
      "nat_count": 0,
      "sha256": "f146b74a3144533e7a67b3cd1e34da29554be94c618edafad1141ab2c2e9efcf",
@@ -947,8 +968,11 @@
      ]
     },
     "begins": {
-     "kind": "time_array",
+     "__kind__": "time_array",
      "dtype": "datetime64",
+     "shape": [
+      20
+     ],
      "n": 20,
      "nat_count": 0,
      "sha256": "54cb96834d944190d664fd811e69fa8abf9607a1251e14c933cecc214b8b6359",
@@ -980,228 +1004,228 @@
     "intervals": [
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:12:41.881000",
        "ns": 1673439161881000000
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:12:44.958333333",
        "ns": 1673439164958333333
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:12:47.875000",
        "ns": 1673439167875000000
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:12:50.872178319",
        "ns": 1673439170872178319
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:12:53.862000",
        "ns": 1673439173862000000
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:12:56.865173670",
        "ns": 1673439176865173670
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:12:59.854000",
        "ns": 1673439179854000000
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:02.947158430",
        "ns": 1673439182947158430
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:05.886000",
        "ns": 1673439185886000000
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:08.861703534",
        "ns": 1673439188861703534
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:11.885000",
        "ns": 1673439191885000000
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:14.880865347",
        "ns": 1673439194880865347
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:17.839000",
        "ns": 1673439197839000000
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:20.846085604",
        "ns": 1673439200846085604
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:23.884192745",
        "ns": 1673439203884192745
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:26.879333333",
        "ns": 1673439206879333333
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:29.887000",
        "ns": 1673439209887000000
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:32.891499999",
        "ns": 1673439212891499999
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:35.892000",
        "ns": 1673439215892000000
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:38.939397779",
        "ns": 1673439218939397779
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:41.893000",
        "ns": 1673439221893000000
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:44.879008370",
        "ns": 1673439224879008370
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:47.886000",
        "ns": 1673439227886000000
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:50.882994836",
        "ns": 1673439230882994836
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:53.887000",
        "ns": 1673439233887000000
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:56.874815791",
        "ns": 1673439236874815791
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:13:59.887000",
        "ns": 1673439239887000000
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:02.876625275",
        "ns": 1673439242876625275
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:05.886000",
        "ns": 1673439245886000000
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:08.883759691",
        "ns": 1673439248883759691
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:11.899000",
        "ns": 1673439251899000000
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:14.879623231",
        "ns": 1673439254879623231
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:17.882000",
        "ns": 1673439257882000000
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:20.880094277",
        "ns": 1673439260880094277
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:23.894000",
        "ns": 1673439263894000000
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:26.887119894",
        "ns": 1673439266887119894
       }
      ],
      [
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:29.894000",
        "ns": 1673439269894000000
       },
       {
-       "kind": "timestamp",
+       "__kind__": "timestamp",
        "repr": "2023-01-11 12:14:32.917499999",
        "ns": 1673439272917499999
       }
@@ -1218,29 +1242,32 @@
      "len": 23518,
      "time_unit": "ms",
      "time_start": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:37.997000",
       "ns": 1673439157997000000
      },
      "offset": {
-      "kind": "timedelta",
+      "__kind__": "timedelta",
       "repr": "0 days 00:00:00",
       "ns": 0
      },
      "first_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:37.997000",
       "ns": 1673439157997000000
      },
      "last_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:14:37.994000",
       "ns": 1673439277994000000
      },
      "time_index_unit": "ns",
      "time": {
-      "kind": "time_array",
+      "__kind__": "time_array",
       "dtype": "timedelta64",
+      "shape": [
+       23518
+      ],
       "n": 23518,
       "nat_count": 0,
       "sha256": "269d8303b830de88d6b895362dfd8ab6579787b26a7c9260c5355cfd5c1105b6",
@@ -1506,7 +1533,10 @@
       ]
      },
      "data": {
-      "kind": "numeric_array",
+      "__kind__": "numeric_array",
+      "shape": [
+       23518
+      ],
       "n": 23518,
       "dtype_kind": "f",
       "sha256": "d27c6f364236e39154accf5b880eaa386cabce3903d3021ce7cd895b3addb9c9",
@@ -1787,29 +1817,32 @@
      "len": 59103,
      "time_unit": "ms",
      "time_start": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:37.995000",
       "ns": 1673439157995000000
      },
      "offset": {
-      "kind": "timedelta",
+      "__kind__": "timedelta",
       "repr": "0 days 00:00:00",
       "ns": 0
      },
      "first_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:37.995000",
       "ns": 1673439157995000000
      },
      "last_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:14:37.994000",
       "ns": 1673439277994000000
      },
      "time_index_unit": "ns",
      "time": {
-      "kind": "time_array",
+      "__kind__": "time_array",
       "dtype": "timedelta64",
+      "shape": [
+       59103
+      ],
       "n": 59103,
       "nat_count": 0,
       "sha256": "ab4c8027bf0d611de0374a8557e979cc263c4f57d8e58e944b317d6cc3ee753d",
@@ -2075,7 +2108,10 @@
       ]
      },
      "data": {
-      "kind": "numeric_array",
+      "__kind__": "numeric_array",
+      "shape": [
+       59103
+      ],
       "n": 59103,
       "dtype_kind": "f",
       "sha256": "1012a7c4c0530d67f31d62b2d10cc7fbcedac7b58c760c0756f17276f2e64f59",
@@ -2356,29 +2392,32 @@
      "len": 71640,
      "time_unit": "s",
      "time_start": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:37.997000",
       "ns": 1673439157997000000
      },
      "offset": {
-      "kind": "timedelta",
+      "__kind__": "timedelta",
       "repr": "0 days 00:00:00",
       "ns": 0
      },
      "first_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:37.997000",
       "ns": 1673439157997000000
      },
      "last_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:14:37.994000",
       "ns": 1673439277994000000
      },
      "time_index_unit": "ns",
      "time": {
-      "kind": "time_array",
+      "__kind__": "time_array",
       "dtype": "timedelta64",
+      "shape": [
+       71640
+      ],
       "n": 71640,
       "nat_count": 0,
       "sha256": "dfbf99a31c3258ae0d63ce690485be382a7b58d573ab4f929b45caa361d4bd69",
@@ -2644,7 +2683,10 @@
       ]
      },
      "data": {
-      "kind": "numeric_array",
+      "__kind__": "numeric_array",
+      "shape": [
+       71640
+      ],
       "n": 71640,
       "dtype_kind": "f",
       "sha256": "ff33c08d891aa8e45f090ca375ec2fbc27093eef1c5ac368134c5c0e0e08ddc8",
@@ -2927,29 +2969,32 @@
      "len": 71640,
      "time_unit": "s",
      "time_start": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:37.997000",
       "ns": 1673439157997000000
      },
      "offset": {
-      "kind": "timedelta",
+      "__kind__": "timedelta",
       "repr": "0 days 00:00:00",
       "ns": 0
      },
      "first_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:37.997000",
       "ns": 1673439157997000000
      },
      "last_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:14:37.994000",
       "ns": 1673439277994000000
      },
      "time_index_unit": "ns",
      "time": {
-      "kind": "time_array",
+      "__kind__": "time_array",
       "dtype": "timedelta64",
+      "shape": [
+       71640
+      ],
       "n": 71640,
       "nat_count": 0,
       "sha256": "dfbf99a31c3258ae0d63ce690485be382a7b58d573ab4f929b45caa361d4bd69",
@@ -3215,7 +3260,10 @@
       ]
      },
      "data": {
-      "kind": "numeric_array",
+      "__kind__": "numeric_array",
+      "shape": [
+       71640
+      ],
       "n": 71640,
       "dtype_kind": "f",
       "sha256": "59f8fda817ffb1910f2927e7958a6d0cbe3c2c7c48e89f0eb45a3a3bb58318f4",
@@ -3498,29 +3546,32 @@
      "len": 71640,
      "time_unit": "s",
      "time_start": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:37.997000",
       "ns": 1673439157997000000
      },
      "offset": {
-      "kind": "timedelta",
+      "__kind__": "timedelta",
       "repr": "0 days 00:00:00",
       "ns": 0
      },
      "first_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:37.997000",
       "ns": 1673439157997000000
      },
      "last_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:14:37.994000",
       "ns": 1673439277994000000
      },
      "time_index_unit": "ns",
      "time": {
-      "kind": "time_array",
+      "__kind__": "time_array",
       "dtype": "timedelta64",
+      "shape": [
+       71640
+      ],
       "n": 71640,
       "nat_count": 0,
       "sha256": "dfbf99a31c3258ae0d63ce690485be382a7b58d573ab4f929b45caa361d4bd69",
@@ -3786,7 +3837,10 @@
       ]
      },
      "data": {
-      "kind": "numeric_array",
+      "__kind__": "numeric_array",
+      "shape": [
+       71640
+      ],
       "n": 71640,
       "dtype_kind": "f",
       "sha256": "5613a9b065d27bd6d660a26765936f65b4a44c037cbbdf73bd9f9c40da34c5de",
@@ -4071,29 +4125,32 @@
      "len": 71640,
      "time_unit": "s",
      "time_start": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:37.997000",
       "ns": 1673439157997000000
      },
      "offset": {
-      "kind": "timedelta",
+      "__kind__": "timedelta",
       "repr": "0 days 00:00:00",
       "ns": 0
      },
      "first_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:37.997000",
       "ns": 1673439157997000000
      },
      "last_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:14:37.994000",
       "ns": 1673439277994000000
      },
      "time_index_unit": "ns",
      "time": {
-      "kind": "time_array",
+      "__kind__": "time_array",
       "dtype": "timedelta64",
+      "shape": [
+       71640
+      ],
       "n": 71640,
       "nat_count": 0,
       "sha256": "dfbf99a31c3258ae0d63ce690485be382a7b58d573ab4f929b45caa361d4bd69",
@@ -4359,7 +4416,10 @@
       ]
      },
      "data": {
-      "kind": "numeric_array",
+      "__kind__": "numeric_array",
+      "shape": [
+       71640
+      ],
       "n": 71640,
       "dtype_kind": "f",
       "sha256": "c1bdd9e9bab8acbcfb3bbbe063a1a33eec5e2bb947c8f74bf4149e3b6b18bdb5",
@@ -4638,29 +4698,32 @@
      "len": 71640,
      "time_unit": "s",
      "time_start": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:37.997000",
       "ns": 1673439157997000000
      },
      "offset": {
-      "kind": "timedelta",
+      "__kind__": "timedelta",
       "repr": "0 days 00:00:00",
       "ns": 0
      },
      "first_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:37.997000",
       "ns": 1673439157997000000
      },
      "last_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:14:37.994000",
       "ns": 1673439277994000000
      },
      "time_index_unit": "ns",
      "time": {
-      "kind": "time_array",
+      "__kind__": "time_array",
       "dtype": "timedelta64",
+      "shape": [
+       71640
+      ],
       "n": 71640,
       "nat_count": 0,
       "sha256": "dfbf99a31c3258ae0d63ce690485be382a7b58d573ab4f929b45caa361d4bd69",
@@ -4926,7 +4989,10 @@
       ]
      },
      "data": {
-      "kind": "numeric_array",
+      "__kind__": "numeric_array",
+      "shape": [
+       71640
+      ],
       "n": 71640,
       "dtype_kind": "f",
       "sha256": "32d5f4fcbae55b0d68888376459d6e1b1b4deebdad42187d48df8b4a58ad9ca4",
@@ -5213,29 +5279,32 @@
      "len": 20,
      "time_unit": "s",
      "time_start": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:38.860841487",
       "ns": 1673439158860841487
      },
      "offset": {
-      "kind": "timedelta",
+      "__kind__": "timedelta",
       "repr": "0 days 00:00:00",
       "ns": 0
      },
      "first_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:38.860841487",
       "ns": 1673439158860841487
      },
      "last_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:14:32.917499999",
       "ns": 1673439272917499999
      },
      "time_index_unit": "ns",
      "time": {
-      "kind": "time_array",
+      "__kind__": "time_array",
       "dtype": "timedelta64",
+      "shape": [
+       20
+      ],
       "n": 20,
       "nat_count": 0,
       "sha256": "d3e6a03e95c194f001c9262d7e6e0746f918d41b23e7fbd4aabe0264238e0456",
@@ -5293,29 +5362,32 @@
      "len": 20,
      "time_unit": "s",
      "time_start": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:41.881000",
       "ns": 1673439161881000000
      },
      "offset": {
-      "kind": "timedelta",
+      "__kind__": "timedelta",
       "repr": "0 days 00:00:00",
       "ns": 0
      },
      "first_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:41.881000",
       "ns": 1673439161881000000
      },
      "last_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:14:35.892000",
       "ns": 1673439275892000000
      },
      "time_index_unit": "ns",
      "time": {
-      "kind": "time_array",
+      "__kind__": "time_array",
       "dtype": "timedelta64",
+      "shape": [
+       20
+      ],
       "n": 20,
       "nat_count": 0,
       "sha256": "12d51e279440eddec94ad63f86ea894cc1a192d4fc14e36f64f0b3e791813138",
@@ -5373,29 +5445,32 @@
      "len": 20,
      "time_unit": "s",
      "time_start": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:38.860841487",
       "ns": 1673439158860841487
      },
      "offset": {
-      "kind": "timedelta",
+      "__kind__": "timedelta",
       "repr": "0 days 00:00:00",
       "ns": 0
      },
      "first_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:38.860841487",
       "ns": 1673439158860841487
      },
      "last_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:14:35.892000",
       "ns": 1673439275892000000
      },
      "time_index_unit": "ns",
      "time": {
-      "kind": "time_array",
+      "__kind__": "time_array",
       "dtype": "timedelta64",
+      "shape": [
+       40
+      ],
       "n": 40,
       "nat_count": 0,
       "sha256": "2875561cdda105f3e31f5bcee8e20029104b5cabcfd47a1b7b2ab9be2c923b5e",
@@ -5462,29 +5537,32 @@
      "len": 19,
      "time_unit": "s",
      "time_start": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:41.881000",
       "ns": 1673439161881000000
      },
      "offset": {
-      "kind": "timedelta",
+      "__kind__": "timedelta",
       "repr": "0 days 00:00:00",
       "ns": 0
      },
      "first_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:12:41.881000",
       "ns": 1673439161881000000
      },
      "last_entry": {
-      "kind": "timestamp",
+      "__kind__": "timestamp",
       "repr": "2023-01-11 12:14:32.917499999",
       "ns": 1673439272917499999
      },
      "time_index_unit": "ns",
      "time": {
-      "kind": "time_array",
+      "__kind__": "time_array",
       "dtype": "timedelta64",
+      "shape": [
+       38
+      ],
       "n": 38,
       "nat_count": 0,
       "sha256": "05c881da8240e226ca616b36e38c01904c80de9cec33e0dda619a37b17723fa9",
