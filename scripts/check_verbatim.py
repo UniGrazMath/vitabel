@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Check that functions have been moved *verbatim*.
 
-Compares the definition of functions (or methods) at a given git reference
+Compares the definition of functions, classes, or methods at a given git reference
 with their definition in the current working tree, after normalizing away
 differences that are irrelevant for a pure move:
 
@@ -70,7 +70,7 @@ DEFAULT_RENAMES: list[tuple[str, str]] = [
 class Definition:
     path: str
     qualname: str
-    node: ast.FunctionDef | ast.AsyncFunctionDef
+    node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef
     is_method: bool
 
 
@@ -102,6 +102,7 @@ def _collect_definitions(path: str, source: str) -> list[Definition]:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             definitions.append(Definition(path, node.name, node, is_method=False))
         elif isinstance(node, ast.ClassDef):
+            definitions.append(Definition(path, node.name, node, is_method=False))
             for child in node.body:
                 if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
                     definitions.append(
@@ -289,7 +290,7 @@ def normalize(
 
     self_name = None
     if method_to_function is not None:
-        if not definition.is_method:
+        if not definition.is_method or isinstance(node, ast.ClassDef):
             raise ConversionError(
                 f"{definition.qualname} is not a method, but a method-to-function "
                 "conversion was requested"
