@@ -383,7 +383,6 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
     return pat_dat, data
 
 
-
 def lifepak2zoll_name(lp):
     # if lp == "II":
     #     return "12-Lead II"
