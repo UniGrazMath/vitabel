@@ -6,6 +6,7 @@ with their definition in the current working tree, after normalizing away
 differences that are irrelevant for a pure move:
 
 - source formatting, comments, and line numbers (the comparison is AST-based),
+- the indentation of docstrings,
 - the name of the function itself,
 - qualified names that are only spelled differently because of changed imports
   (configurable via ``--rename``; e.g. ``vitabel.Channel`` -> ``Channel``),
@@ -43,6 +44,7 @@ import argparse
 import ast
 import copy
 import difflib
+import inspect
 import re
 import subprocess
 import sys
@@ -224,6 +226,19 @@ class _Normalizer(ast.NodeTransformer):
         return self.generic_visit(node)
 
 
+def _clean_docstring_indentation(node: ast.AST) -> None:
+    """Normalize the indentation of the docstring (which changes when, e.g.,
+    a method is moved to module level), keeping its content."""
+    body = getattr(node, "body", None)
+    if (
+        body
+        and isinstance(body[0], ast.Expr)
+        and isinstance(body[0].value, ast.Constant)
+        and isinstance(body[0].value.value, str)
+    ):
+        body[0].value.value = inspect.cleandoc(body[0].value.value)
+
+
 def _strip_docstring(body: list[ast.stmt]) -> list[ast.stmt]:
     if (
         body
@@ -299,6 +314,8 @@ def normalize(
 
     if ignore_docstrings:
         node.body = _strip_docstring(node.body)
+    else:
+        _clean_docstring_indentation(node)
 
     node = _Normalizer(renames, self_name).visit(node)
     ast.fix_missing_locations(node)
