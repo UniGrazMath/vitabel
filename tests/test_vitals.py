@@ -14,7 +14,11 @@ from vitabel import Channel, Label, IntervalLabel
 from vitabel.utils import loading
 from vitabel.utils.helpers import compress_array, decompress_array
 
-from tests.builders import write_synthetic_zoll_csv_pair, write_test_edfplus
+from tests.builders import (
+    write_synthetic_vital_file,
+    write_synthetic_zoll_csv_pair,
+    write_test_edfplus,
+)
 from tests.golden import assert_matches_golden, summarize_series
 
 
@@ -247,6 +251,44 @@ def test_vital_db_recording_is_independent_of_local_time_zone(
         env=os.environ | {"TZ": time_zone},
     )
     assert result.stdout.strip() == "2023-01-11 13:10:37.540275"
+
+
+def test_add_vital_db_recording_label_attachment(tmp_path):
+    path = write_synthetic_vital_file(tmp_path / "synthetic.vit")
+    recording = Vitals()
+    recording.add_vital_db_recording(path)
+
+    labels_by_channel = {
+        channel.name: [label.name for label in channel.labels]
+        for channel in recording.channels
+    }
+    assert labels_by_channel == {
+        "PLETH": [],
+        "PUMP2_RATE": ["UNIT", "DRUG"],
+        "PUMP2_CONC": ["DRUG"],
+        "PUMP2_PRES": ["DRUG"],
+    }
+    assert [label.name for label in recording.data.global_labels] == [
+        "EVENT",
+        "SOME_NOTE",
+    ]
+    unit_label = recording.get_channel("PUMP2_RATE").labels[0]
+    assert unit_label.anchored_channel.name == "PUMP2_RATE"
+    assert list(unit_label.text_data) == ["ml/h"]
+    # the same label object is attached to all three pump channels
+    drug_labels = {
+        id(label)
+        for channel in recording.channels
+        for label in channel.labels
+        if label.name == "DRUG"
+    }
+    assert len(drug_labels) == 1
+    event_label = recording.get_label("EVENT")
+    assert list(event_label.text_data) == ["start", "stop"]
+    assert event_label.time_start == pd.Timestamp("2023-01-11 13:10:37.5")
+    assert recording.get_channel("PLETH").time_start == pd.Timestamp(
+        "2023-01-11 13:10:37.5"
+    )
 
 
 def test_add_unreadable_file(vitabel_test_data_dir):
