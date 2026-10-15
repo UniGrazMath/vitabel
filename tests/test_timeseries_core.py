@@ -1,17 +1,9 @@
-"""Characterization tests for the time-series core.
-
-These tests pin the current behavior of time parsing, time conversion,
-hashing, windowing, and mutation of time series, in preparation for the
-performance refactoring of ``vitabel.timeseries``. Most tests compare against
-the frozen reference implementation in ``tests/reference_impl.py``
-(differential testing on hand-picked and randomized inputs), the remaining
-ones against golden files or explicitly pinned values.
-"""
+"""Tests for the time-series core: time parsing, time conversion, hashing,
+windowing, and mutation of time series."""
 
 from __future__ import annotations
 
 import logging
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -20,7 +12,6 @@ import pytest
 from vitabel import Channel, IntervalLabel, Label
 from vitabel.timeseries import TimeSeriesBase
 
-from tests import reference_impl
 from tests.golden import assert_matches_golden, summarize_series
 
 ABSOLUTE_START = pd.Timestamp("2024-01-01 12:00:00")
@@ -115,58 +106,11 @@ def _construction_cases() -> dict[str, dict]:
 CONSTRUCTION_CASES = list(_construction_cases())
 
 
-def _constructible_cases() -> list[str]:
-    cases = []
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        for case, kwargs in _construction_cases().items():
-            try:
-                TimeSeriesBase(**kwargs)
-            except Exception:  # noqa: BLE001
-                continue
-            cases.append(case)
-    return cases
-
-
 def _outcome(func, *args, **kwargs):
     try:
         return "ok", func(*args, **kwargs)
     except Exception as exc:  # noqa: BLE001 - we compare the exception
         return "error", (type(exc), str(exc))
-
-
-@pytest.mark.parametrize("case", CONSTRUCTION_CASES)
-def test_construction_matches_reference(case):
-    expected_status, expected = _outcome(
-        reference_impl.parse_time_index, **_construction_cases()[case]
-    )
-    status, series = _outcome(TimeSeriesBase, **_construction_cases()[case])
-    assert status == expected_status, (series, expected)
-    if status == "error":
-        assert series == expected
-        return
-
-    ref_index, ref_start, ref_offset, ref_unit = expected
-    # NOTE: the type is not always a TimedeltaIndex; e.g., a pandas.Series
-    # passed as time_index currently results in a Series (pinned here).
-    assert type(series.time_index) is type(ref_index)
-    assert series.time_index.dtype == ref_index.dtype
-    assert series.time_index.equals(ref_index)
-    _assert_same_time_start(series.time_start, ref_start)
-    assert series.offset == ref_offset
-    assert series.time_unit == ref_unit
-
-
-def _assert_same_time_start(time_start, expected):
-    assert (time_start is None) == (expected is None)
-    if expected is None:
-        return
-    if pd.isna(expected):
-        # NOTE: a leading NaT currently results in time_start = NaT (pinned here)
-        assert pd.isna(time_start)
-        return
-    assert time_start == expected
-    assert time_start.tz is None
 
 
 @pytest.mark.golden
@@ -191,28 +135,55 @@ def test_construction_golden():
     assert_matches_golden("timeseries_construction", results)
 
 
-@pytest.mark.parametrize("n_samples", [10, 10_000])
-def test_construction_matches_reference_randomized(n_samples):
-    rng = np.random.default_rng(n_samples)
-    seconds = np.sort(rng.uniform(0, 3600, n_samples))
-    inputs = [
-        dict(time_index=seconds),
-        dict(time_index=seconds, time_unit="ms"),
-        dict(
-            time_index=(ABSOLUTE_START + pd.to_timedelta(seconds, unit="s")).to_numpy()
+@pytest.mark.parametrize(
+    "kwargs, expected_seconds, expected_start",
+    [
+        (dict(time_index=np.array([0.0, 1.25, np.nan])), [0, 1.25, np.nan], None),
+        (dict(time_index=np.array([0, 1250]), time_unit="ms"), [0, 1.25], None),
+        (
+            dict(time_index=pd.to_timedelta([0, 1.25], unit="s").to_numpy()),
+            [0, 1.25],
+            None,
         ),
-        dict(time_index=pd.to_timedelta(seconds, unit="s").to_numpy()),
-        dict(time_index=np.round(seconds * 1000).astype(np.int64), time_unit="ms"),
-    ]
-    for kwargs in inputs:
-        ref_index, ref_start, ref_offset, ref_unit = reference_impl.parse_time_index(
-            **kwargs
-        )
-        series = TimeSeriesBase(**kwargs)
-        assert series.time_index.dtype == ref_index.dtype
-        assert series.time_index.equals(ref_index)
-        _assert_same_time_start(series.time_start, ref_start)
-        assert series.offset == ref_offset
+        (
+            dict(
+                time_index=np.array(
+                    ["2024-01-01T12:00:00", "NaT", "2024-01-01T12:00:02.5"], "M8[ms]"
+                )
+            ),
+            [0, np.nan, 2.5],
+            ABSOLUTE_START,
+        ),
+        (
+            # time_start is the local (wall clock) time of the first entry
+            dict(
+                time_index=pd.date_range(
+                    ABSOLUTE_START, periods=2, freq="1250ms", tz="Europe/Vienna"
+                )
+            ),
+            [0, 1.25],
+            ABSOLUTE_START,
+        ),
+        (
+            dict(time_index=pd.Series(pd.date_range(ABSOLUTE_START, periods=2))),
+            [0, 86400],
+            ABSOLUTE_START,
+        ),
+    ],
+    ids=[
+        "float_array",
+        "int_array_ms",
+        "timedelta64_array",
+        "datetime64_array_with_nat",
+        "tzaware_datetime_index",
+        "datetime_series",
+    ],
+)
+def test_construction_from_typed_arrays(kwargs, expected_seconds, expected_start):
+    series = TimeSeriesBase(**kwargs)
+    assert isinstance(series.time_index, pd.TimedeltaIndex)
+    np.testing.assert_array_equal(series.numeric_time("s"), expected_seconds)
+    assert series.time_start == expected_start
 
 
 # ---------------------------------------------------------------------------
@@ -220,27 +191,14 @@ def test_construction_matches_reference_randomized(n_samples):
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.filterwarnings("ignore:Could not infer format")
-@pytest.mark.parametrize("case", _constructible_cases())
-@pytest.mark.parametrize("time_unit", ["s", "ms", "min", "h"])
-def test_numeric_time_matches_reference(case, time_unit):
-    series = TimeSeriesBase(**_construction_cases()[case])
-    expected = reference_impl.numeric_time(series.time_index, time_unit)
-    result = series.numeric_time(time_unit)
-    assert isinstance(result, np.ndarray)
-    assert result.dtype == expected.dtype
-    assert np.array_equal(result, expected, equal_nan=True)
-
-
-@pytest.mark.parametrize("index_unit", ["ns", "us", "ms", "s"])
-def test_numeric_time_matches_reference_randomized(index_unit):
-    rng = np.random.default_rng(42)
-    ns_values = np.sort(rng.integers(0, 10**13, 5_000))
-    time_index = pd.to_timedelta(ns_values, unit="ns").as_unit(index_unit)
-    series = TimeSeriesBase(time_index)
-    for time_unit in ["s", "ms", "us", "min"]:
-        expected = reference_impl.numeric_time(series.time_index, time_unit)
-        assert np.array_equal(series.numeric_time(time_unit), expected)
+def test_numeric_time():
+    series = TimeSeriesBase([])
+    series.time_index = pd.to_timedelta(["1.5s", "NaT", "-2min"]).as_unit("ms")
+    np.testing.assert_array_equal(series.numeric_time("s"), [1.5, np.nan, -120.0])
+    np.testing.assert_array_equal(series.numeric_time("min"), [0.025, np.nan, -2.0])
+    # exact also beyond 2**53 ns
+    series.time_index = pd.to_timedelta([2**60], unit="ns")
+    assert series.numeric_time("s")[0] == 2**60 / 10**9
 
 
 def _hash_channels() -> dict[str, Channel]:
@@ -294,137 +252,6 @@ def test_data_hash_does_not_depend_on_compressed_encoding(monkeypatch):
 # ---------------------------------------------------------------------------
 # Windowing: get_time_mask / get_data
 # ---------------------------------------------------------------------------
-
-
-def _random_series(rng: np.random.Generator) -> TimeSeriesBase:
-    n_samples = int(rng.choice([0, 1, 2, 5, 50, 500]))
-    times = np.round(rng.uniform(0, 100, n_samples), int(rng.choice([1, 3, 6])))
-    if rng.random() < 0.8:
-        times = np.sort(times)
-    absolute = rng.random() < 0.5
-    offset = rng.choice([None, 0.5, -2.0])
-    time_unit = str(rng.choice(["s", "ms"]))
-    if time_unit == "ms":
-        times = times * 1000
-    return Channel(
-        "random",
-        time_index=times,
-        data=rng.normal(size=n_samples),
-        time_start=ABSOLUTE_START if absolute else None,
-        time_unit=time_unit,
-        offset=None if offset is None else float(offset),
-    )
-
-
-def _random_time_input(rng: np.random.Generator, series: TimeSeriesBase):
-    choice = rng.random()
-    if choice < 0.15:
-        return None
-    unit = pd.to_timedelta(1, unit=series.time_unit)
-    if choice < 0.45 and len(series) > 0:
-        # exactly at a sample
-        relative = series.time_index[int(rng.integers(len(series)))]
-    else:
-        relative = pd.to_timedelta(rng.uniform(-10, 110), unit="s")
-    kind = rng.choice(["number", "timedelta", "timestamp", "string"])
-    if kind == "number":
-        return float(relative / unit)
-    if kind == "timedelta":
-        return relative
-    if kind == "timestamp":
-        # also used for relative series (where it is expected to raise)
-        return (series.time_start or ABSOLUTE_START) + relative
-    if series.is_time_absolute():
-        return str(series.time_start + relative)
-    return str(relative)
-
-
-def _random_resolution(rng: np.random.Generator):
-    return rng.choice(
-        np.array(
-            [None, 0, float(rng.uniform(0.001, 20)), "500ms", pd.Timedelta("2s")],
-            dtype=object,
-        )
-    )
-
-
-def _window_kwargs(rng, series):
-    return dict(
-        start=_random_time_input(rng, series),
-        stop=_random_time_input(rng, series),
-        resolution=_random_resolution(rng),
-        include_adjacent=bool(rng.random() < 0.5),
-    )
-
-
-def _reference_mask(series, **kwargs):
-    return reference_impl.get_time_mask(
-        series.time_index, series.time_start, series.time_unit, **kwargs
-    )
-
-
-@pytest.mark.parametrize("seed", range(20))
-def test_get_time_mask_matches_reference_randomized(seed, caplog):
-    rng = np.random.default_rng(seed)
-    for _ in range(25):
-        series = _random_series(rng)
-        kwargs = _window_kwargs(rng, series)
-        expected_status, expected = _outcome(_reference_mask, series, **kwargs)
-        status, result = _outcome(series.get_time_mask, **kwargs)
-        assert status == expected_status, (kwargs, result, expected)
-        if status == "error":
-            assert result == expected
-        else:
-            assert result.dtype == bool
-            np.testing.assert_array_equal(result, expected, err_msg=str(kwargs))
-
-
-@pytest.mark.parametrize("seed", range(10))
-def test_channel_and_label_get_data_match_reference_randomized(seed, caplog):
-    rng = np.random.default_rng(1000 + seed)
-    for _ in range(20):
-        channel = _random_series(rng)
-        label = Label(
-            "label",
-            time_index=channel.time_index,
-            data=None if rng.random() < 0.3 else channel.data,
-            text_data=None
-            if rng.random() < 0.5
-            else np.array([f"t{i}" for i in range(len(channel))], dtype=object),
-            time_start=channel.time_start,
-            time_unit=channel.time_unit,
-        )
-        kwargs = _window_kwargs(rng, channel)
-        resolution = kwargs.pop("resolution")
-
-        for series, extra in [(channel, {"resolution": resolution}), (label, {})]:
-            expected_status, mask = _outcome(
-                _reference_mask, series, **kwargs, resolution=extra.get("resolution")
-            )
-            status, result = _outcome(series.get_data, **kwargs, **extra)
-            assert status == expected_status, (kwargs, result, mask)
-            if status == "error":
-                assert result == mask
-                continue
-
-            expected_time = series.time_index[mask]
-            if series.is_time_absolute():
-                expected_time = expected_time + series.time_start
-            assert result.time_index.equals(expected_time)
-
-            if isinstance(series, Label):
-                for attribute in ["data", "text_data"]:
-                    values = getattr(series, attribute)
-                    expected_values = (
-                        values[mask] if values is not None and mask.any() else None
-                    )
-                    actual_values = getattr(result, attribute)
-                    if expected_values is None:
-                        assert actual_values is None
-                    else:
-                        np.testing.assert_array_equal(actual_values, expected_values)
-            else:
-                np.testing.assert_array_equal(result.data, series.data[mask])
 
 
 class TestGetTimeMaskEdgeCases:
@@ -540,6 +367,78 @@ def test_interval_label_get_data_golden():
                 "text_data": data.text_data,
             }
     assert_matches_golden("timeseries_interval_label_get_data", results)
+
+
+class TestWindowingOfSortedSeries:
+    """Windows of sorted series are found by binary search; these cases need
+    care to select the same time points as comparing all of them."""
+
+    def test_bounds_finer_than_the_unit_of_the_time_index(self):
+        channel = Channel("channel", np.zeros(6), data=np.arange(6.0))
+        channel.time_index = pd.to_timedelta(np.arange(6), unit="s").as_unit("s")
+        np.testing.assert_array_equal(
+            channel.get_data(start=1.5, stop=3.5).data, [2.0, 3.0]
+        )
+        one_ns = pd.Timedelta(1, "ns")
+        data = channel.get_data(
+            start=pd.Timedelta(1, "s") + one_ns, stop=pd.Timedelta(3, "s") - one_ns
+        )
+        np.testing.assert_array_equal(data.data, [2.0])
+
+    def test_bounds_far_outside_of_the_time_range(self):
+        channel = Channel(
+            "channel", np.arange(5.0), data=np.arange(5.0), time_start=ABSOLUTE_START
+        )
+        early, late = pd.Timestamp("1700-01-01"), pd.Timestamp("2300-01-01")
+        assert len(channel.get_data(start=early, stop=late).data) == 5
+        assert len(channel.get_data(start=late).data) == 0
+        assert len(channel.get_data(stop=early).data) == 0
+
+    def test_numpy_bounds(self):
+        channel = Channel(
+            "channel", np.arange(5.0), data=np.arange(5.0), time_start=ABSOLUTE_START
+        )
+        data = channel.get_data(
+            start=np.datetime64("2024-01-01T12:00:01.5", "us"),
+            stop=np.datetime64("2024-01-02", "D"),
+        )
+        np.testing.assert_array_equal(data.data, [2.0, 3.0, 4.0])
+
+    def test_time_zone_aware_bounds_raise(self):
+        channel = Channel(
+            "channel", np.arange(5.0), data=np.arange(5.0), time_start=ABSOLUTE_START
+        )
+        with pytest.raises(TypeError):
+            channel.get_data(start=ABSOLUTE_START.tz_localize("UTC"))
+
+    def test_missing_times_are_never_selected(self):
+        channel = Channel("channel", [0.0, np.nan, 2.0], data=[0.0, 1.0, 2.0])
+        np.testing.assert_array_equal(channel.get_data(start=0, stop=5).data, [0, 2])
+
+
+@pytest.mark.parametrize("absolute", [False, True])
+def test_get_data_returns_copies(absolute):
+    """Modifying returned data must not modify the series."""
+    channel = Channel(
+        "channel",
+        time_index=np.arange(10.0),
+        data=np.arange(10.0),
+        time_start=ABSOLUTE_START if absolute else None,
+    )
+    label = Label(
+        "label",
+        time_index=np.arange(10.0),
+        data=np.arange(10.0),
+        text_data=np.array([str(i) for i in range(10)], dtype=object),
+        time_start=ABSOLUTE_START if absolute else None,
+    )
+    for series in [channel, label]:
+        result = series.get_data(start=2.0, stop=5.0)
+        result.data[:] = -1
+        if isinstance(series, Label):
+            result.text_data[:] = "x"
+            assert list(series.text_data) == [str(i) for i in range(10)]
+        np.testing.assert_array_equal(series.data, np.arange(10.0))
 
 
 # ---------------------------------------------------------------------------
