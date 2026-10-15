@@ -138,6 +138,41 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
     return df.reindex(columns=df_columns + metadata_columns)
 
 
+_TYPED_ARRAY_TYPES = (np.ndarray, pd.Index, pd.Series)
+
+
+def _typed_array_kind(time_index: Any) -> str | None:
+    """Return the numpy dtype kind of a typed array (numpy array, pandas
+    Index or Series), with ``"M"`` also for time zone aware timestamps, or
+    ``None`` for other inputs (lists, extension dtypes, ...)."""
+    if not isinstance(time_index, _TYPED_ARRAY_TYPES):
+        return None
+    dtype = time_index.dtype
+    if isinstance(dtype, pd.DatetimeTZDtype):
+        return "M"
+    if isinstance(dtype, np.dtype):
+        return dtype.kind
+    return None
+
+
+def _time_type_from_dtype(time_index: Any) -> type | None:
+    """Fast path for the time type detection in :func:`_parse_time_index`.
+
+    For typed arrays of numbers, timestamps or timedeltas, all elements have
+    the same type, so the element-wise detection (which skips missing values)
+    can be replaced by looking at the dtype. Returns a type that selects the
+    same conversion branch as the element-wise detection, or ``None`` if the
+    element-wise detection is needed (other inputs, empty or all-missing
+    arrays).
+    """
+    kind = _typed_array_kind(time_index)
+    if kind is None or kind not in "iufMm" or len(time_index) == 0:
+        return None
+    if kind in "fMm" and not pd.notna(time_index).any():
+        return None
+    return {"M": pd.Timestamp, "m": pd.Timedelta}.get(kind, numbers.Number)
+
+
 def _parse_time_index(
     time_index: npt.ArrayLike,
     time_start: Timestamp | None,
@@ -155,17 +190,29 @@ def _parse_time_index(
     # it is possible that the specified time_index is empty
     # or contains undefined values like pandas.NaT, numpy.nan, or None.
 
-    time_index_arr = np.asarray(time_index)
+    # avoid np.asarray for typed arrays: for time zone aware timestamps it
+    # creates an object array
+    time_index_arr = (
+        time_index
+        if isinstance(time_index, _TYPED_ARRAY_TYPES)
+        else np.asarray(time_index)
+    )
     if time_index_arr.ndim != 1:
         raise ValueError(
             f"time_index must be a 1D array, got shape {time_index_arr.shape}"
         )
 
-    cleaned_time_index_iter = (value for value in time_index if not pd.isna(value))
+    time_type = _time_type_from_dtype(time_index)
+    cleaned_time_index_iter = (
+        iter(())  # typed array: all elements have the same type
+        if time_type is not None
+        else (value for value in time_index if not pd.isna(value))
+    )
 
     try:
-        value = next(cleaned_time_index_iter)
-        time_type = type(value)
+        if time_type is None:
+            value = next(cleaned_time_index_iter)
+            time_type = type(value)
     except StopIteration:
         # no non-na values in time_index
         if hasattr(time_index, "dtype"):
@@ -223,7 +270,14 @@ def _parse_time_index(
                 raise ValueError("time_start cannot be passed if time data is absolute")
             if len(time_index) > 0:
                 time_start = pd.Timestamp(time_index[0])
-            time_index = pd.to_timedelta([time - time_start for time in time_index])
+            if _typed_array_kind(time_index) == "M" and not pd.isna(time_start):
+                # vectorized; same values and unit as the element-wise
+                # subtraction below (also for NaT and time zone aware data).
+                # a leading NaT (time_start = NaT) gives an all-NaT index whose
+                # unit differs, so that case is left to the element-wise path
+                time_index = pd.DatetimeIndex(time_index) - time_start
+            else:
+                time_index = pd.to_timedelta([time - time_start for time in time_index])
 
         elif time_type in (pd.Timedelta, np.timedelta64):
             time_index = pd.to_timedelta(time_index)
