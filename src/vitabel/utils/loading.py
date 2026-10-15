@@ -16,7 +16,7 @@ from vitabel.typing import EOLifeRecord
 from pathlib import Path
 from scipy.stats import mode
 from vitaldb.utils import VitalFile, Device
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from typing import TYPE_CHECKING
 
@@ -3076,7 +3076,12 @@ def _track_to_timeseries(
         return_timestamp=True,
     )
     unix_start = vit.dtstart
-    rec_start = datetime.fromtimestamp(unix_start)
+    # local time of the recording site (dgmt = UTC - local time in minutes);
+    # independent of the time zone of the machine loading the file
+    recording_timezone = timezone(timedelta(minutes=-vit.dgmt))
+    rec_start = datetime.fromtimestamp(unix_start, tz=recording_timezone).replace(
+        tzinfo=None
+    )
     ti = ti - unix_start
 
     trk = vit.find_track(dtname=track_name)

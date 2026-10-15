@@ -1,5 +1,8 @@
 import logging
+import os
 import shutil
+import subprocess
+import sys
 
 import json
 import numpy as np
@@ -220,6 +223,30 @@ def test_add_vital_db_recording(vitabel_test_data_dir):
     cardio_object = Vitals()
     cardio_object.add_vital_db_recording(recording_path)
     assert cardio_object.channels
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="time zone set via the TZ environment variable"
+)
+@pytest.mark.parametrize("time_zone", ["UTC", "Asia/Seoul", "America/New_York"])
+def test_vital_db_recording_is_independent_of_local_time_zone(
+    vitabel_test_data_dir, time_zone
+):
+    # the recording start is given in the local time of the recording site
+    # (stored in the file), not in the local time of the loading machine
+    code = (
+        "from vitabel import Vitals; v = Vitals(); "
+        f"v.add_vital_db_recording({str(vitabel_test_data_dir / 'vital_file.vit')!r}); "
+        "print(v.channels[0].time_start)"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+        check=True,
+        env=os.environ | {"TZ": time_zone},
+    )
+    assert result.stdout.strip() == "2023-01-11 13:10:37.540275"
 
 
 def test_add_unreadable_file(vitabel_test_data_dir):
