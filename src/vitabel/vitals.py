@@ -35,6 +35,7 @@ from vitabel.timeseries import (
 )
 from vitabel.analysis.circulation.features import construct_snippets
 from vitabel.analysis.circulation.rosc import find_ROSC_2, predict_circulation
+from vitabel.analysis.cpr.defibrillation import extract_shocks
 from vitabel.analysis.cpr.compressions import CCF_minute, convert_two_alternating_list
 from vitabel.analysis.threshold import area_under_threshold
 from vitabel.utils.serialization import NumpyEncoder
@@ -338,7 +339,6 @@ class Vitals:
         if metadata:
             self.metadata.update(metadata)
         self.metadata["Recording_files_added"].append(str(file_path))
-
 
     def add_old_cardio_label(self, filepath: Path | str) -> None:
         """Add labels from legacy version of this package.
@@ -1334,52 +1334,15 @@ class Vitals:
     # ------------------------------------------------------------------------------------------------------------------------------------------------------
 
     def shocks(self):
-        """Return a list of all defibrillations with all stored information
-        in a DataFrame.
+        """Return all defibrillations with all stored information in a
+        DataFrame, see :func:`.analysis.cpr.defibrillation.extract_shocks`.
 
         Returns
         -------
         shocks : pandas.DataFrame
-            DESCRIPTION.
-
+            One row per defibrillation (index: time of the defibrillation).
         """
-        defib_data = {}
-        defib_channel_names = [
-            channel_name
-            for channel_name in self.get_channel_names()
-            if "defibrillations" in channel_name
-        ]
-
-        for channel in self.channels:
-            if channel.name in defib_channel_names:
-                channel_data = channel.get_data()
-                time, data = channel_data.time_index, channel_data.data
-                defib_data[channel.name] = {"timestamp": time, "data": data}
-
-        time_index = np.array([])
-        all_times_equal = True
-        for key in defib_data:
-            if not time_index.any():
-                time_index = np.array(defib_data[key]["timestamp"])
-            all_times_equal = (
-                all_times_equal & (defib_data[key]["timestamp"] == time_index).all()
-            )
-
-        if all_times_equal:
-            data = np.asarray([defib_data[key]["data"] for key in defib_data]).T
-            keys = [key[key.find("_") + 1 :] for key in defib_data]
-            if data.any():
-                shocks = pd.DataFrame(data, index=time_index, columns=keys)
-                shocks.index.name = "timestamp"
-            else:
-                shocks = pd.DataFrame()
-            return shocks
-
-        else:
-            logger.error(
-                "Error. Different Defibrillation keys contain different timestamp. Cannot construct single DataFrame from this"
-            )
-            return None
+        return extract_shocks(self.channels)
 
     def compute_etco2_and_ventilations(
         self,
@@ -2639,7 +2602,6 @@ class Vitals:
             stop_time=stop_time,
             threshold=threshold,
         )
-
 
     def _prepare_named_outputs(
         self,
