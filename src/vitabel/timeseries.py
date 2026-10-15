@@ -625,11 +625,9 @@ class Channel(TimeSeriesBase):
         if data is not None:
             if not isinstance(data, np.ndarray):
                 data = np.asarray(data)
-            
+
             if data.ndim != 1:
-                raise ValueError(
-                    f"data must be a 1D array, got shape {data.shape}"
-                )
+                raise ValueError(f"data must be a 1D array, got shape {data.shape}")
 
             if len(data) != len(time_index):
                 raise ValueError(
@@ -1147,9 +1145,7 @@ class Label(TimeSeriesBase):
                 # replace None with np.nan and convert to float
                 data = np.asarray(data, dtype=float)
                 if data.ndim != 1:
-                    raise ValueError(
-                        f"data must be a 1D array, got shape {data.shape}"
-                    )
+                    raise ValueError(f"data must be a 1D array, got shape {data.shape}")
 
         if text_data is not None and len(text_data) > 0:
             text_data = np.asarray(text_data, dtype=object)
@@ -3713,8 +3709,10 @@ class TimeDataCollection:
                 min_input.value = ymin
                 max_input.value = ymax
                 text_labels = ax.findobj(
-                    lambda artist: isinstance(artist, Text)
-                    and hasattr(artist, "_from_vitals_label")
+                    lambda artist: (
+                        isinstance(artist, Text)
+                        and hasattr(artist, "_from_vitals_label")
+                    )
                 )
                 for artist in text_labels:
                     artist.set_y(ymin + 0.1 * (ymax - ymin))
@@ -3782,7 +3780,9 @@ class TimeDataCollection:
                             )
                         )
                         subax.grid(True)
-                        subax.set_xlabel(f"time [{time_unit}]", labelpad=-12, fontsize=7)
+                        subax.set_xlabel(
+                            f"time [{time_unit}]", labelpad=-12, fontsize=7
+                        )
                         subax.yaxis.set_label_text(old_ylabel)
                         if old_ylims != (0, 1):
                             subax.set_ylim(old_ylims)
