@@ -668,6 +668,143 @@ def test_interval_label_get_data_golden():
     assert_matches_golden("timeseries_interval_label_get_data", results)
 
 
+def _window_series_with_unit(rng: np.random.Generator) -> Channel:
+    """A sorted (sometimes unsorted, or with NaT) channel whose time index has
+    a random unit (set directly, since the constructor normalizes the unit),
+    with duplicates and sometimes a frequency."""
+    unit = str(rng.choice(["s", "ms", "us", "ns"]))
+    n_samples = int(rng.choice([1, 2, 5, 60]))
+    if rng.random() < 0.2:
+        time_index = pd.timedelta_range("-3s", periods=n_samples, freq="1500ms")
+    else:
+        values = rng.integers(-5, 120, n_samples)  # in seconds, with duplicates
+        if rng.random() < 0.85:
+            values = np.sort(values)
+        time_index = pd.to_timedelta(values, unit="s")
+        if rng.random() < 0.1:
+            time_index = time_index.insert(int(rng.integers(n_samples)), pd.NaT)
+    channel = Channel(
+        "units",
+        time_index=np.zeros(len(time_index)),
+        data=rng.normal(size=len(time_index)),
+        time_start=ABSOLUTE_START if rng.random() < 0.5 else None,
+    )
+    channel.time_index = time_index.as_unit(unit)
+    return channel
+
+
+def _window_bound(rng: np.random.Generator, series: Channel):
+    """Bounds of all supported kinds, also finer than the unit of the time
+    index, far outside of the time range, NaT, and time zone aware."""
+    choice = rng.random()
+    if choice < 0.1:
+        return None
+    if choice < 0.35 and len(series) > 0:
+        relative = series.time_index[int(rng.integers(len(series)))]
+        if pd.isna(relative):
+            relative = pd.Timedelta(0)
+        # exactly on a sample, or just next to it
+        relative += pd.Timedelta(int(rng.choice([0, 0, -1, 1])), "ns")
+    elif choice < 0.45:
+        relative = pd.Timedelta(days=int(rng.choice([-1, 1])) * 365 * 250)
+    else:
+        relative = pd.Timedelta(float(rng.uniform(-10, 130)), "s")
+    reference = series.time_start if series.is_time_absolute() else None
+    kind = str(
+        rng.choice(
+            [
+                "number",
+                "timedelta",
+                "np_timedelta",
+                "timestamp",
+                "np_datetime_us",
+                "np_datetime_day",
+                "tz_timestamp",
+                "nat",
+                "string",
+            ]
+        )
+    )
+    if kind == "number":
+        return float(relative / pd.to_timedelta(1, unit=series.time_unit))
+    if kind == "timedelta":
+        return relative
+    if kind == "np_timedelta":
+        return relative.to_timedelta64()
+    if kind == "nat":
+        return pd.NaT
+    if kind == "string":
+        return str(relative) if reference is None else str(reference + relative)
+    timestamp = (reference or ABSOLUTE_START) + relative
+    if kind == "np_datetime_us":
+        return timestamp.to_datetime64().astype("M8[us]")
+    if kind == "np_datetime_day":
+        return timestamp.to_datetime64().astype("M8[D]")
+    if kind == "tz_timestamp":
+        return timestamp.tz_localize("UTC")
+    return timestamp
+
+
+# np.timedelta64 is a numbers.Number, so convert_time_input passes it to
+# pd.to_timedelta together with a unit (as in the reference)
+@pytest.mark.filterwarnings("ignore:The 'unit' keyword is only used")
+@pytest.mark.parametrize("seed", range(20))
+def test_windowing_matches_reference_units_and_bounds(seed, caplog):
+    """The binary search must give exactly the same windows as the comparison
+    of all time points (the frozen reference), in particular for bounds that
+    are finer than the unit of the time index."""
+    rng = np.random.default_rng(5000 + seed)
+    for _ in range(40):
+        channel = _window_series_with_unit(rng)
+        kwargs = dict(
+            start=_window_bound(rng, channel),
+            stop=_window_bound(rng, channel),
+            resolution=_random_resolution(rng),
+            include_adjacent=bool(rng.random() < 0.5),
+        )
+        expected_status, mask = _outcome(_reference_mask, channel, **kwargs)
+        status, result = _outcome(channel.get_time_mask, **kwargs)
+        assert status == expected_status, (kwargs, result, mask)
+        if status == "error":
+            assert result == mask
+            continue
+        np.testing.assert_array_equal(result, mask, err_msg=str(kwargs))
+
+        data = channel.get_data(**kwargs)
+        expected_time = channel.time_index[mask]
+        if channel.is_time_absolute():
+            expected_time = expected_time + channel.time_start
+        assert data.time_index.equals(expected_time), kwargs
+        assert data.time_index.dtype == expected_time.dtype
+        assert data.time_index.freq == expected_time.freq
+        np.testing.assert_array_equal(data.data, channel.data[mask])
+
+
+@pytest.mark.parametrize("absolute", [False, True])
+def test_get_data_returns_copies(absolute):
+    """Modifying returned data must not modify the series."""
+    channel = Channel(
+        "channel",
+        time_index=np.arange(10.0),
+        data=np.arange(10.0),
+        time_start=ABSOLUTE_START if absolute else None,
+    )
+    label = Label(
+        "label",
+        time_index=np.arange(10.0),
+        data=np.arange(10.0),
+        text_data=np.array([str(i) for i in range(10)], dtype=object),
+        time_start=ABSOLUTE_START if absolute else None,
+    )
+    for series in [channel, label]:
+        result = series.get_data(start=2.0, stop=5.0)
+        result.data[:] = -1
+        if isinstance(series, Label):
+            result.text_data[:] = "x"
+            assert list(series.text_data) == [str(i) for i in range(10)]
+        np.testing.assert_array_equal(series.data, np.arange(10.0))
+
+
 # ---------------------------------------------------------------------------
 # Mutation
 # ---------------------------------------------------------------------------
