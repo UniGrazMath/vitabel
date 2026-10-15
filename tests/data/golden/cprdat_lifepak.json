@@ -1,7 +1,7 @@
 {
  "mode": "values",
  "generated_with": {
-  "git_commit": "5a16b03cd007b3807894d16133df4b1f2b98b41a",
+  "git_commit": "932ab034f8cea03649a76e0a90c1c2087843b11d",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -19,7 +19,86 @@
    "DACTYP": "04",
    "DACTYP2": "10"
   },
-  "chest_compression_analysis": [],
+  "chest_compression_analysis": [
+   {
+    "CC_start": 4188030.3999999994,
+    "CC_stop": 4191601.95,
+    "CC_rate": 162.76924746336041,
+    "CC_depth": null
+   },
+   {
+    "CC_start": 7249254.55,
+    "CC_stop": 7370474.13,
+    "CC_rate": 101.72939979657332,
+    "CC_depth": null
+   },
+   {
+    "CC_start": 7373668.85,
+    "CC_stop": 7426160.75,
+    "CC_rate": 101.72939979657332,
+    "CC_depth": null
+   },
+   {
+    "CC_start": 7429060.58,
+    "CC_stop": 7546675.84,
+    "CC_rate": 101.72939979657332,
+    "CC_depth": null
+   },
+   {
+    "CC_start": 7554654.48,
+    "CC_stop": 7611340.47,
+    "CC_rate": 101.72939979657332,
+    "CC_depth": null
+   },
+   {
+    "CC_start": 7612552.83,
+    "CC_stop": 7730479.37,
+    "CC_rate": 101.72939979657332,
+    "CC_depth": null
+   },
+   {
+    "CC_start": 7734231.13,
+    "CC_stop": 7752989.94,
+    "CC_rate": 101.72939979657332,
+    "CC_depth": null
+   },
+   {
+    "CC_start": 7774533.89,
+    "CC_stop": 7910367.31,
+    "CC_rate": 101.72939979657332,
+    "CC_depth": null
+   },
+   {
+    "CC_start": 7914528.65,
+    "CC_stop": 7973197.02,
+    "CC_rate": 101.72939979657332,
+    "CC_depth": null
+   },
+   {
+    "CC_start": 7975490.67,
+    "CC_stop": 8091385.69,
+    "CC_rate": 101.72939979657332,
+    "CC_depth": null
+   },
+   {
+    "CC_start": 8094564.04,
+    "CC_stop": 8151495.79,
+    "CC_rate": 101.72939979657332,
+    "CC_depth": null
+   },
+   {
+    "CC_start": 8171073.75,
+    "CC_stop": 8259690.68,
+    "CC_rate": 101.72939979657332,
+    "CC_depth": null
+   },
+   {
+    "CC_start": 8301811.98,
+    "CC_stop": 8359546.51,
+    "CC_rate": 101.72939979657332,
+    "CC_depth": null
+   }
+  ],
   "CPR_per_minute_analysis": [
    {
     "starttime": 0,
@@ -506,9 +585,9 @@
    },
    {
     "starttime": 4140000,
-    "CC_rate": null,
+    "CC_rate": 162.76924746336041,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.059525833333345754,
     "Ventilation_rate": null
    },
    {
@@ -863,142 +942,142 @@
    },
    {
     "starttime": 7200000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.17909083333333645,
     "Ventilation_rate": null
    },
    {
     "starttime": 7260000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 1.0,
     "Ventilation_rate": null
    },
    {
     "starttime": 7320000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.946754666666671,
     "Ventilation_rate": null
    },
    {
     "starttime": 7380000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.9516694999999987,
     "Ventilation_rate": null
    },
    {
     "starttime": 7440000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 1.0,
     "Ventilation_rate": null
    },
    {
     "starttime": 7500000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.8670226666666567,
     "Ventilation_rate": null
    },
    {
     "starttime": 7560000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.9797939999999944,
     "Ventilation_rate": null
    },
    {
     "starttime": 7620000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 1.0,
     "Ventilation_rate": null
    },
    {
     "starttime": 7680000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.9374706666666703,
     "Ventilation_rate": null
    },
    {
     "starttime": 7740000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.6409341666666791,
     "Ventilation_rate": null
    },
    {
     "starttime": 7800000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 1.0,
     "Ventilation_rate": null
    },
    {
     "starttime": 7860000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.9306443333333203,
     "Ventilation_rate": null
    },
    {
     "starttime": 7920000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.9617724999999938,
     "Ventilation_rate": null
    },
    {
     "starttime": 7980000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 1.0,
     "Ventilation_rate": null
    },
    {
     "starttime": 8040000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.9470275000000062,
     "Ventilation_rate": null
    },
    {
     "starttime": 8100000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.8582631666666672,
     "Ventilation_rate": null
    },
    {
     "starttime": 8160000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.8154375,
     "Ventilation_rate": null
    },
    {
     "starttime": 8220000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.6615113333333283,
     "Ventilation_rate": null
    },
    {
     "starttime": 8280000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.6364669999999926,
     "Ventilation_rate": null
    },
    {
     "starttime": 8340000,
-    "CC_rate": null,
+    "CC_rate": 101.72939979657333,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.32577516666666295,
     "Ventilation_rate": null
    },
    {
@@ -1218,49 +1297,49 @@
     "energy_delivered": 300.0,
     "energy_planned": null,
     "impedance": 54.0,
-    "pre_shock_pause": null,
-    "post_shock_pause": null
+    "pre_shock_pause": 360.320000000298,
+    "post_shock_pause": 2834.399999999441
    },
    {
     "time": 7551268.449999999,
     "energy_delivered": 360.0,
     "energy_planned": null,
     "impedance": 58.0,
-    "pre_shock_pause": null,
-    "post_shock_pause": null
+    "pre_shock_pause": 4592.609999999404,
+    "post_shock_pause": 3386.030000001192
    },
    {
     "time": 7730788.45,
     "energy_delivered": 360.0,
     "energy_planned": null,
     "impedance": 62.0,
-    "pre_shock_pause": null,
-    "post_shock_pause": null
+    "pre_shock_pause": 309.0800000000745,
+    "post_shock_pause": 3442.679999999702
    },
    {
     "time": 7910538.45,
     "energy_delivered": 360.0,
     "energy_planned": null,
     "impedance": 62.0,
-    "pre_shock_pause": null,
-    "post_shock_pause": null
+    "pre_shock_pause": 171.14000000059605,
+    "post_shock_pause": 3990.2000000001863
    },
    {
     "time": 8091378.45,
     "energy_delivered": 360.0,
     "energy_planned": null,
     "impedance": 62.0,
-    "pre_shock_pause": null,
-    "post_shock_pause": null
+    "pre_shock_pause": 0.0,
+    "post_shock_pause": 3185.589999999851
    }
   ],
   "registry_time_points": {
-   "ZHDM": null,
+   "ZHDM": 4188030.3999999994,
    "ZDEFIAN": 0,
    "ZDEFI1": 7370834.45,
    "ZINTUB": null,
-   "ZTOD": null,
-   "ZROSC1": null
+   "ZROSC1": 4191601.95,
+   "ZTOD": null
   },
   "registry_info": {
    "FBSYSTEM": "06",
@@ -1268,7 +1347,9 @@
    "AUTOCPR": "06",
    "TYPAUCPR": null,
    "ANZDEFI": "03",
-   "ROSC": "01"
+   "ROSC": "02",
+   "TECHSCHO": null,
+   "ENERGIESCHO": null
   },
   "channels": [
    {
@@ -3004,6 +3085,12 @@
     "type": "startendtime",
     "starttime": 4192101.45,
     "endtime": 8360046.45
+   },
+   {
+    "name": "cc_periods",
+    "type": "startendtime",
+    "starttime": 4188030.3999999994,
+    "endtime": 8359546.51
    },
    {
     "name": "cc_rate_for_plotting",
@@ -6372,13 +6459,13 @@
    }
   ],
   "cpr_quality_analysis": {
-   "global_ccf": null,
+   "global_ccf": 1.0,
    "pauses_median": null,
    "pauses_maximum": null,
-   "preshock_median": null,
-   "preshock_maximum": null,
-   "postshock_median": null,
-   "postshock_maximum": null
+   "preshock_median": 334.70000000018626,
+   "preshock_maximum": 4592.609999999404,
+   "postshock_median": 3386.030000001192,
+   "postshock_maximum": 3990.2000000001863
   }
  }
 }

@@ -1,7 +1,7 @@
 {
  "mode": "values",
  "generated_with": {
-  "git_commit": "5a16b03cd007b3807894d16133df4b1f2b98b41a",
+  "git_commit": "932ab034f8cea03649a76e0a90c1c2087843b11d",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
