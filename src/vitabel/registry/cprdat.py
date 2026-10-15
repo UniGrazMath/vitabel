@@ -79,9 +79,7 @@ def make_cprdat_analysis(vitals, model="") -> dict:
         CC_depth = np.array([])
 
     if "mech_cpr_depth" in vitals.get_channel_names():
-        mech_CC_time, mech_CC_depth = (
-            vitals.get_channel("mech_cpr_depth")
-        ).get_data()
+        mech_CC_time, mech_CC_depth = (vitals.get_channel("mech_cpr_depth")).get_data()
         CC = np.append(CC, mech_CC_time)
         CC_depth = np.append(CC_depth, mech_CC_depth)
 
@@ -165,9 +163,7 @@ def make_cprdat_analysis(vitals, model="") -> dict:
 
     vitals.compute_etco2_and_ventilations()
     if "ventilations_from_capnography" in vitals.get_label_names():
-        ventilations, x = (
-            vitals.get_label("ventilations_from_capnography")
-        ).get_data()
+        ventilations, x = (vitals.get_label("ventilations_from_capnography")).get_data()
         ventilations = np.array(
             [(c - vitals.rec_start()).total_seconds() * 1000 for c in ventilations]
         )
@@ -582,8 +578,7 @@ def make_cprdat_analysis(vitals, model="") -> dict:
             z_end - zhdm
         )
         pauses = [
-            sta - sto
-            for sta, sto in zip(CC_start_analyze[1:], CC_stops_analyze[:-1])
+            sta - sto for sta, sto in zip(CC_start_analyze[1:], CC_stops_analyze[:-1])
         ]
     else:
         CCF_glob = None
@@ -664,10 +659,7 @@ def make_cprdat_analysis(vitals, model="") -> dict:
             else:
                 arrest_episodes["roscs"].append(CC_stops[i])
                 j = 1
-                while (
-                    CC_lengths[i + j] < CC_min_length
-                    and i + j < len(CC_lengths) - 1
-                ):
+                while CC_lengths[i + j] < CC_min_length and i + j < len(CC_lengths) - 1:
                     j += 1
                 if i + j < len(CC_lengths) - 1:
                     arrest_episodes["arrests"].append(CC_starts[i + j])
