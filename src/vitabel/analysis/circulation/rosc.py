@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from vitabel.analysis.circulation.features import construct_snippets, data_filter
-from vitabel.analysis.circulation.model import _load_circulation_model
+from vitabel.analysis.circulation.model import load_circulation_model
 from vitabel.timeseries import Channel, IntervalLabel, Label
 from vitabel.utils.stylesheet import DEFAULT_PLOT_STYLE
 
@@ -104,7 +104,7 @@ def predict_circulation(erg):
     # print(f"Xn {Xn.shape}")
 
     # Load model and scaler
-    svc, scaler = _load_circulation_model()
+    svc, scaler = load_circulation_model()
     # Apply scaler
     Xn = scaler.transform(Xn)
     X = scaler.transform(X)

@@ -14,7 +14,7 @@ logger = logging.getLogger("vitabel")
 
 
 @functools.cache
-def _load_circulation_model():
+def load_circulation_model():
     """Load the (pre-trained) classification model and the corresponding
     scaler used by :func:`predict_circulation` from the package assets.
 
