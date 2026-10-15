@@ -260,7 +260,6 @@ def read_zolljson(filepath: Path | str):
     return pat_dat, data
 
 
-
 def read_zolljson_contin(wave_recording_elements, starttime):
     ## Routine to read continuum data of single json file:
     # Routine to get Infos on all Recorded Channels
@@ -590,7 +589,6 @@ def read_zolljson_contin(wave_recording_elements, starttime):
     return timeseries_data, df, recording_start, recording_end, invalid_ch
 
 
-
 # routine to read trend reports
 def read_zolljson_trend(trend_rpt, starttime):
     trend_keys = [
@@ -883,7 +881,6 @@ def read_zolljson_trend(trend_rpt, starttime):
     return trend_data, trend_info
 
 
-
 # routine to read compression data
 def read_zolljson_compr(cpr_compr, starttime):
     cpr_compr_keys = ["CompDisp", "RelVelocity", "CompRate"]
@@ -915,7 +912,6 @@ def read_zolljson_compr(cpr_compr, starttime):
     compr_data["CompDisp"] = compr_data["CompDisp"] * 2.54 / 1000
 
     return compr_data, compr_info
-
 
 
 def read_zollxml(filepath: Path | str):
@@ -1148,7 +1144,6 @@ def read_zollxml(filepath: Path | str):
         **twelve_lead_dict,
     }
     return pat_dat, data
-
 
 
 def read_zollxml_contin(wave_recording_elements, starttime):
@@ -1497,7 +1492,6 @@ def read_zollxml_contin(wave_recording_elements, starttime):
     return timeseries_data, df, recording_start, recording_end, invalid_ch
 
 
-
 def read_zollxml_trend(trend_rpt, starttime):
     trend_keys = [
         "LtaStateVal",
@@ -1775,7 +1769,6 @@ def read_zollxml_trend(trend_rpt, starttime):
     return trend_data, trend_info
 
 
-
 def read_zollxml_compr(cpr_compr, starttime):
     cpr_compr_keys = ["CompDisp", "RelVelocity", "CompRate"]
     compr_data = {
@@ -1811,7 +1804,6 @@ def read_zollxml_compr(cpr_compr, starttime):
     return compr_data, compr_info
 
 
-
 def find_wavetypevar(entry):
     if not isinstance(entry, str):
         entry = str(entry)
@@ -1819,7 +1811,6 @@ def find_wavetypevar(entry):
         return zoll_wavetype_dict[entry]
     else:
         return entry + ": Unknown Type"
-
 
 
 def read_zollcsv(filepath: Path | str, filepathxml: Path | str, quick=False):
@@ -2080,7 +2071,6 @@ def read_zollcsv(filepath: Path | str, filepathxml: Path | str, quick=False):
     pat_dat["Main data"] = pd.DataFrame.from_dict(pat_dat["Main data"], orient="index")
 
     return pat_dat, data
-
 
 
 # Method which for each key in OLD CSV-Data the new key of JSON Data

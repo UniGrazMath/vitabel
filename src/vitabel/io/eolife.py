@@ -100,9 +100,9 @@ def read_eolife_export(eolife_filepath: Path) -> EOLifeRecord:
             "Leakage (mL)": "Int64",
         },
         converters={
-            "Leakage ratio (%)": lambda x: float(x) / 100
-            if x not in ["Na", "NA"]
-            else None
+            "Leakage ratio (%)": lambda x: (
+                float(x) / 100 if x not in ["Na", "NA"] else None
+            )
         },
     )
 

@@ -176,9 +176,7 @@ def read_edfplus(file_path: Path | str) -> tuple[list, list, dict]:
             # Create interval-annotation Labels (one per unique annotation text)
             unique_interval_texts = sorted(set(interval_texts))
             for ann_text in unique_interval_texts:
-                indices = [
-                    i for i, t in enumerate(interval_texts) if t == ann_text
-                ]
+                indices = [i for i, t in enumerate(interval_texts) if t == ann_text]
                 onsets = np.array([interval_onsets[i] for i in indices])
                 offsets = np.array([interval_offsets[i] for i in indices])
 
