@@ -1986,6 +1986,8 @@ class Vitals:
         """Automatically analyses a defibrillator recording and and returns a dictionary with all derived information.
         This functions is used in the German Resuscitation Registry to generate a case timeline as interactive visualisation.
 
+        The required analyses (chest compression periods, etCO₂ and ventilations,
+        ROSC prediction) add their results as labels to this recording.
         See :func:`.registry.cprdat.make_cprdat_analysis`.
         """
         from vitabel.registry.cprdat import make_cprdat_analysis
