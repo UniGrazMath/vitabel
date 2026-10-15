@@ -6,9 +6,12 @@ import logging
 
 
 import numpy as np
+import pandas as pd
 
-from vitabel.analysis.circulation.features import data_filter
+from vitabel.analysis.circulation.features import construct_snippets, data_filter
 from vitabel.analysis.circulation.model import _load_circulation_model
+from vitabel.timeseries import Channel, IntervalLabel, Label
+from vitabel.utils.stylesheet import DEFAULT_PLOT_STYLE
 
 
 logger = logging.getLogger("vitabel")
@@ -199,3 +202,96 @@ def find_ROSC_2(rosctime, roscdata, CC_starts, CC_stops):
                 final_flag = True
             i += 1
     return roscs, arrests
+
+
+def predict_rosc(
+    cpr_acceleration_source: Channel,
+    ecg_pads_source: Channel,
+    label_cc_periods: IntervalLabel,
+) -> list[Label]:
+    """Predict circulation (ROSC) during CPR from the accelerometer signal of a
+    CPR feedback sensor and the ECG signal of the defibrillator pads, as
+    published by Kern et al. in :cite:`10.1109/tbme.2023.3242717`.
+
+    Parameters
+    ----------
+    cpr_acceleration_source
+        The channel containing the accelerometer signal of the CPR feedback sensor.
+    ecg_pads_source
+        The channel containing the ECG signal from the pads.
+    label_cc_periods
+        The periods of chest compressions (e.g., from
+        :func:`.analysis.cpr.compressions.cc_periods_from_acceleration`).
+
+    Returns
+    -------
+    The (unattached) labels ``rosc_prediction`` (binary prediction),
+    ``rosc_probability``, and ``rosc_decision_function`` (output of the
+    kernelized SVM trained for the paper).
+    """
+    acc_data = cpr_acceleration_source.get_data()  # get data
+    acctime, acc = acc_data.time_index, acc_data.data
+
+    ecg_data = ecg_pads_source.get_data()  # get data
+    ecgtime, ecg = ecg_data.time_index, ecg_data.data
+
+    cc_periods = label_cc_periods.get_data().time_index
+    cc_periods = np.asarray([t for pair in cc_periods for t in pair])
+
+    t_ref = cpr_acceleration_source.time_start
+
+    if label_cc_periods.is_time_relative():
+        cc_periods = (
+            pd.Series(pd.to_timedelta(cc_periods)).dt.total_seconds().to_numpy()
+        )
+    else:
+        cc_periods = np.array([(t - t_ref).total_seconds() for t in cc_periods])
+
+    if cpr_acceleration_source.is_time_relative():
+        acctime = acctime.dt.total_seconds().to_numpy()
+    else:
+        acctime = np.array([(t - t_ref).total_seconds() for t in acctime])
+
+    # Time conversion for ECG channel
+    if ecg_pads_source.is_time_relative():
+        ecgtime = ecgtime.dt.total_seconds().to_numpy()
+    else:
+        ecgtime = np.array([(t - t_ref).total_seconds() for t in ecgtime])
+
+    CC_starts = cc_periods[0::2]
+    CC_stops = cc_periods[1::2]
+
+    snippets = construct_snippets(acctime, acc, ecgtime, ecg, CC_starts, CC_stops)
+    case_pred = predict_circulation(snippets)
+
+    metadata = {
+        "creator": "automatic",
+        "creation_date": pd.Timestamp.now(),
+        "method": "Period_dection",
+    }
+
+    pred_lab = Label(
+        "rosc_prediction",
+        case_pred["Starttime"],
+        case_pred["Predicted"],
+        time_start=t_ref,
+        metadata=metadata,
+        plotstyle=DEFAULT_PLOT_STYLE.get("rosc_prediction", None),
+    )
+    prob_lab = Label(
+        "rosc_probability",
+        case_pred["Starttime"],
+        case_pred["Probability"],
+        time_start=t_ref,
+        metadata=metadata,
+        plotstyle=DEFAULT_PLOT_STYLE.get("rosc_probability", None),
+    )
+    dec_lab = Label(
+        "rosc_decision_function",
+        case_pred["Starttime"],
+        case_pred["DecisionFunction"],
+        time_start=t_ref,
+        metadata=metadata,
+        plotstyle=DEFAULT_PLOT_STYLE.get("rosc_decision_function", None),
+    )
+    return [pred_lab, prob_lab, dec_lab]
