@@ -36,10 +36,8 @@ from vitabel.timeseries import (
     _timeseries_list_info,
 )
 from vitabel.utils import (
-    loading,
     constants,
     helpers,
-    rename_channels,
     predict_circulation,
     construct_snippets,
     deriv,
@@ -54,6 +52,14 @@ from vitabel.utils import (
     convert_two_alternating_list,
 )
 from vitabel.utils import DEFAULT_PLOT_STYLE
+from vitabel.io._common import rename_channels
+from vitabel.io.corpuls import read_corpuls
+from vitabel.io.edf import read_edfplus
+from vitabel.io.eolife import read_eolife_export
+from vitabel.io.lifepak import read_lifepak
+from vitabel.io.lucas import read_lucas
+from vitabel.io.vitaldb import _track_to_timeseries
+from vitabel.io.zoll import read_zollcsv, read_zolljson, read_zollxml
 from vitabel.typing import (
     Timedelta,
     Timestamp,
@@ -443,7 +449,7 @@ class Vitals:
           is placed in the same directory as the ``.bdf`` file. Pass the path to
           ``filename.bdf`` to import the data.
 
-        The actual loading routines are implemented in the :mod:`.utils.loading` module.
+        The actual loading routines are implemented in the :mod:`.io` subpackage.
 
         Parameters
         ----------
@@ -473,7 +479,7 @@ class Vitals:
         logger.info(f"Endings {fileend_c}")
 
         if ".json" in fileend_c:
-            pat_dat, dats = loading.read_zolljson(filepath)
+            pat_dat, dats = read_zolljson(filepath)
             dats = rename_channels(dats, constants.zoll2channelnames_dict)
             logger.info(f"File: {filename} successfully read!")
         elif (".xml" in fileend_c) and (".txt" not in fileend_c):
@@ -510,7 +516,7 @@ class Vitals:
                     )
 
                 else:
-                    pat_dat, dats = loading.read_lifepak(
+                    pat_dat, dats = read_lifepak(
                         fp1, fp2, fp3, further_files=further_files
                     )
                     dats = rename_channels(dats, constants.LP2channelnames_dict)
@@ -526,7 +532,7 @@ class Vitals:
                     )
 
                 else:
-                    pat_dat, dats = loading.read_lucas(fp1, fp2)
+                    pat_dat, dats = read_lucas(fp1, fp2)
                     dats = rename_channels(dats, constants.LP2channelnames_dict)
 
                 if dats:
@@ -536,7 +542,7 @@ class Vitals:
                     return None
 
             else:
-                pat_dat, dats = loading.read_zollxml(
+                pat_dat, dats = read_zollxml(
                     dirpath.joinpath(Path(filename + ".xml"))
                 )
                 dats = rename_channels(dats, constants.zoll2channelnames_dict)
@@ -545,7 +551,7 @@ class Vitals:
         elif ".txt" in fileend_c:
             pure_filename = filename[: filename.index("_ecg")]
 
-            pat_dat, dats = loading.read_zollcsv(
+            pat_dat, dats = read_zollcsv(
                 dirpath.joinpath(Path(pure_filename + "_ecg.txt")),
                 dirpath.joinpath(Path(pure_filename + ".xml")),
             )
@@ -553,7 +559,7 @@ class Vitals:
 
             logger.info(f"File: {filename} successfully read!")
         elif ".bdf" in fileend_c:
-            pat_dat, dats = loading.read_corpuls(
+            pat_dat, dats = read_corpuls(
                 dirpath.joinpath(Path(filename + ".bdf"))
             )
             dats = rename_channels(dats, constants.corpuls2channelnames_dict)
@@ -630,7 +636,7 @@ class Vitals:
         """
         if metadata is None:
             metadata = {}
-        eolife_export = loading.read_eolife_export(filepath)
+        eolife_export = read_eolife_export(filepath)
         self.add_data_from_DataFrame(
             source=eolife_export.data,
             time_start=eolife_export.recording_start,
@@ -661,7 +667,7 @@ class Vitals:
         vit = vitaldb.VitalFile(str(filepath))
 
         timeseries_list = [  # convert all tracks in Channel or Label
-            loading._track_to_timeseries(vit, track_name=track_name, metadata=metadata)
+            _track_to_timeseries(vit, track_name=track_name, metadata=metadata)
             for track_name in vit.get_track_names()
         ]
         labels = []
@@ -713,7 +719,7 @@ class Vitals:
         """Load channels and labels from an EDF+ file.
 
         Reads biosignal channels and annotation labels from an EDF+ file
-        using :func:`.utils.loading.read_edfplus` and adds them to the
+        using :func:`.io.edf.read_edfplus` and adds them to the
         internal data collection.
 
         Parameters
@@ -733,7 +739,7 @@ class Vitals:
         if metadata is None:
             metadata = {}
 
-        channels, labels, recording_metadata = loading.read_edfplus(file_path)
+        channels, labels, recording_metadata = read_edfplus(file_path)
 
         if channel_names is not None:
             channels = [ch for ch in channels if ch.name in channel_names]
