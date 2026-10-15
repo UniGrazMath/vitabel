@@ -260,17 +260,31 @@ def _hash_channels() -> dict[str, Channel]:
 
 
 # Hashes are stored in saved files (``Vitals.save_data``), so they must not
-# change unintentionally.
+# change unintentionally (and must be identical on all platforms).
 PINNED_DATA_HASHES = {
-    "relative": "c93e5f65611843790542fb1a0ad7c74ba5b753cea26a4161328a1f3d148cd9ad",
-    "absolute_with_offset": "f5f12577b74bc0437216ca63837597040d8e88573fcc0685d4219ee189850bf0",
-    "time_only_ms": "4f6535cf1e0038b994f5542a6fb7f3aef548570ea870a717b7f32505aa175f67",
+    "relative": "7b24d5d113fe72df6fcf99fe16fce4b8e834994ac2e1765f6d6939fa1d94a3f3",
+    "absolute_with_offset": (
+        "bced44a11c2af47ade5412db1833fb81bb311b836304c4ec4a79f422f073b145"
+    ),
+    "time_only_ms": "9a34d87a8f194fb299b332a85e9efe0d89f5e14066a81adae3b1c9b8d51fc555",
 }
 
 
 @pytest.mark.parametrize("name", list(PINNED_DATA_HASHES))
 def test_data_hash_is_stable(name):
     assert _hash_channels()[name].data_hash() == PINNED_DATA_HASHES[name]
+
+
+def test_data_hash_does_not_depend_on_compressed_encoding(monkeypatch):
+    # compressed arrays (np.savez_compressed) contain platform-specific ZIP
+    # metadata, so they must not be part of the hash
+    def fail(*args, **kwargs):
+        raise AssertionError("data_hash must not compress arrays")
+
+    monkeypatch.setattr(np, "savez_compressed", fail)
+    channel = _hash_channels()["absolute_with_offset"]
+    channel.metadata["array"] = np.arange(3)
+    assert len(channel.data_hash()) == 64
 
 
 # ---------------------------------------------------------------------------

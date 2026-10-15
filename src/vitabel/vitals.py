@@ -27,6 +27,7 @@ from vitabel.analysis.ventilation.volumes import (
     compute_volume_channels_and_labels,
 )
 from vitabel.timeseries import (
+    DATA_HASH_VERSION,
     Channel,
     Label,
     IntervalLabel,
@@ -1256,7 +1257,12 @@ class Vitals:
         self.metadata["vitabel version"] = __version__
         data_hash = self.data.channel_data_hash()
         data_dict = self.data.to_dict()
-        json_dict = {"metadata": self.metadata, "data": data_dict, "hash": data_hash}
+        json_dict = {
+            "metadata": self.metadata,
+            "data": data_dict,
+            "hash": data_hash,
+            "hash_version": DATA_HASH_VERSION,
+        }
 
         with open(path, "w") as fd:
             json.dump(json_dict, fd, cls=NumpyEncoder)
@@ -1273,8 +1279,10 @@ class Vitals:
             Whether to compare the hash of the loaded channel data with the
             hash stored in the file (see :meth:`save_data`). A mismatch, which
             indicates that the data has been modified outside of vitabel,
-            results in a warning. Defaults to ``True``; pass ``False`` to skip
-            the (potentially expensive) check.
+            results in a warning. Files without a hash of the current format
+            (:data:`.timeseries.DATA_HASH_VERSION`) are not checked. Defaults
+            to ``True``; pass ``False`` to skip the (potentially expensive)
+            check.
         """
         from vitabel import __version__
 
@@ -1291,8 +1299,14 @@ class Vitals:
                 "This may lead to compatibility issues."
             )
 
+        # files saved with older versions contain no (comparable) hash
         saved_hash = json_dict.get("hash")
-        if check_channel_hash and saved_hash is not None:
+        hash_version = json_dict.get("hash_version")
+        if (
+            check_channel_hash
+            and saved_hash is not None
+            and hash_version == DATA_HASH_VERSION
+        ):
             channel_hash = self.data.channel_data_hash()
             if channel_hash != saved_hash:
                 version_note = (

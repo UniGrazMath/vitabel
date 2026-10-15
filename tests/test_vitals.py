@@ -991,6 +991,30 @@ def test_load_data_hash_check_detects_modified_data(
     assert "does not match the hash" not in caplog.text
 
 
+def test_load_data_does_not_check_hashes_of_older_format(
+    vitabel_test_data_dir, tmp_path, caplog, monkeypatch
+):
+    from vitabel.timeseries import TimeDataCollection
+
+    recording = _recordings_for_hash_check(vitabel_test_data_dir)["absolute"]
+    path = tmp_path / "recording.json"
+    recording.save_data(path)
+    content = json.loads(path.read_text())
+    assert content["hash_version"] == 2
+    # files saved before the hash version was introduced: hash not comparable
+    del content["hash_version"]
+    content["hash"] = "0" * 64
+    path.write_text(json.dumps(content))
+
+    def fail(*args, **kwargs):
+        raise AssertionError("channel_data_hash must not be called")
+
+    monkeypatch.setattr(TimeDataCollection, "channel_data_hash", fail)
+    with caplog.at_level(logging.WARNING, logger="vitabel"):
+        Vitals().load_data(path)
+    assert "does not match the hash" not in caplog.text
+
+
 def test_load_data_without_hash(vitabel_test_data_dir, tmp_path, caplog):
     recording = _recordings_for_hash_check(vitabel_test_data_dir)["absolute"]
     path = tmp_path / "recording.json"
