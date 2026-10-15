@@ -25,7 +25,8 @@ import numpy.typing as npt
 import hashlib
 from pathlib import Path
 
-from vitabel.utils.helpers import match_object, NumpyEncoder, decompress_array
+from vitabel.utils.matching import match_object
+from vitabel.utils.serialization import NumpyEncoder, decompress_array
 from vitabel.typing import (
     LabelPlotType,
     LabelPlotVLineTextSource,

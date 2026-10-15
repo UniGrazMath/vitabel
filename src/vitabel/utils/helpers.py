@@ -3,13 +3,9 @@
 from __future__ import annotations
 
 
-import base64
-import datetime
 import functools
 import importlib.resources
-import io
 import joblib
-import json
 import warnings
 
 import numpy as np
@@ -19,10 +15,15 @@ import scipy.fft as fft
 import scipy.signal as sgn
 import scipy.stats as stats
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from vitabel.typing import Timedelta, Timestamp, ThresholdMetrics, Metric, DataSlice
+from vitabel.utils.matching import match_object  # noqa: F401 (re-export)
+from vitabel.utils.serialization import (  # noqa: F401 (re-export)
+    NumpyEncoder,
+    compress_array,
+    decompress_array,
+)
 
 if TYPE_CHECKING:
     from vitabel.typing import TimeUnitChoices
@@ -45,78 +46,6 @@ __all__ = [
     "find_ROSC_2",
     "convert_two_alternating_list",
 ]
-
-
-def compress_array(lst: npt.NDArray | pd.DatetimeIndex | pd.TimedeltaIndex) -> str:
-    """Compress a given array by returning a bae64-encoded string of
-    the corresponding (NumPy) zip compressed data.
-    """
-    buff = io.BytesIO()
-    np.savez_compressed(buff, data=lst)
-    return base64.b64encode(buff.getvalue()).decode()
-
-
-def decompress_array(b64data: str) -> npt.NDArray:
-    """Decompress a given base64 string representing a
-    (NumPy) zipped array object.
-    """
-    buff = io.BytesIO(base64.b64decode(b64data))
-    return np.load(buff)["data"]
-
-
-class NumpyEncoder(json.JSONEncoder):
-    """Special json encoder for numpy types"""
-
-    def default(self, obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
-        elif isinstance(obj, np.ndarray) and obj.dtype != object:
-            return compress_array(obj)
-        elif isinstance(obj, np.ndarray) and obj.dtype == object:
-            return obj.tolist()
-        elif isinstance(obj, pd.TimedeltaIndex):
-            return compress_array(obj)
-        elif isinstance(obj, pd.DatetimeIndex):
-            return compress_array(obj)
-        elif isinstance(obj, datetime.time):
-            return obj.strftime("%H:%M:%S")
-        elif isinstance(obj, pd.Timestamp):
-            return obj.strftime("%Y-%m-%d %X")
-        elif isinstance(obj, datetime.datetime):
-            return str(obj)
-        elif isinstance(obj, pd.Timedelta):
-            return str(obj)
-        elif isinstance(obj, Path):
-            return str(obj)
-        return json.JSONEncoder.default(self, obj)
-
-
-def match_object(obj: object, **kwargs) -> bool:
-    """Check whether a given object matches the filter criteria.
-
-    Parameters
-    ----------
-    obj
-        The object to check.
-    kwargs
-        Filter criteria. The keys are the attribute names of the object,
-        and the values are the expected values. If expected value is a
-        dictionary, then the object attribute only needs to contain all
-        key-value pairs in the dictionary (but could contain other key-value
-        pairs too).
-    """
-    for key, value in kwargs.items():
-        if isinstance(value, dict):
-            if not all(getattr(obj, key).get(k) == v for k, v in value.items()):
-                return False
-        else:
-            if not hasattr(obj, key):
-                return False
-            if getattr(obj, key) != value:
-                return False
-    return True
 
 
 def deriv(time, data):
