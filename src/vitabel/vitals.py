@@ -15,13 +15,7 @@ from typing import Any, Literal
 from IPython.display import display
 from pathlib import Path
 
-from vitabel.analysis.ventilation.phases import (
-    _compute_slope,
-    _create_phase_intervals,
-    _filter_alternating_phases,
-    get_expiration_starts,
-    get_inspiration_starts,
-)
+from vitabel.analysis.ventilation.phases import detect_respiratory_phases
 from vitabel.analysis.ventilation.volumes import (
     compute_breath_duration_and_rate_labels,
     compute_cumulative_volume_channels,
@@ -39,13 +33,11 @@ from vitabel.timeseries import (
     _timeseries_list_info,
 )
 from vitabel.utils import (
-    constants,
     helpers,
     predict_circulation,
     construct_snippets,
     deriv,
     av_mean,
-    resample_to_common_index,
     NumpyEncoder,
     determine_gaps_in_recording,
     linear_interpolate_gaps_in_recording,
@@ -71,9 +63,6 @@ from vitabel.typing import (
     ChannelSpecification,
     LabelSpecification,
     ThresholdMetrics,
-    DataSlice,
-    RespPhases,
-    PhaseData,
 )
 
 logger: logging.Logger = logging.getLogger("vitabel")
@@ -2831,122 +2820,6 @@ class Vitals:
         )
 
 
-    def _add_respiratory_labels(
-        self,
-        insp_begin: pd.DatetimeIndex,
-        exp_begin: pd.DatetimeIndex,
-        insp_intervals: list[tuple],
-        exp_intervals: list[tuple],
-    ) -> None:
-        """Add respiratory phase labels to the Vitals object.
-
-        Creates and adds the following global labels:
-        - "Inspiration Begin": point label at each inspiration onset
-        - "Expiration Begin": point label at each expiration onset
-        - "Inspiration": interval label spanning inspiration phases
-        - "Expiration": interval label spanning expiration phases
-
-        Parameters
-        ----------
-        insp_begin : pd.DatetimeIndex
-            Timestamps of inspiration phase onsets.
-        exp_begin : pd.DatetimeIndex
-            Timestamps of expiration phase onsets.
-        insp_intervals : list[tuple]
-            List of (start, end) tuples for inspiration phases.
-        exp_intervals : list[tuple]
-            List of (start, end) tuples for expiration phases.
-        """
-        self.add_global_label(
-            Label(
-                name="Inspiration Begin",
-                time_index=insp_begin,
-                plotstyle=DEFAULT_PLOT_STYLE.get("Inspiration Begin"),
-            )
-        )
-        self.add_global_label(
-            Label(
-                name="Expiration Begin",
-                time_index=exp_begin,
-                plotstyle=DEFAULT_PLOT_STYLE.get("Expiration Begin"),
-            )
-        )
-
-        if len(insp_begin) > 0 and len(exp_begin) > 0:
-            self.add_global_label(
-                IntervalLabel(
-                    name="Inspiration",
-                    time_index=insp_intervals,
-                    plotstyle=DEFAULT_PLOT_STYLE.get("Inspiration"),
-                )
-            )
-            self.add_global_label(
-                IntervalLabel(
-                    name="Expiration",
-                    time_index=exp_intervals,
-                    plotstyle=DEFAULT_PLOT_STYLE.get("Expiration"),
-                )
-            )
-
-    def _add_respiratory_intermediate_channels(
-        self,
-        f_interpolated: DataSlice,
-        p_interpolated: DataSlice,
-        product_flow_pressure: DataSlice,
-        slope_p: DataSlice,
-        product_flow_pslope: DataSlice,
-    ) -> None:
-        """Add intermediate channels from respiratory phase detection.
-
-        These channels expose the internal computations of the respiratory
-        phase detection algorithm, useful for debugging and visualization.
-
-        Parameters
-        ----------
-        f_interpolated : DataSlice
-            Interpolated flow data resampled to a common time index.
-        p_interpolated : DataSlice
-            Interpolated pressure data resampled to a common time index.
-        product_flow_pressure : DataSlice
-            Product of flow and pressure, used for inspiration detection.
-        slope_p : DataSlice
-            Time derivative (slope) of the pressure signal.
-        product_flow_pslope : DataSlice
-            Product of negative flow and pressure slope, used for expiration detection.
-        """
-        intermediate_channels = [
-            Channel(
-                name="Flow Interpolated",
-                time_index=f_interpolated.time_index,
-                data=f_interpolated.data,
-            ),
-            Channel(
-                name="Pressure Interpolated",
-                time_index=p_interpolated.time_index,
-                data=p_interpolated.data,
-            ),
-            Channel(
-                name="Product Flow Pressure",
-                time_index=product_flow_pressure.time_index,
-                data=product_flow_pressure.data,
-                metadata={"unit": "J/min"},
-            ),
-            Channel(
-                name="Slope Pressure",
-                time_index=slope_p.time_index,
-                data=slope_p.data,
-            ),
-            Channel(
-                name="Product negative Flow Pressures Slope",
-                time_index=p_interpolated.time_index,
-                data=product_flow_pslope.data,
-                metadata={"unit": "W/s"},
-            ),
-        ]
-        for channel in intermediate_channels:
-            channel.plotstyle = DEFAULT_PLOT_STYLE.get(channel.name)
-            self.add_channel(channel)
-
     def _prepare_named_outputs(
         self,
         *,
@@ -3015,6 +2888,8 @@ class Vitals:
 
         It expects flow in L/min and pressure in cmH₂O.
 
+        The computation is implemented in
+        :func:`.analysis.ventilation.phases.detect_respiratory_phases`.
         This function derives the begin of inspiration based on the product of flow and pressure see :func:`.analysis.ventilation.phases.get_inspiration_starts`.
         The begin of expiration is derived from the product of flow and slope of pressure see :func:`.analysis.ventilation.phases.get_expiration_starts`.
         The begin of inspiration and expiration as well as the inspiration and expiration intervals are added as global labels to the Vitals object.
@@ -3095,97 +2970,23 @@ class Vitals:
             overwrite_existing_output=overwrite_existing_output,
         )
 
-        # Interpolate Flow and Pressure to have a common index and crosses of y=0
-        # f_interpolated, p_interpolated = _resample_to_common_index(flow, pressure)
-        f_interpolated, p_interpolated = resample_to_common_index(flow, pressure)
-        index = f_interpolated.time_index
-
-        # get slope of pressure
-        dp_dt = _compute_slope(p_interpolated)
-
-        # Calculate the product of flow and pressure (ventilation power in J/min)
-        product_flow_pressure = DataSlice(
-            time_index=index,
-            data=f_interpolated.data * p_interpolated.data * constants.CMH2O_TO_KPA,
+        result = detect_respiratory_phases(
+            flow,
+            pressure,
+            inspiratory_threshold=inspiratory_threshold,
+            expiratory_threshold=expiratory_threshold,
         )
-
-        # derive idx for inspiration start
-        potential_insp_idxs, insp_onsets_above_threshold, insp_filtered_onsets = (
-            get_inspiration_starts(
-                product=product_flow_pressure,
-                interpolated_flow=f_interpolated,
-                interpolated_pressure=p_interpolated,
-                slope_pressure=dp_dt,
-                threshold=inspiratory_threshold,
-            )
-        )
-
-        # For expiration detection, only negative (outward-directed) airflow is
-        # considered. Positive flow values are clipped to zero so they don't
-        # contribute to the product used for expiration landmark detection.
-        neg_flow = np.minimum(f_interpolated.data, 0)
-        product_flow_pslope = DataSlice(
-            index, neg_flow * dp_dt.data * constants.L_MIN_CMH2O_PER_S_TO_WATTS
-        )
-        # derive idx for expiration start
-        potential_exp_idxs, exp_onsets_above_threshold, exp_filtered_onsets = (
-            get_expiration_starts(
-                product=product_flow_pslope, threshold=expiratory_threshold
-            )
-        )
-
-        # Filter secondary expiration starts between two inspiration starts
-        exp_idxs = _filter_alternating_phases(
-            candidate_phase_idxs=potential_exp_idxs,
-            anchor_phase_idxs=potential_insp_idxs,
-        )
-        insp_idxs = _filter_alternating_phases(
-            candidate_phase_idxs=potential_insp_idxs, anchor_phase_idxs=exp_idxs
-        )
-
-        # Generating Results: convert indices to timestamps and create intervals
-        if insp_idxs.size == 0 or exp_idxs.size == 0:
-            insp_begin = index[:0]  # empty, same type as index
-            exp_begin = index[:0]
-        else:
-            insp_begin = index.take(insp_idxs)
-            exp_begin = index.take(exp_idxs)
-
-        insp_intervals, exp_intervals = _create_phase_intervals(insp_begin, exp_begin)
 
         if add_labels:
-            self._add_respiratory_labels(
-                insp_begin, exp_begin, insp_intervals, exp_intervals
-            )
+            for label in result.labels():
+                self.add_global_label(label)
 
         if add_intermediate_channels:
-            self._add_respiratory_intermediate_channels(
-                f_interpolated,
-                p_interpolated,
-                product_flow_pressure,
-                dp_dt,
-                product_flow_pslope,
-            )
+            for channel in result.intermediate_channels():
+                self.add_channel(channel)
 
         if return_landmarks:
-            return RespPhases(
-                inspiration=PhaseData(
-                    onsets_above_threshold=index.take(insp_onsets_above_threshold),
-                    filtered_onsets_above_threshold=index.take(insp_filtered_onsets),
-                    candidates=index.take(potential_insp_idxs),
-                    begins=insp_begin,
-                    intervals=insp_intervals,
-                    threshold=inspiratory_threshold,
-                ),
-                expiration=PhaseData(
-                    onsets_above_threshold=index.take(exp_onsets_above_threshold),
-                    filtered_onsets_above_threshold=index.take(exp_filtered_onsets),
-                    candidates=index.take(potential_exp_idxs),
-                    begins=exp_begin,
-                    intervals=exp_intervals,
-                    threshold=expiratory_threshold,
-                ),
-            )
+            return result.landmarks
         else:
             return
 
