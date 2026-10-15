@@ -33,19 +33,17 @@ from vitabel.timeseries import (
     TimeSeriesBase,
     _timeseries_list_info,
 )
-from vitabel.utils import (
-    helpers,
-    predict_circulation,
-    construct_snippets,
-    deriv,
+from vitabel.analysis.circulation.features import construct_snippets
+from vitabel.analysis.circulation.rosc import find_ROSC_2, predict_circulation
+from vitabel.analysis.cpr.compressions import CCF_minute, convert_two_alternating_list
+from vitabel.analysis.threshold import area_under_threshold
+from vitabel.utils.serialization import NumpyEncoder
+from vitabel.utils.signal import (
     av_mean,
-    NumpyEncoder,
+    deriv,
     determine_gaps_in_recording,
-    linear_interpolate_gaps_in_recording,
     gaussian_kernel_regression_point,
-    CCF_minute,
-    find_ROSC_2,
-    convert_two_alternating_list,
+    linear_interpolate_gaps_in_recording,
 )
 from vitabel.utils import DEFAULT_PLOT_STYLE
 from vitabel.io.defibrillator import read_defibrillator_file
@@ -2595,7 +2593,7 @@ class Vitals:
 
         See also
         --------
-        :func:`.utils.helpers.area_under_threshold`
+        :func:`.analysis.threshold.area_under_threshold`
 
         Parameters
         ----------
@@ -2635,7 +2633,7 @@ class Vitals:
         source_data = source.get_data()
         timeseries = pd.Series(source_data.data, index=source_data.time_index)
 
-        return helpers.area_under_threshold(
+        return area_under_threshold(
             timeseries=timeseries,
             start_time=start_time,
             stop_time=stop_time,

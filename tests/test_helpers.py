@@ -28,7 +28,7 @@ def test_load_circulation_model():
 
     import numpy as np
 
-    from vitabel.utils.helpers import _load_circulation_model
+    from vitabel.analysis.circulation.model import _load_circulation_model
 
     asset_dir = importlib.resources.files("vitabel") / "assets"
     assert (asset_dir / "circ-classification_model.joblib").is_file()
