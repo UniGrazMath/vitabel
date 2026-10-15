@@ -138,6 +138,120 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
     return df.reindex(columns=df_columns + metadata_columns)
 
 
+def _parse_time_index(
+    time_index: npt.ArrayLike,
+    time_start: Timestamp | None,
+    time_unit: str,
+    offset: Timedelta,
+) -> tuple[pd.TimedeltaIndex, Timestamp | None]:
+    """Convert time data as passed to :class:`TimeSeriesBase` into a relative
+    time index (with ``offset`` applied) and the reference time ``time_start``
+    (``None`` for relative time data).
+    """
+    # we need to process the passed time_index. in the end,
+    # the stored time_index should always be a pandas.TimedeltaIndex,
+    # with time_start set to None for relative time data,
+    # and to a pandas.Timestamp for absolute time data.
+    # it is possible that the specified time_index is empty
+    # or contains undefined values like pandas.NaT, numpy.nan, or None.
+
+    time_index_arr = np.asarray(time_index)
+    if time_index_arr.ndim != 1:
+        raise ValueError(
+            f"time_index must be a 1D array, got shape {time_index_arr.shape}"
+        )
+
+    cleaned_time_index_iter = (value for value in time_index if not pd.isna(value))
+
+    try:
+        value = next(cleaned_time_index_iter)
+        time_type = type(value)
+    except StopIteration:
+        # no non-na values in time_index
+        if hasattr(time_index, "dtype"):
+            # try to infer time type for empty time_index
+            # based on the dtype
+            dtype = time_index.dtype
+            if np.issubdtype(dtype, np.datetime64):
+                time_type = pd.Timestamp
+            elif np.issubdtype(dtype, np.timedelta64):
+                time_type = pd.Timedelta
+            else:
+                time_type = pd.Timedelta
+        else:  # general fallback: assume relative time
+            time_type = pd.Timedelta
+
+    all_same_time_type = True
+    all_numeric = True
+    for value in cleaned_time_index_iter:
+        if all_same_time_type and not isinstance(value, time_type):
+            all_same_time_type = False
+        if all_numeric and not isinstance(value, numbers.Number):
+            all_numeric = False
+        if not all_same_time_type and not all_numeric:
+            raise ValueError(
+                "All time data must be of the same type or numeric, "
+                f"but found {value} ({type(value)}) instead of {time_type}"
+            )
+
+    parsed_from_strings = time_type in (str, np.str_)
+    parse_error_types = (
+        ValueError,
+        TypeError,
+        OverflowError,
+        pd.errors.OutOfBoundsDatetime,
+        pd.errors.OutOfBoundsTimedelta,
+    )
+
+    if parsed_from_strings:
+        for convert_func in [pd.to_datetime, pd.to_timedelta]:
+            try:
+                time_index = convert_func(time_index)
+                time_type = type(time_index[0])
+                break
+            except parse_error_types:
+                pass
+        else:
+            raise ValueError(
+                "The time data could not be parsed to timestamps or timedeltas"
+            )
+
+    try:
+        if time_type in (pd.Timestamp, np.datetime64):  # absolute time
+            # check that time_start does not conflict
+            if time_start is not None:
+                raise ValueError("time_start cannot be passed if time data is absolute")
+            if len(time_index) > 0:
+                time_start = pd.Timestamp(time_index[0])
+            time_index = pd.to_timedelta([time - time_start for time in time_index])
+
+        elif time_type in (pd.Timedelta, np.timedelta64):
+            time_index = pd.to_timedelta(time_index)
+
+        elif issubclass(time_type, numbers.Number):
+            time_index = pd.to_timedelta(time_index, unit=time_unit)
+
+        else:
+            raise ValueError(f"The time data type {time_type} is not supported")
+
+        time_index = time_index + offset
+    except (
+        OverflowError,
+        pd.errors.OutOfBoundsDatetime,
+        pd.errors.OutOfBoundsTimedelta,
+    ) as exc:
+        if parsed_from_strings:
+            raise ValueError(
+                "The time data could not be parsed to timestamps or timedeltas"
+            ) from exc
+        raise
+
+    if time_start is not None:
+        time_start = pd.Timestamp(time_start)
+        time_start = time_start.tz_localize(None)
+    return time_index, time_start
+
+
 class TimeSeriesBase:
     """Base class for time series data.
 
@@ -196,110 +310,9 @@ class TimeSeriesBase:
             offset = pd.to_timedelta(offset, unit=self.time_unit)
         self._offset = offset
 
-        # we need to process the passed time_index. in the end,
-        # the stored time_index should always be a pandas.TimedeltaIndex,
-        # with time_start set to None for relative time data,
-        # and to a pandas.Timestamp for absolute time data.
-        # it is possible that the specified time_index is empty
-        # or contains undefined values like pandas.NaT, numpy.nan, or None.
-
-        time_index_arr = np.asarray(time_index)
-        if time_index_arr.ndim != 1:
-            raise ValueError(
-                f"time_index must be a 1D array, got shape {time_index_arr.shape}"
-            )
-
-        cleaned_time_index_iter = (value for value in time_index if not pd.isna(value))
-
-        try:
-            value = next(cleaned_time_index_iter)
-            time_type = type(value)
-        except StopIteration:
-            # no non-na values in time_index
-            if hasattr(time_index, "dtype"):
-                # try to infer time type for empty time_index
-                # based on the dtype
-                dtype = time_index.dtype
-                if np.issubdtype(dtype, np.datetime64):
-                    time_type = pd.Timestamp
-                elif np.issubdtype(dtype, np.timedelta64):
-                    time_type = pd.Timedelta
-                else:
-                    time_type = pd.Timedelta
-            else:  # general fallback: assume relative time
-                time_type = pd.Timedelta
-
-        all_same_time_type = True
-        all_numeric = True
-        for value in cleaned_time_index_iter:
-            if all_same_time_type and not isinstance(value, time_type):
-                all_same_time_type = False
-            if all_numeric and not isinstance(value, numbers.Number):
-                all_numeric = False
-            if not all_same_time_type and not all_numeric:
-                raise ValueError(
-                    "All time data must be of the same type or numeric, "
-                    f"but found {value} ({type(value)}) instead of {time_type}"
-                )
-
-        parsed_from_strings = time_type in (str, np.str_)
-        parse_error_types = (
-            ValueError,
-            TypeError,
-            OverflowError,
-            pd.errors.OutOfBoundsDatetime,
-            pd.errors.OutOfBoundsTimedelta,
+        self.time_index, self.time_start = _parse_time_index(
+            time_index, time_start, self.time_unit, offset
         )
-
-        if parsed_from_strings:
-            for convert_func in [pd.to_datetime, pd.to_timedelta]:
-                try:
-                    time_index = convert_func(time_index)
-                    time_type = type(time_index[0])
-                    break
-                except parse_error_types:
-                    pass
-            else:
-                raise ValueError(
-                    "The time data could not be parsed to timestamps or timedeltas"
-                )
-
-        try:
-            if time_type in (pd.Timestamp, np.datetime64):  # absolute time
-                # check that time_start does not conflict
-                if time_start is not None:
-                    raise ValueError(
-                        "time_start cannot be passed if time data is absolute"
-                    )
-                if len(time_index) > 0:
-                    time_start = pd.Timestamp(time_index[0])
-                time_index = pd.to_timedelta([time - time_start for time in time_index])
-
-            elif time_type in (pd.Timedelta, np.timedelta64):
-                time_index = pd.to_timedelta(time_index)
-
-            elif issubclass(time_type, numbers.Number):
-                time_index = pd.to_timedelta(time_index, unit=self.time_unit)
-
-            else:
-                raise ValueError(f"The time data type {time_type} is not supported")
-
-            self.time_index = time_index + offset
-        except (
-            OverflowError,
-            pd.errors.OutOfBoundsDatetime,
-            pd.errors.OutOfBoundsTimedelta,
-        ) as exc:
-            if parsed_from_strings:
-                raise ValueError(
-                    "The time data could not be parsed to timestamps or timedeltas"
-                ) from exc
-            raise
-
-        if time_start is not None:
-            time_start = pd.Timestamp(time_start)
-            time_start = time_start.tz_localize(None)
-        self.time_start = time_start
 
     def __len__(self) -> int:
         """Return the number of time points."""
