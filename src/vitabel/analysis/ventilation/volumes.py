@@ -510,13 +510,9 @@ def compute_reverse_airflow_labels(
         return float(np.sum(0.5 * (y[1:] + y[:-1]) * dt))
 
     def _area_segment(start, end):
-        mask = (flow.get_data().time_index >= start) & (
-            flow.get_data().time_index <= end
-        )
-        return _area(
-            flow.data[mask] * correction_factor,
-            flow.get_data().time_index[mask],
-        )
+        # same time points as comparing the full time index with start / end
+        segment = flow.get_data(start=start, stop=end)
+        return _area(segment.data * correction_factor, segment.time_index)
 
     crossing = np.array(flow.get_data().time_index[flow.data == 0])
     segment = np.array(list(zip(crossing, crossing[1:])))
