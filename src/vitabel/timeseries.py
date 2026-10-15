@@ -140,6 +140,50 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
 
 _TYPED_ARRAY_TYPES = (np.ndarray, pd.Index, pd.Series)
 
+_NS_PER_UNIT = {
+    "W": 7 * 24 * 3600 * 10**9,
+    "D": 24 * 3600 * 10**9,
+    "h": 3600 * 10**9,
+    "m": 60 * 10**9,
+    "s": 10**9,
+    "ms": 10**6,
+    "us": 10**3,
+    "ns": 1,
+}
+"""Nanoseconds per numpy datetime / timedelta unit (fixed-length units only)."""
+
+_INT64_MIN = int(np.iinfo(np.int64).min)
+_INT64_MAX = int(np.iinfo(np.int64).max)
+
+
+def _integer_ns(value: np.datetime64 | np.timedelta64) -> int:
+    """Exact number of nanoseconds (since the epoch, for timestamps) of a numpy
+    timestamp or timedelta, as a Python integer (no overflow). Raises
+    ``KeyError`` for calendar units (years, months) and ``ValueError`` for
+    NaT."""
+    if np.isnat(value):
+        raise ValueError("NaT has no integer value")
+    unit, count = np.datetime_data(value.dtype)
+    return int(value.astype(np.int64)) * _NS_PER_UNIT[unit] * count
+
+
+def _is_nonempty_selection(selection: slice | npt.NDArray) -> bool:
+    """Whether a selection (slice, boolean mask, or integer positions)
+    selects anything."""
+    if isinstance(selection, slice):
+        return selection.start < selection.stop
+    if selection.dtype == bool:
+        return bool(selection.any())
+    return len(selection) > 0
+
+
+def _select(array: npt.NDArray, selection: slice | npt.NDArray) -> npt.NDArray:
+    """Select from a numpy array, always returning a copy (slicing alone
+    would return a view)."""
+    if isinstance(selection, slice):
+        return array[selection].copy()
+    return array[selection]
+
 
 def _typed_array_kind(time_index: Any) -> str | None:
     """Return the numpy dtype kind of a typed array (numpy array, pandas
@@ -523,12 +567,186 @@ class TimeSeriesBase:
             adjacent to (but outside of) the start and stop times; useful
             for plotting. Defaults to ``False``.
         """
+        selection = self._time_selection(
+            start=start,
+            stop=stop,
+            resolution=resolution,
+            include_adjacent=include_adjacent,
+        )
+        if isinstance(selection, np.ndarray) and selection.dtype == bool:
+            return selection
+        mask = np.zeros(len(self), dtype=bool)
+        mask[selection] = True
+        return mask
+
+    def _time_selection(
+        self,
+        start: Timestamp | Timedelta | float | None = None,
+        stop: Timestamp | Timedelta | float | None = None,
+        resolution: Timedelta | float | str | None = None,
+        include_adjacent: bool = False,
+    ) -> slice | npt.NDArray:
+        """Select the time points of a window, as in :meth:`get_time_mask`.
+
+        If the time index is sorted, the window is found by binary search
+        (cost independent of the length of the series) and returned as a
+        slice, or as integer positions if it is downsampled. Otherwise, a
+        boolean mask is returned.
+
+        Indexing the time index with the result gives the same result as
+        indexing with the mask from :meth:`_time_mask_by_comparison`,
+        including the ``freq`` attribute (pandas converts contiguous boolean
+        masks to slices, which keep ``freq``). Numpy arrays must be indexed
+        with :func:`_select`, which copies slices.
+        """
+        if not self.is_empty() and not (
+            self.is_time_relative()
+            and (isinstance(start, Timestamp) or isinstance(stop, Timestamp))
+        ):
+            positions = self._time_positions(
+                start=start,
+                stop=stop,
+                resolution=resolution,
+                include_adjacent=include_adjacent,
+            )
+            if positions is not None:
+                n_selected = len(range(positions.start, positions.stop, positions.step))
+                if positions.step == 1 or n_selected <= 1:
+                    # contiguous
+                    return slice(positions.start, positions.start + n_selected)
+                return np.arange(positions.start, positions.stop, positions.step)
         return self._time_mask_by_comparison(
             start=start,
             stop=stop,
             resolution=resolution,
             include_adjacent=include_adjacent,
         )
+
+    def _relative_ns(self, time_value: Timestamp | Timedelta) -> int | None:
+        """Exact time (as returned by :meth:`convert_time_input`) relative to
+        :attr:`time_start` in integer nanoseconds, or ``None`` if it can't be
+        compared with the time index this way."""
+        if self.is_time_absolute():
+            if isinstance(time_value, pd.Timestamp):
+                if time_value.tz is not None:
+                    return None  # comparison raises, see the fallback
+                time_value = time_value.to_datetime64()
+            if not isinstance(time_value, np.datetime64):
+                return None
+            return _integer_ns(time_value) - _integer_ns(
+                self.time_start.to_datetime64()
+            )
+        if isinstance(time_value, pd.Timedelta):
+            time_value = time_value.to_timedelta64()
+        if not isinstance(time_value, np.timedelta64):
+            return None
+        return _integer_ns(time_value)
+
+    def _time_positions(
+        self,
+        start: Timestamp | Timedelta | float | None,
+        stop: Timestamp | Timedelta | float | None,
+        resolution: Timedelta | float | str | None,
+        include_adjacent: bool,
+    ) -> slice | None:
+        """Positions of the time points in a window via binary search, or
+        ``None`` if the time index is not sorted (or contains NaT), or the
+        bounds can't be handled exactly; then :meth:`_time_mask_by_comparison`
+        is used.
+
+        Gives the same result as the comparison: the bounds are converted
+        exactly to integers in the unit of the time index (rounding the start
+        up and the stop down), so no precision is lost when the bounds are
+        finer than the unit of the time index.
+        """
+        time_index = self.time_index
+        if (
+            not isinstance(time_index, pd.TimedeltaIndex)
+            or time_index.unit not in _NS_PER_UNIT
+            or (self.is_time_absolute() and pd.isna(self.time_start))
+            or not time_index.is_monotonic_increasing
+        ):
+            return None
+
+        try:
+            start_value = None if start is None else self.convert_time_input(start)
+            stop_value = None if stop is None else self.convert_time_input(stop)
+            start_ns = None if start is None else self._relative_ns(start_value)
+            stop_ns = None if stop is None else self._relative_ns(stop_value)
+        except (TypeError, ValueError, KeyError, OverflowError):
+            # let the comparison raise (or handle) it in the same way as before
+            return None
+        if (start is not None and start_ns is None) or (
+            stop is not None and stop_ns is None
+        ):
+            return None
+
+        values = time_index.asi8
+        unit_ns = _NS_PER_UNIT[time_index.unit]
+        n_points = len(values)
+        first, last = 0, n_points
+        if start_ns is not None:
+            lower = -(-start_ns // unit_ns)  # first value >= start
+            if lower > _INT64_MAX:
+                first = n_points
+            elif lower >= _INT64_MIN:
+                first = int(np.searchsorted(values, lower, side="left"))
+        if stop_ns is not None:
+            upper = stop_ns // unit_ns  # last value <= stop
+            if upper < _INT64_MIN:
+                last = 0
+            elif upper <= _INT64_MAX:
+                last = int(np.searchsorted(values, upper, side="right"))
+        last = max(first, last)
+
+        if include_adjacent and first < last:
+            first = max(first - 1, 0)
+            last = min(last + 1, n_points)
+
+        if start is not None and stop is not None and start_value > stop_value:
+            logger.warning(
+                f"Start time {start_value} is after stop time {stop_value}, "
+                "the queried interval is empty."
+            )
+
+        step = self._downsampling_step(first, last, resolution)
+        return slice(first, last, step)
+
+    def _downsampling_step(
+        self,
+        first: int,
+        last: int,
+        resolution: Timedelta | float | str | None,
+    ) -> int:
+        """Step size for downsampling the time points at positions
+        ``first:last`` to the given resolution; same rule as in
+        :meth:`_time_mask_by_comparison`."""
+        if resolution is None or resolution == 0 or first >= last:
+            return 1
+
+        if isinstance(resolution, str):
+            resolution = pd.to_timedelta(resolution)
+        if isinstance(resolution, numbers.Number):
+            resolution = pd.to_timedelta(resolution, unit=self.time_unit)
+
+        bounded_time = self.time_index[first:last]
+        if self.is_time_absolute():
+            # same unit as in the comparison (relevant for the mean below)
+            bounded_time = bounded_time + self.time_start
+        if len(bounded_time) == 1:
+            return 1
+
+        mean_dt_bounded_time = (bounded_time[1:] - bounded_time[:-1]).mean()
+        if mean_dt_bounded_time == pd.Timedelta(0):
+            logger.warning(
+                "The time index has no variation, so the resolution "
+                "cannot be applied. Returning the full time index."
+            )
+            return 1
+        n_downsample = resolution / mean_dt_bounded_time
+        if n_downsample <= 2:
+            return 1
+        return int(np.floor(n_downsample))
 
     def _time_mask_by_comparison(
         self,
@@ -981,18 +1199,18 @@ class Channel(TimeSeriesBase):
             stop times; useful for plotting. Defaults to ``False``.
         """
 
-        time_mask = self.get_time_mask(
+        selection = self._time_selection(
             start=start,
             stop=stop,
             resolution=resolution,
             include_adjacent=include_adjacent,
         )
 
-        time_index = self.time_index[time_mask]
+        time_index = self.time_index[selection]
         if self.is_time_absolute():
             time_index += self.time_start
 
-        data = self.data[time_mask] if self.data is not None else None
+        data = _select(self.data, selection) if self.data is not None else None
         return DataSlice(time_index=time_index, data=data)
 
     def plot(
@@ -1778,21 +1996,21 @@ class Label(TimeSeriesBase):
             stop times; useful for plotting. Defaults to ``False``.
         """
 
-        time_mask = self.get_time_mask(
+        selection = self._time_selection(
             start=start, stop=stop, resolution=None, include_adjacent=include_adjacent
         )
 
-        time_index = self.time_index[time_mask]
+        time_index = self.time_index[selection]
         if self.is_time_absolute():
             time_index += self.time_start
 
         data = None
-        if self.data is not None and time_mask.any():
-            data = self.data[time_mask]
+        if self.data is not None and _is_nonempty_selection(selection):
+            data = _select(self.data, selection)
 
         text_data = None
-        if self.text_data is not None and time_mask.any():
-            text_data = self.text_data[time_mask]
+        if self.text_data is not None and _is_nonempty_selection(selection):
+            text_data = _select(self.text_data, selection)
 
         return DataSlice(time_index=time_index, data=data, text_data=text_data)
 
