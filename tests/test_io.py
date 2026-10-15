@@ -50,3 +50,68 @@ def test_read_vitaldb_tracks_does_not_modify_metadata(tmp_path):
         "EVENT",
         "SOME_NOTE",
     ]
+
+
+def test_tabular_dict_import_with_anchored_and_interval_labels():
+    import pandas as pd
+
+    from vitabel import Channel, IntervalLabel, Vitals
+
+    recording = Vitals()
+    channel = Channel("channel", time_index=[0.0, 1.0, 2.0], data=[1.0, 2.0, 3.0])
+    recording.add_channel(channel)
+    recording.add_data_from_dict(
+        {"anchored": {"timestamp": [0.5, 1.5], "data": [1, 2]}},
+        datatype="label",
+        anchored_channel=channel,
+    )
+    recording.add_data_from_dict(
+        {
+            "intervals": {
+                "timestamp": [pd.Timedelta(0), pd.Timedelta(1, unit="s")],
+                "data": [],
+            },
+            "empty": {"timestamp": [], "data": []},
+        },
+        datatype="interval_label",
+        metadata={"source": "test"},
+    )
+    assert [label.name for label in channel.labels] == ["anchored"]
+    assert [label.name for label in recording.data.global_labels] == ["intervals"]
+    intervals = recording.get_label("intervals")
+    assert isinstance(intervals, IntervalLabel)
+    assert intervals.metadata == {"source": "test"}
+
+
+def test_tabular_dict_import_is_incremental():
+    import pytest
+
+    from vitabel import Vitals
+
+    recording = Vitals()
+    with pytest.raises(ValueError, match="For key broken the value is not a dict"):
+        recording.add_data_from_dict(
+            {"ok": {"timestamp": [0.0, 1.0], "data": [1, 2]}, "broken": [1, 2]}
+        )
+    # time series before the invalid entry have been added
+    assert recording.get_channel_names() == ["ok"]
+
+
+def test_tabular_dataframe_interval_labels_not_implemented():
+    import pandas as pd
+    import pytest
+
+    from vitabel.io.tabular import iter_series_from_dataframe
+
+    df = pd.DataFrame({"a": [1.0, 2.0]}, index=[0.0, 1.0])
+    with pytest.raises(NotImplementedError):
+        list(iter_series_from_dataframe(df, datatype="interval_label"))
+
+
+def test_read_csv_table_missing_file(tmp_path):
+    import pytest
+
+    from vitabel.io.tabular import read_csv_table
+
+    with pytest.raises(FileNotFoundError):
+        read_csv_table(tmp_path / "missing.csv")

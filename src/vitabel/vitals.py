@@ -52,6 +52,12 @@ from vitabel.utils import DEFAULT_PLOT_STYLE
 from vitabel.io.defibrillator import read_defibrillator_file
 from vitabel.io.edf import read_edfplus
 from vitabel.io.eolife import read_eolife_export
+from vitabel.io.tabular import (
+    iter_series_from_dataframe,
+    iter_series_from_dict,
+    read_csv_table,
+    series_from_dict,
+)
 from vitabel.io.vitaldb import assign_vitaldb_labels, read_vitaldb_tracks
 from vitabel.typing import (
     Timedelta,
@@ -769,52 +775,25 @@ class Vitals:
         None.
 
         """
-        if not ("timestamp" in source.keys() and "data" in source.keys()):
-            raise ValueError(
-                "The dictionary must contain a 'timestamp' and a 'data' key which contain timestamps and data for this channel. \n \
-                             In case of time_only or 'time_interval' channel_types choose 'data' to be an empty list."
-            )
+        series = series_from_dict(
+            source,
+            name,
+            time_start=time_start,
+            datatype=datatype,
+            anchored_channel=anchored_channel,
+            metadata=metadata,
+        )
+        self._add_imported_series(series)
 
-        if time_start:
-            time_start = pd.Timestamp(time_start)
-
-        time = source["timestamp"]
-        data = source["data"]
-        if len(time) == 0:
-            logger.warning("The data is empty. No channel or label will be added.")
+    def _add_imported_series(self, series: Channel | Label | None) -> None:
+        """Add an imported channel, or an imported label that is not attached
+        to a channel (as global label), to the data collection."""
+        if series is None:
             return
-
-        if datatype == "channel":
-            channel = Channel(
-                name,
-                time,
-                data,
-                metadata=metadata,
-                time_start=time_start,
-            )
-            self.data.add_channel(channel)
-        elif datatype == "label":
-            label = Label(
-                name,
-                time,
-                data,
-                metadata=metadata,
-                time_start=time_start,
-                anchored_channel=anchored_channel,
-            )
-            if anchored_channel is None:
-                self.data.add_global_label(label)
-        elif datatype == "interval_label":
-            label = IntervalLabel(
-                name,
-                time,
-                data,
-                metadata=metadata,
-                time_start=time_start,
-                anchored_channel=anchored_channel,
-            )
-            if anchored_channel is None:
-                self.data.add_global_label(label)
+        if isinstance(series, Channel):
+            self.data.add_channel(series)
+        elif series.anchored_channel is None:
+            self.data.add_global_label(series)
 
     def add_data_from_dict(
         self,
@@ -853,27 +832,14 @@ class Vitals:
         ValueError
             In case the dictionary does not have the expected form.
         """
-        if isinstance(source, Path):
-            with open(source, "r") as file:
-                source = json.load(file)
-
-        for key in source:
-            if not isinstance(source[key], dict):
-                raise ValueError(
-                    "Source must be a dictionary of the form "
-                    "{'channel1': {'timestamp': [...], 'data': [...]},"
-                    " 'channel2': { ... }, ... }. "
-                    f"For key {key} the value is not a dict."
-                )
-            else:
-                self._add_single_dict(
-                    source[key],
-                    key,
-                    metadata=metadata,
-                    time_start=time_start,
-                    datatype=datatype,
-                    anchored_channel=anchored_channel,
-                )
+        for series in iter_series_from_dict(
+            source,
+            time_start=time_start,
+            datatype=datatype,
+            anchored_channel=anchored_channel,
+            metadata=metadata,
+        ):
+            self._add_imported_series(series)
 
     def add_data_from_DataFrame(
         self,
@@ -919,55 +885,16 @@ class Vitals:
         ValueError
             The DataFrame does not contain a DateTime or Numeric Index.
         """
-
-        if metadata is None:
-            metadata = {}
-        if column_metadata is None:
-            column_metadata = {}
-
-        if not (
-            isinstance(source.index, (pd.DatetimeIndex, pd.TimedeltaIndex))
-            or (pd.api.types.is_numeric_dtype(source.index))
+        for series in iter_series_from_dataframe(
+            source,
+            time_start=time_start,
+            time_unit=time_unit,
+            datatype=datatype,
+            anchored_channel=anchored_channel,
+            metadata=metadata,
+            column_metadata=column_metadata,
         ):
-            raise ValueError(
-                "The DataFrame needs to have a datetime or a numeric index, "
-                "which describes the time of the timeseries."
-            )
-
-        for col in source.columns:
-            series = source[col]
-            series = series[series.notna()]
-            time = np.array(series.index)
-            data = series.values
-            if len(time) == 0:
-                continue
-
-            if datatype == "channel":
-                channel = Channel(
-                    name=col,
-                    time_index=time,
-                    data=data,
-                    time_start=time_start,
-                    time_unit=time_unit,
-                    metadata=metadata | column_metadata.get(col, {}),
-                )
-                self.data.add_channel(channel)
-            elif datatype == "label":
-                label = Label(
-                    name=col,
-                    time_index=time,
-                    data=data,
-                    time_start=time_start,
-                    time_unit=time_unit,
-                    metadata=metadata | column_metadata.get(col, {}),
-                    anchored_channel=anchored_channel,
-                )
-                if anchored_channel is None:
-                    self.data.add_global_label(label)
-            elif datatype == "interval_label":
-                raise NotImplementedError(
-                    "Interval labels can currently not be added from DataFrames."
-                )
+            self._add_imported_series(series)
 
     def add_data_from_csv(
         self,
@@ -1009,10 +936,7 @@ class Vitals:
             Additional keyword arguments are passed to the ``pandas.read_csv``
             function.
         """
-        file_path = Path(file_path)
-        if not file_path.exists():
-            raise FileNotFoundError(f"File {file_path} not found.")
-        df = pd.read_csv(file_path, **kwargs)
+        df = read_csv_table(file_path, **kwargs)
         self.add_data_from_DataFrame(
             df,
             time_start=time_start,
