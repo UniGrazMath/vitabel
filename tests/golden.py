@@ -73,9 +73,11 @@ FULL_ARRAY_LIMIT = 20_000
 N_SAMPLES = 256
 """Number of evenly spaced samples stored for larger arrays."""
 
-RTOL = 1e-9
-ATOL = 1e-12
-"""Tolerances for floating point values in ``"values"`` mode."""
+RTOL = 1e-7
+ATOL = 1e-9
+"""Tolerances for floating point values in ``"values"`` mode. Computed
+results (e.g., classifier decision functions based on FFT features) differ
+by up to ~1e-10 between platforms / BLAS builds."""
 
 TIME_ATOL_NS = 1_000
 """Absolute tolerance for time values (integer nanoseconds) in ``"values"``
