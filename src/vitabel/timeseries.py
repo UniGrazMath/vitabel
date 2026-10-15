@@ -368,8 +368,10 @@ class TimeSeriesBase:
             initialization is used.
         """
         time_unit = time_unit or self.time_unit
-        return np.array(
-            [time / pd.to_timedelta(1, unit=time_unit) for time in self.time_index]
+        # vectorized; bit-identical to dividing element by element
+        # (NaT becomes NaN)
+        return np.asarray(
+            self.time_index / pd.to_timedelta(1, unit=time_unit), dtype=float
         )
 
     def shift_time_index(

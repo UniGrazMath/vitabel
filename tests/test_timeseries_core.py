@@ -243,6 +243,25 @@ def test_numeric_time_matches_reference_randomized(index_unit):
         assert np.array_equal(series.numeric_time(time_unit), expected)
 
 
+@pytest.mark.parametrize("index_unit", ["ns", "us", "ms", "s"])
+def test_numeric_time_matches_reference_large_values_and_nat(index_unit):
+    # values beyond 2**53 ns (where float64 can't represent every integer)
+    # and missing values
+    rng = np.random.default_rng(7)
+    max_value = 2**62 // pd.Timedelta(1, unit=index_unit).value
+    values = rng.integers(-max_value, max_value, 2_000).astype(f"m8[{index_unit}]")
+    values[::97] = np.timedelta64("NaT", index_unit)
+    series = TimeSeriesBase([])
+    # set the index directly: the constructor may change the unit
+    series.time_index = pd.TimedeltaIndex(values)
+    assert series.time_index.unit == index_unit
+    for time_unit in ["s", "ms", "us", "ns", "min", "h"]:
+        expected = reference_impl.numeric_time(series.time_index, time_unit)
+        result = series.numeric_time(time_unit)
+        assert result.dtype == expected.dtype
+        assert np.array_equal(result, expected, equal_nan=True)
+
+
 def _hash_channels() -> dict[str, Channel]:
     return {
         "relative": Channel(
