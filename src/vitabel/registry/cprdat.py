@@ -68,6 +68,10 @@ def _cc_periods(vitals, channel, compute) -> tuple:
 def make_cprdat_analysis(vitals, model="") -> dict:
     """Automatically analyses a defibrillator recording and and returns a dictionary with all derived information.
     This functions is used in the German Resuscitation Registry to generate a case timeline as interactive visualisation.
+
+    Like the other analysis methods of :class:`.Vitals`, the analyses required
+    for this (chest compression periods, etCO₂ and ventilations, ROSC
+    prediction) add their results as labels to the given recording.
     """
 
     gaussian_kernel_regression = np.vectorize(
@@ -120,8 +124,10 @@ def make_cprdat_analysis(vitals, model="") -> dict:
     chest_compression_analysis = []
     if "cc_depth" in vitals.get_channel_names():
         CC, CC_depth = _time_and_data(vitals.get_channel("cc_depth"))
-    elif "CC" in vitals.get_channel_names():
+    elif "cc" in vitals.get_channel_names():
         CC, CC_depth = _time_and_data(vitals.get_channel("cc"))
+        if CC_depth is None:  # compression events without depth information
+            CC_depth = np.array([])
     else:
         CC = np.array([])
         CC_depth = np.array([])
@@ -325,14 +331,20 @@ def make_cprdat_analysis(vitals, model="") -> dict:
         registry_time_points["ZDEFI1"] = defibrillations[0]["time"]
     else:
         registry_time_points["ZDEFI1"] = None
+    # NOTE: "CO2" is the raw name of the capnography waveform of Corpuls and
+    # LIFEPAK exports, which vitabel renames to "capnography" (see
+    # utils.constants). Hence, ZINTUB is currently always None; whether the
+    # heuristic (first non-zero CO2 value) applies to the "capnography"
+    # channel of all devices is an open question.
     intub_time = None
     if "CO2" in vitals.get_channel_names():
         co_channel = vitals.get_channel("CO2")
         cotime, co = _time_and_data(co_channel)
         for time, value in zip(cotime, co):
-            if value != 0:
+            if value != 0 and not np.isnan(value):
                 intub_time = time
                 break
+    if intub_time is not None:
         registry_time_points["ZINTUB"] = (
             intub_time - vitals.rec_start()
         ).total_seconds() * 1000
@@ -676,81 +688,3 @@ def make_cprdat_analysis(vitals, model="") -> dict:
 
     cprdat_analysis["cpr_quality_analysis"] = cpr_quality_analysis
     return cprdat_analysis
-
-    # -------------- CIRCULATORY STATE --------------------------------
-    arrest_episodes = {"arrests": [], "roscs": []}
-    CC_starts = []
-    CC_stops = []
-    for elem in cprdat_analysis["chest_compression_analysis"]:
-        CC_starts.append(elem["CC_start"])
-        CC_stops.append(elem["CC_stop"])
-    if (
-        "rosc_probability" in vitals.get_label_names()
-    ):  # USE Accelerometry-Algorithm for ROSC detection
-        rosctime, roscdata = _time_and_data(vitals.get_label("rosc_probability"))
-        pred_time = np.array(
-            [(c - vitals.rec_start()).total_seconds() * 1000 for c in rosctime]
-        )
-
-        roscs, arrests = find_ROSC_2(pred_time, roscdata, CC_starts, CC_stops)
-
-        for ro in roscs:
-            arrest_episodes["roscs"].append(ro)
-        for ar in arrests:
-            arrest_episodes["arrests"].append(ar)
-        if len(arrests) > len(roscs):
-            i = len(CC_stops) - 1
-            while CC_stops[i] - CC_starts[i] < CC_min_length:
-                i -= 1
-            arrest_episodes["termination"] = CC_stops[i]
-        else:
-            arrest_episodes["termination"] = None
-
-    else:
-        arrest_episodes["arrests"].append(
-            CC_starts[0]
-        )  # Detect ROSCS and arrests directly on length of CC interruptions
-        pauses = [sta - sto for sta, sto in zip(CC_starts[1:], CC_stops[:-1])]
-        CC_lengths = [sto - sta for sta, sto in zip(CC_starts, CC_stops)]
-        i = 0
-        while i < len(pauses):
-            pause = pauses[i]
-            if pause < 120000:
-                i += 1
-            else:
-                arrest_episodes["roscs"].append(CC_stops[i])
-                j = 1
-                while CC_lengths[i + j] < CC_min_length and i + j < len(CC_lengths) - 1:
-                    j += 1
-                if i + j < len(CC_lengths) - 1:
-                    arrest_episodes["arrests"].append(CC_starts[i + j])
-
-                else:
-                    i = i + j
-        if (
-            arrest_episodes["roscs"][-1] > arrest_episodes["arrests"][-1]
-        ):  # Create Termination marker i nthe end, if necessary
-            arrest_episodes["termination"] = arrest_episodes["roscs"][-1]
-            arrest_episodes["roscs"].pop(-1)
-        else:
-            i = len(CC_stops) - 1
-            while CC_stops[i] - CC_starts[i] < CC_min_length:
-                i -= 1
-            arrest_episodes["termination"] = CC_stops[i]
-            # DECIDE whether ROSC or Arrest
-
-    cprdat_analysis["arrest_episodes"] = arrest_episodes
-
-    version = "1.5.2"
-    schema_version = "0.6.1"
-    # --------------- TOTAL --------------------------------------------------------------------
-
-    result_dict = {
-        "cprdat_analysis": cprdat_analysis,
-        "analyzationtime": pd.Timestamp.now().isoformat(),
-        "schemaversion": schema_version,
-        "cprdatversion": version,
-        "result_code": "00",
-    }
-
-    return result_dict

@@ -1,7 +1,7 @@
 {
  "mode": "values",
  "generated_with": {
-  "git_commit": "5a16b03cd007b3807894d16133df4b1f2b98b41a",
+  "git_commit": "932ab034f8cea03649a76e0a90c1c2087843b11d",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -18,44 +18,57 @@
    "endtime": 187590.0,
    "DACTYP": "00"
   },
-  "chest_compression_analysis": [],
+  "chest_compression_analysis": [
+   {
+    "CC_start": -590.0000000000001,
+    "CC_stop": 87880.0,
+    "CC_rate": 101.69491525423729,
+    "CC_depth": null
+   },
+   {
+    "CC_start": 129210.00000000001,
+    "CC_stop": 187590.0,
+    "CC_rate": 101.69491525423729,
+    "CC_depth": null
+   }
+  ],
   "CPR_per_minute_analysis": [
    {
     "starttime": 0,
-    "CC_rate": null,
+    "CC_rate": 101.6949152542373,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 1.0,
     "Ventilation_rate": null
    },
    {
     "starttime": 60000,
-    "CC_rate": null,
+    "CC_rate": 101.6949152542373,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.4646666666666667,
     "Ventilation_rate": null
    },
    {
     "starttime": 120000,
-    "CC_rate": null,
+    "CC_rate": 101.6949152542373,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.8464999999999998,
     "Ventilation_rate": null
    },
    {
     "starttime": 180000,
-    "CC_rate": null,
+    "CC_rate": 101.6949152542373,
     "CC_depth": null,
-    "CCF": 0.0,
+    "CCF": 0.1265,
     "Ventilation_rate": null
    }
   ],
   "defibrillations": [],
   "registry_time_points": {
-   "ZHDM": null,
+   "ZHDM": -590.0000000000001,
    "ZDEFIAN": 0,
    "ZDEFI1": null,
    "ZINTUB": null,
-   "ZTOD": null,
+   "ZTOD": 187590.0,
    "ZROSC1": null
   },
   "registry_info": {
@@ -321,6 +334,12 @@
      187000.0,
      187590.0
     ]
+   },
+   {
+    "name": "cc_periods",
+    "type": "startendtime",
+    "starttime": -590.0000000000001,
+    "endtime": 187590.0
    },
    {
     "name": "cc_rate_for_plotting",
@@ -827,9 +846,9 @@
    }
   ],
   "cpr_quality_analysis": {
-   "global_ccf": null,
-   "pauses_median": null,
-   "pauses_maximum": null,
+   "global_ccf": 0.7803698586459773,
+   "pauses_median": 41330.000000000015,
+   "pauses_maximum": 41330.000000000015,
    "preshock_median": null,
    "preshock_maximum": null,
    "postshock_median": null,
