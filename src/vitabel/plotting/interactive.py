@@ -4,15 +4,19 @@ from __future__ import annotations
 
 import itertools as it
 import logging
-
 from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 from matplotlib.text import Text
 
+from vitabel.plotting.layout import (
+    get_time_extremum,
+    get_timeunit_from_channels,
+    parse_channel_specification,
+    parse_label_specification,
+)
 from vitabel.timeseries import Channel, IntervalLabel, Label
 from vitabel.typing import (
     ChannelSpecification,
@@ -37,33 +41,37 @@ def plot_interactive(
     subplots_kwargs: dict[str, Any] | None = None,
 ):
     """Implementation of :meth:`.TimeDataCollection.plot_interactive`."""
-    import ipywidgets as widgets
     from enum import Enum
+
+    import ipywidgets as widgets
     from IPython import get_ipython
-    from matplotlib.backend_bases import MouseButton, MouseEvent, KeyEvent
+    from matplotlib.backend_bases import KeyEvent, MouseButton, MouseEvent
 
     CANVAS_SELECTION_TOLERANCE_PX = 5
 
-    channel_lists = collection._parse_channel_specification(channels)
+    channel_lists = parse_channel_specification(collection, channels)
     if channel_overviews is False:
         channel_overviews = []
     elif channel_overviews is True:
         channel_overviews = [list(set(it.chain.from_iterable(channel_lists)))]
     else:
-        channel_overviews = collection._parse_channel_specification(channel_overviews)
+        channel_overviews = parse_channel_specification(collection, channel_overviews)
 
     if subplots_kwargs is None:
         subplots_kwargs = {}
 
-    label_lists = collection._parse_label_specification(
-        labels, channel_lists, include_attached_labels=include_attached_labels
+    label_lists = parse_label_specification(
+        collection,
+        labels,
+        channel_lists,
+        include_attached_labels=include_attached_labels,
     )
 
     all_data_sources = channel_lists + label_lists
 
     num_subplots = len(channel_lists) + len(channel_overviews)
-    start = collection._get_time_extremum(start, all_data_sources, minimum=True)
-    stop = collection._get_time_extremum(stop, all_data_sources, minimum=False)
+    start = get_time_extremum(collection, start, all_data_sources, minimum=True)
+    stop = get_time_extremum(collection, stop, all_data_sources, minimum=False)
     if start is None and stop is None:
         logger.warning(
             "Specified channels and labels contain no data, setting start "
@@ -83,7 +91,7 @@ def plot_interactive(
     shift_span = (stop - start) * 0.25
 
     if time_unit is None:
-        time_unit = collection._get_timeunit_from_channels(channel_lists)
+        time_unit = get_timeunit_from_channels(collection, channel_lists)
 
     ipy_shell = get_ipython()
     if ipy_shell is None:
@@ -581,11 +589,11 @@ def plot_interactive(
             if limited_overview:  # xlim of overview based on selected channels
                 channels_for_xlims = [channel_list]
 
-            ov_start = collection._get_time_extremum(
-                time=None, channel_lists=channels_for_xlims, minimum=True
+            ov_start = get_time_extremum(
+                collection, time=None, channel_lists=channels_for_xlims, minimum=True
             )
-            ov_stop = collection._get_time_extremum(
-                time=None, channel_lists=channels_for_xlims, minimum=False
+            ov_stop = get_time_extremum(
+                collection, time=None, channel_lists=channels_for_xlims, minimum=False
             )
 
             data_width = (ov_stop - ov_start).total_seconds()
