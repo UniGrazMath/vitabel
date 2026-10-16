@@ -26,16 +26,52 @@ LabelSpecification: TypeAlias = Union[str, dict[str, Any], "Label"]
 """Type alias for different ways to specify a Label."""
 
 LabelPlotType: TypeAlias = Literal["scatter", "vline", "combined"]
+"""How the entries of a :class:`.Label` are plotted (``plot_type``):
+
+- ``"scatter"``: points at their values (requires numeric data);
+- ``"vline"``: vertical lines, with text as set by
+  :data:`LabelPlotVLineTextSource`;
+- ``"combined"``: points for entries with a value, vertical lines for the
+  others (default).
+"""
+
 LabelPlotVLineTextSource: TypeAlias = Literal[
     "data", "text_data", "combined", "disabled"
 ]
+"""Text at the vertical lines of a :class:`.Label` (``vline_text_source``):
+
+- ``"text_data"``: the texts of the entries (default);
+- ``"data"``: their numeric values;
+- ``"combined"``: texts where available, values otherwise;
+- ``"disabled"``: no text.
+"""
 
 IntervalLabelPlotType: TypeAlias = Literal["box", "hline", "combined"]
+"""How the intervals of an :class:`.IntervalLabel` are plotted (``plot_type``):
+
+- ``"box"``: a shaded area over the full height;
+- ``"hline"``: a horizontal bar at the value of the interval (requires
+  numeric data);
+- ``"combined"``: bars for intervals with a value, boxes for the others
+  (default).
+"""
 # IntervalLabelPlotVLineTextSource: TypeAlias = Literal["data", "text_data", "combined", "disabled"] #TODO: yet not implemented
 
 LabelAnnotationPresetType: TypeAlias = Literal[
     "timestamp", "numerical", "textual", "combined"
 ]
+"""Preselection of the annotation menu of the interactive plot for an empty
+:class:`.Label` (``annotation_preset_type``): what is stored with a new entry
+besides its time.
+
+- ``"timestamp"``: nothing else;
+- ``"numerical"``: the y position as value;
+- ``"textual"``: a text;
+- ``"combined"``: both.
+
+Without a preset (``None``), it is derived from ``plot_type`` and
+``vline_text_source``. Labels with entries use the kind of data they have.
+"""
 
 
 @dataclass
