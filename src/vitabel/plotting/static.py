@@ -27,6 +27,25 @@ from vitabel.typing import (
 logger = logging.getLogger("vitabel")
 
 
+def _relative_times(times, series, reference_time):
+    """Times relative to the reference time: the given one, or by default the
+    start of an absolute series (relative series are plotted as they are).
+    ``times`` is a time index, or an array of interval end points."""
+    if len(times) == 0:
+        # empty labels may have lost their time_start: no reference needed,
+        # just the right (timedelta) type
+        return times - times
+    if reference_time is None:
+        if not series.is_time_absolute():
+            return times
+        reference_time = series.time_start
+    if isinstance(times, np.ndarray):  # interval end points
+        if isinstance(reference_time, pd.Timestamp):
+            return times - np.datetime64(reference_time)
+        return times - np.timedelta64(pd.Timedelta(reference_time))
+    return times - reference_time
+
+
 def plot_channel(
     channel,
     plot_axes: plt.Axes | None = None,
@@ -50,9 +69,7 @@ def plot_channel(
     # when plotting a single channel, the times should always
     # be numeric (matplotlib's datetime formatter is not ideal,
     # the labels have lots of overlap).
-    if channel.is_time_absolute():
-        reference_time = reference_time or channel.time_start
-        time_index = time_index - reference_time
+    time_index = _relative_times(time_index, channel, reference_time)
 
     if time_unit is None:
         time_unit = channel.time_unit
@@ -107,9 +124,7 @@ def plot_label(
         start=start, stop=stop, include_adjacent=True
     )
 
-    if label.is_time_absolute():
-        reference_time = reference_time or label.time_start
-        time_index = time_index - reference_time
+    time_index = _relative_times(time_index, label, reference_time)
 
     if time_unit is None:
         time_unit = label.time_unit
@@ -220,9 +235,7 @@ def plot_interval_label(
     if plot_type not in typing.get_args(IntervalLabelPlotType):
         raise ValueError(f"Value '{plot_type}' is not a valid choice for plot_type")
 
-    if label.is_time_absolute():
-        reference_time = reference_time or label.time_start
-        time_index = time_index - np.datetime64(reference_time)
+    time_index = _relative_times(time_index, label, reference_time)
 
     if time_unit is None:
         time_unit = label.time_unit
@@ -347,10 +360,17 @@ def plot_collection(
                 stop=stop,
                 resolution=resolution,
                 time_unit=time_unit,
+                reference_time=start,
             )
 
         for label in label_list:
-            label.plot(plot_axes=subax, start=start, stop=stop, time_unit=time_unit)
+            label.plot(
+                plot_axes=subax,
+                start=start,
+                stop=stop,
+                time_unit=time_unit,
+                reference_time=start,
+            )
 
         plot_duration = (stop - start) / pd.to_timedelta(1, unit=time_unit)
         subax.set_xlim((0, plot_duration))

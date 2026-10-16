@@ -441,3 +441,40 @@ def test_minmax_decimate_short_input_unchanged():
     xd, yd = minmax_decimate(x, y, 0, 10, 100)
     assert xd is x or np.array_equal(xd, x)
     assert np.array_equal(yd, y)
+
+
+# -- regression tests --------------------------------------------------------------------
+
+
+def test_static_plot_aligns_series_with_different_starts():
+    """Static plots use a common reference time (#241)."""
+    recording = Vitals()
+    t = np.arange(0, 120, 1.0)
+    recording.add_channel(Channel("first", START + pd.to_timedelta(t, "s"), t))
+    recording.add_channel(Channel("later", START + pd.to_timedelta(t + 30, "s"), t))
+    # a label that starts 15 minutes before the channels
+    label = Label(
+        "events",
+        time_index=[START - pd.Timedelta(minutes=15), START + pd.Timedelta(seconds=60)],
+        data=[1.0, 2.0],
+    )
+    recording.add_global_label(label)
+    fig, axes = recording.plot(channels=[["first", "later"]], labels=[["events"]])
+    first, later, events = axes[0].get_lines()[:3]
+    assert first.get_xdata()[0] == 0
+    assert later.get_xdata()[0] == 30
+    assert 60 in events.get_xdata()
+    plt.close(fig)
+
+
+def test_relative_recording_not_starting_at_zero(ipython):
+    recording = Vitals()
+    t = np.arange(100, 200, 0.5)
+    recording.add_channel(Channel("relative", t, np.sin(t)))
+    fig, axes = recording.plot()
+    assert axes[0].get_lines()[0].get_xdata()[0] == 0  # within the axis limits
+    plot = recording.plot_interactive(channels=[["relative"]])
+    ax = plot.center.figure.axes[0]
+    (line,) = [line for line in ax.get_lines() if line.get_label() == "relative"]
+    xmin, xmax = ax.get_xlim()
+    assert xmin <= line.get_xdata()[0] < xmax
