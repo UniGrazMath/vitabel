@@ -841,3 +841,20 @@ def test_undo_redo_keys(ipython):
     assert len(events) == 0
     plot.key("ctrl+y")
     assert len(events) == 1
+
+
+def test_default_colors_are_kept_when_redrawing(ipython):
+    """Series without explicit color keep their color from the color cycle
+    (redrawing must not advance the cycle)."""
+    plot = Interactive(_recording())
+    ax = plot.axes[0]
+
+    def signal_color():
+        (line,) = [line for line in ax.get_lines() if line.get_label() == "signal"]
+        return matplotlib.colors.to_hex(line.get_color())
+
+    color = signal_color()
+    for key in ["right", "+", "-"]:
+        plot.key(key)
+    plot.click(ax, 300, 0.5)  # redraws the label (and its subplot)
+    assert signal_color() == color
