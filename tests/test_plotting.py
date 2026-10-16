@@ -830,3 +830,14 @@ def test_threshold_and_span_overlays(ipython):
     plot.key("right")
     assert len(ax.lines) == n_lines + 1
     assert len(ax.patches) + len(ax.collections) > n_patches
+
+
+def test_undo_redo_keys(ipython):
+    recording = _recording()
+    events = recording.get_label("events")
+    plot = Interactive(recording)
+    plot.click(plot.axes[0], 300, 0.5)
+    plot.key("ctrl+z")
+    assert len(events) == 0
+    plot.key("ctrl+y")
+    assert len(events) == 1

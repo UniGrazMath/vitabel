@@ -19,6 +19,9 @@ Right-click to add data points to the active label. Use the number
 keys (<kbd style="color: black;">0</kbd> to <kbd style="color: black;">9</kbd>)
 to quickly switch between active labels. Use the button below or the
 <kbd style="color: black;">D</kbd> key to toggle between adding and deleting labels.
+<kbd style="color: black;">Ctrl</kbd>+<kbd style="color: black;">Z</kbd> undoes the last
+change of a label or time shift, <kbd style="color: black;">Ctrl</kbd>+<kbd style="color: black;">Y</kbd>
+redoes it.
 </p>
 <p>
 Use the left and right arrow keys to shift the plotted time window.
