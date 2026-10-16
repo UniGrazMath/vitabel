@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import numbers
 import typing
 
 from typing import Any
@@ -14,6 +15,7 @@ import pandas as pd
 from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle
 
+from vitabel.plotting.data import minmax_decimate
 from vitabel.typing import (
     ChannelSpecification,
     IntervalLabelPlotType,
@@ -58,9 +60,7 @@ def plot_channel(
 ):
     """Implementation of :meth:`.Channel.plot`."""
 
-    channel_data = channel.get_data(
-        start=start, stop=stop, resolution=resolution, include_adjacent=True
-    )
+    channel_data = channel.get_data(start=start, stop=stop, include_adjacent=True)
     time_index = channel_data.time_index
     data = channel_data.data
     if data is None:
@@ -73,7 +73,39 @@ def plot_channel(
 
     if time_unit is None:
         time_unit = channel.time_unit
-    time_index /= pd.to_timedelta(1, unit=time_unit)
+    unit = pd.to_timedelta(1, unit=time_unit)
+    time_index /= unit
+
+    if resolution is not None and len(time_index) > 0:
+        # keep the minimum and maximum per interval of the resolution's length
+        # (peaks are kept), in buckets aligned to the plotted window
+        if isinstance(resolution, str):
+            resolution = pd.to_timedelta(resolution)
+        elif isinstance(resolution, numbers.Number):
+            resolution = pd.to_timedelta(resolution, unit=channel.time_unit)
+        x = np.asarray(time_index, dtype=float)
+        x0, x1 = x[0], x[-1]
+        bounds = (
+            _relative_times(
+                pd.Index(
+                    [
+                        channel.convert_time_input(t)
+                        for t in (start, stop)
+                        if t is not None
+                    ]
+                ),
+                channel,
+                reference_time,
+            )
+            / unit
+        )
+        if start is not None:
+            x0 = bounds[0]
+        if stop is not None:
+            x1 = bounds[-1]
+        n_buckets = int(np.ceil((x1 - x0) / (resolution / unit)))
+        x, data = minmax_decimate(x, np.asarray(data, dtype=float), x0, x1, n_buckets)
+        time_index = x
 
     if plot_axes is None:
         figure, plot_axes = plt.subplots()
@@ -350,7 +382,7 @@ def plot_collection(
     if resolution is None:
         screen_pixel_width, screen_pixel_height = fig.canvas.get_width_height()
         data_width = (stop - start).total_seconds()
-        resolution = data_width / screen_pixel_width
+        resolution = pd.Timedelta(seconds=data_width / screen_pixel_width)
 
     for channel_list, label_list, subax in zip(channel_lists, label_lists, axes):
         for channel in channel_list:

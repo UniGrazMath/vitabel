@@ -478,3 +478,29 @@ def test_relative_recording_not_starting_at_zero(ipython):
     (line,) = [line for line in ax.get_lines() if line.get_label() == "relative"]
     xmin, xmax = ax.get_xlim()
     assert xmin <= line.get_xdata()[0] < xmax
+
+
+def test_static_plot_keeps_peaks():
+    """Downsampling keeps minimum and maximum per pixel column."""
+    recording = Vitals()
+    t = np.arange(0, 3600, 0.01)  # 360k samples
+    values = np.sin(t)
+    values[123_457] = 25.0  # a single-sample peak
+    recording.add_channel(Channel("signal", START + pd.to_timedelta(t, "s"), values))
+    fig, axes = recording.plot()
+    (line,) = axes[0].get_lines()
+    assert len(line.get_xdata()) < 10_000  # downsampled
+    assert line.get_ydata().max() == 25.0
+    plt.close(fig)
+
+
+def test_static_plot_resolution_for_millisecond_channels():
+    """The resolution (computed from the figure width) is a duration, not a
+    number of seconds read in the channel's time unit."""
+    recording = Vitals()
+    t = np.arange(0, 600_000, 2.0)  # 10 minutes in ms, 300k samples
+    recording.add_channel(Channel("signal", t, np.sin(t / 1000), time_unit="ms"))
+    fig, axes = recording.plot()
+    (line,) = axes[0].get_lines()
+    assert len(line.get_xdata()) < 10_000
+    plt.close(fig)
