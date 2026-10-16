@@ -58,15 +58,17 @@ class Renderer:
         self.overview_axes = list(axes[n_channel_axes:])
         self.screen_pixel_width, _ = figure.canvas.get_width_height()
 
-        # the crosshair is drawn by blitting on top of the last full draw
-        # (animated: not part of the full draw), so moving the mouse does not
-        # re-render the figure
+        # the crosshair is drawn on top of the last full draw (animated: not
+        # part of the full draw, does not make the figure stale), so moving
+        # the mouse does not re-render the figure; see _handle_draw
         self.x_indicators = [
             ax.axvline(x=0, color="black", linestyle="--", linewidth=0.5, animated=True)
             for ax in self.channel_axes
         ]
         self._background = None
         figure.canvas.mpl_connect("draw_event", self._on_draw)
+        self._full_draw = figure.canvas.handle_draw
+        figure.canvas.handle_draw = self._handle_draw
         self.overview_indicators = []
         self.pending_interval_artists = []
         self.shift_reference_artist = None
@@ -140,14 +142,26 @@ class Renderer:
             indicator.axes.draw_artist(indicator)
         self.figure.canvas.blit(self.figure.bbox)
 
+    def _handle_draw(self, event) -> None:
+        """Draw request of the browser (ipympl): if only the crosshair changed
+        (the figure is not stale), draw it on the saved background instead of
+        rendering the whole figure.
+
+        Images are only sent on request of the browser, which waits for the
+        previous image: pushing images (blitting on mouse moves) lets the
+        browser skip some of them, and since they only contain the changed
+        pixels, skipped ones leave fragments.
+        """
+        if self._background is not None and not self.figure.stale:
+            self.figure.canvas.restore_region(self._background)
+            self._blit_indicators()
+        else:
+            self._full_draw(event)
+
     def move_indicators(self, x: float) -> None:
         for indicator in self.x_indicators:
             indicator.set_xdata(np.ones_like(indicator.get_xdata()) * x)
-        if self._background is None:
-            self.figure.canvas.draw_idle()
-            return
-        self.figure.canvas.restore_region(self._background)
-        self._blit_indicators()
+        self.figure.canvas.draw_idle()
 
     def update_vline_texts(self) -> None:
         """Keep vline texts at 10 % of the y range."""

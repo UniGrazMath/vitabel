@@ -858,3 +858,34 @@ def test_default_colors_are_kept_when_redrawing(ipython):
         plot.key(key)
     plot.click(ax, 300, 0.5)  # redraws the label (and its subplot)
     assert signal_color() == color
+
+
+def test_crosshair_redraw_without_full_render(ipython):
+    """Mouse moves request a redraw from the browser (flow control: no
+    pushed images, which the browser may skip, leaving fragments); the
+    requested redraw only draws the crosshair on the saved background."""
+    plot = Interactive(_recording())
+    canvas, ax = plot.figure.canvas, plot.axes[0]
+    full_renders = []
+    canvas.mpl_connect("draw_event", lambda event: full_renders.append(event))
+    canvas.handle_event({"type": "draw"})  # first request: full render
+    assert len(full_renders) == 1
+
+    px, py = ax.transData.transform((300, 0))
+
+    def dark_pixels_in_column():
+        """Maximum number of dark pixels in the columns around ``px``."""
+        pixels = np.asarray(canvas.get_renderer().buffer_rgba())
+        columns = pixels[:, round(px) - 1 : round(px) + 2, :3].mean(axis=2)
+        return int((columns < 100).sum(axis=0).max())
+
+    before = dark_pixels_in_column()
+    MouseEvent("motion_notify_event", canvas, px, py)._process()
+    assert not plot.figure.stale
+    canvas.handle_event({"type": "draw"})
+    assert len(full_renders) == 1  # crosshair only
+    assert dark_pixels_in_column() > before + 50  # the dashed line is there
+
+    plot.key("right")  # a real change: full render
+    canvas.handle_event({"type": "draw"})
+    assert len(full_renders) == 2
