@@ -24,6 +24,7 @@ from matplotlib.text import Text
 
 from vitabel import Channel, IntervalLabel, Label, Vitals
 from vitabel.plotting.data import minmax_decimate
+from vitabel.plotting.interaction import AnnotationOptions, InteractionCore, LabelChange
 from vitabel.plotting.layout import PlotSpec
 
 START = pd.Timestamp("2024-01-01 12:00:00")
@@ -556,3 +557,173 @@ def test_plots_of_collections_without_channels(ipython):
     assert axes[0].get_lines()
     plot = recording.plot_interactive()
     assert isinstance(plot, widgets.AppLayout)
+
+
+# -- interaction core ------------------------------------------------------------------------
+
+
+def _core(recording=None, **kwargs) -> InteractionCore:
+    recording = recording or _recording()
+    kwargs = {
+        "channels": [["signal"], ["other"]],
+        "labels": [["events", "notes", "phases"], []],
+        **kwargs,
+    }
+    return InteractionCore(PlotSpec.from_arguments(recording.data, **kwargs))
+
+
+def _seconds(value: float) -> pd.Timestamp:
+    return START + pd.Timedelta(seconds=value)
+
+
+class Recorder:
+    def __init__(self, core):
+        self.events = []
+        for event in (
+            "view_changed",
+            "labels_changed",
+            "channels_shifted",
+            "state_changed",
+        ):
+            core.on(
+                event, lambda *args, event=event: self.events.append((event, *args))
+            )
+
+    def of(self, event):
+        return [args for name, *args in self.events if name == event]
+
+
+def test_core_navigation():
+    core = _core()
+    events = Recorder(core)
+    core.zoom_in()
+    assert (core.start, core.stop) == (_seconds(149.875), _seconds(449.625))
+    core.pan(+1)
+    assert core.start == _seconds(224.8125)
+    core.pan(-1)
+    core.zoom_out()
+    assert (core.start, core.stop) == (_seconds(74.9375), _seconds(524.5625))
+    core.center_on(_seconds(100))
+    assert (core.start, core.stop) == (_seconds(-124.8125), _seconds(324.8125))
+    core.set_window(_seconds(20), _seconds(10))  # ordered
+    assert (core.start, core.stop) == (_seconds(10), _seconds(20))
+    assert core.shift_span == pd.Timedelta(seconds=2.5)
+    assert events.of("view_changed")[-1] == [_seconds(10), _seconds(20)]
+    assert len(events.of("view_changed")) == 6
+
+
+def test_core_y_limits():
+    core = _core()
+    core.set_ylim(0, -1.0, 1.0)
+    core.zoom_y(0, center=0.0, step=1)
+    assert core.ylims[0] == pytest.approx((-1.1, 1.1))
+
+
+def test_core_label_selection_and_options():
+    core = _core()
+    assert [label.name for label in core.labels] == ["events", "notes", "phases"]
+    core.select_label(1)  # "notes": vline label, text preset with its name
+    assert core.active_label.name == "notes"
+    assert core.options == AnnotationOptions(
+        use_value=False, use_text=True, text="notes"
+    )
+    core.set_options(text="other")
+    assert core.options.text == "other"
+
+
+def test_core_point_annotation_and_deletion():
+    recording = _recording()
+    events = recording.get_label("events")
+    core = _core(recording)
+    core.set_options(use_value=True, use_text=True, text="check")
+    recorder = Recorder(core)
+
+    core.click(_seconds(300), 0.5, subplot=0)
+    assert events.get_data().data.tolist() == [0.5]
+    label, change = recorder.of("labels_changed")[-1]
+    assert label is events
+    assert change == LabelChange("added", _seconds(300), 0.5, "check")
+
+    core.toggle_delete()
+    core.click(_seconds(310), 0, subplot=0, tolerance=pd.Timedelta(seconds=5))
+    assert len(events) == 1  # not within the tolerance
+    core.click(_seconds(303), 0, subplot=0, tolerance=pd.Timedelta(seconds=5))
+    assert len(events) == 0
+    assert recorder.of("labels_changed")[-1][1] == LabelChange(
+        "removed", _seconds(300), 0.5, "check"
+    )
+
+
+def test_core_interval_annotation():
+    recording = _recording()
+    phases = recording.get_label("phases")
+    core = _core(recording)
+    core.select_label(phases)
+    core.set_options(use_value=True, use_text=False)
+
+    core.click(_seconds(360), 0.6, subplot=1)
+    assert core.pending_interval.subplot == 1
+    assert len(phases.intervals) == 0
+    core.click(_seconds(310), 0.2, subplot=0)
+    assert core.pending_interval is None
+    assert pd.DatetimeIndex(phases.intervals[0]).tolist() == [
+        _seconds(310),
+        _seconds(360),
+    ]
+    assert phases.data.tolist() == pytest.approx([0.4])
+
+    core.click(_seconds(400), 0, subplot=0)
+    core.cancel()
+    assert core.pending_interval is None
+
+    core.toggle_delete()
+    core.click(_seconds(330), 0, subplot=0)
+    assert len(phases.intervals) == 0
+
+
+def test_core_shift():
+    recording = _recording()
+    signal = recording.get_channel("signal")
+    core = _core(recording)
+    recorder = Recorder(core)
+    core.set_mode("shift")
+    core.click(_seconds(300), 0, subplot=0)
+    assert core.shift_reference.time == _seconds(300)
+    core.click(_seconds(310), 0, subplot=0)
+    assert signal.first_entry == _seconds(10)
+    assert recorder.of("channels_shifted") == [[[signal], pd.Timedelta(seconds=10)]]
+
+
+def test_core_undo_redo():
+    recording = _recording()
+    events, signal = recording.get_label("events"), recording.get_channel("signal")
+    core = _core(recording)
+    core.set_options(use_value=True, use_text=False)
+    core.click(_seconds(300), 0.5, subplot=0)
+    core.toggle_delete()
+    core.click(_seconds(300), 0, subplot=0)
+    core.set_mode("shift")
+    core.click(_seconds(0), 0, subplot=0)
+    core.click(_seconds(10), 0, subplot=0)
+
+    core.undo()  # shift
+    assert signal.first_entry == START
+    core.undo()  # deletion
+    assert events.get_data().data.tolist() == [0.5]
+    core.undo()  # addition
+    assert len(events) == 0
+    assert not core.can_undo()
+    core.redo()
+    core.redo()
+    assert len(events) == 0 and core.can_redo()
+    core.click(_seconds(5), 0, subplot=0)  # a new change (shift reference) ...
+    core.click(_seconds(6), 0, subplot=0)
+    assert not core.can_redo()  # ... clears the redo history
+
+
+def test_core_mode_none_ignores_clicks():
+    recording = _recording()
+    core = _core(recording)
+    core.set_mode("none")
+    core.click(_seconds(300), 0.5, subplot=0)
+    assert len(recording.get_label("events")) == 0
