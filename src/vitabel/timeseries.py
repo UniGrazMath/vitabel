@@ -2105,12 +2105,12 @@ class IntervalLabel(Label):
     plot_type
         Determines how entries of the label are plotted. Available options are:
 
-        - ``'box'``: Entries of the label are plotted as colorized area.
-            Requries no additional data.
+        - ``'box'``: Entries of the label are plotted as shaded areas.
+          Requires no additional data.
         - ``'hline'``: Entries of the label are plotted as horizontal lines.
-            Requires a label with numeric data.
-        - ``'combined'``: Entries of the label are plotted as horizontal line when there
-            is associated numeric data, and as rectangle lines otherwise.
+          Requires a label with numeric data.
+        - ``'combined'``: Entries of the label are plotted as horizontal lines
+          when there is associated numeric data, and as shaded areas otherwise.
 
         Defaults to ``'combined'``.
 
