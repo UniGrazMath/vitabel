@@ -110,6 +110,10 @@ class InteractivePlot(widgets.AppLayout):
             self.panel.toggle_delete()
         elif key == "escape":
             core.cancel()
+        elif key in ("ctrl+z", "cmd+z"):
+            core.undo()
+        elif key in ("ctrl+y", "cmd+y", "ctrl+Z", "ctrl+shift+z", "cmd+shift+z"):
+            core.redo()
 
     def _on_click(self, event: MouseEvent) -> None:
         renderer = self.renderer
