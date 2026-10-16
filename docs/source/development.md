@@ -66,6 +66,9 @@ vitabel/
 │   ├── circulation/          ROSC prediction (features, pre-trained model)
 │   ├── intervals.py          filtering by interval labels
 │   └── threshold.py          area / duration under threshold
+├── plotting/                 plotting of channels and labels
+│   ├── static.py             static matplotlib plots (Channel.plot, ..., Vitals.plot)
+│   └── interactive.py        interactive plot (Vitals.plot_interactive; ipympl, ipywidgets)
 ├── registry/
 │   └── cprdat.py             German Resuscitation Registry analysis
 └── utils/
@@ -78,7 +81,9 @@ vitabel/
 ```
 
 **Dependencies** point downwards: `utils` and `typing` → `timeseries` →
-`io` / `analysis` → `vitals` → `registry`. In particular, modules in `io`
+`io` / `analysis` / `plotting` → `vitals` → `registry`. The `plot` methods
+of the time series classes delegate to `plotting` (imported when called).
+In particular, modules in `io`
 and `analysis` must not depend on `vitals` (and must import names from the
 defining modules, not via `import vitabel`); this is checked by
 `tests/test_architecture.py`.
