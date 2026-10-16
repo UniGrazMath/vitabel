@@ -317,12 +317,14 @@ def plot_interval_label(
             hline_data = data[~np.isnan(data)]
         else:
             hline_time_index = time_index
+            hline_data = data
 
         time_midpoints = np.mean(hline_time_index, axis=1)
         time_radius = np.diff(hline_time_index, axis=1).reshape(-1) / 2.0
 
         # TODO: deal with text_data
-        base_plotstyle = label.plotstyle.copy()
+        # a fresh merge: the box styling above adds defaults for boxes only
+        base_plotstyle = {**label.plotstyle, **(plotstyle or {})}
         filtered_base_plotstyle = {
             k: v for k, v in base_plotstyle.items() if k in Line2D([], []).properties()
         }
