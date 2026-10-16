@@ -129,7 +129,8 @@ def get_time_extremum(
         for channel in it.chain.from_iterable(channel_lists):
             if channel.is_empty():
                 continue
-            ex_time = op(channel.time_index)
+            # vectorized (the builtins min / max iterate over every entry)
+            ex_time = channel.time_index.min() if minimum else channel.time_index.max()
             if collection.is_time_absolute():
                 ex_time += channel.time_start
             time_list.append(ex_time)
