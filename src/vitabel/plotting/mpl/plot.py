@@ -11,6 +11,7 @@ from vitabel.plotting.interaction import InteractionCore
 from vitabel.plotting.layout import PlotSpec
 from vitabel.plotting.mpl.panel import ControlPanel
 from vitabel.plotting.mpl.renderer import Renderer
+from vitabel.plotting.overlays import Overlay
 from vitabel.timeseries import IntervalLabel
 
 SELECTION_TOLERANCE_PX = 5
@@ -47,6 +48,45 @@ class InteractivePlot(widgets.AppLayout):
         self._show_limits()
         self.figure.subplots_adjust(top=0.95, bottom=0.05, left=0.05, right=0.97)
         canvas._figure_label = ""
+
+    # -- public interface --------------------------------------------------------------
+
+    def on(self, event: str, callback) -> None:
+        """Call ``callback`` on an event of the plot.
+
+        - ``"labels_changed"``: ``callback(label, change)`` after an entry was
+          added to or removed from a label (by annotating, deleting, undo /
+          redo); ``change`` is a :class:`~vitabel.plotting.interaction.LabelChange`
+          with ``kind`` (``"added"`` / ``"removed"``), ``time``, ``value``,
+          ``text``.
+        - ``"view_changed"``: ``callback(start, stop)`` when the time window
+          changes.
+        - ``"channels_shifted"``: ``callback(channels, offset)`` after a time
+          shift.
+        - ``"state_changed"``: ``callback(field)``, e.g. ``"mode"``,
+          ``"active_label"``.
+        """
+        self.core.on(event, callback)
+
+    def set_window(self, start, stop) -> None:
+        """Show the time window from ``start`` to ``stop`` (timestamps /
+        timedeltas, strings, or numbers in the units of the x axis)."""
+
+        def to_time(value):
+            if isinstance(value, (int, float)):
+                return self.renderer.to_time(value)
+            return self.core.spec.collection._parse_time(value)
+
+        self.core.set_window(to_time(start), to_time(stop))
+
+    def add_overlay(self, overlay: Overlay, subplot: int = 0) -> Overlay:
+        """Add an overlay (e.g. :class:`~vitabel.plotting.overlays.FillBetween`)
+        to a subplot; it is recomputed whenever the plot changes."""
+        self.renderer.add_overlay(overlay, subplot)
+        return overlay
+
+    def remove_overlay(self, overlay: Overlay) -> None:
+        self.renderer.remove_overlay(overlay)
 
     # -- input -----------------------------------------------------------------------
 

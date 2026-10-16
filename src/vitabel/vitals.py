@@ -1309,6 +1309,21 @@ class Vitals:
             to the recording interval of the channels being plotted.
         subplots_kwargs
             Keyword arguments passed to ``matplotlib.pyplot.subplots``.
+
+        Returns
+        -------
+        InteractivePlot
+            An ipywidgets layout (control panel above the figure) that can be
+            displayed and combined with other widgets. It also provides:
+
+            - ``on(event, callback)``: react to changes, e.g.
+              ``"labels_changed"`` after annotating;
+            - ``add_overlay(overlay, subplot=0)``: persistent overlays, e.g.
+              :class:`~vitabel.plotting.overlays.FillBetween` to shade the
+              area of a signal below a threshold;
+            - ``set_window(start, stop)``;
+            - ``figure``: the matplotlib figure (customisations persist when
+              the plot is updated).
         """
         return self.data.plot_interactive(
             channels=channels,

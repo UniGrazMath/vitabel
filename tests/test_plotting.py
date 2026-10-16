@@ -26,6 +26,7 @@ from vitabel import Channel, IntervalLabel, Label, Vitals
 from vitabel.plotting.data import minmax_decimate
 from vitabel.plotting.interaction import AnnotationOptions, InteractionCore, LabelChange
 from vitabel.plotting.layout import PlotSpec
+from vitabel.plotting.overlays import FillBetween, HLine, VSpan
 
 START = pd.Timestamp("2024-01-01 12:00:00")
 
@@ -780,3 +781,52 @@ def test_settings_show_the_current_limits(ipython):
     plot.widget.header.selected_index = 2  # ... shown when opening them
     fields = plot.find(widgets.FloatText)
     assert (fields[0].value, fields[1].value) == (-3, 3)
+
+
+# -- public interface of the interactive plot ------------------------------------------------
+
+
+def test_interactive_plot_events_and_window(ipython):
+    plot = Interactive(_recording())
+    changes, windows = [], []
+    plot.widget.on(
+        "labels_changed",
+        lambda label, change: changes.append((label.name, change.kind)),
+    )
+    plot.widget.on("view_changed", lambda start, stop: windows.append((start, stop)))
+    plot.click(plot.axes[0], 300, 0.5)
+    assert changes == [("events", "added")]
+    plot.widget.set_window(100, 200)  # in units of the x axis
+    assert plot.window() == (100.0, 200.0)
+    plot.widget.set_window("2024-01-01 12:01:00", "2024-01-01 12:02:00")
+    assert windows[-1] == (_seconds(60), _seconds(120))
+
+
+def test_fill_between_overlay(ipython):
+    """Like notebook 03: the area of a signal below a threshold, recomputed
+    for every window."""
+    plot = Interactive(_recording())
+    ax = plot.axes[0]
+    n_collections = len(ax.collections)
+    overlay = plot.widget.add_overlay(
+        FillBetween("signal", 0.5, where="below", color="orange"), subplot=0
+    )
+    assert len(ax.collections) == n_collections + 1
+    fill = ax.collections[-1]
+    assert matplotlib.colors.to_hex(fill.get_facecolor()[0]) == "#ffa500"
+    plot.key("+")
+    assert len(ax.collections) == n_collections + 1  # replaced, not added
+    assert ax.collections[-1] is not fill
+    plot.widget.remove_overlay(overlay)
+    assert len(ax.collections) == n_collections
+
+
+def test_threshold_and_span_overlays(ipython):
+    plot = Interactive(_recording())
+    ax = plot.axes[1]
+    n_lines, n_patches = len(ax.lines), len(ax.patches)
+    plot.widget.add_overlay(HLine(0.5, color="red"), subplot=1)
+    plot.widget.add_overlay(VSpan(_seconds(10), _seconds(20), alpha=0.2), subplot=1)
+    plot.key("right")
+    assert len(ax.lines) == n_lines + 1
+    assert len(ax.patches) + len(ax.collections) > n_patches

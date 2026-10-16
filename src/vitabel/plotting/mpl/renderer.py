@@ -9,8 +9,17 @@ import pandas as pd
 
 from matplotlib.text import Text
 
+from vitabel.plotting.data import minmax_decimate
 from vitabel.plotting.interaction import InteractionCore
 from vitabel.plotting.layout import PlotSpec
+from vitabel.plotting.overlays import (
+    FillBetween,
+    HLine,
+    Overlay,
+    VSpan,
+    resolve_series,
+    series_values,
+)
 
 
 class Renderer:
@@ -58,6 +67,9 @@ class Renderer:
         self.shift_reference_artist = None
         self.is_repainting = False
         self._artists: dict[tuple[int, int], list] = {}
+        self.overlays: list[tuple[int, Overlay]] = []
+        """Overlays with their subplot, drawn in this order."""
+        self._overlay_series: dict[int, tuple] = {}
         """Artists drawn per (subplot, series id); only these are ever replaced,
         so user changes to the axes and their own artists persist."""
         for ax in self.channel_axes:
@@ -141,14 +153,25 @@ class Renderer:
             if any(item is series for item in [*channels, *labels])
         ]
 
-    def _draw_series(self, subplot: int, series, resolution) -> None:
-        """(Re)draw one channel / label, replacing only its own artists."""
+    def _replace_artists(self, subplot: int, key, draw) -> None:
+        """Remove the artists previously drawn under ``key``, call ``draw``,
+        and remember the artists (and containers) it added."""
         ax = self.channel_axes[subplot]
-        for artist in self._artists.pop((subplot, id(series)), []):
+        for artist in self._artists.pop((subplot, key), []):
             artist.remove()
         children, containers = set(ax.get_children()), list(ax.containers)
+        draw(ax)
+        new_containers = [c for c in ax.containers if c not in containers]
+        in_containers = {id(a) for c in new_containers for a in c.get_children()}
+        self._artists[(subplot, key)] = [
+            artist
+            for artist in ax.get_children()
+            if artist not in children and id(artist) not in in_containers
+        ] + new_containers
+
+    def _draw_series(self, subplot: int, series, resolution) -> None:
+        """(Re)draw one channel / label, replacing only its own artists."""
         kwargs = dict(
-            plot_axes=ax,
             start=self.core.start,
             stop=self.core.stop,
             time_unit=self.spec.time_unit,
@@ -156,14 +179,78 @@ class Renderer:
         )
         if any(series is channel for channel in self.spec.channels[subplot]):
             kwargs["resolution"] = resolution
-        series.plot(**kwargs)
-        new_containers = [c for c in ax.containers if c not in containers]
-        in_containers = {id(a) for c in new_containers for a in c.get_children()}
-        self._artists[(subplot, id(series))] = [
-            artist
-            for artist in ax.get_children()
-            if artist not in children and id(artist) not in in_containers
-        ] + new_containers
+        self._replace_artists(
+            subplot, id(series), lambda ax: series.plot(plot_axes=ax, **kwargs)
+        )
+
+    # -- overlays ----------------------------------------------------------------
+
+    def add_overlay(self, overlay: Overlay, subplot: int) -> None:
+        if isinstance(overlay, FillBetween):
+            collection = self.spec.collection
+            y2 = overlay.y2
+            if not isinstance(y2, (int, float)):
+                y2 = resolve_series(collection, y2)
+            self._overlay_series[id(overlay)] = (
+                resolve_series(collection, overlay.y1),
+                y2,
+            )
+        self.overlays.append((subplot, overlay))
+        self._draw_overlay(subplot, overlay)
+        self.figure.canvas.draw_idle()
+
+    def remove_overlay(self, overlay: Overlay) -> None:
+        for subplot, item in list(self.overlays):
+            if item is overlay:
+                for artist in self._artists.pop(
+                    (subplot, ("overlay", id(overlay))), []
+                ):
+                    artist.remove()
+                self.overlays.remove((subplot, item))
+        self._overlay_series.pop(id(overlay), None)
+        self.figure.canvas.draw_idle()
+
+    def _overlay_depends_on(self, overlay: Overlay, series) -> bool:
+        return any(item is series for item in self._overlay_series.get(id(overlay), ()))
+
+    def _draw_overlay(self, subplot: int, overlay: Overlay) -> None:
+        def draw(ax):
+            if isinstance(overlay, HLine):
+                ax.axhline(overlay.y, **overlay.style)
+            elif isinstance(overlay, VSpan):
+                ax.axvspan(
+                    self.to_x(overlay.start), self.to_x(overlay.stop), **overlay.style
+                )
+            elif isinstance(overlay, FillBetween):
+                self._fill_between(ax, overlay)
+
+        self._replace_artists(subplot, ("overlay", id(overlay)), draw)
+
+    def _fill_between(self, ax, overlay: FillBetween) -> None:
+        y1, y2 = self._overlay_series[id(overlay)]
+        start, stop = self.core.start, self.core.stop
+        window = (self.to_x(start), self.to_x(stop))
+
+        def values(series):
+            x, y = series_values(
+                series, start, stop, self.spec.reference_time, self.unit
+            )
+            return minmax_decimate(x, y, *window, self.screen_pixel_width)
+
+        x, a = values(y1)
+        if len(x) == 0:
+            return
+        if isinstance(y2, (int, float)):
+            b = np.full(len(x), float(y2))
+        else:
+            x2, b2 = values(y2)
+            b = np.interp(x, x2, b2) if len(x2) else np.full(len(x), np.nan)
+        where = None
+        if overlay.where == "below":
+            where = a <= b
+        elif overlay.where == "above":
+            where = a >= b
+        ax.fill_between(x, a, b, where=where, interpolate=True, **overlay.style)
 
     def repaint(self, series=None) -> None:
         """Redraw the content for the current window: all series, or only the
@@ -187,6 +274,11 @@ class Renderer:
                     for item in items:
                         if series is None or item is series:
                             self._draw_series(subplot, item, resolution)
+                    for overlay_subplot, overlay in self.overlays:
+                        if overlay_subplot == subplot and (
+                            series is None or self._overlay_depends_on(overlay, series)
+                        ):
+                            self._draw_overlay(subplot, overlay)
                     ax.set_xlim((self.to_x(start), self.to_x(stop)))
                     self._update_legend(ax)
                     # y limits: automatic until the first non-empty draw, then kept
