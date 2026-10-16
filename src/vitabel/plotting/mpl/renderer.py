@@ -58,10 +58,15 @@ class Renderer:
         self.overview_axes = list(axes[n_channel_axes:])
         self.screen_pixel_width, _ = figure.canvas.get_width_height()
 
+        # the crosshair is drawn by blitting on top of the last full draw
+        # (animated: not part of the full draw), so moving the mouse does not
+        # re-render the figure
         self.x_indicators = [
-            ax.axvline(x=0, color="black", linestyle="--", linewidth=0.5)
+            ax.axvline(x=0, color="black", linestyle="--", linewidth=0.5, animated=True)
             for ax in self.channel_axes
         ]
+        self._background = None
+        figure.canvas.mpl_connect("draw_event", self._on_draw)
         self.overview_indicators = []
         self.pending_interval_artists = []
         self.shift_reference_artist = None
@@ -124,10 +129,25 @@ class Renderer:
             self.update_vline_texts()
             self.figure.canvas.draw_idle()
 
+    def _on_draw(self, event) -> None:
+        """After a full draw: keep the image as background for the crosshair."""
+        canvas = self.figure.canvas
+        self._background = canvas.copy_from_bbox(self.figure.bbox)
+        self._blit_indicators()
+
+    def _blit_indicators(self) -> None:
+        for indicator in self.x_indicators:
+            indicator.axes.draw_artist(indicator)
+        self.figure.canvas.blit(self.figure.bbox)
+
     def move_indicators(self, x: float) -> None:
         for indicator in self.x_indicators:
             indicator.set_xdata(np.ones_like(indicator.get_xdata()) * x)
-        self.figure.canvas.draw_idle()
+        if self._background is None:
+            self.figure.canvas.draw_idle()
+            return
+        self.figure.canvas.restore_region(self._background)
+        self._blit_indicators()
 
     def update_vline_texts(self) -> None:
         """Keep vline texts at 10 % of the y range."""
