@@ -504,3 +504,15 @@ def test_static_plot_resolution_for_millisecond_channels():
     (line,) = axes[0].get_lines()
     assert len(line.get_xdata()) < 10_000
     plt.close(fig)
+
+
+def test_interval_bars_use_the_plotstyle_argument(axes):
+    label = IntervalLabel(
+        "phases",
+        time_index=[(START, START + pd.Timedelta(seconds=2))],
+        data=[1.0],
+        plotstyle={"color": "blue"},
+    )
+    label.plot(plot_axes=axes, plot_type="hline", plotstyle={"color": "red"})
+    (bar,) = axes.containers
+    assert matplotlib.colors.to_hex(bar.lines[0].get_color()) == "#ff0000"
