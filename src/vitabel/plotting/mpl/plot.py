@@ -43,6 +43,8 @@ class InteractivePlot(widgets.AppLayout):
         canvas.mpl_connect("scroll_event", self._on_scroll)
         canvas.capture_scroll = True
         core.on("state_changed", self._on_state_changed)
+        panel.on_settings_opened = self._show_limits
+        self._show_limits()
         self.figure.subplots_adjust(top=0.95, bottom=0.05, left=0.05, right=0.97)
         canvas._figure_label = ""
 
@@ -103,11 +105,17 @@ class InteractivePlot(widgets.AppLayout):
                 event.ydata + (top - event.ydata) * scale,
             )
             self.figure.canvas.draw_idle()
-        self.panel.show_limits([ax.get_ylim() for ax in renderer.channel_axes])
+        self._show_limits()
+
+    def _show_limits(self) -> None:
+        """Show the current y limits in the settings."""
+        self.panel.show_limits([ax.get_ylim() for ax in self.renderer.channel_axes])
 
     # -- status ----------------------------------------------------------------------
 
     def _on_state_changed(self, field: str) -> None:
+        if field == "ylims":
+            self._show_limits()
         if field in ("mode", "active_label", "pending_interval"):
             self.figure.canvas._figure_label = self._status()
 
@@ -119,10 +127,7 @@ class InteractivePlot(widgets.AppLayout):
             )
         if isinstance(core.active_label, IntervalLabel):
             if core.mode == "delete":
-                return (
-                    "To delete an Interval click close to its "
-                    "start with the right mouse button."
-                )
+                return "To delete an interval, right-click inside of it."
             if core.mode == "annotate":
                 return (
                     "Right-click to set start time, then right-click again to "
