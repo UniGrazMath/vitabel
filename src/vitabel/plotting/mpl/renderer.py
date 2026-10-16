@@ -253,8 +253,9 @@ class Renderer:
         ax.fill_between(x, a, b, where=where, interpolate=True, **overlay.style)
 
     def repaint(self, series=None) -> None:
-        """Redraw the content for the current window: all series, or only the
-        given one. Axes settings and other artists are left as they are."""
+        """Redraw the content for the current window: all subplots, or those
+        showing the given series. Only artists drawn by the renderer are
+        replaced; axes settings and other artists are left as they are."""
         start, stop = self.core.start, self.core.stop
         data_width = (stop - start).total_seconds()
         self.screen_pixel_width, _ = self.figure.canvas.get_width_height()
@@ -270,14 +271,16 @@ class Renderer:
                 )
                 for subplot in subplots:
                     ax = self.channel_axes[subplot]
-                    items = [*self.spec.channels[subplot], *self.spec.labels[subplot]]
-                    for item in items:
-                        if series is None or item is series:
-                            self._draw_series(subplot, item, resolution)
+                    # all series of the subplot, in order, with a fresh color
+                    # cycle: series without explicit color keep their colors
+                    ax.set_prop_cycle(None)
+                    for item in [
+                        *self.spec.channels[subplot],
+                        *self.spec.labels[subplot],
+                    ]:
+                        self._draw_series(subplot, item, resolution)
                     for overlay_subplot, overlay in self.overlays:
-                        if overlay_subplot == subplot and (
-                            series is None or self._overlay_depends_on(overlay, series)
-                        ):
+                        if overlay_subplot == subplot:
                             self._draw_overlay(subplot, overlay)
                     ax.set_xlim((self.to_x(start), self.to_x(stop)))
                     self._update_legend(ax)
