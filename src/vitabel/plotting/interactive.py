@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import itertools as it
 import logging
 from typing import Any
 
@@ -11,12 +10,7 @@ import numpy as np
 import pandas as pd
 from matplotlib.text import Text
 
-from vitabel.plotting.layout import (
-    get_time_extremum,
-    get_timeunit_from_channels,
-    parse_channel_specification,
-    parse_label_specification,
-)
+from vitabel.plotting.layout import PlotSpec
 from vitabel.timeseries import Channel, IntervalLabel, Label
 from vitabel.typing import (
     ChannelSpecification,
@@ -49,49 +43,26 @@ def plot_interactive(
 
     CANVAS_SELECTION_TOLERANCE_PX = 5
 
-    channel_lists = parse_channel_specification(collection, channels)
-    if channel_overviews is False:
-        channel_overviews = []
-    elif channel_overviews is True:
-        channel_overviews = [list(set(it.chain.from_iterable(channel_lists)))]
-    else:
-        channel_overviews = parse_channel_specification(collection, channel_overviews)
-
+    spec = PlotSpec.from_arguments(
+        collection,
+        channels=channels,
+        labels=labels,
+        start=start,
+        stop=stop,
+        time_unit=time_unit,
+        include_attached_labels=include_attached_labels,
+        channel_overviews=channel_overviews,
+        limited_overview=limited_overview,
+    )
+    channel_lists, label_lists = spec.channels, spec.labels
+    channel_overviews = spec.overviews
+    start, stop, time_unit = spec.start, spec.stop, spec.time_unit
     if subplots_kwargs is None:
         subplots_kwargs = {}
 
-    label_lists = parse_label_specification(
-        collection,
-        labels,
-        channel_lists,
-        include_attached_labels=include_attached_labels,
-    )
-
-    all_data_sources = channel_lists + label_lists
-
     num_subplots = len(channel_lists) + len(channel_overviews)
-    start = get_time_extremum(collection, start, all_data_sources, minimum=True)
-    stop = get_time_extremum(collection, stop, all_data_sources, minimum=False)
-    if start is None and stop is None:
-        logger.warning(
-            "Specified channels and labels contain no data, setting start "
-            "to the current time."
-        )
-        start = pd.Timestamp.now()
-        stop = start + pd.Timedelta(minutes=1)
-
-    if start == stop:
-        logger.warning(
-            "Start and stop time are equal, setting stop time to "
-            "1 minute after start to allow plotting."
-        )
-        stop = start + pd.Timedelta(minutes=1)
-
     reference_time = start
     shift_span = (stop - start) * 0.25
-
-    if time_unit is None:
-        time_unit = get_timeunit_from_channels(collection, channel_lists)
 
     ipy_shell = get_ipython()
     if ipy_shell is None:
@@ -113,18 +84,7 @@ def plot_interactive(
     )
     value_text_stack.selected_index = 1
 
-    distinct_labels = {"single": [], "interval": []}
-    for label_list in label_lists:
-        for label in label_list:
-            if isinstance(label, IntervalLabel):
-                if label not in distinct_labels["interval"]:
-                    distinct_labels["interval"].append(label)
-            elif label not in distinct_labels["single"]:
-                distinct_labels["single"].append(label)
-
-    label_master = sorted(
-        distinct_labels["single"], key=lambda label: label.name
-    ) + sorted(distinct_labels["interval"], key=lambda label: label.name)
+    label_master = spec.annotation_labels
     label_dict = dict(enumerate(label_master, start=1))
     dropdown_options = [
         (f"{label.name}   [Interval]", i)
@@ -318,7 +278,7 @@ def plot_interactive(
     # ---------- WIDGETS FOR SHIFTING ------------------------
     # --------------------------------------------------------
     shifting_channel_selection = widgets.SelectMultiple(
-        value=[collection.channels[0]],
+        value=collection.channels[:1],
         options=[
             (f"[{idx}] {chan.name}", chan)
             for idx, chan in enumerate(collection.channels)
@@ -581,20 +541,13 @@ def plot_interactive(
 
     def repaint_overview_plot():
         nonlocal overview_indicators
-        channels_for_xlims = channel_lists
-        for channel_list, subax in zip(channel_overviews, overview_axes):
+        for index, (channel_list, subax) in enumerate(
+            zip(channel_overviews, overview_axes)
+        ):
             if not channel_list:
                 continue
 
-            if limited_overview:  # xlim of overview based on selected channels
-                channels_for_xlims = [channel_list]
-
-            ov_start = get_time_extremum(
-                collection, time=None, channel_lists=channels_for_xlims, minimum=True
-            )
-            ov_stop = get_time_extremum(
-                collection, time=None, channel_lists=channels_for_xlims, minimum=False
-            )
+            ov_start, ov_stop = spec.overview_range(index)
 
             data_width = (ov_stop - ov_start).total_seconds()
             resolution = pd.Timedelta(seconds=data_width / screen_pixel_width)

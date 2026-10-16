@@ -4,14 +4,21 @@ and time unit of plots."""
 from __future__ import annotations
 
 import itertools as it
+import logging
 
-from vitabel.timeseries import Channel, Label
+from dataclasses import dataclass, field
+
+import pandas as pd
+
+from vitabel.timeseries import Channel, IntervalLabel, Label, TimeDataCollection
 from vitabel.typing import (
     ChannelSpecification,
     LabelSpecification,
     Timedelta,
     Timestamp,
 )
+
+logger = logging.getLogger("vitabel")
 
 
 def parse_channel_specification(
@@ -52,7 +59,6 @@ def parse_label_specification(
     include_attached_labels: bool = False,
 ) -> list[list[Label]]:
     """Parse (nested) label specifications into nested lists of labels.
-    Empty labels are excluded.
 
     Parameters
     ----------
@@ -152,3 +158,135 @@ def get_timeunit_from_channels(collection, channel_lists: list[list[Channel]]) -
             "unit explicitly by specifying the time_unit argument"
         )
     return time_unit
+
+
+@dataclass
+class PlotSpec:
+    """Resolved description of a (static or interactive) plot: which series
+    are plotted in which subplot, and the time range and unit.
+
+    Build it with :meth:`from_arguments`.
+    """
+
+    collection: TimeDataCollection
+    channels: list[list[Channel]]
+    """Channels per subplot."""
+    labels: list[list[Label]]
+    """Labels per subplot."""
+    overviews: list[list[Channel]] = field(default_factory=list)
+    """Channels per overview subplot."""
+    start: Timestamp | Timedelta | None = None
+    stop: Timestamp | Timedelta | None = None
+    time_unit: str = "s"
+    limited_overview: bool = False
+
+    @property
+    def reference_time(self) -> Timestamp | Timedelta | None:
+        """Time at the origin of the x axis (the plot start)."""
+        return self.start
+
+    @property
+    def annotation_labels(self) -> list[Label]:
+        """The plotted labels in the order offered for annotation: point
+        labels by name, then interval labels by name."""
+        unique = []  # labels define __eq__ (not hashable): compare like before
+        for label in it.chain.from_iterable(self.labels):
+            if label not in unique:
+                unique.append(label)
+        points = [label for label in unique if not isinstance(label, IntervalLabel)]
+        intervals = [label for label in unique if isinstance(label, IntervalLabel)]
+        return sorted(points, key=lambda label: label.name) + sorted(
+            intervals, key=lambda label: label.name
+        )
+
+    def overview_range(self, index: int) -> tuple[Timestamp | Timedelta, ...]:
+        """Time range of an overview subplot: all plotted channels, or (with
+        ``limited_overview``) the channels of this overview."""
+        channels = [self.overviews[index]] if self.limited_overview else self.channels
+        return (
+            get_time_extremum(self.collection, None, channels, minimum=True),
+            get_time_extremum(self.collection, None, channels, minimum=False),
+        )
+
+    @classmethod
+    def from_arguments(
+        cls,
+        collection: TimeDataCollection,
+        channels: list[list[ChannelSpecification | int]] | None = None,
+        labels: list[list[LabelSpecification | int]] | None = None,
+        start: Timestamp | Timedelta | float | str | None = None,
+        stop: Timestamp | Timedelta | float | str | None = None,
+        time_unit: str | None = None,
+        include_attached_labels: bool = False,
+        channel_overviews: list[list[ChannelSpecification | int]] | bool = False,
+        limited_overview: bool = False,
+        range_from_labels: bool = True,
+        empty_span: Timedelta = pd.Timedelta(minutes=1),
+    ) -> PlotSpec:
+        """Resolve the arguments of :meth:`.TimeDataCollection.plot` /
+        :meth:`.TimeDataCollection.plot_interactive`.
+
+        Parameters
+        ----------
+        range_from_labels
+            Whether the default time range includes the labels (interactive
+            plot) or only the channels (static plot).
+        empty_span
+            Length of the time range if the series contain no data (starting
+            at the current time).
+        """
+        channel_lists = parse_channel_specification(collection, channels)
+        label_lists = parse_label_specification(
+            collection,
+            labels,
+            channel_lists,
+            include_attached_labels=include_attached_labels,
+        )
+        if channel_overviews is False:
+            overviews = []
+        elif channel_overviews is True:
+            # plotted channels, in order of appearance
+            overviews = [list(dict.fromkeys(it.chain.from_iterable(channel_lists)))]
+        else:
+            overviews = parse_channel_specification(collection, channel_overviews)
+
+        range_sources = (
+            channel_lists + label_lists if range_from_labels else channel_lists
+        )
+        if not any(channel_lists):
+            range_sources = label_lists  # no channels: the range of the labels
+        start = get_time_extremum(collection, start, range_sources, minimum=True)
+        stop = get_time_extremum(collection, stop, range_sources, minimum=False)
+        if start is None and stop is None:
+            logger.warning(
+                "Specified channels and labels contain no data, setting start "
+                "to the current time."
+            )
+            start = pd.Timestamp.now()
+            stop = start + empty_span
+        if start == stop:
+            logger.warning(
+                "Start and stop time are equal, setting stop time to "
+                f"{empty_span} after start to allow plotting."
+            )
+            stop = start + empty_span
+
+        if time_unit is None:
+            if any(channel_lists):
+                time_unit = get_timeunit_from_channels(collection, channel_lists)
+            else:  # no channels: the unit of the labels, if they agree
+                units = {
+                    label.time_unit for label in it.chain.from_iterable(label_lists)
+                }
+                time_unit = units.pop() if len(units) == 1 else "s"
+
+        return cls(
+            collection=collection,
+            channels=channel_lists,
+            labels=label_lists,
+            overviews=overviews,
+            start=start,
+            stop=stop,
+            time_unit=time_unit,
+            limited_overview=limited_overview,
+        )

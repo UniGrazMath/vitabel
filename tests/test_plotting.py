@@ -24,6 +24,7 @@ from matplotlib.text import Text
 
 from vitabel import Channel, IntervalLabel, Label, Vitals
 from vitabel.plotting.data import minmax_decimate
+from vitabel.plotting.layout import PlotSpec
 
 START = pd.Timestamp("2024-01-01 12:00:00")
 
@@ -516,3 +517,42 @@ def test_interval_bars_use_the_plotstyle_argument(axes):
     label.plot(plot_axes=axes, plot_type="hline", plotstyle={"color": "red"})
     (bar,) = axes.containers
     assert matplotlib.colors.to_hex(bar.lines[0].get_color()) == "#ff0000"
+
+
+# -- plot specification --------------------------------------------------------------------
+
+
+def test_plot_spec_resolves_arguments():
+    recording = _recording()
+    spec = PlotSpec.from_arguments(
+        recording.data,
+        channels=[["signal"], [1]],
+        labels=[["phases", "events"], []],
+        channel_overviews=True,
+    )
+    assert [[c.name for c in channels] for channels in spec.channels] == [
+        ["signal"],
+        ["other"],
+    ]
+    # overview of all plotted channels, in order of appearance
+    assert [c.name for c in spec.overviews[0]] == ["signal", "other"]
+    assert spec.start == START
+    assert spec.stop == START + pd.Timedelta(seconds=599.5)
+    assert spec.reference_time == spec.start
+    assert spec.time_unit == "s"
+    assert [label.name for label in spec.annotation_labels] == ["events", "phases"]
+
+
+def test_plots_of_collections_without_channels(ipython):
+    recording = Vitals()
+    recording.add_global_label(
+        Label(
+            "events",
+            time_index=[START, START + pd.Timedelta(seconds=30)],
+            data=[1.0, 2.0],
+        )
+    )
+    fig, axes = recording.plot()
+    assert axes[0].get_lines()
+    plot = recording.plot_interactive()
+    assert isinstance(plot, widgets.AppLayout)
