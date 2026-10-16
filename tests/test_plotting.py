@@ -23,6 +23,7 @@ from matplotlib.patches import Rectangle
 from matplotlib.text import Text
 
 from vitabel import Channel, IntervalLabel, Label, Vitals
+from vitabel.plotting.data import minmax_decimate
 
 START = pd.Timestamp("2024-01-01 12:00:00")
 
@@ -402,3 +403,41 @@ def test_interval_label_plot_types(axes):
     (bar,) = [c for c in axes.containers if isinstance(c, ErrorbarContainer)]
     assert bar.lines[0].get_xdata().tolist() == [5.0]  # midpoint
     assert bar.lines[0].get_ydata().tolist() == [5.0]
+
+
+# -- data layer -------------------------------------------------------------------------
+
+
+def test_minmax_decimate_keeps_extremes_per_bucket():
+    rng = np.random.default_rng(0)
+    x = np.sort(rng.uniform(0, 100, 10_000))
+    y = rng.normal(size=len(x))
+    y[1234] = 50.0  # a single peak
+    y[5000:5100] = np.nan
+    xd, yd = minmax_decimate(x, y, 0, 100, 200)
+    assert len(xd) <= 400
+    assert np.all(np.diff(xd) >= 0)  # order kept
+    assert 50.0 in yd
+    buckets = np.minimum((x // 0.5).astype(int), 199)
+    buckets_d = np.minimum((xd // 0.5).astype(int), 199)
+    for bucket in range(200):
+        values = y[buckets == bucket]
+        if np.isfinite(values).any():
+            assert np.nanmin(values) == np.nanmin(yd[buckets_d == bucket])
+            assert np.nanmax(values) == np.nanmax(yd[buckets_d == bucket])
+
+
+def test_minmax_decimate_gaps_and_outside_samples():
+    x = np.arange(-5, 105, 0.01)
+    y = np.sin(x)
+    y[(x > 40) & (x < 50)] = np.nan
+    xd, yd = minmax_decimate(x, y, 0, 100, 50)
+    assert np.isnan(yd[(xd > 41) & (xd < 49)]).all()  # gap stays a gap
+    assert xd[0] == x[0] and xd[-1] == x[-1]  # samples outside are kept
+
+
+def test_minmax_decimate_short_input_unchanged():
+    x, y = np.arange(10.0), np.arange(10.0)
+    xd, yd = minmax_decimate(x, y, 0, 10, 100)
+    assert xd is x or np.array_equal(xd, x)
+    assert np.array_equal(yd, y)
