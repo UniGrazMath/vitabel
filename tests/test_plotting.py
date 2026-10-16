@@ -727,3 +727,43 @@ def test_core_mode_none_ignores_clicks():
     core.set_mode("none")
     core.click(_seconds(300), 0.5, subplot=0)
     assert len(recording.get_label("events")) == 0
+
+
+# -- persistent drawing (M0.4) ---------------------------------------------------------------
+
+
+def test_customisations_survive_navigation_and_annotation(ipython):
+    plot = Interactive(_recording())
+    ax = plot.axes[0]
+    ax.get_legend().remove()
+    ax.grid(False)
+    ax.set_ylabel("custom")
+    marker = ax.axhline(0.25, color="orange")
+
+    plot.key("right")
+    plot.key("+")
+    plot.click(ax, 300, 0.5)  # annotation: redraws the label
+    assert ax.get_legend() is None
+    assert not any(line.get_visible() for line in ax.get_xgridlines())
+    assert ax.get_ylabel() == "custom"
+    assert marker in ax.lines
+
+
+def test_drawn_artists_do_not_accumulate(ipython):
+    plot = Interactive(_recording())
+    ax = plot.axes[0]
+    counts = len(ax.get_children())
+    for key in ["right", "left", "+", "-"] * 3:
+        plot.key(key)
+    assert len(ax.get_children()) == counts
+
+
+def test_pending_interval_marker_in_all_subplots_of_the_label(ipython):
+    """#255"""
+    plot = Interactive(_recording(), labels=[["phases"], ["phases"]])
+    plot.key("1")  # phases (the only label)
+    before = [len(ax.lines) for ax in plot.axes[:2]]
+    plot.click(plot.axes[0], 300, 0)
+    assert [len(ax.lines) for ax in plot.axes[:2]] == [n + 1 for n in before]
+    plot.key("escape")
+    assert [len(ax.lines) for ax in plot.axes[:2]] == before
