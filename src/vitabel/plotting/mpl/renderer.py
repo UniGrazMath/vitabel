@@ -54,11 +54,19 @@ class Renderer:
             for ax in self.channel_axes
         ]
         self.overview_indicators = []
-        self.pending_interval_artist = None
+        self.pending_interval_artists = []
+        self.shift_reference_artist = None
         self.is_repainting = False
+        self._artists: dict[tuple[int, int], list] = {}
+        """Artists drawn per (subplot, series id); only these are ever replaced,
+        so user changes to the axes and their own artists persist."""
+        for ax in self.channel_axes:
+            ax.format_coord = self._format_coords
+            ax.grid(True)
+            ax.set_xlabel(f"time [{self.spec.time_unit}]", labelpad=-12, fontsize=7)
 
         core.on("view_changed", lambda start, stop: self.repaint())
-        core.on("labels_changed", lambda label, change: self.repaint())
+        core.on("labels_changed", lambda label, change: self.repaint(series=label))
         core.on("channels_shifted", self._on_channels_shifted)
         core.on("state_changed", self._on_state_changed)
 
@@ -93,31 +101,11 @@ class Renderer:
 
     def _on_state_changed(self, field: str) -> None:
         if field == "pending_interval":
-            pending = self.core.pending_interval
-            if pending is not None:
-                label = self.core.active_label
-                self.pending_interval_artist = self.channel_axes[
-                    pending.subplot
-                ].axvline(
-                    x=self.to_x(pending.time),
-                    color=label.plotstyle.get("color", "limegreen"),
-                    linestyle="--",
-                    linewidth=1.5,
-                )
-            else:
-                self.pending_interval_artist = None
-                self.repaint()
+            self._draw_pending_interval()
+            self.figure.canvas.draw_idle()
         elif field == "shift_reference":
-            reference = self.core.shift_reference
-            if reference is not None:
-                self.channel_axes[reference.subplot].axvline(
-                    x=self.to_x(reference.time),
-                    color="red",
-                    linestyle="--",
-                    linewidth=1.5,
-                )
-            else:
-                self.repaint()
+            self._draw_shift_reference()
+            self.figure.canvas.draw_idle()
         elif field == "ylims":
             for subplot, (low, high) in self.core.ylims.items():
                 self.channel_axes[subplot].set_ylim(low, high)
@@ -143,57 +131,67 @@ class Renderer:
 
     # -- drawing -----------------------------------------------------------------
 
-    def repaint(self) -> None:
-        """Redraw the subplots for the current window."""
+    def _subplots_showing(self, series) -> list[int]:
+        """Subplots in which a series is plotted (compared by identity)."""
+        return [
+            index
+            for index, (channels, labels) in enumerate(
+                zip(self.spec.channels, self.spec.labels)
+            )
+            if any(item is series for item in [*channels, *labels])
+        ]
+
+    def _draw_series(self, subplot: int, series, resolution) -> None:
+        """(Re)draw one channel / label, replacing only its own artists."""
+        ax = self.channel_axes[subplot]
+        for artist in self._artists.pop((subplot, id(series)), []):
+            artist.remove()
+        children, containers = set(ax.get_children()), list(ax.containers)
+        kwargs = dict(
+            plot_axes=ax,
+            start=self.core.start,
+            stop=self.core.stop,
+            time_unit=self.spec.time_unit,
+            reference_time=self.spec.reference_time,
+        )
+        if any(series is channel for channel in self.spec.channels[subplot]):
+            kwargs["resolution"] = resolution
+        series.plot(**kwargs)
+        new_containers = [c for c in ax.containers if c not in containers]
+        in_containers = {id(a) for c in new_containers for a in c.get_children()}
+        self._artists[(subplot, id(series))] = [
+            artist
+            for artist in ax.get_children()
+            if artist not in children and id(artist) not in in_containers
+        ] + new_containers
+
+    def repaint(self, series=None) -> None:
+        """Redraw the content for the current window: all series, or only the
+        given one. Axes settings and other artists are left as they are."""
         start, stop = self.core.start, self.core.stop
-        time_unit = self.spec.time_unit
-        reference_time = self.spec.reference_time
         data_width = (stop - start).total_seconds()
         self.screen_pixel_width, _ = self.figure.canvas.get_width_height()
         resolution = pd.Timedelta(seconds=data_width / self.screen_pixel_width)
 
-        pending_ax = None
-        if self.pending_interval_artist is not None:
-            pending_ax = self.pending_interval_artist.axes
-
         self.is_repainting = True
         try:
             with plt.ioff():
-                for channel_list, label_list, indicator, subax in zip(
-                    self.spec.channels,
-                    self.spec.labels,
-                    self.x_indicators,
-                    self.channel_axes,
-                ):
-                    old_ylims = subax.get_ylim()
-                    old_ylabel = subax.yaxis.get_label_text()
-                    subax.clear()
-                    subax.add_artist(indicator)
-                    subax.format_coord = self._format_coords
-                    subax.set_xlim((self.to_x(start), self.to_x(stop)))
-                    subax.grid(True)
-                    subax.set_xlabel(f"time [{time_unit}]", labelpad=-12, fontsize=7)
-                    subax.yaxis.set_label_text(old_ylabel)
-                    if old_ylims != (0, 1):
-                        subax.set_ylim(old_ylims)
-                    for channel in channel_list:
-                        channel.plot(
-                            plot_axes=subax,
-                            start=start,
-                            stop=stop,
-                            resolution=resolution,
-                            time_unit=time_unit,
-                            reference_time=reference_time,
-                        )
-                    for label in label_list:
-                        label.plot(
-                            plot_axes=subax,
-                            start=start,
-                            stop=stop,
-                            time_unit=time_unit,
-                            reference_time=reference_time,
-                        )
-                    subax.legend(loc="lower right")
+                subplots = (
+                    range(len(self.channel_axes))
+                    if series is None
+                    else self._subplots_showing(series)
+                )
+                for subplot in subplots:
+                    ax = self.channel_axes[subplot]
+                    items = [*self.spec.channels[subplot], *self.spec.labels[subplot]]
+                    for item in items:
+                        if series is None or item is series:
+                            self._draw_series(subplot, item, resolution)
+                    ax.set_xlim((self.to_x(start), self.to_x(stop)))
+                    self._update_legend(ax)
+                    # y limits: automatic until the first non-empty draw, then kept
+                    if ax.get_autoscaley_on() and ax.get_ylim() != (0, 1):
+                        ax.set_ylim(ax.get_ylim())
                 for indicator in self.overview_indicators:
                     indicator.remove()
                 self.overview_indicators = [
@@ -205,18 +203,46 @@ class Renderer:
                     )
                     for ax in self.overview_axes
                 ]
-                reference = self.core.shift_reference
-                if reference is not None:
-                    self.channel_axes[reference.subplot].axvline(
-                        x=self.to_x(reference.time),
-                        color="red",
-                        linestyle="--",
-                        linewidth=1.5,
-                    )
-                if self.pending_interval_artist is not None:
-                    pending_ax.add_artist(self.pending_interval_artist)
         finally:
             self.is_repainting = False
+        self.figure.canvas.draw_idle()
+
+    def _update_legend(self, ax) -> None:
+        """Create the legend once; afterwards only update an existing one
+        (a legend removed by the user stays removed)."""
+        if not getattr(ax, "_vitabel_legend_created", False) or ax.get_legend():
+            ax.legend(loc="lower right")
+            ax._vitabel_legend_created = True
+
+    def _draw_pending_interval(self) -> None:
+        """Marker of the first click of an interval, in every subplot showing
+        the label (#255)."""
+        for artist in self.pending_interval_artists:
+            artist.remove()
+        self.pending_interval_artists = []
+        pending, label = self.core.pending_interval, self.core.active_label
+        if pending is None:
+            return
+        subplots = self._subplots_showing(label) or [pending.subplot]
+        self.pending_interval_artists = [
+            self.channel_axes[subplot].axvline(
+                x=self.to_x(pending.time),
+                color=label.plotstyle.get("color", "limegreen"),
+                linestyle="--",
+                linewidth=1.5,
+            )
+            for subplot in subplots
+        ]
+
+    def _draw_shift_reference(self) -> None:
+        if self.shift_reference_artist is not None:
+            self.shift_reference_artist.remove()
+            self.shift_reference_artist = None
+        reference = self.core.shift_reference
+        if reference is not None:
+            self.shift_reference_artist = self.channel_axes[reference.subplot].axvline(
+                x=self.to_x(reference.time), color="red", linestyle="--", linewidth=1.5
+            )
 
     def repaint_overview(self) -> None:
         """Redraw the overview subplots (full time range)."""
