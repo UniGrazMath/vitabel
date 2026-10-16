@@ -115,20 +115,14 @@ def main() -> None:
         ("zoom in / out (+ then -)", timed(lambda: (key("+")(), key("-")()), 5))
     )
     rows.append(("annotate a point (right click)", timed(click, 10)))
-    rows.append(
-        (
-            "mouse move (crosshair)",
-            timed(
-                lambda: MouseEvent(
-                    "motion_notify_event",
-                    canvas,
-                    *ax.transData.transform(middle_of_axes()),
-                )._process(),
-                10,
-                draw=False,
-            ),
-        )
-    )
+
+    def mouse_move():
+        # the move, then the redraw the browser requests (ipympl "draw" message)
+        px, py = ax.transData.transform(middle_of_axes())
+        MouseEvent("motion_notify_event", canvas, px, py)._process()
+        canvas.handle_event({"type": "draw"})
+
+    rows.append(("mouse move + requested redraw", timed(mouse_move, 10, draw=False)))
 
     print(f"{'interaction':45} {'update ms':>10} {'draw ms':>10}")
     for name, (update, draw) in rows:
