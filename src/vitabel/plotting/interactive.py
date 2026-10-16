@@ -495,7 +495,7 @@ def plot_interactive(
             is_repainting
         data_width = (stop - start).total_seconds()
         screen_pixel_width, _ = fig.canvas.get_width_height()
-        resolution = data_width / screen_pixel_width
+        resolution = pd.Timedelta(seconds=data_width / screen_pixel_width)
 
         partial_interval_artist_ax = None
         if partial_interval_artist is not None:
@@ -589,7 +589,7 @@ def plot_interactive(
             )
 
             data_width = (ov_stop - ov_start).total_seconds()
-            resolution = data_width / screen_pixel_width
+            resolution = pd.Timedelta(seconds=data_width / screen_pixel_width)
             subax.clear()
             overview_indicators = []
             for channel in channel_list:

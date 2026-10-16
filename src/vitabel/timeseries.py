@@ -1236,9 +1236,10 @@ class Channel(TimeSeriesBase):
             The stop time for the data. If not specified, the
             data ends at the last time point.
         resolution
-            The resolution for the data. If specified, the data
-            is downsampled such that the median time difference is
-            bounded below by the given resolution. See :meth:`.get_data`.
+            The resolution for the data (a duration; numbers are taken in
+            the time unit of the channel). If specified, the data is
+            downsampled to the minimum and the maximum value in every
+            interval of this length, so peaks remain visible.
         time_unit
             The time unit values used along the x-axis. If ``None``
             (the default), the time unit of the channel is used.
