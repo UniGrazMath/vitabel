@@ -5,17 +5,21 @@ from __future__ import annotations
 import logging
 import numbers
 import typing
-
 from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle
 
 from vitabel.plotting.data import minmax_decimate
+from vitabel.plotting.layout import (
+    get_time_extremum,
+    get_timeunit_from_channels,
+    parse_channel_specification,
+    parse_label_specification,
+)
 from vitabel.typing import (
     ChannelSpecification,
     IntervalLabelPlotType,
@@ -354,18 +358,21 @@ def plot_collection(
     # 3) determine global start and end time (of selected channels)
     # 4) get_data, and construct the corresponding plot.
 
-    channel_lists = collection._parse_channel_specification(channels)
+    channel_lists = parse_channel_specification(collection, channels)
     num_subplots = len(channel_lists)
 
     if subplots_kwargs is None:
         subplots_kwargs = {}
 
-    label_lists = collection._parse_label_specification(
-        labels, channel_lists, include_attached_labels=include_attached_labels
+    label_lists = parse_label_specification(
+        collection,
+        labels,
+        channel_lists,
+        include_attached_labels=include_attached_labels,
     )
 
-    start = collection._get_time_extremum(start, channel_lists, minimum=True)
-    stop = collection._get_time_extremum(stop, channel_lists, minimum=False)
+    start = get_time_extremum(collection, start, channel_lists, minimum=True)
+    stop = get_time_extremum(collection, stop, channel_lists, minimum=False)
     if start is None and stop is None:
         logger.warning(
             "Specified channels contain no data, setting start to the current time."
@@ -374,7 +381,7 @@ def plot_collection(
         stop = start + pd.Timedelta(hours=1)
 
     if time_unit is None:
-        time_unit = collection._get_timeunit_from_channels(channel_lists)
+        time_unit = get_timeunit_from_channels(collection, channel_lists)
 
     fig, axes = plt.subplots(num_subplots, squeeze=False, **subplots_kwargs)
     if collection.is_time_absolute():
