@@ -14,12 +14,7 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle
 
 from vitabel.plotting.data import minmax_decimate
-from vitabel.plotting.layout import (
-    get_time_extremum,
-    get_timeunit_from_channels,
-    parse_channel_specification,
-    parse_label_specification,
-)
+from vitabel.plotting.layout import PlotSpec
 from vitabel.typing import (
     ChannelSpecification,
     IntervalLabelPlotType,
@@ -353,35 +348,22 @@ def plot_collection(
     subplots_kwargs: dict[str, Any] | None = None,
 ):
     """Implementation of :meth:`.TimeDataCollection.plot`."""
-    # 1) turn channels into proper list of (list of) Channels
-    # 2) same for labels, respect include_attached_labels
-    # 3) determine global start and end time (of selected channels)
-    # 4) get_data, and construct the corresponding plot.
-
-    channel_lists = parse_channel_specification(collection, channels)
+    spec = PlotSpec.from_arguments(
+        collection,
+        channels=channels,
+        labels=labels,
+        start=start,
+        stop=stop,
+        time_unit=time_unit,
+        include_attached_labels=include_attached_labels,
+        range_from_labels=False,
+        empty_span=pd.Timedelta(hours=1),
+    )
+    channel_lists, label_lists = spec.channels, spec.labels
+    start, stop, time_unit = spec.start, spec.stop, spec.time_unit
     num_subplots = len(channel_lists)
-
     if subplots_kwargs is None:
         subplots_kwargs = {}
-
-    label_lists = parse_label_specification(
-        collection,
-        labels,
-        channel_lists,
-        include_attached_labels=include_attached_labels,
-    )
-
-    start = get_time_extremum(collection, start, channel_lists, minimum=True)
-    stop = get_time_extremum(collection, stop, channel_lists, minimum=False)
-    if start is None and stop is None:
-        logger.warning(
-            "Specified channels contain no data, setting start to the current time."
-        )
-        start = pd.Timestamp.now()
-        stop = start + pd.Timedelta(hours=1)
-
-    if time_unit is None:
-        time_unit = get_timeunit_from_channels(collection, channel_lists)
 
     fig, axes = plt.subplots(num_subplots, squeeze=False, **subplots_kwargs)
     if collection.is_time_absolute():
