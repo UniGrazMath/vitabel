@@ -767,3 +767,16 @@ def test_pending_interval_marker_in_all_subplots_of_the_label(ipython):
     assert [len(ax.lines) for ax in plot.axes[:2]] == [n + 1 for n in before]
     plot.key("escape")
     assert [len(ax.lines) for ax in plot.axes[:2]] == before
+
+
+def test_settings_show_the_current_limits(ipython):
+    """Apply without editing keeps the limits (the fields used to start at
+    (0, 1))."""
+    plot = Interactive(_recording())
+    limits = [ax.get_ylim() for ax in plot.axes[:2]]
+    plot.find(widgets.Button, lambda w: w.description == "Apply")[0].click()
+    assert [ax.get_ylim() for ax in plot.axes[:2]] == limits
+    plot.axes[0].set_ylim(-3, 3)  # changed outside of the settings ...
+    plot.widget.header.selected_index = 2  # ... shown when opening them
+    fields = plot.find(widgets.FloatText)
+    assert (fields[0].value, fields[1].value) == (-3, 3)

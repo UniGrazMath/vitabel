@@ -31,9 +31,10 @@ Mouse scrolling in a subplot zooms the vertical axis.
 """
 
 SHIFT_HELP = """
-<p>Select channels and labels to be shifted in the menu below.
-Multiple values can be selected by holding down <kbd style="color: black;">Ctrl</kbd>
-(on MacOS: <kbd style="color: black;">Cmd</kbd>) while clicking.
+<p>Select the channels to be shifted in the menu below (labels attached to
+them move along). Multiple channels can be selected by holding down
+<kbd style="color: black;">Ctrl</kbd> (on MacOS: <kbd style="color: black;">Cmd</kbd>)
+while clicking.
 </p>
 <p>Right-click into one of the plots to first set a reference time
 (represented by a vertical dotted red line), then right-click again
@@ -49,7 +50,6 @@ def _aligned_label(text: str) -> widgets.Label:
         layout=widgets.Layout(
             min_width="85px",
             margin="0px 5px 0px 0px",
-            text_align="right",
             justify_content="flex-end",
         ),
     )
@@ -138,9 +138,8 @@ class ControlPanel:
                 (f"[{index}] {channel.name}", channel)
                 for index, channel in enumerate(channels)
             ],
-            description="Channels / Labels",
+            description="Channels",
             disabled=False,
-            continuous_update=True,
         )
 
         # -- settings --------------------------------------------------------------
@@ -234,6 +233,10 @@ class ControlPanel:
             names="value",
         )
         self.apply_button.on_click(lambda button: self._apply_limits())
+        self.tab.observe(
+            lambda change: change["new"] == SETTINGS_TAB and self.on_settings_opened(),
+            names="selected_index",
+        )
         core.on("state_changed", self._on_state_changed)
 
     def mode(self) -> Mode:
@@ -252,6 +255,9 @@ class ControlPanel:
         for subplot, limit_widget in enumerate(self.limit_widgets):
             _, low, high = limit_widget.children
             self.core.set_ylim(subplot, low.value, high.value)
+
+    def on_settings_opened(self) -> None:
+        """Called when the settings tab is opened (set by the plot)."""
 
     def show_limits(self, limits: list[tuple[float, float]]) -> None:
         for limit_widget, (low, high) in zip(self.limit_widgets, limits):
