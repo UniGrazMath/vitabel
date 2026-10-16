@@ -66,6 +66,15 @@ vitabel/
 │   ├── circulation/          ROSC prediction (features, pre-trained model)
 │   ├── intervals.py          filtering by interval labels
 │   └── threshold.py          area / duration under threshold
+├── plotting/                 plotting of channels and labels
+│   ├── layout.py             PlotSpec: what is plotted (subplots, time range and unit)
+│   ├── data.py               data for drawing (min/max downsampling)
+│   ├── interaction.py        InteractionCore: state, commands, events, undo (no rendering)
+│   ├── overlays.py           FillBetween, HLine, VSpan for interactive plots
+│   ├── static.py             static matplotlib plots (Channel.plot, ..., Vitals.plot)
+│   ├── interactive.py        plot_interactive (entry point)
+│   └── mpl/                  interactive matplotlib backend (ipympl, ipywidgets):
+│                             InteractivePlot, renderer, control panel
 ├── registry/
 │   └── cprdat.py             German Resuscitation Registry analysis
 └── utils/
@@ -78,7 +87,13 @@ vitabel/
 ```
 
 **Dependencies** point downwards: `utils` and `typing` → `timeseries` →
-`io` / `analysis` → `vitals` → `registry`. In particular, modules in `io`
+`io` / `analysis` / `plotting` → `vitals` → `registry`. The `plot` methods
+of the time series classes delegate to `plotting` (imported when called).
+Within `plotting`, `layout`, `data`, `interaction` and `overlays` depend
+neither on matplotlib widgets nor on a backend; backends (`mpl`) translate
+user input into `InteractionCore` commands and draw in reaction to its
+events.
+In particular, modules in `io`
 and `analysis` must not depend on `vitals` (and must import names from the
 defining modules, not via `import vitabel`); this is checked by
 `tests/test_architecture.py`.
