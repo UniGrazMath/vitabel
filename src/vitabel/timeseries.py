@@ -3168,11 +3168,6 @@ class TimeDataCollection:
             subplots_kwargs=subplots_kwargs,
         )
 
-    # for interactive plotting:
-    # add repr-strings for labels (and channels too)
-    # add methods for adding and removing data points to labels
-    # interactive plot should also have a (linear) history with undo...
-
     def plot_interactive(
         self,
         channels: list[list[ChannelSpecification | int]] | None = None,
