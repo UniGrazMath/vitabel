@@ -65,6 +65,10 @@ class InteractivePlot(widgets.AppLayout):
           shift.
         - ``"state_changed"``: ``callback(field)``, e.g. ``"mode"``,
           ``"active_label"``.
+
+        Callbacks run after the change is complete (and recorded for undo).
+        An exception in a callback is logged (logger ``"vitabel"``); it
+        doesn't stop the plot or other callbacks.
         """
         self.core.on(event, callback)
 

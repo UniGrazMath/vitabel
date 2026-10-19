@@ -70,6 +70,52 @@ class ShiftReference:
     subplot: int
 
 
+# -- data changes (undoable) ----------------------------------------------------------
+
+
+@dataclass(frozen=True, eq=False)
+class _LabelEdit:
+    """An entry added to or removed from a label."""
+
+    label: Label
+    change: LabelChange
+
+    def apply(self) -> None:
+        change = self.change
+        if change.kind == "added":
+            self.label.add_data(change.time, value=change.value, text=change.text)
+        else:
+            self.label.remove_data(change.time)
+
+    def inverse(self) -> _LabelEdit:
+        kind = "removed" if self.change.kind == "added" else "added"
+        return _LabelEdit(self.label, replace(self.change, kind=kind))
+
+    def event(self) -> tuple:
+        return ("labels_changed", self.label, self.change)
+
+
+@dataclass(frozen=True, eq=False)
+class _ChannelShift:
+    """Channels (and their attached labels) shifted in time."""
+
+    channels: tuple[Channel, ...]
+    offset: Timedelta
+
+    def apply(self) -> None:
+        for channel in self.channels:
+            channel.shift_time_index(delta_t=self.offset)
+
+    def inverse(self) -> _ChannelShift:
+        return _ChannelShift(self.channels, -self.offset)
+
+    def event(self) -> tuple:
+        return ("channels_shifted", list(self.channels), self.offset)
+
+
+_Action = _LabelEdit | _ChannelShift
+
+
 def annotation_defaults(label: Label) -> AnnotationOptions:
     """Default annotation options for a label.
 
@@ -142,8 +188,8 @@ class InteractionCore:
         self.ylims: dict[int, tuple[float, float]] = {}
         """y limits per subplot, once set (otherwise: automatic)."""
         self._listeners: dict[str, list[Callable]] = defaultdict(list)
-        self._undo: list[tuple[str, tuple]] = []
-        self._redo: list[tuple[str, tuple]] = []
+        self._undo: list[_Action] = []
+        self._redo: list[_Action] = []
 
     # -- events --------------------------------------------------------------------
 
@@ -162,8 +208,14 @@ class InteractionCore:
         self._listeners[event].append(callback)
 
     def _emit(self, event: str, *args) -> None:
+        """Call the listeners of an event. A failing listener is logged; it
+        neither stops the other listeners nor the command that emitted the
+        event (whose changes are complete at this point)."""
         for callback in list(self._listeners[event]):
-            callback(*args)
+            try:
+                callback(*args)
+            except Exception:
+                logger.exception("Error in a callback of %r: %r", event, callback)
 
     # -- navigation ----------------------------------------------------------------
 
@@ -279,7 +331,7 @@ class InteractionCore:
                 self._delete_point(label, time, tolerance)
             else:
                 value = y if self.options.use_value else None
-                self._apply(("add", (label, time, value, self._text())))
+                self._add(label, time, value, self._text())
 
     def _text(self) -> str | None:
         return (
@@ -297,7 +349,7 @@ class InteractionCore:
         value = None
         if self.options.use_value and first.y is not None and y is not None:
             value = (first.y + y) / 2
-        self._apply(("add", (label, (start, stop), value, self._text())))
+        self._add(label, (start, stop), value, self._text())
         self._emit("state_changed", "pending_interval")
 
     def _delete_point(self, label, time, tolerance) -> None:
@@ -307,16 +359,11 @@ class InteractionCore:
         if len(entries.time_index) == 0:
             return
         index = int(np.argmin(entries.time_index))
-        self._apply(
-            (
-                "remove",
-                (
-                    label,
-                    entries.time_index[index],
-                    _entry(entries.data, index),
-                    _entry(entries.text_data, index),
-                ),
-            )
+        self._remove(
+            label,
+            entries.time_index[index],
+            _entry(entries.data, index),
+            _entry(entries.text_data, index),
         )
 
     def _delete_interval(self, label, time) -> None:
@@ -336,16 +383,8 @@ class InteractionCore:
                 pd.Timedelta(intervals[index, 0]),
                 pd.Timedelta(intervals[index, 1]),
             )
-        self._apply(
-            (
-                "remove",
-                (
-                    label,
-                    interval,
-                    _entry(label.data, index),
-                    _entry(label.text_data, index),
-                ),
-            )
+        self._remove(
+            label, interval, _entry(label.data, index), _entry(label.text_data, index)
         )
 
     def _shift_click(self, time, subplot) -> None:
@@ -355,41 +394,23 @@ class InteractionCore:
             return
         offset = time - self.shift_reference.time
         self.shift_reference = None
-        self._apply(("shift", (tuple(self.shift_channels), offset)))
+        self._do(_ChannelShift(tuple(self.shift_channels), offset))
         self._emit("state_changed", "shift_reference")
 
     # -- data changes and history ---------------------------------------------------
 
-    def _apply(self, action: tuple[str, tuple], record: bool = True) -> None:
-        kind, args = action
-        if kind == "add":
-            label, time, value, text = args
-            label.add_data(time, value=value, text=text)
-            self._emit("labels_changed", label, LabelChange("added", time, value, text))
-        elif kind == "remove":
-            label, time, value, text = args
-            label.remove_data(time)
-            self._emit(
-                "labels_changed", label, LabelChange("removed", time, value, text)
-            )
-        elif kind == "shift":
-            channels, offset = args
-            for channel in channels:
-                channel.shift_time_index(delta_t=offset)
-            self._emit("channels_shifted", list(channels), offset)
-        if record:
-            self._undo.append(action)
-            self._redo.clear()
+    def _add(self, label, time, value, text) -> None:
+        self._do(_LabelEdit(label, LabelChange("added", time, value, text)))
 
-    @staticmethod
-    def _inverse(action: tuple[str, tuple]) -> tuple[str, tuple]:
-        kind, args = action
-        if kind == "add":
-            return ("remove", args)
-        if kind == "remove":
-            return ("add", args)
-        channels, offset = args
-        return ("shift", (channels, -offset))
+    def _remove(self, label, time, value, text) -> None:
+        self._do(_LabelEdit(label, LabelChange("removed", time, value, text)))
+
+    def _do(self, action: _Action) -> None:
+        """Carry out a new data change: apply it, record it, then notify."""
+        action.apply()
+        self._undo.append(action)
+        self._redo.clear()
+        self._emit(*action.event())
 
     def can_undo(self) -> bool:
         return bool(self._undo)
@@ -398,19 +419,39 @@ class InteractionCore:
         return bool(self._redo)
 
     def undo(self) -> None:
-        """Revert the last data change (label entry or time shift)."""
-        if not self._undo:
+        """Revert the last data change (label entry or time shift).
+
+        A pending interval or shift reference (first click) is cancelled
+        first, like with :meth:`cancel`.
+        """
+        if self.pending_interval is not None or self.shift_reference is not None:
+            self.cancel()
             return
-        action = self._undo.pop()
-        self._apply(self._inverse(action), record=False)
-        self._redo.append(action)
+        self._replay(self._undo, self._redo, invert=True)
 
     def redo(self) -> None:
-        if not self._redo:
+        """Repeat the last reverted data change."""
+        self._replay(self._redo, self._undo, invert=False)
+
+    def _replay(self, source: list, target: list, invert: bool) -> None:
+        """Move the last action from one history stack to the other, applying
+        it (or its inverse). An action that no longer applies (the label was
+        changed outside of the plot) is dropped from the history."""
+        if not source:
             return
-        action = self._redo.pop()
-        self._apply(action, record=False)
-        self._undo.append(action)
+        action = source.pop()
+        change = action.inverse() if invert else action
+        try:
+            change.apply()
+        except ValueError as error:
+            logger.warning(
+                "Could not %s the last change, dropped from the history: %s",
+                "undo" if invert else "redo",
+                error,
+            )
+            return
+        target.append(action)
+        self._emit(*change.event())
 
 
 def _entry(values, index: int):

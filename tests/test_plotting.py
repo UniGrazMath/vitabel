@@ -8,6 +8,8 @@ Known bugs are deliberately not pinned here.
 
 from __future__ import annotations
 
+import logging
+
 import ipywidgets as widgets
 import matplotlib
 import matplotlib.pyplot as plt
@@ -51,6 +53,19 @@ def _shell():
 def ipython(_shell):
     yield _shell
     plt.close("all")
+
+
+@pytest.fixture(autouse=True)
+def _no_logged_errors(caplog):
+    """Exceptions in event listeners (e.g. the renderer) are logged, not
+    raised: fail on them, unless a test expects (and clears) them."""
+    yield
+    errors = [
+        record
+        for record in caplog.get_records("call")
+        if record.name == "vitabel" and record.levelno >= logging.ERROR
+    ]
+    assert not errors, [record.getMessage() for record in errors]
 
 
 def _recording() -> Vitals:
@@ -720,6 +735,58 @@ def test_core_undo_redo():
     core.click(_seconds(5), 0, subplot=0)  # a new change (shift reference) ...
     core.click(_seconds(6), 0, subplot=0)
     assert not core.can_redo()  # ... clears the redo history
+
+
+def test_core_failing_listener_does_not_break_the_history(caplog):
+    recording = _recording()
+    events = recording.get_label("events")
+    core = _core(recording)
+    notified = []
+
+    def failing(label, change):
+        raise RuntimeError("listener bug")
+
+    core.on("labels_changed", failing)
+    core.on("labels_changed", lambda label, change: notified.append(change.kind))
+    core.click(_seconds(300), 0.5, subplot=0)
+    assert len(events) == 1
+    assert notified == ["added"]  # later listeners are still called
+    assert core.can_undo()
+    core.undo()
+    assert len(events) == 0 and notified == ["added", "removed"]
+    assert "listener bug" in caplog.text
+    caplog.clear()
+
+
+def test_core_undo_after_a_change_outside_of_the_plot(caplog):
+    """An entry removed in the notebook can't be removed again by undo: the
+    step is dropped from the history (instead of blocking it)."""
+    recording = _recording()
+    events = recording.get_label("events")
+    core = _core(recording)
+    core.click(_seconds(100), 0.5, subplot=0)
+    core.click(_seconds(300), 0.5, subplot=0)
+    events.remove_data(_seconds(300))
+    with caplog.at_level(logging.WARNING, logger="vitabel"):
+        core.undo()
+    assert "Could not undo" in caplog.text
+    assert len(events) == 1 and not core.can_redo()
+    core.undo()  # the earlier step still works
+    assert len(events) == 0
+
+
+def test_core_undo_cancels_a_first_click():
+    recording = _recording()
+    events, phases = recording.get_label("events"), recording.get_label("phases")
+    core = _core(recording)
+    core.click(_seconds(100), 0.5, subplot=0)
+    core.select_label(phases)
+    core.click(_seconds(200), 0.5, subplot=0)  # interval start
+    core.undo()
+    assert core.pending_interval is None
+    assert len(events) == 1  # not undone yet
+    core.undo()
+    assert len(events) == 0
 
 
 def test_core_mode_none_ignores_clicks():
