@@ -888,6 +888,37 @@ def test_fill_between_overlay(ipython):
     assert len(ax.collections) == n_collections
 
 
+def test_overlay_follows_a_label_plotted_in_another_subplot(ipython):
+    """Annotating a label redraws overlays computed from it, also in
+    subplots that don't show the label."""
+    plot = Interactive(_recording())
+    events_ax, overlay_ax = plot.axes[0], plot.axes[1]
+    plot.click(events_ax, 100, 0.2)
+    plot.click(events_ax, 200, 0.8)
+    plot.widget.add_overlay(FillBetween("events", 0.5, color="orange"), subplot=1)
+    fill = overlay_ax.collections[-1]
+    plot.click(events_ax, 300, 0.2)
+    assert overlay_ax.collections[-1] is not fill
+    assert overlay_ax.collections[-1].get_datalim(overlay_ax.transData).x1 >= 300
+
+
+def test_legend_customisation_is_kept(ipython):
+    """A customised legend is kept as it is while its entries stay the same;
+    when they change, it is rebuilt with its location and title."""
+    plot = Interactive(_recording())
+    ax = plot.axes[0]
+    legend = ax.legend(loc="upper left", title="Signals", fontsize="small")
+    plot.key("right")
+    plot.key("left")
+    assert ax.get_legend() is legend
+
+    plot.click(ax, 300, 0.5)  # first visible entry of "events": a new entry
+    legend = ax.get_legend()
+    assert [text.get_text() for text in legend.get_texts()] == ["signal", "events"]
+    assert legend.get_title().get_text() == "Signals"
+    assert legend._loc == matplotlib.legend.Legend.codes["upper left"]
+
+
 def test_threshold_and_span_overlays(ipython):
     plot = Interactive(_recording())
     ax = plot.axes[1]

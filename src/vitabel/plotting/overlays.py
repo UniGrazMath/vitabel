@@ -52,9 +52,6 @@ class FillBetween(Overlay):
             raise ValueError(f"where must be 'below', 'above' or None, not {where!r}")
         self.y1, self.y2, self.where = y1, y2, where
 
-    def depends_on(self, series) -> bool:
-        return any(item is series for item in (self.y1, self.y2))
-
 
 class HLine(Overlay):
     """A horizontal line at ``y`` (e.g. a threshold); style as for

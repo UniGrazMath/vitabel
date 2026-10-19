@@ -3,6 +3,8 @@ interaction core."""
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -20,6 +22,19 @@ from vitabel.plotting.overlays import (
     resolve_series,
     series_values,
 )
+
+
+@dataclass(eq=False)
+class _PlacedOverlay:
+    """An overlay in a subplot, with the channels / labels it is computed
+    from (resolved; a constant for ``FillBetween.y2``)."""
+
+    overlay: Overlay
+    subplot: int
+    inputs: tuple = ()
+
+    def depends_on(self, series) -> bool:
+        return any(item is series for item in self.inputs)
 
 
 class Renderer:
@@ -73,19 +88,21 @@ class Renderer:
         self.pending_interval_artists = []
         self.shift_reference_artist = None
         self.is_repainting = False
-        self._artists: dict[tuple[int, int], list] = {}
-        self.overlays: list[tuple[int, Overlay]] = []
-        """Overlays with their subplot, drawn in this order."""
-        self._overlay_series: dict[int, tuple] = {}
-        """Artists drawn per (subplot, series id); only these are ever replaced,
-        so user changes to the axes and their own artists persist."""
+        self._artists: dict[tuple, list] = {}
+        """Artists drawn per (subplot, key of a series / overlay); only these
+        are ever replaced, so user changes to the axes and their own artists
+        persist."""
+        self.overlays: list[_PlacedOverlay] = []
+        """Overlays, drawn in this order."""
+        self._legend_created: set[int] = set()
+        """Subplots whose legend was created (a removed one stays removed)."""
         for ax in self.channel_axes:
             ax.format_coord = self._format_coords
             ax.grid(True)
             ax.set_xlabel(f"time [{self.spec.time_unit}]", labelpad=-12, fontsize=7)
 
         core.on("view_changed", lambda start, stop: self.repaint())
-        core.on("labels_changed", lambda label, change: self.repaint(series=label))
+        core.on("labels_changed", lambda label, change: self.repaint(changed=label))
         core.on("channels_shifted", self._on_channels_shifted)
         core.on("state_changed", self._on_state_changed)
 
@@ -187,6 +204,14 @@ class Renderer:
             if any(item is series for item in [*channels, *labels])
         ]
 
+    def _subplots_affected_by(self, series) -> list[int]:
+        """Subplots showing a series, or an overlay computed from it."""
+        subplots = set(self._subplots_showing(series))
+        subplots.update(
+            placed.subplot for placed in self.overlays if placed.depends_on(series)
+        )
+        return sorted(subplots)
+
     def _replace_artists(self, subplot: int, key, draw) -> None:
         """Remove the artists previously drawn under ``key``, call ``draw``,
         and remember the artists (and containers) it added."""
@@ -220,34 +245,32 @@ class Renderer:
     # -- overlays ----------------------------------------------------------------
 
     def add_overlay(self, overlay: Overlay, subplot: int) -> None:
+        inputs = ()
         if isinstance(overlay, FillBetween):
             collection = self.spec.collection
             y2 = overlay.y2
             if not isinstance(y2, (int, float)):
                 y2 = resolve_series(collection, y2)
-            self._overlay_series[id(overlay)] = (
-                resolve_series(collection, overlay.y1),
-                y2,
-            )
-        self.overlays.append((subplot, overlay))
-        self._draw_overlay(subplot, overlay)
+            inputs = (resolve_series(collection, overlay.y1), y2)
+        placed = _PlacedOverlay(overlay, subplot, inputs)
+        self.overlays.append(placed)
+        self._draw_overlay(placed)
         self.figure.canvas.draw_idle()
 
     def remove_overlay(self, overlay: Overlay) -> None:
-        for subplot, item in list(self.overlays):
-            if item is overlay:
-                for artist in self._artists.pop(
-                    (subplot, ("overlay", id(overlay))), []
-                ):
-                    artist.remove()
-                self.overlays.remove((subplot, item))
-        self._overlay_series.pop(id(overlay), None)
+        for placed in [p for p in self.overlays if p.overlay is overlay]:
+            for artist in self._artists.pop(self._overlay_key(placed), []):
+                artist.remove()
+            self.overlays.remove(placed)
         self.figure.canvas.draw_idle()
 
-    def _overlay_depends_on(self, overlay: Overlay, series) -> bool:
-        return any(item is series for item in self._overlay_series.get(id(overlay), ()))
+    @staticmethod
+    def _overlay_key(placed: _PlacedOverlay) -> tuple:
+        return (placed.subplot, ("overlay", id(placed)))
 
-    def _draw_overlay(self, subplot: int, overlay: Overlay) -> None:
+    def _draw_overlay(self, placed: _PlacedOverlay) -> None:
+        overlay = placed.overlay
+
         def draw(ax):
             if isinstance(overlay, HLine):
                 ax.axhline(overlay.y, **overlay.style)
@@ -256,12 +279,11 @@ class Renderer:
                     self.to_x(overlay.start), self.to_x(overlay.stop), **overlay.style
                 )
             elif isinstance(overlay, FillBetween):
-                self._fill_between(ax, overlay)
+                self._fill_between(ax, overlay, *placed.inputs)
 
-        self._replace_artists(subplot, ("overlay", id(overlay)), draw)
+        self._replace_artists(*self._overlay_key(placed), draw)
 
-    def _fill_between(self, ax, overlay: FillBetween) -> None:
-        y1, y2 = self._overlay_series[id(overlay)]
+    def _fill_between(self, ax, overlay: FillBetween, y1, y2) -> None:
         start, stop = self.core.start, self.core.stop
         window = (self.to_x(start), self.to_x(stop))
 
@@ -286,10 +308,11 @@ class Renderer:
             where = a >= b
         ax.fill_between(x, a, b, where=where, interpolate=True, **overlay.style)
 
-    def repaint(self, series=None) -> None:
+    def repaint(self, changed=None) -> None:
         """Redraw the content for the current window: all subplots, or those
-        showing the given series. Only artists drawn by the renderer are
-        replaced; axes settings and other artists are left as they are."""
+        affected by a changed series (showing it, or an overlay computed from
+        it). Only artists drawn by the renderer are replaced; axes settings
+        and other artists are left as they are."""
         start, stop = self.core.start, self.core.stop
         data_width = (stop - start).total_seconds()
         self.screen_pixel_width, _ = self.figure.canvas.get_width_height()
@@ -300,8 +323,8 @@ class Renderer:
             with plt.ioff():
                 subplots = (
                     range(len(self.channel_axes))
-                    if series is None
-                    else self._subplots_showing(series)
+                    if changed is None
+                    else self._subplots_affected_by(changed)
                 )
                 for subplot in subplots:
                     ax = self.channel_axes[subplot]
@@ -313,11 +336,11 @@ class Renderer:
                         *self.spec.labels[subplot],
                     ]:
                         self._draw_series(subplot, item, resolution)
-                    for overlay_subplot, overlay in self.overlays:
-                        if overlay_subplot == subplot:
-                            self._draw_overlay(subplot, overlay)
+                    for placed in self.overlays:
+                        if placed.subplot == subplot:
+                            self._draw_overlay(placed)
                     ax.set_xlim((self.to_x(start), self.to_x(stop)))
-                    self._update_legend(ax)
+                    self._update_legend(subplot)
                     # y limits: automatic until the first non-empty draw, then kept
                     if ax.get_autoscaley_on() and ax.get_ylim() != (0, 1):
                         ax.set_ylim(ax.get_ylim())
@@ -336,12 +359,27 @@ class Renderer:
             self.is_repainting = False
         self.figure.canvas.draw_idle()
 
-    def _update_legend(self, ax) -> None:
-        """Create the legend once; afterwards only update an existing one
-        (a legend removed by the user stays removed)."""
-        if not getattr(ax, "_vitabel_legend_created", False) or ax.get_legend():
-            ax.legend(loc="lower right")
-            ax._vitabel_legend_created = True
+    def _update_legend(self, subplot: int) -> None:
+        """Legend of the series visible in the window.
+
+        Created on the first draw. Afterwards it is left alone (with all
+        changes made to it) unless its entries change; then it is rebuilt,
+        keeping its location and title. A legend removed by the user stays
+        removed.
+        """
+        ax = self.channel_axes[subplot]
+        legend = ax.get_legend()
+        if legend is None:
+            if subplot not in self._legend_created:
+                ax.legend(loc="lower right")
+                self._legend_created.add(subplot)
+            return
+        _, entries = ax.get_legend_handles_labels()
+        if entries == [text.get_text() for text in legend.get_texts()]:
+            return
+        title = legend.get_title().get_text()
+        # matplotlib has no public getter for the location of a legend
+        ax.legend(loc=legend._loc, title=title or None)
 
     def _draw_pending_interval(self) -> None:
         """Marker of the first click of an interval, in every subplot showing
