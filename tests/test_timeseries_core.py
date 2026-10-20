@@ -135,6 +135,20 @@ def test_construction_golden():
     assert_matches_golden("timeseries_construction", results)
 
 
+def test_construction_from_a_series():
+    series = TimeSeriesBase(pd.Series([0.0, 1.5]))
+    assert isinstance(series.time_index, pd.TimedeltaIndex)
+
+
+def test_construction_with_leading_nat():
+    """The time start is the first timestamp that is not missing."""
+    series = TimeSeriesBase(
+        [pd.NaT, ABSOLUTE_START, ABSOLUTE_START + pd.Timedelta(1, "s")]
+    )
+    assert series.time_start == ABSOLUTE_START
+    assert series.time_index[1:].tolist() == [pd.Timedelta(0), pd.Timedelta(1, "s")]
+
+
 @pytest.mark.parametrize(
     "kwargs, expected_seconds, expected_start",
     [

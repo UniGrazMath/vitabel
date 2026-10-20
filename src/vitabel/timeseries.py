@@ -323,12 +323,16 @@ def _parse_time_index(
             if time_start is not None:
                 raise ValueError("time_start cannot be passed if time data is absolute")
             if len(time_index) > 0:
-                time_start = pd.Timestamp(time_index[0])
+                # the first timestamp that is not missing (NaT if there is none)
+                valid = np.flatnonzero(pd.notna(time_index))
+                time_start = pd.Timestamp(
+                    time_index[valid[0]] if len(valid) else pd.NaT
+                )
             if _typed_array_kind(time_index) == "M" and not pd.isna(time_start):
                 # vectorized; same values and unit as the element-wise
                 # subtraction below (also for NaT and time zone aware data).
-                # a leading NaT (time_start = NaT) gives an all-NaT index whose
-                # unit differs, so that case is left to the element-wise path
+                # all-NaT data (time_start = NaT) gives an index whose unit
+                # differs, so that case is left to the element-wise path
                 time_index = pd.DatetimeIndex(time_index) - time_start
             else:
                 time_index = pd.to_timedelta([time - time_start for time in time_index])
@@ -342,7 +346,8 @@ def _parse_time_index(
         else:
             raise ValueError(f"The time data type {time_type} is not supported")
 
-        time_index = time_index + offset
+        # a TimedeltaIndex also for pandas Series as input
+        time_index = pd.TimedeltaIndex(time_index + offset)
     except (
         OverflowError,
         pd.errors.OutOfBoundsDatetime,
