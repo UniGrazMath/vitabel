@@ -48,6 +48,7 @@ case.plot_interactive(
 ```{toctree}
 :maxdepth: 3
 quickstart
+interactive
 examples
 development
 bibliography
