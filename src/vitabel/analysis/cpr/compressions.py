@@ -139,7 +139,7 @@ def cc_periods_from_acceleration(accelerometer_channel: Channel) -> IntervalLabe
     t_ref = ACC_channel.time_start
 
     if ACC_channel.is_time_relative():
-        acctime = acctime.dt.total_seconds().to_numpy()
+        acctime = np.asarray(acctime / pd.Timedelta(seconds=1))
     else:
         acctime = np.asarray([(t - t_ref).total_seconds() for t in acctime])
 

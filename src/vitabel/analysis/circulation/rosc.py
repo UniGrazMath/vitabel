@@ -248,13 +248,13 @@ def predict_rosc(
         cc_periods = np.array([(t - t_ref).total_seconds() for t in cc_periods])
 
     if cpr_acceleration_source.is_time_relative():
-        acctime = acctime.dt.total_seconds().to_numpy()
+        acctime = np.asarray(acctime / pd.Timedelta(seconds=1))
     else:
         acctime = np.array([(t - t_ref).total_seconds() for t in acctime])
 
     # Time conversion for ECG channel
     if ecg_pads_source.is_time_relative():
-        ecgtime = ecgtime.dt.total_seconds().to_numpy()
+        ecgtime = np.asarray(ecgtime / pd.Timedelta(seconds=1))
     else:
         ecgtime = np.array([(t - t_ref).total_seconds() for t in ecgtime])
 
