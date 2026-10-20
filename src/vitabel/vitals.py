@@ -1075,28 +1075,21 @@ class Vitals:
             label=label, channel=channel, reattach_as_global=reattach_as_global
         )
 
-    def rec_start(self) -> pd.Timestamp:  # part of register application
-        """Returns the first timestamp among all channels in this case."""
-        if self.data.is_time_absolute():
-            start_time = self.data.channels[0].time_start
-            for chan in self.channels:
-                if chan.time_start < start_time:
-                    start_time = chan.time_start
+    def rec_start(self) -> Timestamp | Timedelta | None:  # part of register application
+        """Returns the first entry among all channels in this case (``None``
+        if there is no data). Empty channels are ignored."""
+        return min(
+            (channel.first_entry for channel in self.channels if len(channel) > 0),
+            default=None,
+        )
 
-        return start_time
-
-    def rec_stop(self) -> pd.Timestamp:  # part of register application
-        """Returns the last timestamp among all channels in this case."""
-        if self.data.is_time_absolute():
-            stop_time = (
-                self.data.channels[0].time_start + self.data.channels[0].time_index[-1]
-            )
-            for chan in self.channels:
-                cha_stop_time = chan.time_start + chan.time_index[-1]
-                if cha_stop_time > stop_time:
-                    stop_time = cha_stop_time
-
-        return stop_time
+    def rec_stop(self) -> Timestamp | Timedelta | None:  # part of register application
+        """Returns the last entry among all channels in this case (``None``
+        if there is no data). Empty channels are ignored."""
+        return max(
+            (channel.last_entry for channel in self.channels if len(channel) > 0),
+            default=None,
+        )
 
     def get_channel_infos(self, **kwargs) -> pd.DataFrame:
         """Returns information about all channels in a nicely formatted

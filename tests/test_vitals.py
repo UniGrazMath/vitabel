@@ -682,6 +682,22 @@ def test_rec_start():
     assert t_start == pd.Timestamp("2020-01-01 00:00:01.000000")
 
 
+def test_rec_start_and_stop_ignore_empty_channels():
+    start = pd.Timestamp("2020-01-01")
+    recording = Vitals()
+    recording.add_channel(
+        Channel("signal", start + pd.to_timedelta([1, 5], "s"), [1, 2])
+    )
+    recording.add_channel(Channel("empty", [], []))
+    assert recording.rec_start() == start + pd.Timedelta(1, "s")
+    assert recording.rec_stop() == start + pd.Timedelta(5, "s")
+
+    relative = Vitals()
+    relative.add_channel(Channel("signal", [1.0, 5.0], [1, 2]))
+    assert relative.rec_start() == pd.Timedelta(1, "s")
+    assert relative.rec_stop() == pd.Timedelta(5, "s")
+
+
 def test_get_channel_info():
     cha = Channel(
         "Channel1",
