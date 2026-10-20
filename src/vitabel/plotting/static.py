@@ -185,7 +185,7 @@ def plot_label(
                 "skipping them in the scatter plot"
             )
 
-        if data[~nan_mask].any():
+        if (~nan_mask).any():
             if "marker" not in base_plotstyle and len(data[~nan_mask]) == 1:
                 # no marker style set, override to make single value visible
                 base_plotstyle.update({"marker": "X"})

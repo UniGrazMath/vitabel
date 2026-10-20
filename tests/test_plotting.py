@@ -405,6 +405,14 @@ def test_label_plot_types(axes):
     assert _texts(axes) == []
 
 
+def test_label_scatter_with_zero_values(axes):
+    """Entries with value 0 are drawn (only missing values are skipped)."""
+    label = Label("zeros", time_index=pd.to_timedelta([1, 2], "s"), data=[0.0, 0.0])
+    label.plot(plot_axes=axes)
+    (line,) = axes.lines
+    assert line.get_ydata().tolist() == [0.0, 0.0]
+
+
 def test_interval_label_plot_types(axes):
     intervals = [
         (START + pd.Timedelta(seconds=1), START + pd.Timedelta(seconds=2)),
