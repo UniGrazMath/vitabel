@@ -560,8 +560,6 @@ def test_interval_label_mutations_golden():
         _record(steps, f"{kind}: truncated", label.truncate(t(4.0), t(7.0)))
 
         def times(values, t=t):
-            # NOTE: lists of pd.Timedelta / pd.Timestamp objects are currently
-            # not supported by contains_time (see test below), numpy arrays are.
             return np.array([t(value).to_numpy() for value in values])
 
         intervals = times([5.0, 5.2, 5.2, 7.0, 9.0, 10.0]).reshape(-1, 2)
@@ -581,3 +579,18 @@ def test_interval_label_mutations_golden():
             }
         )
     assert_matches_golden("timeseries_interval_label_mutations", steps)
+
+
+@pytest.mark.parametrize("time_start", [None, ABSOLUTE_START])
+def test_interval_label_contains_pandas_times(time_start):
+    """Lists and scalars of pandas timestamps / timedeltas (numpy keeps them
+    as objects)."""
+
+    def t(seconds):
+        delta = pd.Timedelta(seconds=seconds)
+        return delta if time_start is None else time_start + delta
+
+    label = IntervalLabel("intervals", time_index=[(t(1), t(2))])
+    assert label.contains_time([t(1.5), t(3)]).tolist() == [True, False]
+    assert label.contains_time(t(1.5))
+    assert label.contains_time([[t(1.5), t(3)]]).tolist() == [True]

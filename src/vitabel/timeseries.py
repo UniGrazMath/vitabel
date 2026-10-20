@@ -213,6 +213,20 @@ def _time_type_from_dtype(time_index: Any) -> type | None:
     return {"M": pd.Timestamp, "m": pd.Timedelta}.get(kind, numbers.Number)
 
 
+def _as_time_array(time_data: Any) -> np.ndarray:
+    """Times as a numpy array; timestamps and timedeltas (also in lists, or
+    as scalars, which numpy keeps as objects) as ``datetime64`` /
+    ``timedelta64``."""
+    array = np.asarray(time_data)
+    if array.dtype == object and array.size > 0:
+        first = array.flat[0]
+        if isinstance(first, (pd.Timestamp, np.datetime64)):
+            array = array.astype("datetime64[ns]")
+        elif isinstance(first, (pd.Timedelta, np.timedelta64)):
+            array = array.astype("timedelta64[ns]")
+    return array
+
+
 def _parse_time_index(
     time_index: npt.ArrayLike,
     time_start: Timestamp | None,
@@ -2568,7 +2582,7 @@ class IntervalLabel(Label):
         whether it is contained in any of the intervals of the label.
         """
 
-        time_data = np.array(time_data)
+        time_data = _as_time_array(time_data)
         start_cmp = np.greater_equal if include_start else np.greater
         end_cmp = np.less_equal if include_end else np.less
 
