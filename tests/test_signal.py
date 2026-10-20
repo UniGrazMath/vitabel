@@ -80,6 +80,12 @@ class TestGaps:
         gap_start, gap_stop, gap_indices = determine_gaps_in_recording(time, time)
         assert len(gap_start) == len(gap_stop) == len(gap_indices) == 0
 
+    def test_linear_interpolation_of_gaps(self):
+        time = np.array([0.0, 1.0, 2.0, 5.0, 6.0, 7.0, 10.0])
+        new_time, new_data = linear_interpolate_gaps_in_recording(time, 2 * time)
+        np.testing.assert_array_equal(new_time, np.arange(11.0))
+        np.testing.assert_array_equal(new_data, 2 * np.arange(11.0))
+
     def test_linear_interpolation_without_gaps(self):
         time = np.arange(5.0)
         new_time, new_data = linear_interpolate_gaps_in_recording(time, 2 * time)

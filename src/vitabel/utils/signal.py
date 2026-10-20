@@ -139,17 +139,25 @@ def determine_gaps_in_recording(
 def linear_interpolate_gaps_in_recording(
     time: npt.ArrayLike, data: npt.ArrayLike
 ) -> (npt.NDArray, npt.NDArray):
-    dtime = time[1:] - time[:-1]
-    median_dtime = np.nanmedian(dtime)
-    gap_start, gap_stop, gap_start_indices = determine_gaps_in_recording(time, data)
-    for starttime, stoptime, start_index in zip(gap_start, gap_stop, gap_start_indices):
-        time_in_gap = np.arange(starttime, stoptime, median_dtime)
-        data_in_gap = data[start_index] + (
-            data[start_index + 1] - data[start_index]
-        ) / (stoptime - starttime) * (time_in_gap - starttime)
-        time = np.insert(time, start_index, time_in_gap)
-        data = np.insert(data, start_index, data_in_gap)
-    return time, data
+    """Fill the gaps found by :func:`determine_gaps_in_recording` with points
+    at the median time step, linearly interpolated between the samples
+    around the gap. The result is sorted like the input."""
+    time, data = np.asarray(time), np.asarray(data)
+    step = np.nanmedian(np.diff(time))
+    *_, gap_start_indices = determine_gaps_in_recording(time, data)
+    insert_at, gap_time = [], []
+    for index in gap_start_indices:
+        start, stop = time[index], time[index + 1]
+        count = int(round((stop - start) / step)) - 1  # points inside of the gap
+        insert_at.append(np.full(count, index + 1))
+        gap_time.append(start + step * np.arange(1, count + 1))
+    if not insert_at:
+        return time, data
+    insert_at, gap_time = np.concatenate(insert_at), np.concatenate(gap_time)
+    return (
+        np.insert(time, insert_at, gap_time),
+        np.insert(data, insert_at, np.interp(gap_time, time, data)),
+    )
 
 
 def resample_to_common_index(
