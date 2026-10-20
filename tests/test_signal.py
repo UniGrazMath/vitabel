@@ -36,6 +36,12 @@ class TestDeriv:
         result = deriv(time, 3 * time + 1)
         np.testing.assert_allclose(result, 3.0)
 
+    def test_alternating_steps(self):
+        """Steps alternating such that ``time[2:] - time[:-2]`` is constant
+        (used to be mistaken for equidistant: wrong boundary values)."""
+        time = np.array([0.0, 0.5, 2.0, 2.5, 4.0])
+        np.testing.assert_allclose(deriv(time, 3 * time + 1), 3.0)
+
 
 class TestIntegrate:
     def test_linear_function(self):
@@ -44,6 +50,9 @@ class TestIntegrate:
         assert isinstance(result, pd.Series)
         # trapezoidal rule is exact for linear functions
         np.testing.assert_allclose(result.to_numpy(), time**2)
+
+    def test_non_equidistant(self):
+        np.testing.assert_allclose(integrate([0, 1, 3], [1, 1, 1]), [0, 1, 3])
 
     def test_length_mismatch(self):
         with pytest.raises(Exception, match="Length of time and data must agree"):

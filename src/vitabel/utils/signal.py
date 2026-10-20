@@ -8,6 +8,8 @@ import numpy.typing as npt
 import pandas as pd
 import scipy.signal as sgn
 
+from scipy.integrate import cumulative_trapezoid
+
 from typing import TYPE_CHECKING
 
 from vitabel.typing import DataSlice
@@ -26,68 +28,50 @@ __all__ = [
 ]
 
 
-def deriv(time, data):
-    """
-    Calculates the central point first derivative of x=time,y=data,
-    and take forward/backward step derivative at the boundaries
+def deriv(time: npt.ArrayLike, data: npt.ArrayLike) -> npt.NDArray:
+    """First derivative of ``data`` with respect to ``time``: central
+    differences inside, forward / backward differences at the boundaries.
 
     Parameters
     ----------
-    time : np.array()
-        equidistantly spaced x values.
-    data : np.array()
-        corresponding y values.
+    time
+        x values, in increasing order (not necessarily equidistant).
+    data
+        Corresponding y values.
 
     Returns
     -------
-    ddat : np.array()
-        array with the derivative values.
+    The derivative at every x value.
     """
-    h = time[2:] - time[:-2]
-    if np.std(h) == 0:
-        h = h[0] / 2
-        ddat = data[2:] - data[:-2]
-        ddat = ddat / (2 * h)
-        ddat = np.insert(ddat, 0, (data[1] - data[0]) / h)
-        ddat = np.append(ddat, (data[-1] - data[-2]) / h)
-        return ddat
-    else:
-        ddat = data[2:] - data[0:-2]
-        ddat = ddat / (h)
-        ddat = np.insert(ddat, 0, (data[1] - data[0]) / (time[1] - time[0]))
-        ddat = np.append(ddat, (data[-1] - data[-2]) / (time[-1] - time[-2]))
-        return ddat
+    time, data = np.asarray(time), np.asarray(data)
+    ddat = np.empty(len(data), dtype=float)
+    ddat[1:-1] = (data[2:] - data[:-2]) / (time[2:] - time[:-2])
+    ddat[0] = (data[1] - data[0]) / (time[1] - time[0])
+    ddat[-1] = (data[-1] - data[-2]) / (time[-1] - time[-2])
+    return ddat
 
 
-def integrate(time, data):
-    """
-    Integrates data after time with trapezoidal rule
+def integrate(time: npt.ArrayLike, data: npt.ArrayLike) -> pd.Series:
+    """Cumulative integral of ``data`` over ``time`` (trapezoidal rule).
 
     Parameters
     ----------
-    time : pd.Series
-        Timestamps in seconds.
-    data : pd.Series
-        Datapoints.
+    time
+        Times in seconds (not necessarily equidistant).
+    data
+        Data points.
 
     Returns
     -------
-    vel : pd.Series
-        Integrated data. vel[0]=0
-
+    The integral from the first time to each time (starting at 0).
     """
     if len(time) != len(data):
-        raise Exception("Length of time and data must agree")
-    time = list(time)
-    data = list(data)
-    n = len(data)
-    vel = [0]
-    deltat = time[1] - time[0]
-    for i in range(n - 1):
-        meana = (data[i] + data[i + 1]) / 2
-        vel.append(vel[i] + meana * deltat)
-        i += 1
-    return pd.Series(vel)
+        raise ValueError("Length of time and data must agree")
+    return pd.Series(
+        cumulative_trapezoid(
+            np.asarray(data, dtype=float), np.asarray(time, dtype=float), initial=0
+        )
+    )
 
 
 def av_mean(k: int, data: npt.ArrayLike) -> npt.NDArray:
