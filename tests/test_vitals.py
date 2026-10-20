@@ -1133,9 +1133,8 @@ def test_etco2_and_ventilation_detection(vitabel_test_data_dir):
         "capnography", t, data, time_start=pd.Timestamp(2024, 1, 1, 0, 0, 0)
     )
     cardio_object.add_channel(co2_channel)
-    cardio_object.compute_etco2_and_ventilations(
-        mode="threshold", breath_thresh=4, etco2_thresh=4
-    )  # TODO: test might be adapted to new default values in the future
+    # default thresholds (misspelt keywords used to be ignored silently)
+    cardio_object.compute_etco2_and_ventilations(mode="threshold")
     vent_dict = cardio_object.get_label("ventilations_from_capnography").to_dict()
     etCO2_dict = cardio_object.get_label("etco2_from_capnography").to_dict()
 
@@ -1262,6 +1261,24 @@ def test_cycle_duration_analysis_absolute(vitabel_test_data_dir):
         [summarize_series(label) for label in cardio_object.labels],
         mode="values",
     )
+
+
+def test_cycle_duration_analysis_prefers_cc_channel():
+    recording = Vitals()
+    recording.add_channel(Channel("cc_depth", np.arange(0, 30, 0.6), np.ones(50)))
+    recording.add_channel(Channel("cc", np.arange(0, 30, 0.6)))
+    recording.cycle_duration_analysis()
+    assert recording.get_channel("cc").labels
+    assert not recording.get_channel("cc_depth").labels
+
+
+def test_etco2_keyword_arguments():
+    recording = Vitals()
+    recording.add_channel(Channel("capnography", np.arange(10.0), np.zeros(10)))
+    with pytest.raises(TypeError, match="breath_thresh"):
+        recording.compute_etco2_and_ventilations(breath_thresh=4)
+    with pytest.raises(TypeError, match="Cannot specify both"):
+        recording.compute_etco2_and_ventilations(breath_threshold=2, breaththresh=4)
 
 
 @pytest.mark.golden

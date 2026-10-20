@@ -1349,7 +1349,7 @@ class Vitals:
         self,
         source: Channel | str = "capnography",
         mode: Literal["threshold", "filter"] = "filter",
-        breath_threshold: float = 2,
+        breath_threshold: float | None = None,
         etco2_threshold: float = 3,
         **kwargs,
     ):
@@ -1386,6 +1386,10 @@ class Vitals:
                 "The keyword argument breaththresh is deprecated, "
                 "use breath_threshold instead"
             )
+        if kwargs:
+            raise TypeError(f"Unexpected keyword arguments: {', '.join(kwargs)}")
+        if breath_threshold is None:
+            breath_threshold = 2
 
         if isinstance(source, str):
             source = self.get_channel(name=source)
@@ -1418,7 +1422,7 @@ class Vitals:
         ----------
         cc_events_channel
             The channel containing the data of single chest compression events, such that every timepoint in the timeindex represents a chest compression.
-            Defaults to 'cc' or 'cc_depth' depending on the availability.
+            Defaults to 'cc', or 'cc_depth' if there is no 'cc' channel.
 
         Returns
         -------
@@ -1431,9 +1435,10 @@ class Vitals:
             PhD thesis :cite:`kern:phd:2024` of Wolfgang Kern in more detail.
         """
         if cc_events_channel is None:
-            available_channels = set(self.get_channel_names()) & {"cc", "cc_depth"}
-            if available_channels:
-                cc_events_channel = self.get_channel(next(iter(available_channels)))
+            names = self.get_channel_names()
+            name = next((name for name in ("cc", "cc_depth") if name in names), None)
+            if name is not None:
+                cc_events_channel = self.get_channel(name)
             else:
                 raise ValueError(
                     "Could not identify channels with single chest compressions. "
