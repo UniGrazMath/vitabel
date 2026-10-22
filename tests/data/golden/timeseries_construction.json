@@ -1,7 +1,7 @@
 {
  "mode": "exact",
  "generated_with": {
-  "git_commit": "d06a36a107341709c093093f8e052cd2d0be763a",
+  "git_commit": "9837e903e784f65adcb2351fd74dac9a5acc1845",
   "vitabel": "0.1.1",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
@@ -216,11 +216,11 @@
   "datetime64_with_nat_first": {
    "time_index": [
     "NaT",
-    "NaT",
-    "NaT"
+    "0 days 00:00:00",
+    "0 days 00:00:01"
    ],
    "time_index_dtype": "timedelta64[ns]",
-   "time_start": "NaT",
+   "time_start": "2024-01-01 12:00:00",
    "offset": "0 days 00:00:00",
    "time_unit": "s"
   },
@@ -311,11 +311,11 @@
   "nat_first_timestamps": {
    "time_index": [
     "NaT",
-    "NaT",
-    "NaT"
+    "0 days 00:00:00",
+    "1 days 00:00:00"
    ],
    "time_index_dtype": "timedelta64[ns]",
-   "time_start": "NaT",
+   "time_start": "2024-01-01 00:00:00",
    "offset": "0 days 00:00:00",
    "time_unit": "s"
   },

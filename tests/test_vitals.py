@@ -14,7 +14,11 @@ from vitabel import Channel, Label, IntervalLabel
 from vitabel.utils import loading
 from vitabel.utils.helpers import compress_array, decompress_array
 
-from tests.builders import write_synthetic_zoll_csv_pair, write_test_edfplus
+from tests.builders import (
+    write_synthetic_vital_file,
+    write_synthetic_zoll_csv_pair,
+    write_test_edfplus,
+)
 from tests.golden import assert_matches_golden, summarize_series
 
 
@@ -247,6 +251,44 @@ def test_vital_db_recording_is_independent_of_local_time_zone(
         env=os.environ | {"TZ": time_zone},
     )
     assert result.stdout.strip() == "2023-01-11 13:10:37.540275"
+
+
+def test_add_vital_db_recording_label_attachment(tmp_path):
+    path = write_synthetic_vital_file(tmp_path / "synthetic.vit")
+    recording = Vitals()
+    recording.add_vital_db_recording(path)
+
+    labels_by_channel = {
+        channel.name: [label.name for label in channel.labels]
+        for channel in recording.channels
+    }
+    assert labels_by_channel == {
+        "PLETH": [],
+        "PUMP2_RATE": ["UNIT", "DRUG"],
+        "PUMP2_CONC": ["DRUG"],
+        "PUMP2_PRES": ["DRUG"],
+    }
+    assert [label.name for label in recording.data.global_labels] == [
+        "EVENT",
+        "SOME_NOTE",
+    ]
+    unit_label = recording.get_channel("PUMP2_RATE").labels[0]
+    assert unit_label.anchored_channel.name == "PUMP2_RATE"
+    assert list(unit_label.text_data) == ["ml/h"]
+    # the same label object is attached to all three pump channels
+    drug_labels = {
+        id(label)
+        for channel in recording.channels
+        for label in channel.labels
+        if label.name == "DRUG"
+    }
+    assert len(drug_labels) == 1
+    event_label = recording.get_label("EVENT")
+    assert list(event_label.text_data) == ["start", "stop"]
+    assert event_label.time_start == pd.Timestamp("2023-01-11 13:10:37.5")
+    assert recording.get_channel("PLETH").time_start == pd.Timestamp(
+        "2023-01-11 13:10:37.5"
+    )
 
 
 def test_add_unreadable_file(vitabel_test_data_dir):
@@ -638,6 +680,22 @@ def test_rec_start():
     cardio_object.add_channel(cha2)
     t_start = cardio_object.rec_start()
     assert t_start == pd.Timestamp("2020-01-01 00:00:01.000000")
+
+
+def test_rec_start_and_stop_ignore_empty_channels():
+    start = pd.Timestamp("2020-01-01")
+    recording = Vitals()
+    recording.add_channel(
+        Channel("signal", start + pd.to_timedelta([1, 5], "s"), [1, 2])
+    )
+    recording.add_channel(Channel("empty", [], []))
+    assert recording.rec_start() == start + pd.Timedelta(1, "s")
+    assert recording.rec_stop() == start + pd.Timedelta(5, "s")
+
+    relative = Vitals()
+    relative.add_channel(Channel("signal", [1.0, 5.0], [1, 2]))
+    assert relative.rec_start() == pd.Timedelta(1, "s")
+    assert relative.rec_stop() == pd.Timedelta(5, "s")
 
 
 def test_get_channel_info():
@@ -1075,9 +1133,8 @@ def test_etco2_and_ventilation_detection(vitabel_test_data_dir):
         "capnography", t, data, time_start=pd.Timestamp(2024, 1, 1, 0, 0, 0)
     )
     cardio_object.add_channel(co2_channel)
-    cardio_object.compute_etco2_and_ventilations(
-        mode="threshold", breath_thresh=4, etco2_thresh=4
-    )  # TODO: test might be adapted to new default values in the future
+    # default thresholds (misspelt keywords used to be ignored silently)
+    cardio_object.compute_etco2_and_ventilations(mode="threshold")
     vent_dict = cardio_object.get_label("ventilations_from_capnography").to_dict()
     etCO2_dict = cardio_object.get_label("etco2_from_capnography").to_dict()
 
@@ -1204,6 +1261,24 @@ def test_cycle_duration_analysis_absolute(vitabel_test_data_dir):
         [summarize_series(label) for label in cardio_object.labels],
         mode="values",
     )
+
+
+def test_cycle_duration_analysis_prefers_cc_channel():
+    recording = Vitals()
+    recording.add_channel(Channel("cc_depth", np.arange(0, 30, 0.6), np.ones(50)))
+    recording.add_channel(Channel("cc", np.arange(0, 30, 0.6)))
+    recording.cycle_duration_analysis()
+    assert recording.get_channel("cc").labels
+    assert not recording.get_channel("cc_depth").labels
+
+
+def test_etco2_keyword_arguments():
+    recording = Vitals()
+    recording.add_channel(Channel("capnography", np.arange(10.0), np.zeros(10)))
+    with pytest.raises(TypeError, match="breath_thresh"):
+        recording.compute_etco2_and_ventilations(breath_thresh=4)
+    with pytest.raises(TypeError, match="Cannot specify both"):
+        recording.compute_etco2_and_ventilations(breath_threshold=2, breaththresh=4)
 
 
 @pytest.mark.golden
@@ -1475,7 +1550,7 @@ class TestFindSegmentsAboveThreshold:
 
     def test_empty_input(self, make_time_index):
         """Test with empty arrays."""
-        from vitabel.vitals import _find_segments_above_threshold
+        from vitabel.analysis.ventilation.phases import _find_segments_above_threshold
 
         data = np.array([])
         time_index = make_time_index(0)
@@ -1492,7 +1567,7 @@ class TestFindSegmentsAboveThreshold:
 
     def test_nothing_above_threshold(self, make_time_index):
         """Test when no values exceed the threshold."""
-        from vitabel.vitals import _find_segments_above_threshold
+        from vitabel.analysis.ventilation.phases import _find_segments_above_threshold
 
         data = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
         time_index = make_time_index(5)
@@ -1509,7 +1584,7 @@ class TestFindSegmentsAboveThreshold:
 
     def test_single_segment_above_threshold(self, make_time_index):
         """Test with a single contiguous segment above threshold."""
-        from vitabel.vitals import _find_segments_above_threshold
+        from vitabel.analysis.ventilation.phases import _find_segments_above_threshold
 
         # Data: indices 2-5 are above threshold (value 15)
         data = np.array([1.0, 2.0, 15.0, 15.0, 15.0, 15.0, 3.0, 4.0])
@@ -1530,7 +1605,7 @@ class TestFindSegmentsAboveThreshold:
 
     def test_multiple_segments_with_large_gap(self, make_time_index):
         """Test with multiple segments separated by gaps larger than max_gap."""
-        from vitabel.vitals import _find_segments_above_threshold
+        from vitabel.analysis.ventilation.phases import _find_segments_above_threshold
 
         # Two segments: indices 1-2 and 6-7 (gap of 3 indices = 3ms)
         data = np.array([1.0, 15.0, 15.0, 1.0, 1.0, 1.0, 15.0, 15.0, 1.0])
@@ -1551,7 +1626,7 @@ class TestFindSegmentsAboveThreshold:
 
     def test_segments_merged_when_gap_small(self, make_time_index):
         """Test that segments are merged when gap is smaller than max_gap."""
-        from vitabel.vitals import _find_segments_above_threshold
+        from vitabel.analysis.ventilation.phases import _find_segments_above_threshold
 
         # Two segments: indices 1-2 and 4-5 (gap of 1 index = 1ms)
         data = np.array([1.0, 15.0, 15.0, 1.0, 15.0, 15.0, 1.0])
@@ -1571,7 +1646,7 @@ class TestFindSegmentsAboveThreshold:
 
     def test_short_segment_filtered_out(self, make_time_index):
         """Test that segments shorter than min_duration are filtered."""
-        from vitabel.vitals import _find_segments_above_threshold
+        from vitabel.analysis.ventilation.phases import _find_segments_above_threshold
 
         # Single point above threshold at index 3 (duration = 0ms)
         data = np.array([1.0, 1.0, 1.0, 15.0, 1.0, 1.0])
@@ -1591,7 +1666,7 @@ class TestFindSegmentsAboveThreshold:
 
     def test_mixed_segments_some_filtered(self, make_time_index):
         """Test with multiple segments where some are filtered by duration."""
-        from vitabel.vitals import _find_segments_above_threshold
+        from vitabel.analysis.ventilation.phases import _find_segments_above_threshold
 
         # Segment 1: indices 1-4 (3ms duration) - should pass
         # Segment 2: index 8 only (0ms duration) - should be filtered
@@ -1613,7 +1688,7 @@ class TestFindSegmentsAboveThreshold:
 
     def test_all_values_above_threshold(self, make_time_index):
         """Test when all values exceed the threshold."""
-        from vitabel.vitals import _find_segments_above_threshold
+        from vitabel.analysis.ventilation.phases import _find_segments_above_threshold
 
         data = np.array([15.0, 20.0, 25.0, 30.0, 35.0])
         time_index = make_time_index(5)
@@ -1633,7 +1708,7 @@ class TestFindSegmentsAboveThreshold:
 
     def test_threshold_boundary(self, make_time_index):
         """Test that values exactly at threshold are NOT included (> not >=)."""
-        from vitabel.vitals import _find_segments_above_threshold
+        from vitabel.analysis.ventilation.phases import _find_segments_above_threshold
 
         data = np.array([10.0, 10.0, 10.0, 11.0, 10.0])
         time_index = make_time_index(5)
@@ -1651,7 +1726,7 @@ class TestFindSegmentsAboveThreshold:
 
     def test_realistic_timescale(self, make_time_index):
         """Test with realistic millisecond timescales used in respiratory detection."""
-        from vitabel.vitals import _find_segments_above_threshold
+        from vitabel.analysis.ventilation.phases import _find_segments_above_threshold
 
         # Simulate 100ms of data at 1ms resolution
         # Segment from 20-40ms (20ms duration), gap, segment from 60-70ms (10ms)
@@ -1684,7 +1759,7 @@ class TestFilterAlternatingPhases:
 
     def test_empty_candidates(self):
         """Test with empty candidate array."""
-        from vitabel.vitals import _filter_alternating_phases
+        from vitabel.analysis.ventilation.phases import _filter_alternating_phases
 
         candidates = np.array([], dtype=int)
         anchors = np.array([100, 200, 300])
@@ -1695,7 +1770,7 @@ class TestFilterAlternatingPhases:
 
     def test_empty_anchors(self):
         """Test with empty anchor array - should return candidates unchanged."""
-        from vitabel.vitals import _filter_alternating_phases
+        from vitabel.analysis.ventilation.phases import _filter_alternating_phases
 
         candidates = np.array([50, 150, 250])
         anchors = np.array([], dtype=int)
@@ -1706,7 +1781,7 @@ class TestFilterAlternatingPhases:
 
     def test_both_empty(self):
         """Test with both arrays empty."""
-        from vitabel.vitals import _filter_alternating_phases
+        from vitabel.analysis.ventilation.phases import _filter_alternating_phases
 
         candidates = np.array([], dtype=int)
         anchors = np.array([], dtype=int)
@@ -1724,7 +1799,7 @@ class TestFilterAlternatingPhases:
         - Interval (200, 300]: candidate 250, keep 250
         Result: [50, 120, 250]
         """
-        from vitabel.vitals import _filter_alternating_phases
+        from vitabel.analysis.ventilation.phases import _filter_alternating_phases
 
         candidates = np.array([50, 120, 150, 250])
         anchors = np.array([100, 200, 300])
@@ -1735,7 +1810,7 @@ class TestFilterAlternatingPhases:
 
     def test_single_candidate_per_interval(self):
         """Test when each interval already has at most one candidate."""
-        from vitabel.vitals import _filter_alternating_phases
+        from vitabel.analysis.ventilation.phases import _filter_alternating_phases
 
         candidates = np.array([50, 150, 250, 350])
         anchors = np.array([100, 200, 300, 400])
@@ -1746,7 +1821,7 @@ class TestFilterAlternatingPhases:
 
     def test_multiple_candidates_per_interval(self):
         """Test filtering when multiple candidates fall in same interval."""
-        from vitabel.vitals import _filter_alternating_phases
+        from vitabel.analysis.ventilation.phases import _filter_alternating_phases
 
         # All candidates in interval (100, 200]
         candidates = np.array([110, 120, 130, 140, 150])
@@ -1759,7 +1834,7 @@ class TestFilterAlternatingPhases:
 
     def test_candidate_before_first_anchor(self):
         """Test that candidates before the first anchor are included."""
-        from vitabel.vitals import _filter_alternating_phases
+        from vitabel.analysis.ventilation.phases import _filter_alternating_phases
 
         candidates = np.array([10, 20, 30, 150])
         anchors = np.array([100, 200])
@@ -1771,7 +1846,7 @@ class TestFilterAlternatingPhases:
 
     def test_candidate_after_last_anchor(self):
         """Test that candidates after the last anchor are included."""
-        from vitabel.vitals import _filter_alternating_phases
+        from vitabel.analysis.ventilation.phases import _filter_alternating_phases
 
         candidates = np.array([50, 150, 350, 400])
         anchors = np.array([100, 200, 300])
@@ -1788,7 +1863,7 @@ class TestFilterAlternatingPhases:
         fall in the interval (anchor_i, anchor_{i+1}]. Only candidates strictly
         greater than a boundary are included in that interval.
         """
-        from vitabel.vitals import _filter_alternating_phases
+        from vitabel.analysis.ventilation.phases import _filter_alternating_phases
 
         candidates = np.array([100, 150, 200])
         anchors = np.array([100, 200, 300])
@@ -1802,7 +1877,7 @@ class TestFilterAlternatingPhases:
 
     def test_single_anchor(self):
         """Test with only one anchor point."""
-        from vitabel.vitals import _filter_alternating_phases
+        from vitabel.analysis.ventilation.phases import _filter_alternating_phases
 
         candidates = np.array([50, 60, 150, 160])
         anchors = np.array([100])
@@ -1814,7 +1889,7 @@ class TestFilterAlternatingPhases:
 
     def test_single_candidate(self):
         """Test with only one candidate."""
-        from vitabel.vitals import _filter_alternating_phases
+        from vitabel.analysis.ventilation.phases import _filter_alternating_phases
 
         candidates = np.array([150])
         anchors = np.array([100, 200, 300])
@@ -1829,7 +1904,7 @@ class TestCreatePhaseIntervals:
 
     def test_empty_insp_begins(self):
         """Test with empty inspiration begins."""
-        from vitabel.vitals import _create_phase_intervals
+        from vitabel.analysis.ventilation.phases import _create_phase_intervals
 
         insp = pd.DatetimeIndex([])
         exp = pd.DatetimeIndex(["2021-01-01 00:00:02", "2021-01-01 00:00:06"])
@@ -1841,7 +1916,7 @@ class TestCreatePhaseIntervals:
 
     def test_empty_exp_begins(self):
         """Test with empty expiration begins."""
-        from vitabel.vitals import _create_phase_intervals
+        from vitabel.analysis.ventilation.phases import _create_phase_intervals
 
         insp = pd.DatetimeIndex(["2021-01-01 00:00:00", "2021-01-01 00:00:04"])
         exp = pd.DatetimeIndex([])
@@ -1853,7 +1928,7 @@ class TestCreatePhaseIntervals:
 
     def test_both_empty(self):
         """Test with both inputs empty."""
-        from vitabel.vitals import _create_phase_intervals
+        from vitabel.analysis.ventilation.phases import _create_phase_intervals
 
         insp = pd.DatetimeIndex([])
         exp = pd.DatetimeIndex([])
@@ -1865,7 +1940,7 @@ class TestCreatePhaseIntervals:
 
     def test_docstring_example(self):
         """Verify the docstring example works correctly."""
-        from vitabel.vitals import _create_phase_intervals
+        from vitabel.analysis.ventilation.phases import _create_phase_intervals
 
         insp = pd.DatetimeIndex(["2021-01-01 00:00:00", "2021-01-01 00:00:04"])
         exp = pd.DatetimeIndex(["2021-01-01 00:00:02", "2021-01-01 00:00:06"])
@@ -1892,7 +1967,7 @@ class TestCreatePhaseIntervals:
 
     def test_single_insp_single_exp(self):
         """Test with single inspiration and expiration."""
-        from vitabel.vitals import _create_phase_intervals
+        from vitabel.analysis.ventilation.phases import _create_phase_intervals
 
         insp = pd.DatetimeIndex(["2021-01-01 00:00:00"])
         exp = pd.DatetimeIndex(["2021-01-01 00:00:02"])
@@ -1909,7 +1984,7 @@ class TestCreatePhaseIntervals:
 
     def test_exp_before_insp(self):
         """Test when expiration starts before first inspiration."""
-        from vitabel.vitals import _create_phase_intervals
+        from vitabel.analysis.ventilation.phases import _create_phase_intervals
 
         insp = pd.DatetimeIndex(["2021-01-01 00:00:02", "2021-01-01 00:00:06"])
         exp = pd.DatetimeIndex(["2021-01-01 00:00:00", "2021-01-01 00:00:04"])
@@ -1938,7 +2013,7 @@ class TestCreatePhaseIntervals:
 
     def test_multiple_cycles(self):
         """Test with multiple complete respiratory cycles."""
-        from vitabel.vitals import _create_phase_intervals
+        from vitabel.analysis.ventilation.phases import _create_phase_intervals
 
         # 3 inspirations, 3 expirations alternating
         insp = pd.DatetimeIndex(
@@ -1958,7 +2033,7 @@ class TestCreatePhaseIntervals:
 
     def test_insp_ends_last(self):
         """Test when inspiration is the last phase (no following expiration)."""
-        from vitabel.vitals import _create_phase_intervals
+        from vitabel.analysis.ventilation.phases import _create_phase_intervals
 
         insp = pd.DatetimeIndex(["2021-01-01 00:00:00", "2021-01-01 00:00:10"])
         exp = pd.DatetimeIndex(["2021-01-01 00:00:02"])

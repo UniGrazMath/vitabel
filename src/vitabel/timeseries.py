@@ -4,40 +4,37 @@ from __future__ import annotations
 
 from copy import copy
 from typing import Any
-from matplotlib.text import Text
-from matplotlib.patches import Rectangle
 
 try:
     from typing import Self
 except ImportError:
     from typing_extensions import Self
 
-import itertools as it
+import hashlib
 import json
 import logging
-import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
 import numbers
 import typing
-import numpy as np
-import numpy.typing as npt
-import hashlib
 from pathlib import Path
 
-from vitabel.utils.helpers import match_object, NumpyEncoder, decompress_array
+import matplotlib.pyplot as plt
+import numpy as np
+import numpy.typing as npt
+import pandas as pd
+
 from vitabel.typing import (
+    ChannelSpecification,
+    DataSlice,
+    IntervalLabelPlotType,
+    LabelAnnotationPresetType,
     LabelPlotType,
     LabelPlotVLineTextSource,
-    IntervalLabelPlotType,
+    LabelSpecification,
     Timedelta,
     Timestamp,
-    ChannelSpecification,
-    LabelSpecification,
-    LabelAnnotationPresetType,
-    DataSlice,
 )
-
+from vitabel.utils.matching import match_object
+from vitabel.utils.serialization import NumpyEncoder, decompress_array
 
 logger: logging.Logger = logging.getLogger("vitabel")
 """Global package logger."""
@@ -137,6 +134,237 @@ def _timeseries_list_info(series_list: list[TimeSeriesBase]) -> pd.DataFrame:
     return df.reindex(columns=df_columns + metadata_columns)
 
 
+_TYPED_ARRAY_TYPES = (np.ndarray, pd.Index, pd.Series)
+
+_NS_PER_UNIT = {
+    "W": 7 * 24 * 3600 * 10**9,
+    "D": 24 * 3600 * 10**9,
+    "h": 3600 * 10**9,
+    "m": 60 * 10**9,
+    "s": 10**9,
+    "ms": 10**6,
+    "us": 10**3,
+    "ns": 1,
+}
+"""Nanoseconds per numpy datetime / timedelta unit (fixed-length units only)."""
+
+_INT64_MIN = int(np.iinfo(np.int64).min)
+_INT64_MAX = int(np.iinfo(np.int64).max)
+
+
+def _integer_ns(value: np.datetime64 | np.timedelta64) -> int:
+    """Exact number of nanoseconds (since the epoch, for timestamps) of a numpy
+    timestamp or timedelta, as a Python integer (no overflow). Raises
+    ``KeyError`` for calendar units (years, months) and ``ValueError`` for
+    NaT."""
+    if np.isnat(value):
+        raise ValueError("NaT has no integer value")
+    unit, count = np.datetime_data(value.dtype)
+    return int(value.astype(np.int64)) * _NS_PER_UNIT[unit] * count
+
+
+def _is_nonempty_selection(selection: slice | npt.NDArray) -> bool:
+    """Whether a selection (slice, boolean mask, or integer positions)
+    selects anything."""
+    if isinstance(selection, slice):
+        return selection.start < selection.stop
+    if selection.dtype == bool:
+        return bool(selection.any())
+    return len(selection) > 0
+
+
+def _select(array: npt.NDArray, selection: slice | npt.NDArray) -> npt.NDArray:
+    """Select from a numpy array, always returning a copy (slicing alone
+    would return a view)."""
+    if isinstance(selection, slice):
+        return array[selection].copy()
+    return array[selection]
+
+
+def _typed_array_kind(time_index: Any) -> str | None:
+    """Return the numpy dtype kind of a typed array (numpy array, pandas
+    Index or Series), with ``"M"`` also for time zone aware timestamps, or
+    ``None`` for other inputs (lists, extension dtypes, ...)."""
+    if not isinstance(time_index, _TYPED_ARRAY_TYPES):
+        return None
+    dtype = time_index.dtype
+    if isinstance(dtype, pd.DatetimeTZDtype):
+        return "M"
+    if isinstance(dtype, np.dtype):
+        return dtype.kind
+    return None
+
+
+def _time_type_from_dtype(time_index: Any) -> type | None:
+    """Fast path for the time type detection in :func:`_parse_time_index`.
+
+    For typed arrays of numbers, timestamps or timedeltas, all elements have
+    the same type, so the element-wise detection (which skips missing values)
+    can be replaced by looking at the dtype. Returns a type that selects the
+    same conversion branch as the element-wise detection, or ``None`` if the
+    element-wise detection is needed (other inputs, empty or all-missing
+    arrays).
+    """
+    kind = _typed_array_kind(time_index)
+    if kind is None or kind not in "iufMm" or len(time_index) == 0:
+        return None
+    if kind in "fMm" and not pd.notna(time_index).any():
+        return None
+    return {"M": pd.Timestamp, "m": pd.Timedelta}.get(kind, numbers.Number)
+
+
+def _as_time_array(time_data: Any) -> np.ndarray:
+    """Times as a numpy array; timestamps and timedeltas (also in lists, or
+    as scalars, which numpy keeps as objects) as ``datetime64`` /
+    ``timedelta64``."""
+    array = np.asarray(time_data)
+    if array.dtype == object and array.size > 0:
+        first = array.flat[0]
+        if isinstance(first, (pd.Timestamp, np.datetime64)):
+            array = array.astype("datetime64[ns]")
+        elif isinstance(first, (pd.Timedelta, np.timedelta64)):
+            array = array.astype("timedelta64[ns]")
+    return array
+
+
+def _parse_time_index(
+    time_index: npt.ArrayLike,
+    time_start: Timestamp | None,
+    time_unit: str,
+    offset: Timedelta,
+) -> tuple[pd.TimedeltaIndex, Timestamp | None]:
+    """Convert time data as passed to :class:`TimeSeriesBase` into a relative
+    time index (with ``offset`` applied) and the reference time ``time_start``
+    (``None`` for relative time data).
+    """
+    # we need to process the passed time_index. in the end,
+    # the stored time_index should always be a pandas.TimedeltaIndex,
+    # with time_start set to None for relative time data,
+    # and to a pandas.Timestamp for absolute time data.
+    # it is possible that the specified time_index is empty
+    # or contains undefined values like pandas.NaT, numpy.nan, or None.
+
+    # avoid np.asarray for typed arrays: for time zone aware timestamps it
+    # creates an object array
+    time_index_arr = (
+        time_index
+        if isinstance(time_index, _TYPED_ARRAY_TYPES)
+        else np.asarray(time_index)
+    )
+    if time_index_arr.ndim != 1:
+        raise ValueError(
+            f"time_index must be a 1D array, got shape {time_index_arr.shape}"
+        )
+
+    time_type = _time_type_from_dtype(time_index)
+    cleaned_time_index_iter = (
+        iter(())  # typed array: all elements have the same type
+        if time_type is not None
+        else (value for value in time_index if not pd.isna(value))
+    )
+
+    try:
+        if time_type is None:
+            value = next(cleaned_time_index_iter)
+            time_type = type(value)
+    except StopIteration:
+        # no non-na values in time_index
+        if hasattr(time_index, "dtype"):
+            # try to infer time type for empty time_index
+            # based on the dtype
+            dtype = time_index.dtype
+            if np.issubdtype(dtype, np.datetime64):
+                time_type = pd.Timestamp
+            elif np.issubdtype(dtype, np.timedelta64):
+                time_type = pd.Timedelta
+            else:
+                time_type = pd.Timedelta
+        else:  # general fallback: assume relative time
+            time_type = pd.Timedelta
+
+    all_same_time_type = True
+    all_numeric = True
+    for value in cleaned_time_index_iter:
+        if all_same_time_type and not isinstance(value, time_type):
+            all_same_time_type = False
+        if all_numeric and not isinstance(value, numbers.Number):
+            all_numeric = False
+        if not all_same_time_type and not all_numeric:
+            raise ValueError(
+                "All time data must be of the same type or numeric, "
+                f"but found {value} ({type(value)}) instead of {time_type}"
+            )
+
+    parsed_from_strings = time_type in (str, np.str_)
+    parse_error_types = (
+        ValueError,
+        TypeError,
+        OverflowError,
+        pd.errors.OutOfBoundsDatetime,
+        pd.errors.OutOfBoundsTimedelta,
+    )
+
+    if parsed_from_strings:
+        for convert_func in [pd.to_datetime, pd.to_timedelta]:
+            try:
+                time_index = convert_func(time_index)
+                time_type = type(time_index[0])
+                break
+            except parse_error_types:
+                pass
+        else:
+            raise ValueError(
+                "The time data could not be parsed to timestamps or timedeltas"
+            )
+
+    try:
+        if time_type in (pd.Timestamp, np.datetime64):  # absolute time
+            # check that time_start does not conflict
+            if time_start is not None:
+                raise ValueError("time_start cannot be passed if time data is absolute")
+            if len(time_index) > 0:
+                # the first timestamp that is not missing (NaT if there is none)
+                valid = np.flatnonzero(pd.notna(time_index))
+                time_start = pd.Timestamp(
+                    time_index[valid[0]] if len(valid) else pd.NaT
+                )
+            if _typed_array_kind(time_index) == "M" and not pd.isna(time_start):
+                # vectorized; same values and unit as the element-wise
+                # subtraction below (also for NaT and time zone aware data).
+                # all-NaT data (time_start = NaT) gives an index whose unit
+                # differs, so that case is left to the element-wise path
+                time_index = pd.DatetimeIndex(time_index) - time_start
+            else:
+                time_index = pd.to_timedelta([time - time_start for time in time_index])
+
+        elif time_type in (pd.Timedelta, np.timedelta64):
+            time_index = pd.to_timedelta(time_index)
+
+        elif issubclass(time_type, numbers.Number):
+            time_index = pd.to_timedelta(time_index, unit=time_unit)
+
+        else:
+            raise ValueError(f"The time data type {time_type} is not supported")
+
+        # a TimedeltaIndex also for pandas Series as input
+        time_index = pd.TimedeltaIndex(time_index + offset)
+    except (
+        OverflowError,
+        pd.errors.OutOfBoundsDatetime,
+        pd.errors.OutOfBoundsTimedelta,
+    ) as exc:
+        if parsed_from_strings:
+            raise ValueError(
+                "The time data could not be parsed to timestamps or timedeltas"
+            ) from exc
+        raise
+
+    if time_start is not None:
+        time_start = pd.Timestamp(time_start)
+        time_start = time_start.tz_localize(None)
+    return time_index, time_start
+
+
 class TimeSeriesBase:
     """Base class for time series data.
 
@@ -195,110 +423,9 @@ class TimeSeriesBase:
             offset = pd.to_timedelta(offset, unit=self.time_unit)
         self._offset = offset
 
-        # we need to process the passed time_index. in the end,
-        # the stored time_index should always be a pandas.TimedeltaIndex,
-        # with time_start set to None for relative time data,
-        # and to a pandas.Timestamp for absolute time data.
-        # it is possible that the specified time_index is empty
-        # or contains undefined values like pandas.NaT, numpy.nan, or None.
-
-        time_index_arr = np.asarray(time_index)
-        if time_index_arr.ndim != 1:
-            raise ValueError(
-                f"time_index must be a 1D array, got shape {time_index_arr.shape}"
-            )
-
-        cleaned_time_index_iter = (value for value in time_index if not pd.isna(value))
-
-        try:
-            value = next(cleaned_time_index_iter)
-            time_type = type(value)
-        except StopIteration:
-            # no non-na values in time_index
-            if hasattr(time_index, "dtype"):
-                # try to infer time type for empty time_index
-                # based on the dtype
-                dtype = time_index.dtype
-                if np.issubdtype(dtype, np.datetime64):
-                    time_type = pd.Timestamp
-                elif np.issubdtype(dtype, np.timedelta64):
-                    time_type = pd.Timedelta
-                else:
-                    time_type = pd.Timedelta
-            else:  # general fallback: assume relative time
-                time_type = pd.Timedelta
-
-        all_same_time_type = True
-        all_numeric = True
-        for value in cleaned_time_index_iter:
-            if all_same_time_type and not isinstance(value, time_type):
-                all_same_time_type = False
-            if all_numeric and not isinstance(value, numbers.Number):
-                all_numeric = False
-            if not all_same_time_type and not all_numeric:
-                raise ValueError(
-                    "All time data must be of the same type or numeric, "
-                    f"but found {value} ({type(value)}) instead of {time_type}"
-                )
-
-        parsed_from_strings = time_type in (str, np.str_)
-        parse_error_types = (
-            ValueError,
-            TypeError,
-            OverflowError,
-            pd.errors.OutOfBoundsDatetime,
-            pd.errors.OutOfBoundsTimedelta,
+        self.time_index, self.time_start = _parse_time_index(
+            time_index, time_start, self.time_unit, offset
         )
-
-        if parsed_from_strings:
-            for convert_func in [pd.to_datetime, pd.to_timedelta]:
-                try:
-                    time_index = convert_func(time_index)
-                    time_type = type(time_index[0])
-                    break
-                except parse_error_types:
-                    pass
-            else:
-                raise ValueError(
-                    "The time data could not be parsed to timestamps or timedeltas"
-                )
-
-        try:
-            if time_type in (pd.Timestamp, np.datetime64):  # absolute time
-                # check that time_start does not conflict
-                if time_start is not None:
-                    raise ValueError(
-                        "time_start cannot be passed if time data is absolute"
-                    )
-                if len(time_index) > 0:
-                    time_start = pd.Timestamp(time_index[0])
-                time_index = pd.to_timedelta([time - time_start for time in time_index])
-
-            elif time_type in (pd.Timedelta, np.timedelta64):
-                time_index = pd.to_timedelta(time_index)
-
-            elif issubclass(time_type, numbers.Number):
-                time_index = pd.to_timedelta(time_index, unit=self.time_unit)
-
-            else:
-                raise ValueError(f"The time data type {time_type} is not supported")
-
-            self.time_index = time_index + offset
-        except (
-            OverflowError,
-            pd.errors.OutOfBoundsDatetime,
-            pd.errors.OutOfBoundsTimedelta,
-        ) as exc:
-            if parsed_from_strings:
-                raise ValueError(
-                    "The time data could not be parsed to timestamps or timedeltas"
-                ) from exc
-            raise
-
-        if time_start is not None:
-            time_start = pd.Timestamp(time_start)
-            time_start = time_start.tz_localize(None)
-        self.time_start = time_start
 
     def __len__(self) -> int:
         """Return the number of time points."""
@@ -367,8 +494,10 @@ class TimeSeriesBase:
             initialization is used.
         """
         time_unit = time_unit or self.time_unit
-        return np.array(
-            [time / pd.to_timedelta(1, unit=time_unit) for time in self.time_index]
+        # vectorized; bit-identical to dividing element by element
+        # (NaT becomes NaN)
+        return np.asarray(
+            self.time_index / pd.to_timedelta(1, unit=time_unit), dtype=float
         )
 
     def shift_time_index(
@@ -453,6 +582,196 @@ class TimeSeriesBase:
             adjacent to (but outside of) the start and stop times; useful
             for plotting. Defaults to ``False``.
         """
+        selection = self._time_selection(
+            start=start,
+            stop=stop,
+            resolution=resolution,
+            include_adjacent=include_adjacent,
+        )
+        if isinstance(selection, np.ndarray) and selection.dtype == bool:
+            return selection
+        mask = np.zeros(len(self), dtype=bool)
+        mask[selection] = True
+        return mask
+
+    def _time_selection(
+        self,
+        start: Timestamp | Timedelta | float | None = None,
+        stop: Timestamp | Timedelta | float | None = None,
+        resolution: Timedelta | float | str | None = None,
+        include_adjacent: bool = False,
+    ) -> slice | npt.NDArray:
+        """Select the time points of a window, as in :meth:`get_time_mask`.
+
+        If the time index is sorted, the window is found by binary search
+        (cost independent of the length of the series) and returned as a
+        slice, or as integer positions if it is downsampled. Otherwise, a
+        boolean mask is returned.
+
+        Indexing the time index with the result gives the same result as
+        indexing with the mask from :meth:`_time_mask_by_comparison`,
+        including the ``freq`` attribute (pandas converts contiguous boolean
+        masks to slices, which keep ``freq``). Numpy arrays must be indexed
+        with :func:`_select`, which copies slices.
+        """
+        if not self.is_empty() and not (
+            self.is_time_relative()
+            and (isinstance(start, Timestamp) or isinstance(stop, Timestamp))
+        ):
+            positions = self._time_positions(
+                start=start,
+                stop=stop,
+                resolution=resolution,
+                include_adjacent=include_adjacent,
+            )
+            if positions is not None:
+                n_selected = len(range(positions.start, positions.stop, positions.step))
+                if positions.step == 1 or n_selected <= 1:
+                    # contiguous
+                    return slice(positions.start, positions.start + n_selected)
+                return np.arange(positions.start, positions.stop, positions.step)
+        return self._time_mask_by_comparison(
+            start=start,
+            stop=stop,
+            resolution=resolution,
+            include_adjacent=include_adjacent,
+        )
+
+    def _relative_ns(self, time_value: Timestamp | Timedelta) -> int | None:
+        """Exact time (as returned by :meth:`convert_time_input`) relative to
+        :attr:`time_start` in integer nanoseconds, or ``None`` if it can't be
+        compared with the time index this way."""
+        if self.is_time_absolute():
+            if isinstance(time_value, pd.Timestamp):
+                if time_value.tz is not None:
+                    return None  # comparison raises, see the fallback
+                time_value = time_value.to_datetime64()
+            if not isinstance(time_value, np.datetime64):
+                return None
+            return _integer_ns(time_value) - _integer_ns(
+                self.time_start.to_datetime64()
+            )
+        if isinstance(time_value, pd.Timedelta):
+            time_value = time_value.to_timedelta64()
+        if not isinstance(time_value, np.timedelta64):
+            return None
+        return _integer_ns(time_value)
+
+    def _time_positions(
+        self,
+        start: Timestamp | Timedelta | float | None,
+        stop: Timestamp | Timedelta | float | None,
+        resolution: Timedelta | float | str | None,
+        include_adjacent: bool,
+    ) -> slice | None:
+        """Positions of the time points in a window via binary search, or
+        ``None`` if the time index is not sorted (or contains NaT), or the
+        bounds can't be handled exactly; then :meth:`_time_mask_by_comparison`
+        is used.
+
+        Gives the same result as the comparison: the bounds are converted
+        exactly to integers in the unit of the time index (rounding the start
+        up and the stop down), so no precision is lost when the bounds are
+        finer than the unit of the time index.
+        """
+        time_index = self.time_index
+        if (
+            not isinstance(time_index, pd.TimedeltaIndex)
+            or time_index.unit not in _NS_PER_UNIT
+            or (self.is_time_absolute() and pd.isna(self.time_start))
+            or not time_index.is_monotonic_increasing
+        ):
+            return None
+
+        try:
+            start_value = None if start is None else self.convert_time_input(start)
+            stop_value = None if stop is None else self.convert_time_input(stop)
+            start_ns = None if start is None else self._relative_ns(start_value)
+            stop_ns = None if stop is None else self._relative_ns(stop_value)
+        except (TypeError, ValueError, KeyError, OverflowError):
+            # let the comparison raise (or handle) it in the same way as before
+            return None
+        if (start is not None and start_ns is None) or (
+            stop is not None and stop_ns is None
+        ):
+            return None
+
+        values = time_index.asi8
+        unit_ns = _NS_PER_UNIT[time_index.unit]
+        n_points = len(values)
+        first, last = 0, n_points
+        if start_ns is not None:
+            lower = -(-start_ns // unit_ns)  # first value >= start
+            if lower > _INT64_MAX:
+                first = n_points
+            elif lower >= _INT64_MIN:
+                first = int(np.searchsorted(values, lower, side="left"))
+        if stop_ns is not None:
+            upper = stop_ns // unit_ns  # last value <= stop
+            if upper < _INT64_MIN:
+                last = 0
+            elif upper <= _INT64_MAX:
+                last = int(np.searchsorted(values, upper, side="right"))
+        last = max(first, last)
+
+        if include_adjacent and first < last:
+            first = max(first - 1, 0)
+            last = min(last + 1, n_points)
+
+        if start is not None and stop is not None and start_value > stop_value:
+            logger.warning(
+                f"Start time {start_value} is after stop time {stop_value}, "
+                "the queried interval is empty."
+            )
+
+        step = self._downsampling_step(first, last, resolution)
+        return slice(first, last, step)
+
+    def _downsampling_step(
+        self,
+        first: int,
+        last: int,
+        resolution: Timedelta | float | str | None,
+    ) -> int:
+        """Step size for downsampling the time points at positions
+        ``first:last`` to the given resolution; same rule as in
+        :meth:`_time_mask_by_comparison`."""
+        if resolution is None or resolution == 0 or first >= last:
+            return 1
+
+        if isinstance(resolution, str):
+            resolution = pd.to_timedelta(resolution)
+        if isinstance(resolution, numbers.Number):
+            resolution = pd.to_timedelta(resolution, unit=self.time_unit)
+
+        bounded_time = self.time_index[first:last]
+        if self.is_time_absolute():
+            # same unit as in the comparison (relevant for the mean below)
+            bounded_time = bounded_time + self.time_start
+        if len(bounded_time) == 1:
+            return 1
+
+        mean_dt_bounded_time = (bounded_time[1:] - bounded_time[:-1]).mean()
+        if mean_dt_bounded_time == pd.Timedelta(0):
+            logger.warning(
+                "The time index has no variation, so the resolution "
+                "cannot be applied. Returning the full time index."
+            )
+            return 1
+        n_downsample = resolution / mean_dt_bounded_time
+        if n_downsample <= 2:
+            return 1
+        return int(np.floor(n_downsample))
+
+    def _time_mask_by_comparison(
+        self,
+        start: Timestamp | Timedelta | float | None = None,
+        stop: Timestamp | Timedelta | float | None = None,
+        resolution: Timedelta | float | str | None = None,
+        include_adjacent: bool = False,
+    ) -> npt.NDArray[np.bool_]:
+        """Implementation of :meth:`get_time_mask` that compares every time
+        point with the bounds. Works for unsorted time indices and NaT."""
         if self.is_empty():
             return np.array([], dtype=bool)
 
@@ -624,11 +943,9 @@ class Channel(TimeSeriesBase):
         if data is not None:
             if not isinstance(data, np.ndarray):
                 data = np.asarray(data)
-            
+
             if data.ndim != 1:
-                raise ValueError(
-                    f"data must be a 1D array, got shape {data.shape}"
-                )
+                raise ValueError(f"data must be a 1D array, got shape {data.shape}")
 
             if len(data) != len(time_index):
                 raise ValueError(
@@ -897,18 +1214,18 @@ class Channel(TimeSeriesBase):
             stop times; useful for plotting. Defaults to ``False``.
         """
 
-        time_mask = self.get_time_mask(
+        selection = self._time_selection(
             start=start,
             stop=stop,
             resolution=resolution,
             include_adjacent=include_adjacent,
         )
 
-        time_index = self.time_index[time_mask]
+        time_index = self.time_index[selection]
         if self.is_time_absolute():
             time_index += self.time_start
 
-        data = self.data[time_mask] if self.data is not None else None
+        data = _select(self.data, selection) if self.data is not None else None
         return DataSlice(time_index=time_index, data=data)
 
     def plot(
@@ -937,46 +1254,26 @@ class Channel(TimeSeriesBase):
             The stop time for the data. If not specified, the
             data ends at the last time point.
         resolution
-            The resolution for the data. If specified, the data
-            is downsampled such that the median time difference is
-            bounded below by the given resolution. See :meth:`.get_data`.
+            The resolution for the data (a duration; numbers are taken in
+            the time unit of the channel). If specified, the data is
+            downsampled to the minimum and the maximum value in every
+            interval of this length, so peaks remain visible.
         time_unit
             The time unit values used along the x-axis. If ``None``
             (the default), the time unit of the channel is used.
         """
+        from vitabel.plotting.static import plot_channel
 
-        channel_data = self.get_data(
-            start=start, stop=stop, resolution=resolution, include_adjacent=True
+        return plot_channel(
+            self,
+            plot_axes=plot_axes,
+            plotstyle=plotstyle,
+            start=start,
+            stop=stop,
+            resolution=resolution,
+            time_unit=time_unit,
+            reference_time=reference_time,
         )
-        time_index = channel_data.time_index
-        data = channel_data.data
-        if data is None:
-            data = np.zeros_like(time_index, dtype=float)
-
-        # when plotting a single channel, the times should always
-        # be numeric (matplotlib's datetime formatter is not ideal,
-        # the labels have lots of overlap).
-        if self.is_time_absolute():
-            reference_time = reference_time or self.time_start
-            time_index = time_index - reference_time
-
-        if time_unit is None:
-            time_unit = self.time_unit
-        time_index /= pd.to_timedelta(1, unit=time_unit)
-
-        if plot_axes is None:
-            figure, plot_axes = plt.subplots()
-        else:
-            figure = plot_axes.get_figure()
-
-        base_plotstyle = self.plotstyle.copy() if self.plotstyle is not None else {}
-        base_plotstyle.update(plotstyle if plotstyle is not None else {})
-
-        (line,) = plot_axes.plot(time_index, data, **base_plotstyle)
-        if "label" not in base_plotstyle:
-            line.set_label(self.name)
-
-        return figure
 
     def rename(self, new_name: str):
         """Change the name of the channel.
@@ -1146,9 +1443,7 @@ class Label(TimeSeriesBase):
                 # replace None with np.nan and convert to float
                 data = np.asarray(data, dtype=float)
                 if data.ndim != 1:
-                    raise ValueError(
-                        f"data must be a 1D array, got shape {data.shape}"
-                    )
+                    raise ValueError(f"data must be a 1D array, got shape {data.shape}")
 
         if text_data is not None and len(text_data) > 0:
             text_data = np.asarray(text_data, dtype=object)
@@ -1696,21 +1991,21 @@ class Label(TimeSeriesBase):
             stop times; useful for plotting. Defaults to ``False``.
         """
 
-        time_mask = self.get_time_mask(
+        selection = self._time_selection(
             start=start, stop=stop, resolution=None, include_adjacent=include_adjacent
         )
 
-        time_index = self.time_index[time_mask]
+        time_index = self.time_index[selection]
         if self.is_time_absolute():
             time_index += self.time_start
 
         data = None
-        if self.data is not None and time_mask.any():
-            data = self.data[time_mask]
+        if self.data is not None and _is_nonempty_selection(selection):
+            data = _select(self.data, selection)
 
         text_data = None
-        if self.text_data is not None and time_mask.any():
-            text_data = self.text_data[time_mask]
+        if self.text_data is not None and _is_nonempty_selection(selection):
+            text_data = _select(self.text_data, selection)
 
         return DataSlice(time_index=time_index, data=data, text_data=text_data)
 
@@ -1757,121 +2052,19 @@ class Label(TimeSeriesBase):
         If ``plot_type`` and/or ``vline_text_source`` are inconsistent with the available
         (text) data, the routine will emit warnings.
         """
+        from vitabel.plotting.static import plot_label
 
-        if plot_type is None:  # use plot_type from label
-            plot_type = self.plot_type
-
-        if plot_type not in typing.get_args(LabelPlotType):
-            raise ValueError(f"Value '{plot_type}' is not a valid choice for plot_type")
-
-        if vline_text_source is None:
-            vline_text_source = self.vline_text_source
-
-        if not self._check_plot_parameters(
-            plot_type=plot_type, vline_text_source=vline_text_source
-        ):
-            logger.warning(
-                f"Plotting specifications of the label '{self.name}' are inconsistent, "
-                "data or labels might be missing from the plot."
-            )
-
-        time_index, data, text_data = self.get_data(
-            start=start, stop=stop, include_adjacent=True
+        return plot_label(
+            self,
+            plot_axes=plot_axes,
+            plotstyle=plotstyle,
+            start=start,
+            stop=stop,
+            time_unit=time_unit,
+            reference_time=reference_time,
+            plot_type=plot_type,
+            vline_text_source=vline_text_source,
         )
-
-        if self.is_time_absolute():
-            reference_time = reference_time or self.time_start
-            time_index = time_index - reference_time
-
-        if time_unit is None:
-            time_unit = self.time_unit
-        time_index /= pd.to_timedelta(1, unit=time_unit)
-
-        if data is None:
-            data = np.full_like(time_index, np.nan, dtype=float)
-
-        if text_data is None:
-            text_data = np.full_like(time_index, None, dtype=object)
-
-        if plot_axes is None:
-            figure, plot_axes = plt.subplots()
-        else:
-            figure = plot_axes.get_figure()
-
-        base_plotstyle = self.plotstyle.copy()
-        if plotstyle is not None:
-            base_plotstyle.update(plotstyle)
-        base_plotstyle.setdefault("label", self.name)
-
-        if plot_type in {"scatter", "combined"}:
-            nan_mask = np.isnan(data)
-            if nan_mask.any() and plot_type == "scatter":
-                logger.warning(
-                    f"Data in label {self.name} contains NaN values, "
-                    "skipping them in the scatter plot"
-                )
-
-            if data[~nan_mask].any():
-                if "marker" not in base_plotstyle and len(data[~nan_mask]) == 1:
-                    # no marker style set, override to make single value visible
-                    base_plotstyle.update({"marker": "X"})
-
-                # can be assigned to variable, scatterplot_artist, if needed
-                _ = plot_axes.plot(
-                    time_index[~nan_mask],
-                    data[~nan_mask],
-                    **base_plotstyle,
-                )
-
-        if plot_type in {"vline", "combined"}:
-            if plot_type == "combined":
-                # only need to plot lines where there is no scatter
-                nan_mask = np.isnan(data)
-                time_index = time_index[nan_mask]
-                data = data[nan_mask]
-                text_data = text_data[nan_mask]
-
-            match vline_text_source:
-                case "text_data":
-                    vline_text = text_data
-                case "data":
-                    vline_text = data.astype(str)
-                    vline_text[np.isnan(data)] = ""  # replace NaN with empty string
-                case "combined":
-                    vline_text = text_data.astype(str)
-                    vline_text[np.isnan(text_data)] = data.astype(str)[
-                        np.isnan(text_data)
-                    ]
-                case "disabled":
-                    vline_text = np.full_like(time_index, "", dtype=str)
-                case _:
-                    raise ValueError(
-                        f"Invalid choice for vline_text_source: '{vline_text_source}'"
-                    )
-
-            if plotstyle is None:  # TODO: think about direction
-                base_plotstyle.update({"marker": None})
-            base_plotstyle.setdefault("label", self.name)
-
-            ymin, ymax = plot_axes.get_ylim()
-            for i, (t, text) in enumerate(zip(time_index, vline_text)):
-                vline_artist = plot_axes.axvline(t, **base_plotstyle)
-                if i == 0:
-                    base_plotstyle.pop("label", None)
-                if text:
-                    line_color = vline_artist.get_color()
-                    vline_text_artist = plot_axes.text(
-                        t,
-                        0.9 * ymin + 0.1 * ymax,
-                        text,
-                        rotation=90,
-                        clip_on=True,
-                        color=line_color,
-                        bbox=self.plot_vline_bbox_settings,
-                    )
-                    vline_text_artist._from_vitals_label = True
-
-        return figure
 
     def rename(self, new_name: str):
         """Change the name of the label.
@@ -1931,12 +2124,12 @@ class IntervalLabel(Label):
     plot_type
         Determines how entries of the label are plotted. Available options are:
 
-        - ``'box'``: Entries of the label are plotted as colorized area.
-            Requries no additional data.
+        - ``'box'``: Entries of the label are plotted as shaded areas.
+          Requires no additional data.
         - ``'hline'``: Entries of the label are plotted as horizontal lines.
-            Requires a label with numeric data.
-        - ``'combined'``: Entries of the label are plotted as horizontal line when there
-            is associated numeric data, and as rectangle lines otherwise.
+          Requires a label with numeric data.
+        - ``'combined'``: Entries of the label are plotted as horizontal lines
+          when there is associated numeric data, and as shaded areas otherwise.
 
         Defaults to ``'combined'``.
 
@@ -2394,7 +2587,7 @@ class IntervalLabel(Label):
         whether it is contained in any of the intervals of the label.
         """
 
-        time_data = np.array(time_data)
+        time_data = _as_time_array(time_data)
         start_cmp = np.greater_equal if include_start else np.greater
         end_cmp = np.less_equal if include_end else np.less
 
@@ -2461,87 +2654,18 @@ class IntervalLabel(Label):
             For labels with absolute time, a reference time to subtract from
             the time data. If not specified, the :attr:`time_start` attribute is used.
         """
-        time_index, data, text_data = self.get_data(start=start, stop=stop)
-        artist = None
+        from vitabel.plotting.static import plot_interval_label
 
-        if plot_type is None:  # use plot_type from label
-            plot_type = self.plot_type
-
-        if plot_type not in typing.get_args(IntervalLabelPlotType):
-            raise ValueError(f"Value '{plot_type}' is not a valid choice for plot_type")
-
-        if self.is_time_absolute():
-            reference_time = reference_time or self.time_start
-            time_index = time_index - np.datetime64(reference_time)
-
-        if time_unit is None:
-            time_unit = self.time_unit
-        time_index /= pd.to_timedelta(1, unit=time_unit)
-
-        if plot_axes is None:
-            figure, plot_axes = plt.subplots()
-        else:
-            figure = plot_axes.get_figure()
-
-        base_plotstyle = self.plotstyle.copy()
-        if plotstyle is not None:
-            base_plotstyle.update(plotstyle)
-
-        if plot_type in {"box", "combined"}:
-            if "alpha" not in base_plotstyle:
-                base_plotstyle.update({"alpha": 0.2})
-            if "color" not in base_plotstyle:
-                base_plotstyle.update({"color": "blue"})
-            if not any(k in base_plotstyle for k in ("facecolor", "fc")):
-                base_plotstyle.update({"facecolor": base_plotstyle["color"]})
-
-            if plot_type == "combined" and data is not None:
-                box_time_index = time_index[np.isnan(data)]
-            else:
-                box_time_index = time_index
-
-            # Filter for props in kwargs which can be handled by axvspan / pathces.Rectangle
-            rectangle_props = Rectangle((0, 0), 1, 1).properties().keys()
-            filtered_base_plotstyle = {
-                k: v for k, v in base_plotstyle.items() if k in rectangle_props
-            }
-            filtered_base_plotstyle.setdefault("label", self.name)
-
-            for i, (xmin, xmax) in enumerate(box_time_index):
-                artist = plot_axes.axvspan(xmin, xmax, **filtered_base_plotstyle)
-                if i == 0:
-                    filtered_base_plotstyle.pop("label", None)
-
-        if plot_type == "hline" and len(self) > 0 and data is None:
-            logger.warning(
-                f"Label {self.name} has no data, skipping horizontal line plot"
-            )
-            return figure
-
-        if plot_type in {"hline", "combined"} and data is not None:
-            if plot_type == "combined":
-                hline_time_index = time_index[~np.isnan(data)]
-                hline_data = data[~np.isnan(data)]
-            else:
-                hline_time_index = time_index
-
-            time_midpoints = np.mean(hline_time_index, axis=1)
-            time_radius = np.diff(hline_time_index, axis=1).reshape(-1) / 2.0
-
-            # TODO: deal with text_data
-            base_plotstyle = self.plotstyle.copy()
-            filtered_base_plotstyle = {
-                k: v
-                for k, v in base_plotstyle.items()
-                if k in Line2D([], []).properties()
-            }
-            filtered_base_plotstyle.update({"linestyle": ""})
-            artist = plot_axes.errorbar(
-                time_midpoints, hline_data, xerr=time_radius, **filtered_base_plotstyle
-            )
-            artist.set_label(self.name)
-
-        return figure
+        return plot_interval_label(
+            self,
+            plot_axes=plot_axes,
+            plotstyle=plotstyle,
+            start=start,
+            stop=stop,
+            time_unit=time_unit,
+            reference_time=reference_time,
+            plot_type=plot_type,
+        )
 
 
 class TimeDataCollection:
@@ -3009,142 +3133,6 @@ class TimeDataCollection:
             return time_spec
         raise ValueError(f"Time specification {time_spec} could not be parsed")
 
-    def _parse_channel_specification(
-        self, channels: list[list[ChannelSpecification | int]] | None
-    ) -> list[list[Channel]]:
-        """Parse (nested) channel specifications into nested lists of channels.
-
-        Parameters
-        ----------
-        channels
-            The nested list of channel specifications to parse.
-        """
-        channel_lists = []
-        if channels is None:
-            channel_lists.append(self.channels)
-        else:
-            for spec_list in channels:
-                channel_list: list[Channel] = []
-                for spec in spec_list:
-                    if isinstance(spec, str):
-                        channel_list.extend(self.get_channels(name=spec))
-                    elif isinstance(spec, dict):
-                        channel_list.extend(self.get_channels(**spec))
-                    elif isinstance(spec, int):
-                        channel_list.append(self.channels[spec])
-                    elif isinstance(spec, Channel):
-                        channel_list.append(spec)
-                    else:
-                        raise ValueError(f"Invalid channel specification: {spec}")
-                channel_lists.append(channel_list)
-        return channel_lists
-
-    def _parse_label_specification(
-        self,
-        labels: list[list[LabelSpecification | int]] | None,
-        channel_lists: list[list[Channel]],
-        include_attached_labels: bool = False,
-    ) -> list[list[Label]]:
-        """Parse (nested) label specifications into nested lists of labels.
-        Empty labels are excluded.
-
-        Parameters
-        ----------
-        labels
-            The nested label specifications to parse.
-        channel_lists
-            The nested channel lists that the labels are attached to.
-        include_attached_labels
-            Whether to include attached labels in the output.
-        """
-        num_subplots = len(channel_lists)
-        label_lists: list[list[Label]] = []
-
-        if labels is None:
-            for _ in range(num_subplots):
-                label_lists.append([label for label in self.global_labels])
-        else:
-            for spec_list in labels:
-                label_list: list[Label] = []
-                for spec in spec_list:
-                    if isinstance(spec, str):
-                        label_list.extend(self.get_labels(name=spec))
-                    elif isinstance(spec, dict):
-                        label_list.extend(self.get_labels(**spec))
-                    elif isinstance(spec, int):
-                        label_list.append(self.labels[spec])
-                    elif isinstance(spec, Label):
-                        label_list.append(spec)
-                    else:
-                        raise ValueError(f"Invalid label specification: {spec}")
-                label_lists.append(label_list)
-        if include_attached_labels:
-            for idx in range(num_subplots):
-                for channel in channel_lists[idx]:
-                    for label in channel.labels:
-                        if label not in label_lists[idx]:
-                            label_lists[idx].append(label)
-        return label_lists
-
-    def _get_time_extremum(
-        self,
-        time: Timestamp | Timedelta | float | str | None,
-        channel_lists: list[list[Channel]],
-        minimum: bool = True,
-    ) -> Timestamp | Timedelta | float | None:
-        """Get the minimum or maximum time value from the specified channels,
-        or return the specified time value if it is not ``None``.
-
-        Parameters
-        ----------
-        time
-            The time value to compare to the channel time values. The extremum
-            is only calculated if this value is ``None``.
-        channel_lists
-            The channel lists to get the extremum time value from.
-        minimum
-            If ``True`` (the default), the minimum time value is returned,
-            otherwise the maximum time value is returned.
-        """
-        op = min
-        if not minimum:
-            op = max
-
-        time = self._parse_time(time)
-        if time is None:
-            time_list = []
-            for channel in it.chain.from_iterable(channel_lists):
-                if channel.is_empty():
-                    continue
-                ex_time = op(channel.time_index)
-                if self.is_time_absolute():
-                    ex_time += channel.time_start
-                time_list.append(ex_time)
-            if len(time_list) > 0:
-                time = op(time_list)
-        return time
-
-    def _get_timeunit_from_channels(self, channel_lists: list[list[Channel]]) -> str:
-        """Get the time unit from the specified channels.
-
-        Ensures that all channels have the same time unit, and raises an error
-        if they do not. In that case, the time unit must be passed explicitly
-        to the calling method.
-
-        Parameters
-        ----------
-        channel_lists
-            The channel lists to get the time unit from.
-        """
-        channel_iter = it.chain.from_iterable(channel_lists)
-        time_unit = next(channel_iter).time_unit
-        if not all(channel.time_unit == time_unit for channel in channel_iter):
-            raise ValueError(
-                "The channel time units are not uniform. Specify the plot time "
-                "unit explicitly by specifying the time_unit argument"
-            )
-        return time_unit
-
     def plot(
         self,
         channels: list[list[ChannelSpecification | int]] | None = None,
@@ -3185,68 +3173,19 @@ class TimeDataCollection:
         subplots_kwargs
             Keyword arguments passed to ``matplotlib.pyplot.subplots``.
         """
-        # 1) turn channels into proper list of (list of) Channels
-        # 2) same for labels, respect include_attached_labels
-        # 3) determine global start and end time (of selected channels)
-        # 4) get_data, and construct the corresponding plot.
+        from vitabel.plotting.static import plot_collection
 
-        channel_lists = self._parse_channel_specification(channels)
-        num_subplots = len(channel_lists)
-
-        if subplots_kwargs is None:
-            subplots_kwargs = {}
-
-        label_lists = self._parse_label_specification(
-            labels, channel_lists, include_attached_labels=include_attached_labels
+        return plot_collection(
+            self,
+            channels=channels,
+            labels=labels,
+            start=start,
+            stop=stop,
+            resolution=resolution,
+            time_unit=time_unit,
+            include_attached_labels=include_attached_labels,
+            subplots_kwargs=subplots_kwargs,
         )
-
-        start = self._get_time_extremum(start, channel_lists, minimum=True)
-        stop = self._get_time_extremum(stop, channel_lists, minimum=False)
-        if start is None and stop is None:
-            logger.warning(
-                "Specified channels contain no data, setting start to the current time."
-            )
-            start = pd.Timestamp.now()
-            stop = start + pd.Timedelta(hours=1)
-
-        if time_unit is None:
-            time_unit = self._get_timeunit_from_channels(channel_lists)
-
-        fig, axes = plt.subplots(num_subplots, squeeze=False, **subplots_kwargs)
-        if self.is_time_absolute():
-            fig.suptitle(f"Reference time: {start}")
-        axes = axes[:, 0]
-
-        if resolution is None:
-            screen_pixel_width, screen_pixel_height = fig.canvas.get_width_height()
-            data_width = (stop - start).total_seconds()
-            resolution = data_width / screen_pixel_width
-
-        for channel_list, label_list, subax in zip(channel_lists, label_lists, axes):
-            for channel in channel_list:
-                channel.plot(
-                    plot_axes=subax,
-                    start=start,
-                    stop=stop,
-                    resolution=resolution,
-                    time_unit=time_unit,
-                )
-
-            for label in label_list:
-                label.plot(plot_axes=subax, start=start, stop=stop, time_unit=time_unit)
-
-            plot_duration = (stop - start) / pd.to_timedelta(1, unit=time_unit)
-            subax.set_xlim((0, plot_duration))
-            subax.set_xlabel(f"time [{time_unit}]", labelpad=-12, fontsize=7)
-            subax.grid(True)
-            subax.legend(loc="upper right")
-
-        return fig, axes
-
-    # for interactive plotting:
-    # add repr-strings for labels (and channels too)
-    # add methods for adding and removing data points to labels
-    # interactive plot should also have a (linear) history with undo...
 
     def plot_interactive(
         self,
@@ -3296,843 +3235,33 @@ class TimeDataCollection:
             to the recording interval of the channels being plotted.
         subplots_kwargs
             Keyword arguments passed to ``matplotlib.pyplot.subplots``.
+
+        Returns
+        -------
+        InteractivePlot
+            An ipywidgets layout (control panel above the figure) that can be
+            displayed and combined with other widgets. It also provides:
+
+            - ``on(event, callback)``: react to changes, e.g.
+              ``"labels_changed"`` after annotating;
+            - ``add_overlay(overlay, subplot=0)``: persistent overlays, e.g.
+              :class:`~vitabel.plotting.overlays.FillBetween` to shade the
+              area of a signal below a threshold;
+            - ``set_window(start, stop)``;
+            - ``figure``: the matplotlib figure (customisations persist when
+              the plot is updated).
         """
-        import ipywidgets as widgets
-        from enum import Enum
-        from IPython import get_ipython
-        from matplotlib.backend_bases import MouseButton, MouseEvent, KeyEvent
+        from vitabel.plotting.interactive import plot_interactive
 
-        CANVAS_SELECTION_TOLERANCE_PX = 5
-
-        channel_lists = self._parse_channel_specification(channels)
-        if channel_overviews is False:
-            channel_overviews = []
-        elif channel_overviews is True:
-            channel_overviews = [list(set(it.chain.from_iterable(channel_lists)))]
-        else:
-            channel_overviews = self._parse_channel_specification(channel_overviews)
-
-        if subplots_kwargs is None:
-            subplots_kwargs = {}
-
-        label_lists = self._parse_label_specification(
-            labels, channel_lists, include_attached_labels=include_attached_labels
+        return plot_interactive(
+            self,
+            channels=channels,
+            labels=labels,
+            start=start,
+            stop=stop,
+            time_unit=time_unit,
+            include_attached_labels=include_attached_labels,
+            channel_overviews=channel_overviews,
+            limited_overview=limited_overview,
+            subplots_kwargs=subplots_kwargs,
         )
-
-        all_data_sources = channel_lists + label_lists
-
-        num_subplots = len(channel_lists) + len(channel_overviews)
-        start = self._get_time_extremum(start, all_data_sources, minimum=True)
-        stop = self._get_time_extremum(stop, all_data_sources, minimum=False)
-        if start is None and stop is None:
-            logger.warning(
-                "Specified channels and labels contain no data, setting start "
-                "to the current time."
-            )
-            start = pd.Timestamp.now()
-            stop = start + pd.Timedelta(minutes=1)
-
-        if start == stop:
-            logger.warning(
-                "Start and stop time are equal, setting stop time to "
-                "1 minute after start to allow plotting."
-            )
-            stop = start + pd.Timedelta(minutes=1)
-
-        reference_time = start
-        shift_span = (stop - start) * 0.25
-
-        if time_unit is None:
-            time_unit = self._get_timeunit_from_channels(channel_lists)
-
-        ipy_shell = get_ipython()
-        if ipy_shell is None:
-            raise RuntimeError("This method can only be used in an IPython environment")
-
-        # ---------- WIDGETS FOR ANNOTATION ----------------------
-        # --------------------------------------------------------
-        class InteractionMode(Enum):
-            ANNOTATE = 0
-            ADJUST = 1
-            SETTINGS = 2
-
-        value_text_input = widgets.Text(placeholder="Label text ...")
-        value_text_stack = widgets.Stack(
-            [
-                widgets.HTML(),
-                value_text_input,
-            ]
-        )
-        value_text_stack.selected_index = 1
-
-        distinct_labels = {"single": [], "interval": []}
-        for label_list in label_lists:
-            for label in label_list:
-                if isinstance(label, IntervalLabel):
-                    if label not in distinct_labels["interval"]:
-                        distinct_labels["interval"].append(label)
-                elif label not in distinct_labels["single"]:
-                    distinct_labels["single"].append(label)
-
-        label_master = sorted(
-            distinct_labels["single"], key=lambda label: label.name
-        ) + sorted(distinct_labels["interval"], key=lambda label: label.name)
-        label_dict = dict(enumerate(label_master, start=1))
-        dropdown_options = [
-            (f"{label.name}   [Interval]", i)
-            if isinstance(label, IntervalLabel)
-            else (label.name, i)
-            for i, label in label_dict.items()
-        ]
-
-        label_dropdown = widgets.Dropdown(
-            options=dropdown_options,
-            disabled=False,
-            layout=widgets.Layout(margin="3px 0px 0px 0px"),
-        )
-        DELETE_ANNOTATIONS = False
-        delete_toggle_button = widgets.ToggleButton(
-            value=False,
-            description="Mode: Add Data",
-            disabled=False,
-            button_style="success",
-        )
-
-        add_timestamp_check = widgets.Checkbox(
-            value=True,
-            description="",
-            disabled=True,
-            indent=False,
-            layout=widgets.Layout(width="max-content"),
-        )
-
-        add_numeric_check = widgets.Checkbox(
-            value=True,
-            description="",
-            disabled=False,
-            indent=False,
-            layout=widgets.Layout(width="max-content"),
-        )
-
-        add_text_check = widgets.Checkbox(
-            value=True,
-            description="",
-            disabled=False,  # TODO make this dynamic in conjuncton with value_text_input
-            indent=False,
-            layout=widgets.Layout(width="max-content"),
-        )
-
-        def toggle_add_text(change):
-            if change["name"] == "value":
-                value_text_stack.selected_index = 1 if change["new"] else 0
-
-        add_text_check.observe(toggle_add_text, names="value")
-
-        add_stack = widgets.Stack(
-            [
-                widgets.HTML(),  # alternative to empty widget
-                widgets.HBox(
-                    [  # Hbox to add alligned Label
-                        widgets.Label(  # alligned label
-                            "Data to add:",
-                            layout=widgets.Layout(
-                                min_width="85px",
-                                margin="0px 5px 0px 0px",
-                                text_align="right",
-                                justify_content="flex-end",
-                            ),
-                        ),
-                        widgets.HBox(
-                            [  # Hbox for content
-                                widgets.VBox(
-                                    [widgets.Label("Timestamp"), add_timestamp_check],
-                                    layout=widgets.Layout(margin="0 20px 0 0"),
-                                ),
-                                widgets.VBox(
-                                    [widgets.Label("Numeric value"), add_numeric_check],
-                                    layout=widgets.Layout(margin="0 20px 0 0"),
-                                ),
-                                widgets.VBox(
-                                    [
-                                        widgets.Label("Textual value"),
-                                        widgets.HBox(
-                                            [add_text_check, value_text_stack]
-                                        ),
-                                    ]
-                                ),
-                            ],
-                            layout=widgets.Layout(
-                                border="1px dotted gray", padding="3px 8px"
-                            ),
-                        ),
-                    ]
-                ),
-            ],
-            layout=widgets.Layout(margin="3px 0 0 0 "),  # top margin only
-        )
-        add_stack.selected_index = 1
-
-        def delete_toggle_handler(change):
-            nonlocal DELETE_ANNOTATIONS, partial_interval_data, shifting_reference_time
-            partial_interval_data = None
-            shifting_reference_time = None
-            fig.canvas._figure_label = " "
-            active_label = label_dict[label_dropdown.value]
-            if change["new"]:  # value of "new" attribute is new button value
-                delete_toggle_button.description = "Mode: Delete Data"
-                delete_toggle_button.button_style = "danger"
-                add_stack.selected_index = 0
-                DELETE_ANNOTATIONS = True
-                if isinstance(active_label, IntervalLabel):
-                    fig.canvas._figure_label = (
-                        "To delete an Interval click close to its "
-                        "start with the right mouse button."
-                    )
-            else:
-                delete_toggle_button.description = "Mode: Add Data"
-                delete_toggle_button.button_style = "success"
-                add_stack.selected_index = 1
-                DELETE_ANNOTATIONS = False
-                if isinstance(active_label, IntervalLabel):
-                    fig.canvas._figure_label = (
-                        "Right-click to set start time, then "
-                        "right-click again to set end time."
-                    )
-
-        def label_dropdown_change(change):
-            nonlocal partial_interval_data, shifting_reference_time
-            partial_interval_data = None
-            shifting_reference_time = None
-            fig.canvas._figure_label = " "
-            label = label_dict[label_dropdown.value]
-            if isinstance(label, IntervalLabel):
-                if DELETE_ANNOTATIONS:
-                    fig.canvas._figure_label = (
-                        "To delete an Interval click close to its "
-                        "start with the right mouse button."
-                    )
-                else:
-                    fig.canvas._figure_label = (
-                        "Right-click to set start time, then "
-                        "right-click again to set end time."
-                    )
-            _populate_label_add_menu(label)
-
-        def _populate_label_add_menu(label: Label | IntervalLabel):
-            value_text_input.value = ""
-
-            # empty label -> presets on plottype and vline_text_source
-            if len(label) == 0:
-                # defaulting
-                add_numeric_check.value = False
-                add_text_check.value = False
-
-                # preset by annotation_preset_type specification
-                if label.annotation_preset_type is not None:
-                    if label.annotation_preset_type in ("numerical", "combined"):
-                        add_numeric_check.value = True
-                    if label.annotation_preset_type in ("textual", "combined"):
-                        add_text_check.value = True
-                    return
-
-                # preset by plot_type and vline_text_source
-                if label.vline_text_source in ("text_data", "combined"):
-                    add_text_check.value = True
-                    value_text_input.value = label.name
-                if label.vline_text_source in ("data", "combined"):
-                    add_numeric_check.value = True
-
-                if label.plot_type in ("scatter", "hline", "combined"):
-                    add_numeric_check.value = True
-                if label.plot_type in ("vline", "combined"):
-                    add_text_check.value = True
-
-            # non empty label with no data
-            elif label.data is None and label.text_data is None:
-                add_numeric_check.value = False
-                add_text_check.value = False
-            # label with data
-            else:
-                add_numeric_check.value = bool(label.data is not None)
-
-                add_text_check.value = bool(label.text_data is not None)
-                if add_text_check.value:
-                    strings = label.text_data[~pd.isna(label.text_data)]
-                    if strings.size > 0:
-                        values, counts = np.unique(strings, return_counts=True)
-                        value_text_input.value = values[np.argmax(counts)]
-
-        delete_toggle_button.observe(delete_toggle_handler, names="value")
-
-        label_dropdown.observe(label_dropdown_change, names="value")
-
-        if label_dropdown.value in label_dict:
-            _populate_label_add_menu(label_dict[label_dropdown.value])
-
-        # ---------- WIDGETS FOR SHIFTING ------------------------
-        # --------------------------------------------------------
-        shifting_channel_selection = widgets.SelectMultiple(
-            value=[self.channels[0]],
-            options=[
-                (f"[{idx}] {chan.name}", chan) for idx, chan in enumerate(self.channels)
-            ],
-            description="Channels / Labels",
-            disabled=False,
-            continuous_update=True,
-        )
-
-        # ----------- WIDGETS FOR SETTINGS -----------------------
-        # --------------------------------------------------------
-        limit_widgets = []
-        for idx, channel_list in enumerate(channel_lists, start=1):
-            min_slider = widgets.FloatText(value=0, description="min")
-            max_slider = widgets.FloatText(value=1, description="max")
-            limit_widgets.append(
-                widgets.HBox(
-                    [
-                        widgets.Label(f"Plot {idx} limits:"),
-                        min_slider,
-                        max_slider,
-                    ]
-                )
-            )
-        settings_apply_button = widgets.Button(description="Apply")
-
-        # ------------------ ENTIRE WIDGET DESIGN ----------------
-        # --------------------------------------------------------
-        tab = widgets.Tab()
-        tab.children = [
-            widgets.VBox(
-                [
-                    widgets.HTML(
-                        """
-                    <p>
-                    Right-click to add data points to the active label. Use the number
-                    keys (<kbd style="color: black;">0</kbd> to <kbd style="color: black;">9</kbd>)
-                    to quickly switch between active labels. Use the button below or the
-                    <kbd style="color: black;">D</kbd> key to toggle between adding and deleting labels.
-                    </p>
-                    <p>
-                    Use the left and right arrow keys to shift the plotted time window.
-                    By clicking in an overview plot (if one is present), the plot window location
-                    is moved.
-                    The <kbd style="color: black;">+</kbd> and <kbd style="color: black;">-</kbd>
-                    keys zoom in and out, respectively.
-                    Mouse scrolling in a subplot zooms the vertical axis.
-                    </p>
-                    """
-                    ),
-                    widgets.HBox(
-                        [
-                            widgets.Label(
-                                "Label:",
-                                layout=widgets.Layout(
-                                    min_width="85px",
-                                    margin="0px 5px 0px 0px",
-                                    text_align="right",
-                                    justify_content="flex-end",
-                                ),
-                            ),
-                            label_dropdown,
-                            delete_toggle_button,
-                        ]
-                    ),
-                    add_stack,
-                ],
-            ),
-            widgets.VBox(
-                [
-                    widgets.HTML(
-                        """
-                    <p>Select channels and labels to be shifted in the menu below.
-                    Multiple values can be selected by holding down <kbd style="color: black;">Ctrl</kbd>
-                    (on MacOS: <kbd style="color: black;">Cmd</kbd>) while clicking.
-                    </p>
-                    <p>Right-click into one of the plots to first set a reference time
-                    (represented by a vertical dotted red line), then right-click again
-                    to the position where the reference time should be moved to for the
-                    selected channels. Press <kbd style="color: black;">Esc</kbd> to
-                    clear a set reference time.</p>
-                    """
-                    ),
-                    shifting_channel_selection,
-                ]
-            ),
-            widgets.VBox(
-                [
-                    widgets.Label("Vertical plot limits:"),
-                    *limit_widgets,
-                    settings_apply_button,
-                ]
-            ),
-        ]
-        tab.titles = [
-            "Annotate",
-            "Align Timelines",
-            "Settings",
-        ]
-
-        tab.layout = widgets.Layout(
-            min_height="270px",  # NOTE avoids ynamics witht concomittant plot. yet not flexibel
-        )
-        ipy_shell.enable_matplotlib(gui="widget")
-
-        with plt.ioff():
-            fig, axes = plt.subplots(num_subplots, squeeze=False, **subplots_kwargs)
-            screen_pixel_width, screen_pixel_height = fig.canvas.get_width_height()
-
-            axes = axes[:, 0]
-            channel_axes = axes[: len(channel_lists)]
-            overview_axes = axes[len(channel_lists) :]
-            fig.canvas.toolbar.toolitems = [
-                tool
-                for tool in fig.canvas.toolbar.toolitems
-                if tool[0] in ["Home", "Zoom", "Download"]
-            ]
-            fig.canvas.header_visible = True
-            if self.is_time_absolute():
-                fig.suptitle(f"Reference time: {reference_time}")
-
-        x_indicators = [
-            ax.axvline(x=0, color="black", linestyle="--", linewidth=0.5)
-            for ax in channel_axes
-        ]
-        overview_indicators = []
-
-        partial_interval_data = None
-        partial_interval_artist = None
-        shifting_reference_time = None
-        shifting_reference_axis = None
-        is_repainting = False
-
-        def update_ylim_settings():
-            for ax, limit_widget in zip(channel_axes, limit_widgets):
-                _, min_input, max_input = limit_widget.children
-                ymin, ymax = ax.get_ylim()
-                min_input.value = ymin
-                max_input.value = ymax
-                text_labels = ax.findobj(
-                    lambda artist: isinstance(artist, Text)
-                    and hasattr(artist, "_from_vitals_label")
-                )
-                for artist in text_labels:
-                    artist.set_y(ymin + 0.1 * (ymax - ymin))
-
-        def format_coords(x, y):
-            format_string = f"(x, y) = ({x:.2f}, {y:.2f})"
-            if self.is_time_absolute():
-                format_string += (
-                    f"   x = {x * pd.to_timedelta(1, unit=time_unit) + reference_time}"
-                )
-
-            return format_string
-
-        def _axis_xlim_to_window(ax):
-            xmin, xmax = ax.get_xlim()
-            window_start = reference_time + pd.to_timedelta(xmin, unit=time_unit)
-            window_stop = reference_time + pd.to_timedelta(xmax, unit=time_unit)
-            if window_stop < window_start:
-                window_start, window_stop = window_stop, window_start
-            return window_start, window_stop
-
-        def sync_view_from_axis(ax):
-            nonlocal start, stop, shift_span, is_repainting
-
-            if is_repainting:
-                return
-
-            start, stop = _axis_xlim_to_window(ax)
-            shift_span = (stop - start) * 0.25
-            repaint_plot(start, stop)
-
-        def repaint_plot(start, stop):
-            nonlocal \
-                fig, \
-                channel_axes, \
-                overview_axes, \
-                overview_indicators, \
-                screen_pixel_width, \
-                is_repainting
-            data_width = (stop - start).total_seconds()
-            screen_pixel_width, _ = fig.canvas.get_width_height()
-            resolution = data_width / screen_pixel_width
-
-            partial_interval_artist_ax = None
-            if partial_interval_artist is not None:
-                partial_interval_artist_ax = partial_interval_artist.axes
-
-            is_repainting = True
-            try:
-                with plt.ioff():
-                    for channel_list, label_list, indicator, subax in zip(
-                        channel_lists, label_lists, x_indicators, channel_axes
-                    ):
-                        old_ylims = subax.get_ylim()
-                        old_ylabel = subax.yaxis.get_label_text()
-                        subax.clear()
-                        subax.add_artist(indicator)
-                        subax.format_coord = format_coords
-                        subax.set_xlim(
-                            (
-                                (start - reference_time)
-                                / pd.to_timedelta(1, unit=time_unit),
-                                (stop - reference_time)
-                                / pd.to_timedelta(1, unit=time_unit),
-                            )
-                        )
-                        subax.grid(True)
-                        subax.set_xlabel(f"time [{time_unit}]", labelpad=-12, fontsize=7)
-                        subax.yaxis.set_label_text(old_ylabel)
-                        if old_ylims != (0, 1):
-                            subax.set_ylim(old_ylims)
-                        for channel in channel_list:
-                            channel.plot(
-                                plot_axes=subax,
-                                start=start,
-                                stop=stop,
-                                resolution=resolution,
-                                time_unit=time_unit,
-                                reference_time=reference_time,
-                            )
-
-                        for label in label_list:
-                            label.plot(
-                                plot_axes=subax,
-                                start=start,
-                                stop=stop,
-                                time_unit=time_unit,
-                                reference_time=reference_time,
-                            )
-                        subax.legend(loc="lower right")
-                    for indicator in overview_indicators:
-                        indicator.remove()
-                    overview_indicators = [
-                        ax.axvspan(
-                            xmin=(start - reference_time)
-                            / pd.to_timedelta(1, unit=time_unit),
-                            xmax=(stop - reference_time)
-                            / pd.to_timedelta(1, unit=time_unit),
-                            color="red",
-                            alpha=0.25,
-                        )
-                        for ax in overview_axes
-                    ]
-                    if shifting_reference_time is not None:
-                        shifting_reference_axis.axvline(
-                            x=(shifting_reference_time - reference_time)
-                            / pd.to_timedelta(1, unit=time_unit),
-                            color="red",
-                            linestyle="--",
-                            linewidth=1.5,
-                        )
-                    if partial_interval_artist is not None:
-                        partial_interval_artist_ax.add_artist(partial_interval_artist)
-            finally:
-                is_repainting = False
-            return
-
-        def repaint_overview_plot():
-            nonlocal overview_indicators
-            channels_for_xlims = channel_lists
-            for channel_list, subax in zip(channel_overviews, overview_axes):
-                if not channel_list:
-                    continue
-
-                if limited_overview:  # xlim of overview based on selected channels
-                    channels_for_xlims = [channel_list]
-
-                ov_start = self._get_time_extremum(
-                    time=None, channel_lists=channels_for_xlims, minimum=True
-                )
-                ov_stop = self._get_time_extremum(
-                    time=None, channel_lists=channels_for_xlims, minimum=False
-                )
-
-                data_width = (ov_stop - ov_start).total_seconds()
-                resolution = data_width / screen_pixel_width
-                subax.clear()
-                overview_indicators = []
-                for channel in channel_list:
-                    channel.plot(
-                        plot_axes=subax,
-                        start=ov_start,
-                        stop=ov_stop,
-                        resolution=resolution,
-                        time_unit=time_unit,
-                        reference_time=reference_time,
-                    )
-                subax.set_xlim(
-                    (
-                        (ov_start - reference_time)
-                        / pd.to_timedelta(1, unit=time_unit),
-                        (ov_stop - reference_time) / pd.to_timedelta(1, unit=time_unit),
-                    )
-                )
-                subax.grid(False)
-
-        repaint_overview_plot()
-        repaint_plot(start, stop)
-
-        for ax in channel_axes:
-            ax.callbacks.connect("xlim_changed", sync_view_from_axis)
-
-        interactive_plot = widgets.AppLayout(
-            header=tab, center=fig.canvas, pane_heights=[1, 4, 0]
-        )
-
-        def tab_listener(event):
-            mode = InteractionMode(event["new"])
-            if mode == InteractionMode.ANNOTATE:
-                pass
-
-            elif mode == InteractionMode.ADJUST:
-                pass
-
-            elif mode == InteractionMode.SETTINGS:
-                pass
-
-        def key_press_listener(event: KeyEvent):
-            nonlocal \
-                start, \
-                stop, \
-                fig, \
-                partial_interval_data, \
-                shifting_reference_time, \
-                shift_span
-
-            if event.key in "123456789":
-                new_index = int(event.key) - 1
-                if new_index < len(label_dropdown.options):
-                    label_dropdown.index = new_index
-            elif event.key == "0":
-                new_index = 9
-                if new_index < len(label_dropdown.options):
-                    label_dropdown.index = new_index
-            elif event.key == "right":
-                start += shift_span
-                stop += shift_span
-                repaint_plot(start, stop)
-            elif event.key == "left":
-                start -= shift_span
-                stop -= shift_span
-                repaint_plot(start, stop)
-            elif event.key == "+":  # Zoom in
-                span = stop - start
-                start += span * 0.25
-                stop -= span * 0.25
-                shift_span = (stop - start) * 0.25
-
-                repaint_plot(start, stop)
-            elif event.key == "-":  # Zoom out
-                span = stop - start
-                start -= span * 0.25
-                stop += span * 0.25
-                shift_span = (stop - start) * 0.25
-
-                repaint_plot(start, stop)
-            elif event.key == "d":
-                delete_toggle_handler({"new": not DELETE_ANNOTATIONS})
-            elif event.key == "escape":
-                partial_interval_data = None
-                shifting_reference_time = None
-                fig.canvas._figure_label = " "
-                repaint_plot(start, stop)
-
-        def mouse_click_listener(event: MouseEvent):
-            nonlocal \
-                fig, \
-                partial_interval_data, \
-                partial_interval_artist, \
-                shifting_reference_time, \
-                shifting_reference_axis, \
-                start, \
-                stop
-
-            current_mode = InteractionMode(tab.selected_index)
-            current_axes = event.inaxes
-            if (
-                current_axes in channel_axes
-            ):  # If click is within current detail plot, annotate something
-                if event.button is MouseButton.RIGHT:
-                    if current_mode == InteractionMode.ANNOTATE:
-                        active_label: Label = label_dict[label_dropdown.value]
-                        if isinstance(active_label, IntervalLabel):
-                            if DELETE_ANNOTATIONS:
-                                time_data = (
-                                    pd.to_timedelta(event.xdata, unit=time_unit)
-                                    + reference_time
-                                )
-                                selected_intervals = (
-                                    np.argwhere(
-                                        (active_label.intervals[:, 0] <= time_data)
-                                        & (active_label.intervals[:, 1] >= time_data)
-                                    )
-                                    .flatten()
-                                    .tolist()
-                                )
-                                if len(selected_intervals) > 0:
-                                    interval_index = min(selected_intervals)
-                                    active_label.remove_data(
-                                        active_label.intervals[interval_index, :]
-                                    )
-                                    repaint_plot(start, stop)
-
-                                return
-
-                            if partial_interval_data is None:
-                                label_color = active_label.plotstyle.get(
-                                    "color", "limegreen"
-                                )
-                                partial_interval_artist = current_axes.axvline(
-                                    x=event.xdata,
-                                    color=label_color,
-                                    linestyle="--",
-                                    linewidth=1.5,
-                                )
-                                partial_interval_data = (event.xdata, event.ydata)
-                                fig.canvas._figure_label = (
-                                    "Creating interval label, select end point "
-                                    "or press <ESC> to abort ..."
-                                )
-
-                            else:
-                                t1, y1 = partial_interval_data
-                                t2, y2 = event.xdata, event.ydata
-                                t1 = reference_time + pd.to_timedelta(
-                                    t1, unit=time_unit
-                                )
-                                t2 = reference_time + pd.to_timedelta(
-                                    t2, unit=time_unit
-                                )
-                                if t2 < t1:
-                                    t1, t2 = t2, t1
-                                ydata = (
-                                    (y1 + y2) / 2 if add_numeric_check.value else None
-                                )
-                                text_input = (
-                                    value_text_input.value
-                                    if add_text_check.value
-                                    and value_text_input.value
-                                    and value_text_input.value != ""
-                                    else None
-                                )
-                                active_label.add_data(
-                                    (t1, t2), value=ydata, text=text_input
-                                )  # TODO
-                                partial_interval_data = None
-                                partial_interval_artist = None
-                                repaint_plot(start, stop)
-                                fig.canvas._figure_label = " "
-                        else:
-                            time_data = (
-                                pd.to_timedelta(event.xdata, unit=time_unit)
-                                + reference_time
-                            )
-                            if DELETE_ANNOTATIONS:
-                                tolerance = (
-                                    (stop - start)
-                                    / screen_pixel_width
-                                    * CANVAS_SELECTION_TOLERANCE_PX
-                                )
-                                selected_times = active_label.get_data(
-                                    start=time_data - tolerance,
-                                    stop=time_data + tolerance,
-                                ).time_index
-                                if len(selected_times) > 0:
-                                    selected_time = min(selected_times)
-                                    active_label.remove_data(time_data=selected_time)
-                            else:
-                                ydata = event.ydata if add_numeric_check.value else None
-                                text_input = (
-                                    value_text_input.value
-                                    if add_text_check.value
-                                    and value_text_input.value
-                                    and value_text_input.value != ""
-                                    else None
-                                )
-                                active_label.add_data(
-                                    time_data=time_data, value=ydata, text=text_input
-                                )
-                            repaint_plot(start, stop)
-
-                    elif current_mode == InteractionMode.ADJUST:
-                        if shifting_reference_time is None:
-                            current_axes.axvline(
-                                x=event.xdata,
-                                color="red",
-                                linestyle="--",
-                                linewidth=1.5,
-                            )
-                            shifting_reference_time = (
-                                pd.to_timedelta(event.xdata, unit=time_unit)
-                                + reference_time
-                            )
-                            shifting_reference_axis = current_axes
-                        else:
-                            offset = (
-                                pd.to_timedelta(event.xdata, unit=time_unit)
-                                + reference_time
-                                - shifting_reference_time
-                            )
-                            for channel in shifting_channel_selection.value:
-                                channel: Channel
-                                channel.shift_time_index(delta_t=offset)
-                            shifting_reference_time = None
-                            shifting_reference_axis = None
-                            repaint_overview_plot()
-                            repaint_plot(start, stop)
-
-            elif (
-                current_axes in overview_axes
-            ):  # if click is within overview plot: move there
-                time_data = (
-                    pd.to_timedelta(event.xdata, unit=time_unit) + reference_time
-                )
-                plot_span = stop - start
-                stop = time_data + 0.5 * plot_span
-                start = time_data - 0.5 * plot_span
-                repaint_plot(start, stop)
-
-        def mouse_move_event(event: MouseEvent):
-            nonlocal x_indicators
-
-            if event.xdata is None:
-                return
-
-            for indicator in x_indicators:
-                indicator.set_xdata(np.ones_like(indicator.get_xdata()) * event.xdata)
-
-            fig.canvas.draw_idle()
-
-        def scroll_event(event: MouseEvent):
-            mouse_y = event.ydata
-            axplot = event.inaxes
-            if axplot is None:
-                return
-            bottom, top = axplot.axes.get_ylim()
-            scale_factor = 0.1 * event.step
-            new_bottom = mouse_y - ((mouse_y - bottom) * (1 + scale_factor))
-            new_top = mouse_y + ((top - mouse_y) * (1 + scale_factor))
-
-            axplot.axes.set_ylim(new_bottom, new_top)
-            update_ylim_settings()
-            fig.canvas.draw_idle()
-
-        def settings_apply_handler(event):
-            for ax, limit_widget in zip(channel_axes, limit_widgets):
-                _, min_input, max_input = limit_widget.children
-                ax.set_ylim((min_input.value, max_input.value))
-
-            fig.canvas.draw_idle()
-
-        tab.observe(tab_listener, names="selected_index")
-        settings_apply_button.on_click(settings_apply_handler)
-        fig.canvas.mpl_connect("key_press_event", key_press_listener)
-        fig.canvas.mpl_connect("button_press_event", mouse_click_listener)
-        fig.canvas.mpl_connect("motion_notify_event", mouse_move_event)
-        fig.canvas.mpl_connect("scroll_event", scroll_event)
-        fig.canvas.capture_scroll = True
-        fig.subplots_adjust(top=0.95, bottom=0.05, left=0.05, right=0.97)
-
-        interactive_plot.center._figure_label = ""  # is overwritten for some reason
-        return interactive_plot

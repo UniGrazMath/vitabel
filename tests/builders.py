@@ -81,3 +81,34 @@ def write_synthetic_zoll_csv_pair(base_path: Path) -> tuple[Path, Path]:
         encoding="utf-8",
     )
     return csv_path, xml_path
+
+
+def write_synthetic_vital_file(path: Path) -> Path:
+    """Write a small VitalDB recording with a waveform track, numeric tracks,
+    and string tracks (labels) exercising the label attachment rules of
+    :meth:`.Vitals.add_vital_db_recording`."""
+    import vitaldb
+
+    vital_file = vitaldb.VitalFile()
+    start = 1673439037.5  # 2023-01-11 12:10:37.5 UTC
+    vital_file.dtstart = start
+    vital_file.dtend = start + 10
+    vital_file.dgmt = -60  # recorded in UTC+1
+
+    def records(values):
+        return [{"dt": start + i, "val": value} for i, value in enumerate(values)]
+
+    waveform = np.sin(np.arange(1000) / 10).astype(np.float32)
+    vital_file.add_track("MON/PLETH", [{"dt": start, "val": waveform}], srate=100)
+    vital_file.add_track("PUMP/PUMP2_RATE", records([1.0, 2.0, 3.0]), unit="ml/h")
+    vital_file.add_track("PUMP/PUMP2_CONC", records([4.0, 5.0, 6.0]))
+    vital_file.add_track("PUMP/PUMP2_PRES", records([7.0, 8.0, 9.0]))
+    # rule 1: "<channel name>_<suffix>" -> attached to that channel
+    vital_file.add_track("PUMP/PUMP2_RATE_UNIT", records(["ml/h"]))
+    # rule 2: "<prefix>_<suffix>" -> attached to all channels "<prefix>_*"
+    vital_file.add_track("PUMP/PUMP2_DRUG", records(["propofol"]))
+    # rule 3: everything else -> global labels
+    vital_file.add_track("MON/EVENT", records(["start", "stop"]))
+    vital_file.add_track("MON/SOME_NOTE", records(["note"]))
+    vital_file.to_vital(str(path))
+    return path
