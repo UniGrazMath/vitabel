@@ -629,3 +629,29 @@ def test_interval_label_contains_pandas_times(time_start):
     assert label.contains_time([t(1.5), t(3)]).tolist() == [True, False]
     assert label.contains_time(t(1.5))
     assert label.contains_time([[t(1.5), t(3)]]).tolist() == [True]
+
+
+@pytest.mark.parametrize(
+    "time_data",
+    [
+        pd.Timestamp("2024-01-01 12:00:01.5", tz="UTC"),
+        [pd.Timestamp("2024-01-01 12:00:01.5", tz="Europe/Vienna")],
+        pd.date_range("2024-01-01 12:00:01", periods=2, freq="s", tz="UTC"),
+        [ABSOLUTE_START, pd.Timestamp("2024-01-01 12:00:01.5", tz="UTC")],
+    ],
+    ids=["scalar", "list", "index", "mixed"],
+)
+def test_interval_label_contains_time_rejects_time_zones(time_data):
+    """Labels store time zone naive times: comparing them with time zone
+    aware ones would be ambiguous (like the bounds of get_data)."""
+    label = IntervalLabel(
+        "intervals",
+        time_index=[
+            (
+                ABSOLUTE_START + pd.Timedelta(1, "s"),
+                ABSOLUTE_START + pd.Timedelta(2, "s"),
+            )
+        ],
+    )
+    with pytest.raises(TypeError, match="Time zone aware"):
+        label.contains_time(time_data)
