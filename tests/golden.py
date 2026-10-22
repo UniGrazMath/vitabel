@@ -86,9 +86,14 @@ epoch), so a relative tolerance is meaningless for them; computed times are
 typically derived from sampled times and float arithmetic in seconds, so
 deviations well below a microsecond are considered equal."""
 
-VOLATILE_VITALS_METADATA = {"Time_of_construction", "Saving_to_json_time"}
+VOLATILE_VITALS_METADATA = {
+    "Time_of_construction",
+    "Saving_to_json_time",
+    "vitabel version",
+}
 VOLATILE_SERIES_METADATA = {"creation_date"}
-"""Metadata keys containing the time of creation; their value is not compared."""
+"""Metadata keys that depend on when (or with which version of vitabel) the
+data was created or saved; their values are not compared."""
 
 CURRENT_TEST: contextvars.ContextVar[tuple[str, bool] | None] = contextvars.ContextVar(
     "vitabel_golden_current_test", default=None
@@ -312,7 +317,6 @@ def summarize_series(series: Channel | Label) -> dict[str, Any]:
         "offset": jsonable(series.offset),
         "first_entry": jsonable(series.first_entry),
         "last_entry": jsonable(series.last_entry),
-        "time_index_unit": getattr(series.time_index, "unit", None),
         "time": summarize_time_array(np.asarray(series.time_index)),
         "data": summarize_array(series.data),
         "metadata": jsonable(

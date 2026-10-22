@@ -34,7 +34,6 @@
     "repr": "2024-01-01 01:05:09.664000",
     "ns": 1704071109664000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",
@@ -765,7 +764,6 @@
     "repr": "2024-01-01 01:05:08.992000",
     "ns": 1704071108992000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",

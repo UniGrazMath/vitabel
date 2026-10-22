@@ -35,7 +35,6 @@
      "repr": "2023-01-11 13:13:44.730000",
      "ns": 1673442824730000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",

@@ -35,7 +35,6 @@
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -622,7 +621,6 @@
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -1209,7 +1207,6 @@
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -1796,7 +1793,6 @@
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -2383,7 +2379,6 @@
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -2970,7 +2965,6 @@
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -3557,7 +3551,6 @@
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -4144,7 +4137,6 @@
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -4731,7 +4723,6 @@
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -5318,7 +5309,6 @@
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -5905,7 +5895,6 @@
      "repr": "2009-12-10 12:54:01.995000",
      "ns": 1260449641995000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -6494,7 +6483,6 @@
      "repr": "2009-12-10 12:54:02",
      "ns": 1260449642000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",

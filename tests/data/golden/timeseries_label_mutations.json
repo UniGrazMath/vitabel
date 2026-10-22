@@ -32,7 +32,6 @@
      "repr": "0 days 00:00:03",
      "ns": 3000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -105,7 +104,6 @@
      "repr": "0 days 00:00:03",
      "ns": 3000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -180,7 +178,6 @@
      "repr": "0 days 00:00:03",
      "ns": 3000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -272,7 +269,6 @@
      "repr": "0 days 00:00:03",
      "ns": 3000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -367,7 +363,6 @@
      "repr": "0 days 00:00:03",
      "ns": 3000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -459,7 +454,6 @@
      "repr": "0 days 00:00:03",
      "ns": 3000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -548,7 +542,6 @@
      "repr": "0 days 00:00:04",
      "ns": 4000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -637,7 +630,6 @@
      "repr": "0 days 00:00:03",
      "ns": 3000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -712,7 +704,6 @@
     },
     "first_entry": null,
     "last_entry": null,
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -765,7 +756,6 @@
      "repr": "2024-01-01 12:00:03",
      "ns": 1704110403000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -842,7 +832,6 @@
      "repr": "2024-01-01 12:00:03",
      "ns": 1704110403000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -921,7 +910,6 @@
      "repr": "2024-01-01 12:00:03",
      "ns": 1704110403000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -1017,7 +1005,6 @@
      "repr": "2024-01-01 12:00:03",
      "ns": 1704110403000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -1116,7 +1103,6 @@
      "repr": "2024-01-01 12:00:03",
      "ns": 1704110403000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -1212,7 +1198,6 @@
      "repr": "2024-01-01 12:00:03",
      "ns": 1704110403000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -1305,7 +1290,6 @@
      "repr": "2024-01-01 12:00:04",
      "ns": 1704110404000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -1398,7 +1382,6 @@
      "repr": "2024-01-01 12:00:03",
      "ns": 1704110403000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -1473,7 +1456,6 @@
     },
     "first_entry": null,
     "last_entry": null,
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -1514,7 +1496,6 @@
     },
     "first_entry": null,
     "last_entry": null,
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -1567,7 +1548,6 @@
      "repr": "2024-01-01 12:00:05",
      "ns": 1704110405000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -1640,7 +1620,6 @@
      "repr": "2024-01-01 12:00:05",
      "ns": 1704110405000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",

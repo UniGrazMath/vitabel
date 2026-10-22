@@ -35,7 +35,6 @@
      "repr": "2025-02-20 09:41:28.870000",
      "ns": 1740044488870000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -199,7 +198,6 @@
      "repr": "2025-02-20 09:41:28.870000",
      "ns": 1740044488870000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -342,7 +340,6 @@
      "repr": "2025-02-20 09:41:28.870000",
      "ns": 1740044488870000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -485,7 +482,6 @@
      "repr": "2025-02-20 09:41:28.870000",
      "ns": 1740044488870000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -628,7 +624,6 @@
      "repr": "2025-02-20 09:41:28.870000",
      "ns": 1740044488870000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -791,7 +786,6 @@
      "repr": "2025-02-20 09:41:28.870000",
      "ns": 1740044488870000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -956,7 +950,6 @@
      "repr": "2025-02-20 09:41:28.870000",
      "ns": 1740044488870000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -1121,7 +1114,6 @@
      "repr": "2025-02-20 09:41:28.870000",
      "ns": 1740044488870000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -1286,7 +1278,6 @@
      "repr": "2025-02-20 09:41:28.870000",
      "ns": 1740044488870000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",

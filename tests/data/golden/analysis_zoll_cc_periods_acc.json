@@ -34,7 +34,6 @@
     "repr": "1970-01-01 08:32:16.331000",
     "ns": 30736331000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",

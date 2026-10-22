@@ -35,7 +35,6 @@
      "repr": "2023-01-11 12:35:42.226000",
      "ns": 1673440542226000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -610,7 +609,6 @@
      "repr": "2023-01-11 12:35:42.228000",
      "ns": 1673440542228000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -1185,7 +1183,6 @@
      "repr": "2023-01-11 12:35:41.869000",
      "ns": 1673440541869000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -1760,7 +1757,6 @@
      "repr": "2023-01-11 12:35:41.869000",
      "ns": 1673440541869000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",

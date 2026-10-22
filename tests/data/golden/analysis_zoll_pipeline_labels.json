@@ -34,7 +34,6 @@
     "repr": "1970-01-01 08:31:50.415000",
     "ns": 30710415000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",
@@ -1624,7 +1623,6 @@
     "repr": "1970-01-01 08:31:50.415000",
     "ns": 30710415000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",
@@ -3216,7 +3214,6 @@
     "repr": "1970-01-01 08:31:50.415000",
     "ns": 30710415000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",
@@ -4806,7 +4803,6 @@
     "repr": "1970-01-01 08:29:07.167000",
     "ns": 30547167000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",
@@ -5949,7 +5945,6 @@
     "repr": "1970-01-01 08:29:05.543000",
     "ns": 30545543000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",
@@ -6543,7 +6538,6 @@
     "repr": "1970-01-01 08:24:37.726000",
     "ns": 30277726000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",

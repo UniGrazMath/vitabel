@@ -32,7 +32,6 @@
      "repr": "0 days 00:00:04",
      "ns": 4000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -103,7 +102,6 @@
      "repr": "0 days 00:00:05.500000",
      "ns": 5500000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -174,7 +172,6 @@
      "repr": "0 days 00:00:05.250000",
      "ns": 5250000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -245,7 +242,6 @@
      "repr": "0 days 00:00:14",
      "ns": 14000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -316,7 +312,6 @@
      "repr": "0 days 00:00:18",
      "ns": 18000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -387,7 +382,6 @@
      "repr": "0 days 00:00:12.500000",
      "ns": 12500000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -458,7 +452,6 @@
      "repr": "0 days 00:00:12",
      "ns": 12000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -527,7 +520,6 @@
      "repr": "2024-01-01 12:00:04",
      "ns": 1704110404000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -602,7 +594,6 @@
      "repr": "2024-01-01 12:00:05.500000",
      "ns": 1704110405500000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -677,7 +668,6 @@
      "repr": "2024-01-01 12:00:05.250000",
      "ns": 1704110405250000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -752,7 +742,6 @@
      "repr": "2024-01-01 12:00:14",
      "ns": 1704110414000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -827,7 +816,6 @@
      "repr": "2024-01-01 12:00:28",
      "ns": 1704110428000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -902,7 +890,6 @@
      "repr": "2024-01-01 12:00:12.500000",
      "ns": 1704110412500000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -977,7 +964,6 @@
      "repr": "2024-01-01 12:00:12",
      "ns": 1704110412000000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",

@@ -34,7 +34,6 @@
     "repr": "1970-01-01 08:24:34.063000",
     "ns": 30274063000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",
@@ -531,7 +530,6 @@
     "repr": "1970-01-01 08:29:07.167000",
     "ns": 30547167000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",
@@ -1252,7 +1250,6 @@
     "repr": "1970-01-01 08:24:37.719000",
     "ns": 30277719000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",
