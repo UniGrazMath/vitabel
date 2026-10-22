@@ -15,11 +15,12 @@ from vitabel.utils import loading
 from vitabel.utils.helpers import compress_array, decompress_array
 
 from tests.builders import (
+    build_saveable_recording,
     write_synthetic_vital_file,
     write_synthetic_zoll_csv_pair,
     write_test_edfplus,
 )
-from tests.golden import assert_matches_golden, summarize_series
+from tests.golden import assert_matches_golden, summarize_series, summarize_vitals
 
 
 def compare_two_dictionaries(dict1, dict2):
@@ -998,6 +999,58 @@ def _recording_for_hash_check(case: str, test_data_dir) -> Vitals:
     if case == "relative_with_offset":
         channel.offset = 1.2345
     return recording
+
+
+def _saved_content(recording: Vitals) -> str:
+    """Everything about the channels and labels of a recording that
+    ``save_data`` stores (time and data values, offsets, metadata, plot
+    styles, label attachments, ...), as JSON (where NaN equals NaN)."""
+    summary = summarize_vitals(recording)
+    return json.dumps(
+        {key: summary[key] for key in ("channels", "global_labels")},
+        indent=1,
+        sort_keys=True,
+    )
+
+
+@pytest.mark.parametrize("case", ["absolute", "relative", "vitaldb"])
+def test_save_load_round_trip(vitabel_test_data_dir, tmp_path, case, caplog):
+    if case == "vitaldb":
+        recording = Vitals()
+        recording.add_vital_db_recording(vitabel_test_data_dir / "vital_file.vit")
+        recording.channels[0].shift_time_index(pd.Timedelta(seconds=1.5))
+    else:
+        recording = build_saveable_recording(absolute=case == "absolute")
+    path = tmp_path / "recording.json"
+    recording.save_data(path)
+
+    loaded = Vitals()
+    with caplog.at_level(logging.WARNING, logger="vitabel"):
+        loaded.load_data(path)
+    assert caplog.text == ""
+    assert _saved_content(loaded) == _saved_content(recording)
+    assert loaded.metadata["vitabel version"] == __version__
+
+
+@pytest.mark.parametrize("kind", ["absolute", "relative"])
+def test_load_file_saved_with_v0_1_1(vitabel_test_data_dir, kind, caplog, monkeypatch):
+    """Files saved with older versions remain loadable. The files were saved
+    by vitabel 0.1.1 from ``build_saveable_recording``."""
+    import vitabel
+
+    monkeypatch.setattr(vitabel, "__version__", "99.0.0")  # any newer version
+    loaded = Vitals()
+    with caplog.at_level(logging.WARNING, logger="vitabel"):
+        loaded.load_data(
+            vitabel_test_data_dir / "saved" / f"recording_v0.1.1_{kind}.json"
+        )
+    assert _saved_content(loaded) == _saved_content(
+        build_saveable_recording(absolute=kind == "absolute")
+    )
+    assert loaded.metadata["vitabel version"] == "0.1.1"
+    # the version difference is reported; the old hash format is not checked
+    assert "version used to save the data is 0.1.1" in caplog.text
+    assert "does not match the hash" not in caplog.text
 
 
 @pytest.mark.parametrize("case", ["absolute", "relative_with_offset", "vitaldb"])

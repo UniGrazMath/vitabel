@@ -112,3 +112,54 @@ def write_synthetic_vital_file(path: Path) -> Path:
     vital_file.add_track("MON/SOME_NOTE", records(["note"]))
     vital_file.to_vital(str(path))
     return path
+
+
+def build_saveable_recording(absolute: bool = True):
+    """A small recording that uses most of what ``Vitals.save_data`` stores:
+    channels with and without data, offsets, metadata, plot styles, labels
+    attached to channels and global labels, numeric and text data, missing
+    values, and interval labels.
+
+    Also used to create the files in ``tests/data/saved/`` with older versions
+    of vitabel (this function only uses API available since v0.1.0).
+    """
+    from vitabel import Channel, IntervalLabel, Label, Vitals
+
+    def t(seconds):
+        delta = pd.to_timedelta(seconds, unit="s")
+        return pd.Timestamp("2024-01-01 12:00:00") + delta if absolute else delta
+
+    recording = Vitals()
+    pressure = Channel(
+        "pressure",
+        time_index=t(np.arange(20) * 0.5),
+        data=np.concatenate([[np.nan], np.linspace(60.0, 80.0, 19)]),
+        metadata={"source": "synthetic", "unit": "mmHg", "count": 20},
+        plotstyle={"color": "red", "linestyle": "--"},
+    )
+    pressure.shift_time_index(pd.Timedelta(seconds=1.5))
+    recording.add_channel(pressure)
+    recording.add_channel(
+        Channel("compressions", time_index=t(np.array([1.0, 1.6, 2.2, 2.8])))
+    )
+    pressure.attach_label(
+        Label(
+            "marker",
+            time_index=t(np.array([2.0, 3.5, 7.25])),
+            data=[1.0, np.nan, 3.0],
+            text_data=["first", None, "third"],
+            plot_type="combined",
+        )
+    )
+    recording.add_global_label(
+        IntervalLabel(
+            "phases",
+            time_index=[(t(0.0), t(2.5)), (t(4.0), t(9.0))],
+            data=[1.0, 2.0],
+            text_data=["induction", "maintenance"],
+        )
+    )
+    recording.add_global_label(
+        Label("notes", time_index=t(np.array([5.0])), text_data=["note"])
+    )
+    return recording
