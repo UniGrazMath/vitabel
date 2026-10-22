@@ -1,0 +1,59 @@
+{
+ "mode": "values",
+ "generated_with": {
+  "git_commit": "d06a36a107341709c093093f8e052cd2d0be763a",
+  "vitabel": "0.1.1",
+  "numpy": "2.5.1",
+  "pandas": "3.0.3",
+  "python": "3.13.2",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O"
+ },
+ "summary": {
+  "etco2_below_35": {
+   "__dataclass__": "ThresholdMetrics",
+   "area_under_threshold": {
+    "__dataclass__": "Metric",
+    "value": 60.1573755655,
+    "unit": "minutes \u00d7 value units"
+   },
+   "duration_under_threshold": {
+    "__kind__": "timedelta",
+    "repr": "0 days 00:05:21.327546098",
+    "ns": 321327546098
+   },
+   "time_weighted_average_under_threshold": {
+    "__dataclass__": "Metric",
+    "value": 0.9981180864614374,
+    "unit": "value units"
+   },
+   "observational_interval_duration": {
+    "__kind__": "timedelta",
+    "repr": "0 days 01:00:16.248000",
+    "ns": 3616248000000
+   }
+  },
+  "spo2_below_90": {
+   "__dataclass__": "ThresholdMetrics",
+   "area_under_threshold": {
+    "__dataclass__": "Metric",
+    "value": 1357.5352305555334,
+    "unit": "minutes \u00d7 value units"
+   },
+   "duration_under_threshold": {
+    "__kind__": "timedelta",
+    "repr": "0 days 00:46:06.454333332",
+    "ns": 2766454333332
+   },
+   "time_weighted_average_under_threshold": {
+    "__dataclass__": "Metric",
+    "value": 20.992639708469415,
+    "unit": "value units"
+   },
+   "observational_interval_duration": {
+    "__kind__": "timedelta",
+    "repr": "0 days 01:04:40.032000",
+    "ns": 3880032000000
+   }
+  }
+ }
+}

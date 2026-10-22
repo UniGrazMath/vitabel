@@ -1,0 +1,71 @@
+{
+ "mode": "values",
+ "generated_with": {
+  "git_commit": "d06a36a107341709c093093f8e052cd2d0be763a",
+  "vitabel": "0.1.1",
+  "numpy": "2.5.1",
+  "pandas": "3.0.3",
+  "python": "3.13.2",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O"
+ },
+ "summary": [
+  {
+   "class": "IntervalLabel",
+   "name": "cc_periods",
+   "len": 3,
+   "time_unit": "s",
+   "time_start": null,
+   "offset": {
+    "__kind__": "timedelta",
+    "repr": "0 days 00:00:00",
+    "ns": 0
+   },
+   "first_entry": {
+    "__kind__": "timedelta",
+    "repr": "0 days 00:00:00",
+    "ns": 0
+   },
+   "last_entry": {
+    "__kind__": "timedelta",
+    "repr": "0 days 00:01:21.200000",
+    "ns": 81200000000
+   },
+   "time_index_unit": "ns",
+   "time": {
+    "__kind__": "time_array",
+    "dtype": "timedelta64",
+    "shape": [
+     6
+    ],
+    "n": 6,
+    "nat_count": 0,
+    "sha256": "4e34d1c691bfdc39d013cefe092dc60f3b35f3763616d7bd1691953e099ff62e",
+    "min": 0,
+    "max": 81200000000,
+    "values": [
+     0,
+     18000000000,
+     27368421053,
+     40000000000,
+     55568421053,
+     81200000000
+    ]
+   },
+   "data": null,
+   "metadata": {
+    "creator": "automatic",
+    "creation_date": "<volatile>",
+    "method": "cycle_duration_analysis"
+   },
+   "plotstyle": {
+    "label": "CC Periods",
+    "color": "lightsteelblue",
+    "alpha": 0.6
+   },
+   "text_data": null,
+   "anchored_channel": "cc",
+   "plot_type": "box",
+   "annotation_preset_type": null
+  }
+ ]
+}

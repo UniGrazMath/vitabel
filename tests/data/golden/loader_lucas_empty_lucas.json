@@ -1,0 +1,18 @@
+{
+ "mode": "exact",
+ "generated_with": {
+  "git_commit": "d06a36a107341709c093093f8e052cd2d0be763a",
+  "vitabel": "0.1.1",
+  "numpy": "2.5.1",
+  "pandas": "3.0.3",
+  "python": "3.13.2",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O"
+ },
+ "summary": {
+  "channels": [],
+  "global_labels": [],
+  "metadata": {
+   "Recording_files_added": []
+  }
+ }
+}

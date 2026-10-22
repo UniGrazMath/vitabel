@@ -1,18 +1,21 @@
-import bz2
+import logging
+import os
 import shutil
-import tempfile
-from datetime import datetime
-from pathlib import Path
+import subprocess
+import sys
 
 import json
 import numpy as np
 import pandas as pd
-import pyedflib
 import pytest
 
 from vitabel import Vitals, __version__
 from vitabel import Channel, Label, IntervalLabel
 from vitabel.utils import loading
+from vitabel.utils.helpers import compress_array, decompress_array
+
+from tests.builders import write_synthetic_zoll_csv_pair, write_test_edfplus
+from tests.golden import assert_matches_golden, summarize_series
 
 
 def compare_two_dictionaries(dict1, dict2):
@@ -33,83 +36,6 @@ def compare_two_dictionaries(dict1, dict2):
                     return dict1[key] == dict2[key]
 
 
-def _write_test_edfplus(path: Path):
-    writer = pyedflib.EdfWriter(
-        str(path), 1, file_type=pyedflib.FILETYPE_EDFPLUS
-    )
-    writer.setStartdatetime(datetime(2024, 1, 1, 12, 0, 0))
-    writer.setSignalHeader(
-        0,
-        {
-            "label": "sig",
-            "dimension": "uV",
-            "sample_frequency": 1,
-            "physical_min": -1,
-            "physical_max": 1,
-            "digital_min": -32768,
-            "digital_max": 32767,
-            "transducer": "",
-            "prefilter": "",
-        },
-    )
-    writer.writeSamples([np.array([0.0, 1.0] * 6, dtype=float)])
-    writer.writeAnnotation(1.0, 2.5, "artifact")
-    writer.writeAnnotation(5.0, 1.0, "artifact")
-    writer.writeAnnotation(8.0, 0.5, "noise")
-    writer.close()
-
-
-def _write_synthetic_zoll_csv_pair(base_path: Path) -> tuple[Path, Path]:
-    csv_path = base_path.with_name(base_path.name + "_ecg.txt")
-    xml_path = base_path.with_suffix(".xml")
-
-    rows = []
-    for i in range(3):
-        rows.append(
-            {
-                "Start": 0,
-                " Serial": "AR12345",
-                " DeviceId": 1,
-                " RunNumber": 1,
-                " Date": " 01-01-2024",
-                " Real": f" 12:00:0{i}.000",
-                " Elapsed": i,
-                " X": 0,
-                " EcgVal": i + 1,
-                " EcgStatus": 1,
-                " CapnoVal": 10 + i,
-                " CapnoStatus": 1,
-                " P1Val": 0,
-                " P1Status": 0,
-                " P2Val": 0,
-                " P2Status": 0,
-                " P3Val": 0,
-                " P3Status": 0,
-                " Spo2Val": 95 + i,
-                " Spo2Status": 1,
-                " CprDepth": 0,
-                " CprFrequency": 0,
-                " CprStatus": 0,
-                " CprWaveVal": 0,
-                " FiltEcgVal": 0,
-                " FiltEcgStatus": 0,
-                " Ecg2Val": 0,
-                " Ecg2Status": 0,
-                " Ecg3Val": 0,
-                " Ecg3Status": 0,
-                " Ecg4Val": 0,
-                " Ecg4Status": 0,
-            }
-        )
-
-    pd.DataFrame(rows).to_csv(csv_path, index=False, encoding="utf-16")
-    xml_path.write_text(
-        "<Root><Record><Defibrillator><Serial>AR12345</Serial></Defibrillator></Record></Root>",
-        encoding="utf-8",
-    )
-    return csv_path, xml_path
-
-
 def test_cardio_init():
     empty_cardio_object = Vitals()
 
@@ -128,43 +54,67 @@ def test_add_defibrillator_file_without_suffix(vitabel_test_data_dir):
         lifepak_recording.add_defibrillator_recording(file_path_no_suffix)
 
 
-# DATA NOT AVAILABLE FOR PUBLICATION
-# def test_add_defibrillator_lifepak15(vitabel_test_data_dir):
-#     lifepak_dir = vitabel_test_data_dir / "lifepak"
-#     file_path = lifepak_dir / "2022112410042400-LP158890Schwein9-Hup-Sup-ROSC_Continuous.xml"
-#     lifepak_recording = Vitals()
-#     lifepak_recording.add_defibrillator_recording(file_path)
-#     assert len(lifepak_recording.channels)>0
-#     check_cardio_properties(lifepak_recording)
-
-# def test_add_incomplete_defibrillator_lifepak15(vitabel_test_data_dir):
-#     lifepak_dir = vitabel_test_data_dir / "lifepak"
-#     file_path = lifepak_dir / "2022112310110800-LP158890Schwein8-Hup-Sup-ROSC_Continuous.xml"
-#     with pytest.raises(
-#         FileNotFoundError, match="Error when Loading LIFEPAK Recording! Expected Files"
-#     ):
-#         lifepak_recording = Vitals()
-#         lifepak_recording.add_defibrillator_recording(file_path)
-
-# def test_add_defibrillator_lifepak15_2(vitabel_test_data_dir):
-#     lifepak_dir = vitabel_test_data_dir / "lifepak"
-#     file_path = lifepak_dir / "5_6390640_Continuous.xml"
-#     lifepak_recording = Vitals()
-#     lifepak_recording.add_defibrillator_recording(file_path)
-#     assert len(lifepak_recording.channels)>0
-#     check_cardio_properties(lifepak_recording)
+# NOTE: no test data is available for publication for the following formats:
+# ZOLL XML, ZOLL CSV (only a synthetic case, see test_read_zoll_csv_without_cpr_data),
+# Corpuls (BDF), and legacy cardio 1.x annotations (Vitals.add_old_cardio_label).
 
 
-def test_add_zoll_json(vitabel_example_data_dir):
-    cardio_recording = Vitals()
-    compressed_defi_file = vitabel_example_data_dir / "ZOLL_test_case.json.bz2"
-    with tempfile.TemporaryDirectory() as tmpdir:
-        defi_file = Path(tmpdir) / compressed_defi_file.stem
-        with bz2.open(compressed_defi_file, "rb") as source:
-            with open(defi_file, "wb") as dest:
-                shutil.copyfileobj(source, dest)
-        cardio_recording.add_defibrillator_recording(defi_file)
+LP15_CHANNEL_NAMES = [
+    "defibrillations_DeliveredEnergy",
+    "defibrillations_Impedance",
+    "impedance",
+    "ecg_pads",
+    "impedance_2",
+    "heart_rate",
+    "cc",
+    "start_cpr",
+    "stop_cpr",
+]
 
+
+def test_add_defibrillator_lifepak15(lifepak_vitals):
+    assert lifepak_vitals.get_channel_names() == LP15_CHANNEL_NAMES
+    assert all(not channel.is_empty() for channel in lifepak_vitals.channels)
+    assert all(
+        channel.metadata == {"Serial No": "LP1544688890", "source": "LP15"}
+        for channel in lifepak_vitals.channels
+    )
+    assert lifepak_vitals.data.is_time_absolute()
+    assert len(lifepak_vitals.metadata["Recording_files_added"]) == 1
+
+
+def test_add_defibrillator_lifepak15_keeps_constants_unchanged(
+    lifepak_dir, tmp_path, caplog
+):
+    from vitabel.utils import constants
+
+    # inject a trend data type that is not known yet
+    for path in lifepak_dir.iterdir():
+        shutil.copy(path, tmp_path)
+    event_log = tmp_path / "LP15_CprEventLog.xml"
+    event_log.write_text(
+        event_log.read_text(encoding="utf-8").replace(
+            'Type="SharedSyncMode"', 'Type="UnknownTrendType"', 1
+        ),
+        encoding="utf-8",
+    )
+
+    known_trend_data = list(constants.LP15_all_trend_data)
+    Vitals().add_defibrillator_recording(tmp_path / "LP15_Continuous.xml")
+    assert "New trend data type found: UnknownTrendType" in caplog.text
+    assert constants.LP15_all_trend_data == known_trend_data
+
+
+def test_add_incomplete_defibrillator_lifepak15(lifepak_dir, tmp_path):
+    shutil.copy(lifepak_dir / "LP15_Continuous.xml", tmp_path)
+    with pytest.raises(
+        FileNotFoundError, match="Error when Loading LIFEPAK Recording! Expected Files"
+    ):
+        Vitals().add_defibrillator_recording(tmp_path / "LP15_Continuous.xml")
+
+
+def test_add_zoll_json(zoll_vitals):
+    cardio_recording = zoll_vitals
     assert sorted(cardio_recording.get_channel_names()) == [
         "capnography",
         "cc_depth",
@@ -191,28 +141,12 @@ def test_add_zoll_json(vitabel_example_data_dir):
         "temperature_1",
     ]
     assert all(not channel.is_empty() for channel in cardio_recording.channels)
-
-
-# DATA NOT AVAILABLE FOR PUBLICATION
-
-# def test_add_zoll_xml(vitabel_test_data_dir):
-#     file_path = vitabel_test_data_dir / "20140720135017_AR12I001978.xml"
-#     cardio_recording = Vitals()
-#     cardio_recording.add_defibrillator_recording(file_path)
-#     check_cardio_properties(cardio_recording)
-#     assert cardio_recording.channels
-
-
-# def test_add_zoll_csv(vitabel_test_data_dir):
-#     file_path = vitabel_test_data_dir / "_20110825193454_00012254_ecg.txt"
-#     cardio_recording = Vitals()
-#     cardio_recording.add_defibrillator_recording(file_path)
-#     check_cardio_properties(cardio_recording)
-#     assert cardio_recording.channels
+    # the raw imported data is not kept around
+    assert not hasattr(cardio_recording, "dats")
 
 
 def test_read_zoll_csv_without_cpr_data(tmp_path):
-    csv_path, xml_path = _write_synthetic_zoll_csv_pair(tmp_path / "zoll_case")
+    csv_path, xml_path = write_synthetic_zoll_csv_pair(tmp_path / "zoll_case")
 
     pat_dat, data = loading.read_zollcsv(csv_path, xml_path)
 
@@ -243,6 +177,29 @@ def test_add_stryker_lucas(vitabel_test_data_dir):
     assert lifepak_recording.channels
 
 
+def test_add_defibrillator_recording_metadata_is_not_shared(
+    vitabel_test_data_dir, tmp_path
+):
+    user_metadata = {"case": "test case"}
+    lucas_recording = Vitals()
+    lucas_recording.add_defibrillator_recording(
+        vitabel_test_data_dir / "Lucas_file_Lucas.xml", metadata=user_metadata
+    )
+    assert user_metadata == {"case": "test case"}
+    assert lucas_recording.channels[0].metadata == {
+        "case": "test case",
+        "Serial No": "0000X000",
+        "source": "LUCAS3",
+    }
+
+    # loading another recording must not see metadata of the previous one
+    csv_path, _ = write_synthetic_zoll_csv_pair(tmp_path / "zoll_case")
+    zoll_recording = Vitals()
+    zoll_recording.add_defibrillator_recording(csv_path)
+    assert all("case" not in channel.metadata for channel in zoll_recording.channels)
+    assert Vitals.add_defibrillator_recording.__defaults__ == (None,)
+
+
 def test_add_empty_stryker_lucas(vitabel_test_data_dir):
     lifepak_recording = Vitals()
     lifepak_recording.add_defibrillator_recording(
@@ -261,35 +218,35 @@ def test_add_incomplete_stryker_lucas(vitabel_test_data_dir):
         lifepak_recording.add_defibrillator_recording(file_path)
 
 
-# DATA NOT AVAILABLE FOR PUBLICATION
-# def test_add_corpuls_1(vitabel_test_data_dir):
-#     corpuls_dir = vitabel_test_data_dir  / "Corpuls_Case_1"
-#     file_path = corpuls_dir / "146-AED-18321258-00000000.bdf"
-#     cardio_recording = Vitals()
-#     cardio_recording.add_defibrillator_recording(file_path)
-#     assert cardio_recording.channels
-
-
-# def test_add_corpuls_2(vitabel_test_data_dir):
-#     corpuls_dir = vitabel_test_data_dir / "Corpuls_Case_2"
-#     file_path = corpuls_dir / "20000101000646-13000015EA9D8601-00000000.bdf"
-#     cardio_recording = Vitals()
-#     cardio_recording.add_defibrillator_recording(file_path)
-#     assert cardio_recording.channels
-
-# def test_add_corpuls_2_no_additional_event_data(vitabel_test_data_dir):
-#     corpuls_dir = vitabel_test_data_dir / "Corpuls_Case_3"
-#     file_path = corpuls_dir / "20000101000646-13000015EA9D8601-00000000.bdf"
-#     cardio_recording = Vitals()
-#     cardio_recording.add_defibrillator_recording(file_path)
-#     assert cardio_recording.channels
-
-
 def test_add_vital_db_recording(vitabel_test_data_dir):
     recording_path = vitabel_test_data_dir / "vital_file.vit"
     cardio_object = Vitals()
     cardio_object.add_vital_db_recording(recording_path)
     assert cardio_object.channels
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="time zone set via the TZ environment variable"
+)
+@pytest.mark.parametrize("time_zone", ["UTC", "Asia/Seoul", "America/New_York"])
+def test_vital_db_recording_is_independent_of_local_time_zone(
+    vitabel_test_data_dir, time_zone
+):
+    # the recording start is given in the local time of the recording site
+    # (stored in the file), not in the local time of the loading machine
+    code = (
+        "from vitabel import Vitals; v = Vitals(); "
+        f"v.add_vital_db_recording({str(vitabel_test_data_dir / 'vital_file.vit')!r}); "
+        "print(v.channels[0].time_start)"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+        check=True,
+        env=os.environ | {"TZ": time_zone},
+    )
+    assert result.stdout.strip() == "2023-01-11 13:10:37.540275"
 
 
 def test_add_unreadable_file(vitabel_test_data_dir):
@@ -307,22 +264,17 @@ def test_add_nonexistent_file(vitabel_test_data_dir):
     ):
         cardio_object.add_defibrillator_recording(recording_path)
 
-def test_add_edfplus(vitabel_test_data_dir, tmp_path):
-    f_path = vitabel_test_data_dir / "sample_signals" / "test_generator_2.edf.bz2"
-    if f_path.suffix == ".bz2":
-        unpacked_path = tmp_path / f_path.with_suffix("").name
-        with bz2.open(f_path, "rb") as src, open(unpacked_path, "wb") as dst:
-            shutil.copyfileobj(src, dst)
-        f_path = unpacked_path
+
+def test_add_edfplus(edf_sample_path):
     case = Vitals()
-    case.add_edfplus(f_path)
+    case.add_edfplus(edf_sample_path)
     assert len(case.channels) == 11
     assert len(case.labels) == 1
 
 
 def test_add_edfplus_interval_annotations(tmp_path):
     f_path = tmp_path / "interval_annotations.edf"
-    _write_test_edfplus(f_path)
+    write_test_edfplus(f_path)
 
     case = Vitals()
     case.add_edfplus(f_path)
@@ -372,40 +324,6 @@ def test_add_edfplus_interval_annotations(tmp_path):
         noise_label.text_data,
         np.array(["noise"], dtype=object),
     )
-
-
-# Comptability Function to old cardio version: No test required.
-# def test_add_old_json_labels(vitabel_test_data_dir):
-#     recording_path = vitabel_test_data_dir / "359_AR15J015538-20200103-111629-3088_annf.json"
-#     cardio_object = Vitals()
-#     CC_channel = Channel('CC',[pd.Timestamp(2020,11,24,1,0,0) , pd.Timestamp(2020,11,24,1,0,1)],None)
-#     cardio_object.add_channel(CC_channel)
-#     cardio_object.add_old_cardio_label(recording_path)
-#     assert cardio_object.labels
-
-# def test_add_old_csv_labels(vitabel_test_data_dir):
-#     recording_path = vitabel_test_data_dir / "221124_so_ann.csv"
-#     cardio_object = Vitals()
-#     cardio_object.add_old_cardio_label(recording_path)
-#     assert cardio_object.labels
-#     for key in ['Case', 'Annotator', 'Time', 'Duration /s']:
-#         assert key in cardio_object.labels[0].metadata
-
-# def test_add_nonexistant_old_label(vitabel_test_data_dir):
-#     recording_path = vitabel_test_data_dir / "nonexistant.csv"
-#     cardio_object = Vitals()
-#     with pytest.raises(
-#         FileNotFoundError, match="Annotation"
-#     ):
-#         cardio_object.add_old_cardio_label(recording_path)
-
-# def test_add_unreadable_old_label(vitabel_test_data_dir):
-#     recording_path = vitabel_test_data_dir / "test_stylesheet_demo_plot.png"
-#     cardio_object = Vitals()
-#     with pytest.raises(
-#         ValueError, match="is not a valid cardio 1.x annotation"
-#     ):
-#         cardio_object.add_old_cardio_label(recording_path)
 
 
 def test_add_data_from_dict():
@@ -1005,6 +923,115 @@ def test_saving_and_loading_with_offset(tmpdir):
     assert vital_case.data == loaded_case.data
 
 
+def _recording_for_hash_check(case: str, test_data_dir) -> Vitals:
+    recording = Vitals()
+    if case == "vitaldb":
+        recording.add_vital_db_recording(test_data_dir / "vital_file.vit")
+        return recording
+    channel = Channel(
+        case,
+        time_index=np.arange(1000) / 250,
+        data=np.random.default_rng(1).normal(size=1000),
+        time_start=pd.Timestamp("2024-01-01 10:00:00.123456")
+        if case == "absolute"
+        else None,
+    )
+    recording.add_channel(channel)
+    if case == "relative_with_offset":
+        channel.offset = 1.2345
+    return recording
+
+
+@pytest.mark.parametrize("case", ["absolute", "relative_with_offset", "vitaldb"])
+def test_load_data_hash_check_round_trip(vitabel_test_data_dir, tmp_path, case, caplog):
+    path = tmp_path / "recording.json"
+    _recording_for_hash_check(case, vitabel_test_data_dir).save_data(path)
+    with caplog.at_level(logging.WARNING, logger="vitabel"):
+        Vitals().load_data(path)
+    assert "does not match the hash" not in caplog.text
+
+
+def test_load_data_hash_check_round_trip_with_array_metadata(tmp_path, caplog):
+    # array-like metadata is saved as plain JSON and hashed in the same way
+    metadata = {
+        "array": np.arange(3),
+        "large_integers": np.array([2**53, 2**53 + 1]),
+        "timedeltas": pd.timedelta_range("1ns", periods=2, freq="ns"),
+        "timestamps": pd.date_range(
+            "2024-01-01 12:00:00.123456789", periods=2, freq="s", tz="Europe/Vienna"
+        ),
+        "serial": np.int64(2**53 + 1),
+    }
+    expected_metadata = {
+        "array": [0, 1, 2],
+        "large_integers": [2**53, 2**53 + 1],
+        "timedeltas": ["0 days 00:00:00.000000001", "0 days 00:00:00.000000002"],
+        "timestamps": [
+            "2024-01-01 12:00:00.123456789+01:00",
+            "2024-01-01 12:00:01.123456789+01:00",
+        ],
+        "serial": 2**53 + 1,
+    }
+    recording = Vitals()
+    channel = Channel("signal", [0.0, 1.0], data=[1.0, 2.0], metadata=metadata)
+    recording.add_channel(channel)
+    path = tmp_path / "recording.json"
+    recording.save_data(path)
+
+    loaded = Vitals()
+    with caplog.at_level(logging.WARNING, logger="vitabel"):
+        loaded.load_data(path)
+    assert "does not match the hash" not in caplog.text
+    loaded_channel = loaded.get_channel("signal")
+    assert loaded_channel.metadata == expected_metadata
+    assert loaded_channel.data_hash() == channel.data_hash()
+
+
+def test_load_data_hash_check_detects_modified_data(
+    vitabel_test_data_dir, tmp_path, caplog
+):
+    recording = _recording_for_hash_check("absolute", vitabel_test_data_dir)
+    path = tmp_path / "recording.json"
+    recording.save_data(path)
+    content = json.loads(path.read_text())
+    channel_data = decompress_array(content["data"]["channels"][0]["data"])
+    channel_data[0] += 1
+    content["data"]["channels"][0]["data"] = compress_array(channel_data)
+    path.write_text(json.dumps(content))
+
+    with caplog.at_level(logging.WARNING, logger="vitabel"):
+        Vitals().load_data(path)
+    assert "does not match the hash" in caplog.text
+
+    caplog.clear()
+    with caplog.at_level(logging.WARNING, logger="vitabel"):
+        Vitals().load_data(path, check_channel_hash=False)
+    assert "does not match the hash" not in caplog.text
+
+
+@pytest.mark.parametrize("variant", ["without_hash", "older_hash_version"])
+def test_load_data_skips_unverifiable_hashes(
+    vitabel_test_data_dir, tmp_path, caplog, variant
+):
+    recording = _recording_for_hash_check("absolute", vitabel_test_data_dir)
+    path = tmp_path / "recording.json"
+    recording.save_data(path)
+    content = json.loads(path.read_text())
+    if variant == "without_hash":
+        del content["hash"]
+    else:
+        # saved before the hash version was introduced: not comparable
+        del content["hash_version"]
+        content["hash"] = "0" * 64
+    path.write_text(json.dumps(content))
+
+    loaded = Vitals()
+    with caplog.at_level(logging.WARNING, logger="vitabel"):
+        loaded.load_data(path)
+    assert "does not match the hash" not in caplog.text
+    assert loaded.get_channel_names() == ["absolute"]
+
+
 def test_create_shock_information_DataFrame():
     shock_energie = Channel(
         "defibrillations_default_energy",
@@ -1034,6 +1061,7 @@ def test_create_shock_information_DataFrame():
     assert "impedance" in shocks.columns
 
 
+@pytest.mark.golden
 def test_etco2_and_ventilation_detection(vitabel_test_data_dir):
     co_df = pd.read_csv(
         vitabel_test_data_dir / "sample_signals" / "Capnography.csv.bz2"
@@ -1081,7 +1109,14 @@ def test_etco2_and_ventilation_detection(vitabel_test_data_dir):
         ],
     )
 
+    assert_matches_golden(
+        "analysis_etco2_capnography_absolute_threshold_4_4",
+        [summarize_series(label) for label in cardio_object.labels],
+        mode="values",
+    )
 
+
+@pytest.mark.golden
 def test_etco2_and_ventilation_detection_threshold_mode(vitabel_test_data_dir):
     file_path = vitabel_test_data_dir / "sample_signals" / "Capnography.csv.bz2"
     co_df = pd.read_csv(file_path)
@@ -1099,7 +1134,14 @@ def test_etco2_and_ventilation_detection_threshold_mode(vitabel_test_data_dir):
     assert "ventilations_from_capnography" in cardio_object.get_label_names()
     assert "etco2_from_capnography" in cardio_object.get_label_names()
 
+    assert_matches_golden(
+        "analysis_etco2_capnography_absolute_threshold_mode",
+        [summarize_series(label) for label in cardio_object.labels],
+        mode="values",
+    )
 
+
+@pytest.mark.golden
 def test_etco2_and_ventilation_detection_relative_time(vitabel_test_data_dir):
     file_path = vitabel_test_data_dir / "sample_signals" / "Capnography.csv.bz2"
     co_df = pd.read_csv(file_path)
@@ -1113,7 +1155,14 @@ def test_etco2_and_ventilation_detection_relative_time(vitabel_test_data_dir):
     assert "ventilations_from_capnography" in cardio_object.get_label_names()
     assert "etco2_from_capnography" in cardio_object.get_label_names()
 
+    assert_matches_golden(
+        "analysis_etco2_capnography_relative_default",
+        [summarize_series(label) for label in cardio_object.labels],
+        mode="values",
+    )
 
+
+@pytest.mark.golden
 def test_cycle_duration_analysis_absolute(vitabel_test_data_dir):
     len_pause_range = [0, 10, 10, 5, 1]
     n_compressions_range = np.asarray([30, 20, 2, 20, 20])
@@ -1150,7 +1199,14 @@ def test_cycle_duration_analysis_absolute(vitabel_test_data_dir):
 
     assert (cc_periods == periods_test).all()
 
+    assert_matches_golden(
+        "analysis_cycle_duration_absolute",
+        [summarize_series(label) for label in cardio_object.labels],
+        mode="values",
+    )
 
+
+@pytest.mark.golden
 def test_cycle_duration_analysis_relative():
     len_pause_range = [0, 10, 10, 5, 1]
     n_compressions_range = np.asarray([30, 20, 2, 20, 20])
@@ -1171,7 +1227,14 @@ def test_cycle_duration_analysis_relative():
     assert cardio_object.labels
     assert "cc_periods" in cardio_object.get_label_names()
 
+    assert_matches_golden(
+        "analysis_cycle_duration_relative",
+        [summarize_series(label) for label in cardio_object.labels],
+        mode="values",
+    )
 
+
+@pytest.mark.golden
 def test_acceleration_CC_period_dection_absolute(vitabel_test_data_dir):
     file_path = vitabel_test_data_dir / "sample_signals" / "Accelerometer.csv.bz2"
     co_df = pd.read_csv(file_path)
@@ -1199,7 +1262,14 @@ def test_acceleration_CC_period_dection_absolute(vitabel_test_data_dir):
 
     assert (cc_periods == periods_test).all()
 
+    assert_matches_golden(
+        "analysis_cc_periods_acc_absolute",
+        [summarize_series(label) for label in cardio_object.labels],
+        mode="values",
+    )
 
+
+@pytest.mark.golden
 def test_acceleration_CC_period_dection_relative(vitabel_test_data_dir):
     file_path = vitabel_test_data_dir / "sample_signals" / "Accelerometer.csv.bz2"
     co_df = pd.read_csv(file_path)
@@ -1212,7 +1282,14 @@ def test_acceleration_CC_period_dection_relative(vitabel_test_data_dir):
     assert cardio_object.labels
     assert "cc_periods" in cardio_object.get_label_names()
 
+    assert_matches_golden(
+        "analysis_cc_periods_acc_relative",
+        [summarize_series(label) for label in cardio_object.labels],
+        mode="values",
+    )
 
+
+@pytest.mark.golden
 def test_rosc_detection_absolute_time(vitabel_test_data_dir):
     file_path1 = vitabel_test_data_dir / "sample_signals" / "Accelerometer.csv.bz2"
     co_df = pd.read_csv(file_path1)
@@ -1236,7 +1313,14 @@ def test_rosc_detection_absolute_time(vitabel_test_data_dir):
     cardio_object.predict_circulation()
     assert cardio_object.labels
 
+    assert_matches_golden(
+        "analysis_rosc_absolute",
+        [summarize_series(label) for label in cardio_object.labels],
+        mode="values",
+    )
 
+
+@pytest.mark.golden
 def test_rosc_detection_relative_time(vitabel_test_data_dir):
     file_path1 = vitabel_test_data_dir / "sample_signals" / "Accelerometer.csv.bz2"
     co_df = pd.read_csv(file_path1)
@@ -1256,18 +1340,15 @@ def test_rosc_detection_relative_time(vitabel_test_data_dir):
     cardio_object.predict_circulation()
     assert cardio_object.labels
 
+    assert_matches_golden(
+        "analysis_rosc_relative",
+        [summarize_series(label) for label in cardio_object.labels],
+        mode="values",
+    )
 
-def test_real_evaluation(vitabel_example_data_dir):
-    cardio_recording = Vitals()
 
-    compressed_defi_file = vitabel_example_data_dir / "ZOLL_test_case.json.bz2"
-    with tempfile.TemporaryDirectory() as tmpdir:
-        defi_file = Path(tmpdir) / compressed_defi_file.stem
-        with bz2.open(compressed_defi_file, "rb") as source:
-            with open(defi_file, "wb") as dest:
-                shutil.copyfileobj(source, dest)
-        cardio_recording.add_defibrillator_recording(defi_file)
-
+def test_real_evaluation(zoll_vitals_copy):
+    cardio_recording = zoll_vitals_copy
     cardio_recording.compute_etco2_and_ventilations()
     assert cardio_recording.labels
     assert "ventilations_from_capnography" in cardio_recording.get_label_names()
@@ -1294,6 +1375,7 @@ def test_analysis_exception_for_missing_data(caplog):
     assert len(cardio_recording.labels) == 0
 
 
+@pytest.mark.golden
 def test_area_under_threshold_computation():
     vital_case = Vitals()
 
@@ -1328,6 +1410,17 @@ def test_area_under_threshold_computation():
     assert abs(
         threshold_metric.duration_under_threshold - pd.Timedelta(hours=1)
     ) <= pd.Timedelta(microseconds=1)
+
+    assert_matches_golden(
+        "analysis_area_under_threshold_synthetic",
+        {
+            f"{source}_{threshold}": vital_case.area_under_threshold(
+                source=source, threshold=threshold
+            )
+            for source, threshold in [("0", 10), ("0", 100), ("1", 0), ("1", 0.5)]
+        },
+        mode="values",
+    )
 
 
 def test_add_eolife_ventilatory_feedback(vitabel_test_data_dir):
