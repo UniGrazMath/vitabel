@@ -244,6 +244,10 @@ def _parse_time_index(
     # it is possible that the specified time_index is empty
     # or contains undefined values like pandas.NaT, numpy.nan, or None.
 
+    # the values of a Series are used by position (its index is irrelevant)
+    if isinstance(time_index, pd.Series):
+        time_index = pd.Index(time_index)
+
     # avoid np.asarray for typed arrays: for time zone aware timestamps it
     # creates an object array
     time_index_arr = (

@@ -140,6 +140,27 @@ def test_construction_from_a_series():
     assert isinstance(series.time_index, pd.TimedeltaIndex)
 
 
+@pytest.mark.parametrize(
+    "values",
+    [
+        [ABSOLUTE_START, ABSOLUTE_START + pd.Timedelta(1, "s")],
+        [pd.NaT, ABSOLUTE_START, ABSOLUTE_START + pd.Timedelta(1, "s")],
+        [str(ABSOLUTE_START), str(ABSOLUTE_START + pd.Timedelta(1, "s"))],
+    ],
+    ids=["timestamps", "leading_nat", "strings"],
+)
+@pytest.mark.parametrize("index", ["shifted", "reversed"])
+def test_construction_from_a_series_ignores_its_index(values, index):
+    """The values of a Series are used by position, whatever its index."""
+    labels = range(10, 10 + len(values))
+    if index == "reversed":
+        labels = reversed(range(len(values)))
+    series = TimeSeriesBase(pd.Series(values, index=list(labels)))
+    expected = TimeSeriesBase(values)
+    assert series.time_start == ABSOLUTE_START
+    assert series.time_index.equals(expected.time_index)
+
+
 def test_construction_with_leading_nat():
     """The time start is the first timestamp that is not missing."""
     series = TimeSeriesBase(
