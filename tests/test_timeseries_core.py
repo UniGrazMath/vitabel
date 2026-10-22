@@ -12,7 +12,6 @@ import pytest
 from vitabel import Channel, IntervalLabel, Label
 from vitabel.timeseries import TimeSeriesBase
 
-from tests.golden import assert_matches_golden, summarize_series
 
 ABSOLUTE_START = pd.Timestamp("2024-01-01 12:00:00")
 
@@ -22,117 +21,247 @@ ABSOLUTE_START = pd.Timestamp("2024-01-01 12:00:00")
 # ---------------------------------------------------------------------------
 
 
-def _construction_cases() -> dict[str, dict]:
-    """Inputs for TimeSeriesBase(...). Built freshly for each test."""
-    datetimes = pd.date_range("2024-01-01 12:00:00", periods=4, freq="250ms")
-    return {
-        "float_list": dict(time_index=[0.0, 0.5, 1.25, 3.0]),
-        "int_list": dict(time_index=[0, 1, 2, 3]),
-        "float_array_with_nan": dict(time_index=np.array([0.0, np.nan, 2.0, 3.5])),
-        "int_array": dict(time_index=np.arange(5)),
-        "float_array_ms": dict(time_index=np.array([0.0, 1.5, 3.0]), time_unit="ms"),
-        "float_array_min": dict(time_index=np.array([0.0, 1.5, 3.0]), time_unit="min"),
-        "numeric_offset": dict(time_index=[0.0, 1.0], offset=2.5),
-        "timedelta_offset": dict(time_index=[0.0, 1.0], offset=pd.Timedelta("-1s")),
-        "relative_with_time_start": dict(
-            time_index=[0.0, 1.0, 2.0], time_start=ABSOLUTE_START
-        ),
-        "relative_with_string_time_start": dict(
-            time_index=[0.0, 1.0], time_start="2024-01-01 12:00:00"
-        ),
-        "relative_with_tzaware_time_start": dict(
+_DATETIMES = pd.date_range(ABSOLUTE_START, periods=4, freq="250ms")
+NAN = np.nan
+
+CONSTRUCTION_CASES = {
+    # case: (arguments, numeric_time("s"), time_start, offset in seconds)
+    "float_list": (dict(time_index=[0.0, 0.5, 1.25, 3.0]), [0, 0.5, 1.25, 3], None, 0),
+    "int_list": (dict(time_index=[0, 1, 2, 3]), [0, 1, 2, 3], None, 0),
+    "float_array_with_nan": (
+        dict(time_index=np.array([0.0, NAN, 2.0, 3.5])),
+        [0, NAN, 2, 3.5],
+        None,
+        0,
+    ),
+    "int_array": (dict(time_index=np.arange(5)), [0, 1, 2, 3, 4], None, 0),
+    "float_array_ms": (
+        dict(time_index=np.array([0.0, 1.5, 3.0]), time_unit="ms"),
+        [0, 0.0015, 0.003],
+        None,
+        0,
+    ),
+    "int_array_ms": (
+        dict(time_index=np.array([0, 1250]), time_unit="ms"),
+        [0, 1.25],
+        None,
+        0,
+    ),
+    "float_array_min": (
+        dict(time_index=np.array([0.0, 1.5, 3.0]), time_unit="min"),
+        [0, 90, 180],
+        None,
+        0,
+    ),
+    "numeric_offset": (dict(time_index=[0.0, 1.0], offset=2.5), [2.5, 3.5], None, 2.5),
+    "timedelta_offset": (
+        dict(time_index=[0.0, 1.0], offset=pd.Timedelta("-1s")),
+        [-1, 0],
+        None,
+        -1,
+    ),
+    "series_of_floats": (
+        dict(time_index=pd.Series([0.0, 1.0, 2.0])),
+        [0, 1, 2],
+        None,
+        0,
+    ),
+    "none_first": (dict(time_index=[None, 1.0, 2.0]), [NAN, 1, 2], None, 0),
+    "all_nan": (dict(time_index=np.array([NAN, NAN])), [NAN, NAN], None, 0),
+    # relative time with a time start: absolute
+    "relative_with_time_start": (
+        dict(time_index=[0.0, 1.0, 2.0], time_start=ABSOLUTE_START),
+        [0, 1, 2],
+        ABSOLUTE_START,
+        0,
+    ),
+    "relative_with_string_time_start": (
+        dict(time_index=[0.0, 1.0], time_start="2024-01-01 12:00:00"),
+        [0, 1],
+        ABSOLUTE_START,
+        0,
+    ),
+    "relative_with_tzaware_time_start": (  # local (wall clock) time
+        dict(
             time_index=[0.0, 1.0],
-            time_start=pd.Timestamp("2024-01-01 12:00:00", tz="Europe/Vienna"),
+            time_start=ABSOLUTE_START.tz_localize("Europe/Vienna"),
         ),
-        "datetime64_ns_array": dict(time_index=datetimes.to_numpy()),
-        "datetime64_ms_array": dict(time_index=datetimes.to_numpy().astype("M8[ms]")),
-        "datetime64_s_array": dict(
+        [0, 1],
+        ABSOLUTE_START,
+        0,
+    ),
+    # timestamps
+    "datetime64_ns_array": (
+        dict(time_index=_DATETIMES.to_numpy()),
+        [0, 0.25, 0.5, 0.75],
+        ABSOLUTE_START,
+        0,
+    ),
+    "datetime64_ms_array": (
+        dict(time_index=_DATETIMES.to_numpy().astype("M8[ms]")),
+        [0, 0.25, 0.5, 0.75],
+        ABSOLUTE_START,
+        0,
+    ),
+    "datetime64_s_array": (
+        dict(
             time_index=np.array(["2024-01-01T12:00:00", "2024-01-01T12:00:05"], "M8[s]")
         ),
-        "datetime_index": dict(time_index=datetimes),
-        "datetime_index_tzaware": dict(
-            time_index=datetimes.tz_localize("Europe/Vienna")
-        ),
-        "timestamp_list": dict(time_index=list(datetimes)),
-        "datetime64_with_offset": dict(time_index=datetimes.to_numpy(), offset=1.0),
-        "datetime64_with_nat_first": dict(
+        [0, 5],
+        ABSOLUTE_START,
+        0,
+    ),
+    "datetime_index": (
+        dict(time_index=_DATETIMES),
+        [0, 0.25, 0.5, 0.75],
+        ABSOLUTE_START,
+        0,
+    ),
+    "datetime_index_tzaware": (  # local (wall clock) time
+        dict(time_index=_DATETIMES.tz_localize("Europe/Vienna")),
+        [0, 0.25, 0.5, 0.75],
+        ABSOLUTE_START,
+        0,
+    ),
+    "datetime_series": (
+        dict(time_index=pd.Series(pd.date_range(ABSOLUTE_START, periods=2))),
+        [0, 86400],
+        ABSOLUTE_START,
+        0,
+    ),
+    "timestamp_list": (
+        dict(time_index=list(_DATETIMES)),
+        [0, 0.25, 0.5, 0.75],
+        ABSOLUTE_START,
+        0,
+    ),
+    "timestamp_strings": (
+        dict(time_index=["2024-01-01 12:00:00", "2024-01-01 12:00:01"]),
+        [0, 1],
+        ABSOLUTE_START,
+        0,
+    ),
+    "datetime64_with_offset": (
+        dict(time_index=_DATETIMES.to_numpy(), offset=1.0),
+        [1, 1.25, 1.5, 1.75],
+        ABSOLUTE_START,
+        1,
+    ),
+    "datetime64_with_nat_first": (  # time start: the first timestamp
+        dict(
             time_index=np.array(
                 ["NaT", "2024-01-01T12:00:00", "2024-01-01T12:00:01"], "M8[ns]"
             )
         ),
-        "timedelta64_ns_array": dict(
-            time_index=pd.to_timedelta([0, 1, 2], unit="s").to_numpy()
+        [NAN, 0, 1],
+        ABSOLUTE_START,
+        0,
+    ),
+    "datetime64_ms_array_with_nat": (
+        dict(
+            time_index=np.array(
+                ["2024-01-01T12:00:00", "NaT", "2024-01-01T12:00:02.5"], "M8[ms]"
+            )
         ),
-        "timedelta64_ms_array": dict(
-            time_index=np.array([0, 1500, 3000], dtype="m8[ms]")
-        ),
-        "timedelta_index": dict(
-            time_index=pd.timedelta_range("1s", periods=3, freq="1s")
-        ),
-        "timedelta_list": dict(time_index=[pd.Timedelta(seconds=s) for s in (0, 1, 2)]),
-        # NOTE: strings in mixed formats currently fail to parse (pinned)
-        "timestamp_strings": dict(
-            time_index=["2024-01-01 12:00:00", "2024-01-01 12:00:01.5"]
-        ),
-        "timedelta_strings": dict(time_index=["0s", "1.5s", "00:01:00"]),
-        "timestamp_strings_uniform": dict(
-            time_index=["2024-01-01 12:00:00", "2024-01-01 12:00:01"]
-        ),
-        "timedelta_strings_uniform": dict(time_index=["0s", "1s", "2.5s"]),
-        "none_first": dict(time_index=[None, 1.0, 2.0]),
-        "nat_first_timestamps": dict(
-            time_index=[pd.NaT, pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-02")]
-        ),
-        "empty_list": dict(time_index=[]),
-        "empty_float_array": dict(time_index=np.array([], dtype=float)),
-        "empty_datetime64_array": dict(time_index=np.array([], dtype="M8[ns]")),
-        "empty_timedelta64_array": dict(time_index=np.array([], dtype="m8[ns]")),
-        "all_nan": dict(time_index=np.array([np.nan, np.nan])),
-        "series_of_floats": dict(time_index=pd.Series([0.0, 1.0, 2.0])),
-        # error cases
-        "mixed_types": dict(time_index=[pd.Timestamp("2024-01-01"), 1.0]),
-        "mixed_timestamp_timedelta": dict(
-            time_index=[pd.Timestamp("2024-01-01"), pd.Timedelta("1s")]
-        ),
-        "absolute_with_time_start": dict(
-            time_index=list(datetimes), time_start=ABSOLUTE_START
-        ),
-        "unparsable_strings": dict(time_index=["foo", "bar"]),
-        "two_dimensional": dict(time_index=np.zeros((2, 2))),
-        "unsupported_type": dict(time_index=[object(), object()]),
-    }
+        [0, NAN, 2.5],
+        ABSOLUTE_START,
+        0,
+    ),
+    "timestamp_list_with_nat_first": (
+        dict(time_index=[pd.NaT, ABSOLUTE_START, ABSOLUTE_START + pd.Timedelta("1D")]),
+        [NAN, 0, 86400],
+        ABSOLUTE_START,
+        0,
+    ),
+    # timedeltas
+    "timedelta64_ns_array": (
+        dict(time_index=pd.to_timedelta([0, 1, 2], unit="s").to_numpy()),
+        [0, 1, 2],
+        None,
+        0,
+    ),
+    "timedelta64_ms_array": (
+        dict(time_index=np.array([0, 1500, 3000], dtype="m8[ms]")),
+        [0, 1.5, 3],
+        None,
+        0,
+    ),
+    "timedelta_index": (
+        dict(time_index=pd.timedelta_range("1s", periods=3, freq="1s")),
+        [1, 2, 3],
+        None,
+        0,
+    ),
+    "timedelta_list": (
+        dict(time_index=[pd.Timedelta(seconds=s) for s in (0, 1, 2)]),
+        [0, 1, 2],
+        None,
+        0,
+    ),
+    # empty
+    "empty_list": (dict(time_index=[]), [], None, 0),
+    "empty_float_array": (dict(time_index=np.array([], dtype=float)), [], None, 0),
+    "empty_datetime64_array": (
+        dict(time_index=np.array([], dtype="M8[ns]")),
+        [],
+        None,
+        0,
+    ),
+    "empty_timedelta64_array": (
+        dict(time_index=np.array([], dtype="m8[ns]")),
+        [],
+        None,
+        0,
+    ),
+}
+"""Not covered on purpose: timedelta strings (e.g. ``"1.5s"``) and
+timestamp strings in mixed formats, whose parsing still has to be decided."""
 
 
-CONSTRUCTION_CASES = list(_construction_cases())
+@pytest.mark.parametrize(
+    "kwargs, seconds, time_start, offset",
+    CONSTRUCTION_CASES.values(),
+    ids=CONSTRUCTION_CASES.keys(),
+)
+def test_construction(kwargs, seconds, time_start, offset):
+    series = TimeSeriesBase(**kwargs)
+    assert isinstance(series.time_index, pd.TimedeltaIndex)
+    np.testing.assert_array_equal(series.numeric_time("s"), seconds)
+    assert series.time_start == time_start
+    assert series.offset == pd.Timedelta(seconds=offset)
+    assert series.time_unit == kwargs.get("time_unit", "s")
 
 
-def _outcome(func, *args, **kwargs):
-    try:
-        return "ok", func(*args, **kwargs)
-    except Exception as exc:  # noqa: BLE001 - we compare the exception
-        return "error", (type(exc), str(exc))
-
-
-@pytest.mark.golden
-def test_construction_golden():
-    """Pins the resulting time index (including its unit), time start and
-    offset for all non-failing construction cases."""
-    results = {}
-    for case, kwargs in _construction_cases().items():
-        status, series = _outcome(TimeSeriesBase, **kwargs)
-        if status == "error":
-            results[case] = {"error": series[0].__name__, "message": series[1]}
-        else:
-            results[case] = {
-                "time_index": [str(value) for value in series.time_index],
-                "time_index_dtype": str(series.time_index.dtype),
-                "time_start": None
-                if series.time_start is None
-                else str(series.time_start),
-                "offset": str(series.offset),
-                "time_unit": series.time_unit,
-            }
-    assert_matches_golden("timeseries_construction", results)
+@pytest.mark.parametrize(
+    "kwargs, error, match",
+    [
+        (dict(time_index=[ABSOLUTE_START, 1.0]), (TypeError, ValueError), None),
+        (
+            dict(time_index=[ABSOLUTE_START, pd.Timedelta("1s")]),
+            ValueError,
+            "must be of the same type or numeric",
+        ),
+        (
+            dict(time_index=list(_DATETIMES), time_start=ABSOLUTE_START),
+            ValueError,
+            "time_start cannot be passed if time data is absolute",
+        ),
+        (dict(time_index=["foo", "bar"]), ValueError, "could not be parsed"),
+        (dict(time_index=np.zeros((2, 2))), ValueError, "must be a 1D array"),
+        (dict(time_index=[object(), object()]), ValueError, "is not supported"),
+    ],
+    ids=[
+        "mixed_types",
+        "mixed_timestamp_timedelta",
+        "absolute_with_time_start",
+        "unparsable_strings",
+        "two_dimensional",
+        "unsupported_type",
+    ],
+)
+def test_construction_errors(kwargs, error, match):
+    with pytest.raises(error, match=match):
+        TimeSeriesBase(**kwargs)
 
 
 def test_construction_from_a_series():
@@ -159,66 +288,6 @@ def test_construction_from_a_series_ignores_its_index(values, index):
     expected = TimeSeriesBase(values)
     assert series.time_start == ABSOLUTE_START
     assert series.time_index.equals(expected.time_index)
-
-
-def test_construction_with_leading_nat():
-    """The time start is the first timestamp that is not missing."""
-    series = TimeSeriesBase(
-        [pd.NaT, ABSOLUTE_START, ABSOLUTE_START + pd.Timedelta(1, "s")]
-    )
-    assert series.time_start == ABSOLUTE_START
-    assert series.time_index[1:].tolist() == [pd.Timedelta(0), pd.Timedelta(1, "s")]
-
-
-@pytest.mark.parametrize(
-    "kwargs, expected_seconds, expected_start",
-    [
-        (dict(time_index=np.array([0.0, 1.25, np.nan])), [0, 1.25, np.nan], None),
-        (dict(time_index=np.array([0, 1250]), time_unit="ms"), [0, 1.25], None),
-        (
-            dict(time_index=pd.to_timedelta([0, 1.25], unit="s").to_numpy()),
-            [0, 1.25],
-            None,
-        ),
-        (
-            dict(
-                time_index=np.array(
-                    ["2024-01-01T12:00:00", "NaT", "2024-01-01T12:00:02.5"], "M8[ms]"
-                )
-            ),
-            [0, np.nan, 2.5],
-            ABSOLUTE_START,
-        ),
-        (
-            # time_start is the local (wall clock) time of the first entry
-            dict(
-                time_index=pd.date_range(
-                    ABSOLUTE_START, periods=2, freq="1250ms", tz="Europe/Vienna"
-                )
-            ),
-            [0, 1.25],
-            ABSOLUTE_START,
-        ),
-        (
-            dict(time_index=pd.Series(pd.date_range(ABSOLUTE_START, periods=2))),
-            [0, 86400],
-            ABSOLUTE_START,
-        ),
-    ],
-    ids=[
-        "float_array",
-        "int_array_ms",
-        "timedelta64_array",
-        "datetime64_array_with_nat",
-        "tzaware_datetime_index",
-        "datetime_series",
-    ],
-)
-def test_construction_from_typed_arrays(kwargs, expected_seconds, expected_start):
-    series = TimeSeriesBase(**kwargs)
-    assert isinstance(series.time_index, pd.TimedeltaIndex)
-    np.testing.assert_array_equal(series.numeric_time("s"), expected_seconds)
-    assert series.time_start == expected_start
 
 
 # ---------------------------------------------------------------------------
@@ -365,43 +434,72 @@ class TestGetTimeMaskEdgeCases:
         assert data.time_index[0] == ABSOLUTE_START + pd.Timedelta(seconds=11)
 
 
-@pytest.mark.golden
-def test_interval_label_get_data_golden():
-    relative = IntervalLabel(
-        "relative",
-        time_index=[(0.0, 2.0), (1.0, 5.0), (6.0, 7.0), (10.0, 20.0)],
-        data=[1.0, 2.0, 3.0, 4.0],
-        text_data=["a", "b", "c", "d"],
+def _interval_labels() -> dict[str, IntervalLabel]:
+    return {
+        "relative": IntervalLabel(
+            "relative",
+            time_index=[(0.0, 2.0), (1.0, 5.0), (6.0, 7.0), (10.0, 20.0)],
+            data=[1.0, 2.0, 3.0, 4.0],
+            text_data=["a", "b", "c", "d"],
+        ),
+        "absolute": IntervalLabel(
+            "absolute",
+            time_index=[
+                (ABSOLUTE_START, ABSOLUTE_START + pd.Timedelta(seconds=2)),
+                (
+                    ABSOLUTE_START + pd.Timedelta(seconds=5),
+                    ABSOLUTE_START + pd.Timedelta(seconds=9),
+                ),
+            ],
+        ),
+    }
+
+
+@pytest.mark.parametrize(
+    "label, start, stop, intervals, data, text_data",
+    [
+        (
+            "relative",
+            None,
+            None,
+            [(0, 2), (1, 5), (6, 7), (10, 20)],
+            [1, 2, 3, 4],
+            ["a", "b", "c", "d"],
+        ),
+        ("relative", 1.5, 6.5, [(0, 2), (1, 5), (6, 7)], [1, 2, 3], ["a", "b", "c"]),
+        ("relative", 2.5, 4.0, [(1, 5)], [2], ["b"]),  # window inside an interval
+        ("relative", 12.0, 15.0, [(10, 20)], [4], ["d"]),
+        ("relative", 30.0, 40.0, [], None, None),
+        ("relative", None, 1.0, [(0, 2), (1, 5)], [1, 2], ["a", "b"]),
+        ("relative", 6.5, None, [(6, 7), (10, 20)], [3, 4], ["c", "d"]),
+        ("absolute", None, None, [(0, 2), (5, 9)], None, None),
+        ("absolute", 1.5, 6.5, [(0, 2), (5, 9)], None, None),
+        ("absolute", 2.5, 4.0, [], None, None),
+        ("absolute", 30.0, 40.0, [], None, None),
+        ("absolute", None, 1.0, [(0, 2)], None, None),
+        ("absolute", 6.5, None, [(5, 9)], None, None),
+    ],
+)
+def test_interval_label_get_data(label, start, stop, intervals, data, text_data):
+    """Intervals that intersect the window are returned completely (numbers
+    as bounds are seconds relative to the time start)."""
+    result = _interval_labels()[label].get_data(start=start, stop=stop)
+    reference = (
+        np.datetime64(ABSOLUTE_START)
+        if label == "absolute"
+        else np.timedelta64(0, "ns")
     )
-    absolute = IntervalLabel(
-        "absolute",
-        time_index=[
-            (ABSOLUTE_START, ABSOLUTE_START + pd.Timedelta(seconds=2)),
-            (
-                ABSOLUTE_START + pd.Timedelta(seconds=5),
-                ABSOLUTE_START + pd.Timedelta(seconds=9),
-            ),
-        ],
-    )
-    windows = [
-        (None, None),
-        (1.5, 6.5),
-        (2.5, 4.0),  # window fully contained in an interval
-        (12.0, 15.0),
-        (30.0, 40.0),
-        (None, 1.0),
-        (6.5, None),
-    ]
-    results = {}
-    for label in [relative, absolute]:
-        for start, stop in windows:
-            data = label.get_data(start=start, stop=stop)
-            results[f"{label.name} {start} {stop}"] = {
-                "intervals": data.time_index,
-                "data": data.data,
-                "text_data": data.text_data,
-            }
-    assert_matches_golden("timeseries_interval_label_get_data", results)
+    seconds = (np.asarray(result.time_index) - reference) / np.timedelta64(1, "s")
+    assert seconds.shape == (len(intervals), 2)
+    assert [tuple(row) for row in seconds.tolist()] == intervals
+    if data is None:
+        assert result.data is None
+    else:
+        np.testing.assert_array_equal(result.data, data)
+    if text_data is None:
+        assert result.text_data is None
+    else:
+        assert list(result.text_data) == text_data
 
 
 class TestWindowingOfSortedSeries:
@@ -481,139 +579,184 @@ def test_get_data_returns_copies(absolute):
 # ---------------------------------------------------------------------------
 
 
-def _record(steps: list, description: str, series):
-    steps.append({"step": description, "series": summarize_series(series)})
+def _seconds(series) -> list[float]:
+    """Times of a series in seconds (relative to ``ABSOLUTE_START`` for
+    absolute series), independent of how they are stored."""
+    time_index = series.time_index
+    if series.is_time_absolute():
+        time_index = time_index + (series.time_start - ABSOLUTE_START)
+    return (time_index / pd.Timedelta(seconds=1)).tolist()
 
 
-@pytest.mark.golden
-def test_channel_mutations_golden():
-    steps = []
-    for time_start in [None, ABSOLUTE_START]:
-        channel = Channel(
-            "channel",
-            time_index=[0.0, 0.5, 1.0, 1.5, 2.0, 4.0],
-            data=[1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-            time_start=time_start,
-        )
-        kind = "relative" if time_start is None else "absolute"
-        _record(steps, f"{kind}: initial", channel)
-        channel.shift_time_index(1.5)
-        _record(steps, f"{kind}: shift by 1.5", channel)
-        channel.shift_time_index(pd.Timedelta("-250ms"))
-        _record(steps, f"{kind}: shift by -250ms", channel)
-        channel.offset = 10
-        _record(steps, f"{kind}: set offset to 10", channel)
-        _record(steps, f"{kind}: scaled by 2", channel.scale_time_index(2.0))
-        _record(
-            steps,
-            f"{kind}: scaled by 0.5 around 11s",
-            channel.scale_time_index(
-                0.5,
-                reference_time=pd.Timedelta(seconds=11)
-                if time_start is None
-                else time_start + pd.Timedelta(seconds=11),
-            ),
-        )
-        start, stop = (
-            (11.0, 12.0)
-            if time_start is None
-            else (
-                time_start + pd.Timedelta(seconds=11),
-                time_start + pd.Timedelta(seconds=12),
-            )
-        )
-        _record(steps, f"{kind}: truncated", channel.truncate(start, stop))
-    assert_matches_golden("timeseries_channel_mutations", steps)
+def _times(time_start):
+    """``t(seconds)``: a timedelta, or a timestamp after ``time_start``."""
+
+    def t(seconds):
+        delta = pd.Timedelta(seconds=seconds)
+        return delta if time_start is None else time_start + delta
+
+    return t
 
 
-@pytest.mark.golden
-def test_label_mutations_golden():
-    steps = []
-    for time_start in [None, ABSOLUTE_START]:
-        kind = "relative" if time_start is None else "absolute"
-
-        def t(seconds, time_start=time_start):
-            delta = pd.Timedelta(seconds=seconds)
-            return delta if time_start is None else time_start + delta
-
-        label = Label(
-            "label",
-            time_index=[t(1.0), t(2.0), t(3.0)],
-            data=[1.0, 2.0, 3.0],
-        )
-        _record(steps, f"{kind}: initial", label)
-        label.add_data(t(2.5), value=2.5)
-        _record(steps, f"{kind}: add in the middle", label)
-        label.add_data(t(0.25), text="early")
-        _record(steps, f"{kind}: add before first (with text)", label)
-        label.add_data(t(0.125), value=0.5, text="earliest")
-        _record(steps, f"{kind}: add value and text", label)
-        label.remove_data(t(0.125))
-        _record(steps, f"{kind}: remove first", label)
-        label.remove_data(t(2.5))
-        _record(steps, f"{kind}: remove in the middle", label)
-        label.shift_time_index(pd.Timedelta(seconds=1))
-        _record(steps, f"{kind}: shift by 1s", label)
-        _record(steps, f"{kind}: truncated", label.truncate(t(2.0), t(3.5)))
-        for seconds in [1.25, 2.0, 3.0, 4.0]:
-            label.remove_data(t(seconds))
-        _record(steps, f"{kind}: all removed", label)
-
-    empty = Label("empty")
-    _record(steps, "empty: initial", empty)
-    empty.add_data(ABSOLUTE_START + pd.Timedelta(seconds=5), value=1.0)
-    _record(steps, "empty: add absolute", empty)
-    empty.add_data(ABSOLUTE_START + pd.Timedelta(seconds=1), value=2.0)
-    _record(steps, "empty: add earlier", empty)
-    assert_matches_golden("timeseries_label_mutations", steps)
+def _assert_values(actual, expected):
+    if expected is None:
+        assert actual is None
+    else:
+        np.testing.assert_array_equal(actual, expected)
 
 
-@pytest.mark.golden
-def test_interval_label_mutations_golden():
-    steps = []
-    for time_start in [None, ABSOLUTE_START]:
-        kind = "relative" if time_start is None else "absolute"
+@pytest.mark.parametrize("time_start", [None, ABSOLUTE_START])
+def test_channel_mutations(time_start):
+    t = _times(time_start)
+    data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    channel = Channel(
+        "channel", [0.0, 0.5, 1.0, 1.5, 2.0, 4.0], data, time_start=time_start
+    )
 
-        def t(seconds, time_start=time_start):
-            delta = pd.Timedelta(seconds=seconds)
-            return delta if time_start is None else time_start + delta
+    channel.shift_time_index(1.5)
+    assert _seconds(channel) == [1.5, 2.0, 2.5, 3.0, 3.5, 5.5]
+    assert channel.offset == pd.Timedelta(seconds=1.5)
+    channel.shift_time_index(pd.Timedelta("-250ms"))
+    assert _seconds(channel) == [1.25, 1.75, 2.25, 2.75, 3.25, 5.25]
+    assert channel.offset == pd.Timedelta(seconds=1.25)
+    channel.offset = 10
+    assert _seconds(channel) == [10.0, 10.5, 11.0, 11.5, 12.0, 14.0]
 
-        label = IntervalLabel(
-            "intervals",
-            time_index=[(t(1.0), t(2.0)), (t(4.0), t(6.0))],
-            data=[1.0, 2.0],
-        )
-        _record(steps, f"{kind}: initial", label)
-        label.add_data((t(3.0), t(3.5)), value=3.0, text="added")
-        _record(steps, f"{kind}: add interval", label)
-        label.add_data((t(0.5), t(0.75)))
-        _record(steps, f"{kind}: add earlier interval", label)
-        label.remove_data((t(1.0), t(2.0)))
-        _record(steps, f"{kind}: remove first interval", label)
-        label.shift_time_index(2.0)
-        _record(steps, f"{kind}: shift by 2", label)
-        _record(steps, f"{kind}: truncated", label.truncate(t(4.0), t(7.0)))
+    # scaling and truncating return new channels (without offset)
+    scaled = channel.scale_time_index(2.0, reference_time=t(10))
+    assert _seconds(scaled) == [10.0, 11.0, 12.0, 13.0, 14.0, 18.0]
+    assert scaled.offset == pd.Timedelta(0)
+    scaled = channel.scale_time_index(0.5, reference_time=t(11))
+    assert _seconds(scaled) == [10.5, 10.75, 11.0, 11.25, 11.5, 12.5]
+    truncated = channel.truncate(t(11), t(12))
+    assert _seconds(truncated) == [11.0, 11.5, 12.0]
+    np.testing.assert_array_equal(truncated.data, [3.0, 4.0, 5.0])
 
-        def times(values, t=t):
-            return np.array([t(value).to_numpy() for value in values])
+    assert _seconds(channel) == [10.0, 10.5, 11.0, 11.5, 12.0, 14.0]
+    np.testing.assert_array_equal(channel.data, data)
 
-        intervals = times([5.0, 5.2, 5.2, 7.0, 9.0, 10.0]).reshape(-1, 2)
-        steps.append(
-            {
-                "step": f"{kind}: contains_time",
-                "points": label.contains_time(
-                    times([0.0, 2.5, 5.0, 5.5, 6.0, 8.0, 9.0])
-                ),
-                "intervals": label.contains_time(intervals),
-                "intervals_full": label.contains_time(
-                    intervals, interval_require_full_containment=True
-                ),
-                "points_exclusive": label.contains_time(
-                    times([5.0, 5.5, 6.0]), include_start=False, include_end=False
-                ),
-            }
-        )
-    assert_matches_golden("timeseries_interval_label_mutations", steps)
+
+@pytest.mark.parametrize("time_start", [None, ABSOLUTE_START])
+def test_scale_time_index_around_the_start(time_start):
+    """Without reference time, the time start (or the first time point of a
+    relative series) stays fixed."""
+    channel = Channel("channel", [0.0, 0.5, 2.0], time_start=time_start)
+    assert _seconds(channel.scale_time_index(2.0)) == [0.0, 1.0, 4.0]
+
+
+@pytest.mark.parametrize("time_start", [None, ABSOLUTE_START])
+def test_label_mutations(time_start):
+    t = _times(time_start)
+    label = Label("label", [t(1.0), t(2.0), t(3.0)], data=[1.0, 2.0, 3.0])
+
+    label.add_data(t(2.5), value=2.5)
+    assert _seconds(label) == [1.0, 2.0, 2.5, 3.0]
+    _assert_values(label.data, [1.0, 2.0, 2.5, 3.0])
+    assert label.text_data is None
+
+    # entries are kept sorted; missing values / texts are NaN / None
+    label.add_data(t(0.25), text="early")
+    label.add_data(t(0.125), value=0.5, text="earliest")
+    assert _seconds(label) == [0.125, 0.25, 1.0, 2.0, 2.5, 3.0]
+    _assert_values(label.data, [0.5, NAN, 1.0, 2.0, 2.5, 3.0])
+    assert list(label.text_data) == ["earliest", "early", None, None, None, None]
+
+    label.remove_data(t(0.125))
+    label.remove_data(t(2.5))
+    assert _seconds(label) == [0.25, 1.0, 2.0, 3.0]
+    _assert_values(label.data, [NAN, 1.0, 2.0, 3.0])
+    assert list(label.text_data) == ["early", None, None, None]
+
+    label.shift_time_index(pd.Timedelta(seconds=1))
+    assert _seconds(label) == [1.25, 2.0, 3.0, 4.0]
+    assert label.offset == pd.Timedelta(seconds=1)
+    truncated = label.truncate(t(2.0), t(3.5))
+    assert _seconds(truncated) == [2.0, 3.0]
+    _assert_values(truncated.data, [1.0, 2.0])
+    assert list(truncated.text_data) == [None, None]
+
+    for seconds in [1.25, 2.0, 3.0, 4.0]:
+        label.remove_data(t(seconds))
+    assert len(label) == 0
+    assert label.data is None
+    assert label.text_data is None
+
+
+def test_empty_label_becomes_absolute():
+    label = Label("empty")
+    label.add_data(ABSOLUTE_START + pd.Timedelta(seconds=5), value=1.0)
+    assert label.is_time_absolute()
+    label.add_data(ABSOLUTE_START + pd.Timedelta(seconds=1), value=2.0)
+    assert _seconds(label) == [1.0, 5.0]
+    _assert_values(label.data, [2.0, 1.0])
+
+
+def _interval_entries(label: IntervalLabel) -> list[tuple]:
+    """(start, stop, value, text) of all intervals (seconds as in
+    ``_seconds``), sorted by start."""
+    times = _seconds(label)
+    values = [None] * len(label.intervals) if label.data is None else label.data
+    texts = (
+        [None] * len(label.intervals) if label.text_data is None else label.text_data
+    )
+    return sorted(
+        (start, stop, None if pd.isna(value) else float(value), text)
+        for start, stop, value, text in zip(times[::2], times[1::2], values, texts)
+    )
+
+
+@pytest.mark.parametrize("time_start", [None, ABSOLUTE_START])
+def test_interval_label_mutations(time_start):
+    t = _times(time_start)
+    label = IntervalLabel(
+        "intervals", time_index=[(t(1.0), t(2.0)), (t(4.0), t(6.0))], data=[1.0, 2.0]
+    )
+
+    label.add_data((t(3.0), t(3.5)), value=3.0, text="added")
+    label.add_data((t(0.5), t(0.75)))
+    assert _interval_entries(label) == [
+        (0.5, 0.75, None, None),
+        (1.0, 2.0, 1.0, None),
+        (3.0, 3.5, 3.0, "added"),
+        (4.0, 6.0, 2.0, None),
+    ]
+
+    label.remove_data((t(1.0), t(2.0)))
+    label.shift_time_index(2.0)
+    assert label.offset == pd.Timedelta(seconds=2)
+    assert _interval_entries(label) == [
+        (2.5, 2.75, None, None),
+        (5.0, 5.5, 3.0, "added"),
+        (6.0, 8.0, 2.0, None),
+    ]
+
+    # intervals intersecting the range are kept completely
+    assert _interval_entries(label.truncate(t(4.0), t(7.0))) == [
+        (5.0, 5.5, 3.0, "added"),
+        (6.0, 8.0, 2.0, None),
+    ]
+
+    def times(*seconds):
+        return np.array([t(value).to_numpy() for value in seconds])
+
+    points = times(0.0, 2.5, 5.0, 5.5, 6.0, 8.0, 9.0)
+    assert label.contains_time(points).tolist() == [
+        False,
+        True,
+        True,
+        True,
+        True,
+        True,
+        False,
+    ]
+    assert not label.contains_time(
+        times(5.0, 5.5, 6.0), include_start=False, include_end=False
+    ).any()
+    intervals = times(5.0, 5.2, 5.2, 7.0, 9.0, 10.0).reshape(-1, 2)
+    assert label.contains_time(intervals).tolist() == [True, True, False]
+    assert label.contains_time(
+        intervals, interval_require_full_containment=True
+    ).tolist() == [True, False, False]
 
 
 @pytest.mark.parametrize("time_start", [None, ABSOLUTE_START])
