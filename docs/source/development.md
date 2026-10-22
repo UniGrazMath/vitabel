@@ -15,14 +15,21 @@ uv run pytest
 
 ## Golden tests
 
-Many tests compare the results of data loading and analysis routines against
-reference ("golden") files stored in `tests/data/golden`, see `tests/golden.py`
-for details. If a change in behavior is *intended*, the golden files can be
-regenerated via
+Some tests compare results with reference ("golden") files in
+`tests/data/golden`, see `tests/golden.py` for details:
+
+- the channels and labels created by the **loaders** (exact comparison),
+- the results of the **analysis routines** (compared with a tolerance),
+- the outputs of the **registry analysis** (`make_cprdat_analysis`).
+
+They detect any change of these results. If a change is *intended* (e.g.,
+a bug fix in an analysis routine), regenerate the golden files via
 ```sh
 uv run python scripts/regenerate_golden.py
 ```
-Please state the reason for regenerating golden files in the commit message.
+state the reason in the commit message, and add an entry about the changed
+results to the changelog. Other behavior is covered by explicit tests;
+please don't add golden files for it.
 
 ## Development scripts
 
@@ -30,6 +37,7 @@ The `scripts` directory contains some helpers for development:
 
 - `scripts/bench_core.py` benchmarks core time series operations on
   high-resolution data,
+- `scripts/bench_interactive.py` benchmarks the interactive plot,
 - `scripts/check_verbatim.py` checks that functions have been moved between
   modules without (relevant) changes.
 
