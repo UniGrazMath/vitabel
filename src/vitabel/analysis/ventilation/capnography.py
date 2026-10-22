@@ -35,15 +35,15 @@ def detect_etco2_and_ventilations(
     Parameters
     ----------
     source
-    The capnography channel (CO₂ in mmHg).
+        The capnography channel (CO₂ in mmHg).
     mode
-    Method to use for detecting ventilations from the CO₂ signal.
+        Method to use for detecting ventilations from the CO₂ signal.
     breath_threshold
-    Threshold below which a minimum is identified as a ventilation
-    (default: 2 mmHg). Used by the ``'filter'`` method.
+        Threshold below which a minimum is identified as a ventilation
+        (default: 2 mmHg). Used by the ``'filter'`` method.
     etco2_threshold
-    Threshold above which a maximum is identified as an etCO₂ value of an
-    expiration (default: 3 mmHg). Used by the ``'filter'`` method.
+        Threshold above which a maximum is identified as an etCO₂ value of an
+        expiration (default: 3 mmHg). Used by the ``'filter'`` method.
 
     Returns
     -------
