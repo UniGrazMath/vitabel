@@ -1,6 +1,6 @@
 [project]
 name = "vitabel"
-version = "0.1.1"
+version = "0.2.0a1"
 description = "A Python framework for loading, visualizing, aligning, and labeling high-resolution physiological time series."
 authors = [
     {name = "Wolfgang J. Kern", email = "wolfgangjohannkern@gmail.com"},
