@@ -1,9 +1,11 @@
 """Analysis of defibrillator recordings for the German Resuscitation Registry
 (GRR / Deutsches Reanimationsregister).
 
-Ported from the last known-good version (``b2b678c``, before the function was
-merged into ``main``) to the current API; see ``tests/test_cprdat.py`` and
-``scripts/compare_cprdat.py`` for the comparison with the reference outputs.
+Ported to the current API (v0.2.0) from the last version that worked
+(``b2b678c``, before the function was merged into ``main``); the remaining
+differences to its outputs are listed in
+https://github.com/UniGrazMath/vitabel/pull/299.
+The current outputs are pinned by the golden tests in ``tests/test_cprdat.py``.
 """
 
 from __future__ import annotations

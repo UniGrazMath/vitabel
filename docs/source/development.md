@@ -31,9 +31,7 @@ The `scripts` directory contains some helpers for development:
 - `scripts/bench_core.py` benchmarks core time series operations on
   high-resolution data,
 - `scripts/check_verbatim.py` checks that functions have been moved between
-  modules without (relevant) changes,
-- `scripts/cprdat_reference.py` (re)generates reference outputs for the
-  registry analysis (`Vitals.make_cprdat_analysis`).
+  modules without (relevant) changes.
 
 We use [`ruff`](https://docs.astral.sh/ruff/) for linting and formatting the code base,
 and [semantic versioning](https://semver.org/) for the release tags.
