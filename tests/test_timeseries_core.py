@@ -140,6 +140,27 @@ def test_construction_from_a_series():
     assert isinstance(series.time_index, pd.TimedeltaIndex)
 
 
+@pytest.mark.parametrize(
+    "values",
+    [
+        [ABSOLUTE_START, ABSOLUTE_START + pd.Timedelta(1, "s")],
+        [pd.NaT, ABSOLUTE_START, ABSOLUTE_START + pd.Timedelta(1, "s")],
+        [str(ABSOLUTE_START), str(ABSOLUTE_START + pd.Timedelta(1, "s"))],
+    ],
+    ids=["timestamps", "leading_nat", "strings"],
+)
+@pytest.mark.parametrize("index", ["shifted", "reversed"])
+def test_construction_from_a_series_ignores_its_index(values, index):
+    """The values of a Series are used by position, whatever its index."""
+    labels = range(10, 10 + len(values))
+    if index == "reversed":
+        labels = reversed(range(len(values)))
+    series = TimeSeriesBase(pd.Series(values, index=list(labels)))
+    expected = TimeSeriesBase(values)
+    assert series.time_start == ABSOLUTE_START
+    assert series.time_index.equals(expected.time_index)
+
+
 def test_construction_with_leading_nat():
     """The time start is the first timestamp that is not missing."""
     series = TimeSeriesBase(
@@ -608,3 +629,29 @@ def test_interval_label_contains_pandas_times(time_start):
     assert label.contains_time([t(1.5), t(3)]).tolist() == [True, False]
     assert label.contains_time(t(1.5))
     assert label.contains_time([[t(1.5), t(3)]]).tolist() == [True]
+
+
+@pytest.mark.parametrize(
+    "time_data",
+    [
+        pd.Timestamp("2024-01-01 12:00:01.5", tz="UTC"),
+        [pd.Timestamp("2024-01-01 12:00:01.5", tz="Europe/Vienna")],
+        pd.date_range("2024-01-01 12:00:01", periods=2, freq="s", tz="UTC"),
+        [ABSOLUTE_START, pd.Timestamp("2024-01-01 12:00:01.5", tz="UTC")],
+    ],
+    ids=["scalar", "list", "index", "mixed"],
+)
+def test_interval_label_contains_time_rejects_time_zones(time_data):
+    """Labels store time zone naive times: comparing them with time zone
+    aware ones would be ambiguous (like the bounds of get_data)."""
+    label = IntervalLabel(
+        "intervals",
+        time_index=[
+            (
+                ABSOLUTE_START + pd.Timedelta(1, "s"),
+                ABSOLUTE_START + pd.Timedelta(2, "s"),
+            )
+        ],
+    )
+    with pytest.raises(TypeError, match="Time zone aware"):
+        label.contains_time(time_data)

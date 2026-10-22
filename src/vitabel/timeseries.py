@@ -216,9 +216,20 @@ def _time_type_from_dtype(time_index: Any) -> type | None:
 def _as_time_array(time_data: Any) -> np.ndarray:
     """Times as a numpy array; timestamps and timedeltas (also in lists, or
     as scalars, which numpy keeps as objects) as ``datetime64`` /
-    ``timedelta64``."""
+    ``timedelta64``.
+
+    Raises a ``TypeError`` for time zone aware timestamps: the time series
+    store time zone naive times, so the comparison would be ambiguous (as
+    in :meth:`TimeSeriesBase.get_time_mask`).
+    """
     array = np.asarray(time_data)
     if array.dtype == object and array.size > 0:
+        if any(getattr(value, "tzinfo", None) is not None for value in array.flat):
+            raise TypeError(
+                "Time zone aware timestamps cannot be compared with the (time "
+                "zone naive) times of a label; convert them first, e.g. with "
+                "tz_localize(None) or tz_convert(...).tz_localize(None)."
+            )
         first = array.flat[0]
         if isinstance(first, (pd.Timestamp, np.datetime64)):
             array = array.astype("datetime64[ns]")
@@ -243,6 +254,10 @@ def _parse_time_index(
     # and to a pandas.Timestamp for absolute time data.
     # it is possible that the specified time_index is empty
     # or contains undefined values like pandas.NaT, numpy.nan, or None.
+
+    # the values of a Series are used by position (its index is irrelevant)
+    if isinstance(time_index, pd.Series):
+        time_index = pd.Index(time_index)
 
     # avoid np.asarray for typed arrays: for time zone aware timestamps it
     # creates an object array

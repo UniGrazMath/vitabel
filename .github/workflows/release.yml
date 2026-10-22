@@ -23,7 +23,39 @@ jobs:
       
       - name: Install dependencies and package
         run: uv sync
-      
+
+      # Guards against publishing a version that doesn't match the release:
+      # the tag must be "v" + the (normalized) version in pyproject.toml, and
+      # pre-release versions (e.g. 0.2.0a1) must be published as GitHub
+      # pre-releases (and vice versa).
+      - name: Check release tag and version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          uv run --no-sync python - <<'EOF'
+          import os, sys, tomllib
+          from packaging.version import Version
+
+          with open("pyproject.toml", "rb") as fd:
+              version = Version(tomllib.load(fd)["project"]["version"])
+          tag = os.environ["TAG"]
+          marked_prerelease = os.environ["PRERELEASE"] == "true"
+          errors = []
+          if tag != f"v{version}":
+              errors.append(f"tag {tag!r} does not match the package version: expected 'v{version}'")
+          if version.is_prerelease != marked_prerelease:
+              errors.append(
+                  f"version {version} is {'a' if version.is_prerelease else 'not a'} pre-release, "
+                  f"but the GitHub release is {'' if marked_prerelease else 'not '}marked as pre-release"
+              )
+          for error in errors:
+              print(f"::error::{error}")
+          if errors:
+              sys.exit(1)
+          print(f"Publishing vitabel {version} (pre-release: {version.is_prerelease})")
+          EOF
+
       - name: Build package for distribution
         run: uv build
       
