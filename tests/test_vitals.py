@@ -1186,7 +1186,6 @@ def test_etco2_and_ventilation_detection(vitabel_test_data_dir):
         "capnography", t, data, time_start=pd.Timestamp(2024, 1, 1, 0, 0, 0)
     )
     cardio_object.add_channel(co2_channel)
-    # default thresholds (misspelt keywords used to be ignored silently)
     cardio_object.compute_etco2_and_ventilations(mode="threshold")
     vent_dict = cardio_object.get_label("ventilations_from_capnography").to_dict()
     etCO2_dict = cardio_object.get_label("etco2_from_capnography").to_dict()
@@ -1218,31 +1217,6 @@ def test_etco2_and_ventilation_detection(vitabel_test_data_dir):
             25.04570468,
         ],
     )
-
-    assert_matches_golden(
-        "analysis_etco2_capnography_absolute_threshold_4_4",
-        [summarize_series(label) for label in cardio_object.labels],
-        mode="values",
-    )
-
-
-@pytest.mark.golden
-def test_etco2_and_ventilation_detection_threshold_mode(vitabel_test_data_dir):
-    file_path = vitabel_test_data_dir / "sample_signals" / "Capnography.csv.bz2"
-    co_df = pd.read_csv(file_path)
-    t = np.asarray(co_df["Time / s"])
-    data = np.asarray(co_df["CO2 mmHg, Waveform"])
-    data = data[t > 2855]
-    t = t[t > 2855]
-    cardio_object = Vitals()
-    co2_channel = Channel(
-        "capnography", t, data, time_start=pd.Timestamp(2024, 1, 1, 0, 0, 0)
-    )
-    cardio_object.channels.append(co2_channel)
-    cardio_object.compute_etco2_and_ventilations(mode="threshold")
-    assert cardio_object.labels
-    assert "ventilations_from_capnography" in cardio_object.get_label_names()
-    assert "etco2_from_capnography" in cardio_object.get_label_names()
 
     assert_matches_golden(
         "analysis_etco2_capnography_absolute_threshold_mode",
