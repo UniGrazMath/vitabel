@@ -51,6 +51,7 @@ quickstart
 interactive
 examples
 development
+changelog
 bibliography
 ```
 

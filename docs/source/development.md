@@ -119,6 +119,29 @@ defining modules, not via `import vitabel`); this is checked by
 
 ## Changelog
 
-A detailed changelog summarizing all changes incorporated in vitabel between
-releases can be found at the
-[GitHub Release Overview](https://github.com/UniGrazMath/vitabel/releases).
+Notable changes are recorded in
+[`CHANGELOG.md`](https://github.com/UniGrazMath/vitabel/blob/main/CHANGELOG.md),
+which is also part of this documentation ({doc}`changelog`). Pull requests
+that change the behavior of the package add an entry to the topmost section
+(the next release; create it if necessary). Breaking changes and changes of
+results (e.g., of analysis routines) belong in their own sections, so that
+users can see what they have to adapt.
+
+## Releasing
+
+Releases are published to [PyPI](https://pypi.org/project/vitabel/) by the
+`release.yml` workflow whenever a GitHub release is published.
+
+1. In a release preparation pull request, set the version in
+   `pyproject.toml` (run `uv lock` afterwards), and give the changelog section
+   of the release its version and date. Pre-releases use
+   [PEP 440](https://peps.python.org/pep-0440/) versions such as `0.2.0a1`
+   (alpha), `0.2.0b1` (beta), or `0.2.0rc1` (release candidate).
+2. After merging, create the GitHub release from `main` with the tag
+   `v<version>` (e.g. `v0.2.0a1`), using the changelog section as release
+   notes. Pre-releases must be marked as such (`gh release create v0.2.0a1
+   --prerelease`): they are then neither shown as the latest GitHub release
+   nor installed by `pip` unless requested (`pip install --pre vitabel`).
+3. The workflow checks that the tag matches the version in `pyproject.toml`
+   and that the pre-release status of version and GitHub release agree, and
+   publishes the package otherwise.
