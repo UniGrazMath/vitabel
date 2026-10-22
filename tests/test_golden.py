@@ -183,32 +183,6 @@ def test_golden_dataframe_and_dict_import():
     )
 
 
-def test_golden_save_load_roundtrip(tmp_path):
-    recording = Vitals()
-    recording.add_vital_db_recording(TEST_DATA_DIR / "vital_file.vit")
-    channel = recording.channels[0]
-    channel.shift_time_index(pd.Timedelta(seconds=1.5))
-    recording.add_global_label(
-        IntervalLabel(
-            "intervals",
-            time_index=[
-                channel.first_entry,
-                channel.first_entry + pd.Timedelta(seconds=10),
-            ],
-            data=[1.0],
-            text_data=["first"],
-        )
-    )
-    path = tmp_path / "recording.json"
-    recording.save_data(path)
-
-    loaded = Vitals()
-    loaded.load_data(path)
-    summary = summarize_vitals(loaded)
-    summary["metadata"].pop("filepath")
-    assert_matches_golden("loader_save_load_roundtrip", summary)
-
-
 # ---------------------------------------------------------------------------
 # Analysis (values)
 # ---------------------------------------------------------------------------

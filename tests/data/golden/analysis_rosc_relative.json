@@ -30,7 +30,6 @@
     "repr": "0 days 01:34:03.088000",
     "ns": 5643088000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",
@@ -924,7 +923,6 @@
     "repr": "0 days 01:34:03.088000",
     "ns": 5643088000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",
@@ -1820,7 +1818,6 @@
     "repr": "0 days 01:34:03.088000",
     "ns": 5643088000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",
@@ -2714,7 +2711,6 @@
     "repr": "0 days 01:34:23.892000",
     "ns": 5663892000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",

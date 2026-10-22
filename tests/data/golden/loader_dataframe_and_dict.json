@@ -36,7 +36,6 @@
       "repr": "2024-03-01 08:00:12.250000",
       "ns": 1709280012250000000
      },
-     "time_index_unit": "ns",
      "time": {
       "__kind__": "time_array",
       "dtype": "timedelta64",
@@ -200,7 +199,6 @@
       "repr": "2024-03-01 08:00:12.250000",
       "ns": 1709280012250000000
      },
-     "time_index_unit": "ns",
      "time": {
       "__kind__": "time_array",
       "dtype": "timedelta64",
@@ -343,7 +341,6 @@
       "repr": "2024-03-01 08:00:04",
       "ns": 1709280004000000000
      },
-     "time_index_unit": "ns",
      "time": {
       "__kind__": "time_array",
       "dtype": "timedelta64",
@@ -418,7 +415,6 @@
       "repr": "2024-03-01 08:00:12.250000",
       "ns": 1709280012250000000
      },
-     "time_index_unit": "ns",
      "time": {
       "__kind__": "time_array",
       "dtype": "timedelta64",
@@ -566,7 +562,6 @@
       "repr": "2024-03-01 08:00:05",
       "ns": 1709280005000000000
      },
-     "time_index_unit": "ns",
      "time": {
       "__kind__": "time_array",
       "dtype": "timedelta64",
@@ -643,7 +638,6 @@
       "repr": "0 days 00:00:09.500000",
       "ns": 9500000000
      },
-     "time_index_unit": "ns",
      "time": {
       "__kind__": "time_array",
       "dtype": "timedelta64",

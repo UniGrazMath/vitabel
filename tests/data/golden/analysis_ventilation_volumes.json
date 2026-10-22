@@ -35,7 +35,6 @@
      "repr": "2023-01-11 12:14:37.994000",
      "ns": 1673439277994000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -610,7 +609,6 @@
      "repr": "2023-01-11 12:14:37.994000",
      "ns": 1673439277994000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -1185,7 +1183,6 @@
      "repr": "2023-01-11 12:14:37.994000",
      "ns": 1673439277994000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -1762,7 +1759,6 @@
      "repr": "2023-01-11 12:14:37.994000",
      "ns": 1673439277994000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -2341,7 +2337,6 @@
        "repr": "2023-01-11 12:14:33.626000",
        "ns": 1673439273626000000
       },
-      "time_index_unit": "ns",
       "time": {
        "__kind__": "time_array",
        "dtype": "timedelta64",
@@ -2453,7 +2448,6 @@
        "repr": "2023-01-11 12:14:32.917499999",
        "ns": 1673439272917499999
       },
-      "time_index_unit": "ns",
       "time": {
        "__kind__": "time_array",
        "dtype": "timedelta64",
@@ -2567,7 +2561,6 @@
      "repr": "2023-01-11 12:14:37.994000",
      "ns": 1673439277994000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -3146,7 +3139,6 @@
      "repr": "2023-01-11 12:14:37.994000",
      "ns": 1673439277994000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -3719,7 +3711,6 @@
      "repr": "2023-01-11 12:14:37.994000",
      "ns": 1673439277994000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -4298,7 +4289,6 @@
      "repr": "2023-01-11 12:14:32.917000",
      "ns": 1673439272917000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -4879,7 +4869,6 @@
        "repr": "2023-01-11 12:14:28.250000",
        "ns": 1673439268250000000
       },
-      "time_index_unit": "ns",
       "time": {
        "__kind__": "time_array",
        "dtype": "timedelta64",
@@ -4989,7 +4978,6 @@
        "repr": "2023-01-11 12:14:32.917499999",
        "ns": 1673439272917499999
       },
-      "time_index_unit": "ns",
       "time": {
        "__kind__": "time_array",
        "dtype": "timedelta64",
@@ -5101,7 +5089,6 @@
      "repr": "2023-01-11 12:14:29.894000",
      "ns": 1673439269894000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -5680,7 +5667,6 @@
      "repr": "2023-01-11 12:14:35.890000",
      "ns": 1673439275890000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -6260,7 +6246,6 @@
        "repr": "2023-01-11 12:14:26.887000",
        "ns": 1673439266887000000
       },
-      "time_index_unit": "ns",
       "time": {
        "__kind__": "time_array",
        "dtype": "timedelta64",
@@ -6370,7 +6355,6 @@
      "repr": "2023-01-11 12:14:32.917000",
      "ns": 1673439272917000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -6950,7 +6934,6 @@
        "repr": "2023-01-11 12:14:32.917000",
        "ns": 1673439272917000000
       },
-      "time_index_unit": "ns",
       "time": {
        "__kind__": "time_array",
        "dtype": "timedelta64",
@@ -7062,7 +7045,6 @@
      "repr": "2023-01-11 12:14:32.917000",
      "ns": 1673439272917000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -7642,7 +7624,6 @@
        "repr": "2023-01-11 12:14:31.943500",
        "ns": 1673439271943500000
       },
-      "time_index_unit": "ns",
       "time": {
        "__kind__": "time_array",
        "dtype": "timedelta64",
@@ -7756,7 +7737,6 @@
      "repr": "2023-01-11 12:14:32.917499999",
      "ns": 1673439272917499999
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -7839,7 +7819,6 @@
      "repr": "2023-01-11 12:14:35.892000",
      "ns": 1673439275892000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -7922,7 +7901,6 @@
      "repr": "2023-01-11 12:14:35.892000",
      "ns": 1673439275892000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -8014,7 +7992,6 @@
      "repr": "2023-01-11 12:14:32.917499999",
      "ns": 1673439272917499999
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -8104,7 +8081,6 @@
      "repr": "2023-01-11 12:14:35.892000",
      "ns": 1673439275892000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -8214,7 +8190,6 @@
      "repr": "2023-01-11 12:14:32.917499999",
      "ns": 1673439272917499999
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -8322,7 +8297,6 @@
      "repr": "2023-01-11 12:14:32.917499999",
      "ns": 1673439272917499999
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -8432,7 +8406,6 @@
      "repr": "2023-01-11 12:14:28.444500",
      "ns": 1673439268444500000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -8778,7 +8751,6 @@
      "repr": "2023-01-11 12:13:50.862181795",
      "ns": 1673439230862181795
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -8960,7 +8932,6 @@
      "repr": "2023-01-11 12:14:28.444500",
      "ns": 1673439268444500000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -9322,7 +9293,6 @@
      "repr": "2023-01-11 12:13:50.862181795",
      "ns": 1673439230862181795
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -9520,7 +9490,6 @@
      "repr": "2023-01-11 12:14:35.892000",
      "ns": 1673439275892000000
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",
@@ -9630,7 +9599,6 @@
      "repr": "2023-01-11 12:14:32.917499999",
      "ns": 1673439272917499999
     },
-    "time_index_unit": "ns",
     "time": {
      "__kind__": "time_array",
      "dtype": "timedelta64",

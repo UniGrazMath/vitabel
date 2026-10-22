@@ -30,7 +30,6 @@
     "repr": "0 days 00:01:21.200000",
     "ns": 81200000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",

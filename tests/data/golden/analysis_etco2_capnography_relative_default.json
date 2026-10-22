@@ -30,7 +30,6 @@
     "repr": "0 days 01:05:12.144000",
     "ns": 3912144000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",
@@ -1313,7 +1312,6 @@
     "repr": "0 days 01:10:17.112000",
     "ns": 4217112000000
    },
-   "time_index_unit": "ns",
    "time": {
     "__kind__": "time_array",
     "dtype": "timedelta64",
