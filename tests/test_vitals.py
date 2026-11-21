@@ -110,6 +110,109 @@ def test_add_defibrillator_lifepak15_keeps_constants_unchanged(
     assert constants.LP15_all_trend_data == known_trend_data
 
 
+CODESTAT_NAMESPACE = "http://www.physiocontrol.com/code-stat/research-exporter"
+
+
+def _write_codestat12_copy(lifepak_dir, target_dir, scale="1"):
+    """Copy the LIFEPAK test recording, changed as CODE-STAT 12 exports are:
+    all tags in an XML namespace, the pads channel called ``Paddles``, and
+    (optionally) waveform values in device units with a ``Scale`` factor.
+    """
+    for path in lifepak_dir.iterdir():
+        content = path.read_bytes()
+        for root_tag in (b"<Report ", b"<ECGRecord "):
+            content = content.replace(
+                root_tag,
+                root_tag + b'xmlns="' + CODESTAT_NAMESPACE.encode() + b'" ',
+                1,
+            )
+        content = content.replace(
+            b"<Channel>Paddles (Generic)</Channel>", b"<Channel>Paddles</Channel>"
+        )
+        content = content.replace(
+            b"<Scale>1</Scale>", f"<Scale>{scale}</Scale>".encode()
+        )
+        (target_dir / path.name).write_bytes(content)
+    return target_dir / "LP15_Continuous.xml"
+
+
+def test_add_defibrillator_lifepak15_codestat12(lifepak_dir, lifepak_vitals, tmp_path):
+    """CODE-STAT 12 exports (XML namespace, ``Paddles``) load like CODE-STAT 11
+    ones (#308)."""
+    recording = Vitals()
+    recording.add_defibrillator_recording(_write_codestat12_copy(lifepak_dir, tmp_path))
+
+    assert recording.get_channel_names() == LP15_CHANNEL_NAMES
+    for channel in recording.channels:
+        expected = lifepak_vitals.get_channel(channel.name)
+        assert channel.metadata == expected.metadata
+        actual_data, expected_data = channel.get_data(), expected.get_data()
+        np.testing.assert_array_equal(actual_data.time_index, expected_data.time_index)
+        if expected_data.data is None:
+            assert actual_data.data is None
+        else:
+            np.testing.assert_array_equal(actual_data.data, expected_data.data)
+
+
+def test_add_defibrillator_lifepak15_applies_waveform_scale(
+    lifepak_dir, lifepak_vitals, tmp_path
+):
+    recording = Vitals()
+    recording.add_defibrillator_recording(
+        _write_codestat12_copy(lifepak_dir, tmp_path, scale="0.5")
+    )
+    for name in ["ecg_pads", "impedance"]:
+        np.testing.assert_allclose(
+            recording.get_channel(name).get_data().data,
+            0.5 * lifepak_vitals.get_channel(name).get_data().data,
+        )
+
+
+def test_add_defibrillator_lifepak15_trend_data_file(lifepak_dir, tmp_path):
+    """Trend values are read from ``_TrendData.xml`` instead of the
+    ``_CprEventLog.xml`` if it exists; values listed in several events are kept
+    once, and a status without values of its own channel is dropped."""
+    _write_codestat12_copy(lifepak_dir, tmp_path)
+
+    def event(time, values):
+        entries = "".join(
+            f'<Value DataType="Integer" Type="{key}">{value}</Value>'
+            for key, value in values.items()
+        )
+        return (
+            f'<Event Type="Trend"><AdjustedTime>{time}</AdjustedTime>'
+            f"<Values>{entries}</Values></Event>"
+        )
+
+    events = [
+        event("2023-01-11T11:00:00", {"VitalsHeartRate": 60}),
+        event("2023-01-11T11:00:01", {"VitalsHeartRate": 61}),
+        # the same value again, listed in another event at the same time
+        event("2023-01-11T11:00:01", {"VitalsHeartRate": 61}),
+        event("2023-01-11T11:00:02", {"VitalsHeartRate": 62}),
+        event("2023-01-11T11:00:02", {"VitalsIP1SystolicStatus": 0}),
+    ]
+    (tmp_path / "LP15_TrendData.xml").write_text(
+        f'<Report Type="TrendData" xmlns="{CODESTAT_NAMESPACE}">'
+        f"<Events>{''.join(events)}</Events></Report>",
+        encoding="utf-8",
+    )
+
+    recording = Vitals()
+    recording.add_defibrillator_recording(tmp_path / "LP15_Continuous.xml")
+
+    names = recording.get_channel_names()
+    assert "heart_rate" in names
+    assert not any("Status" in name for name in names)
+    heart_rate = recording.get_channel("heart_rate").get_data()
+    np.testing.assert_array_equal(heart_rate.data, [60, 61, 62])
+    assert list(heart_rate.time_index) == list(
+        pd.to_datetime(
+            ["2023-01-11T11:00:00", "2023-01-11T11:00:01", "2023-01-11T11:00:02"]
+        )
+    )
+
+
 def test_add_incomplete_defibrillator_lifepak15(lifepak_dir, tmp_path):
     shutil.copy(lifepak_dir / "LP15_Continuous.xml", tmp_path)
     with pytest.raises(

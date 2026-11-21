@@ -62,6 +62,7 @@ def read_defibrillator_file(filepath: Path | str) -> tuple[dict, dict] | None:
             fp1 = dirpath.joinpath(Path(pure_filename + "_Continuous.xml"))
             fp2 = dirpath.joinpath(Path(pure_filename + "_Continuous_Waveform.xml"))
             fp3 = dirpath.joinpath(Path(pure_filename + "_CprEventLog.xml"))
+            fp4 = dirpath.joinpath(Path(pure_filename + "_TrendData.xml"))
 
             further_files = []
             for file in dirpath.glob("*.xml"):
@@ -71,6 +72,7 @@ def read_defibrillator_file(filepath: Path | str) -> tuple[dict, dict] | None:
                     and "_Continuous.xml" not in file
                     and "_Continuous_Waveform.xml" not in file
                     and "_CprEventLog.xml" not in file
+                    and "_TrendData.xml" not in file
                     and ".xml" in file
                 ):
                     file_ending = file[
@@ -90,7 +92,13 @@ def read_defibrillator_file(filepath: Path | str) -> tuple[dict, dict] | None:
                 )
 
             else:
-                pat_dat, dats = read_lifepak(fp1, fp2, fp3, further_files=further_files)
+                pat_dat, dats = read_lifepak(
+                    fp1,
+                    fp2,
+                    fp3,
+                    further_files=further_files,
+                    f_trend=fp4 if os.path.isfile(fp4) else None,
+                )
                 dats = rename_channels(dats, constants.LP2channelnames_dict)
             logger.info(f"LIFEPAK-File: {str(filename)} successfully read!")
         elif "_Lucas" in filename:
