@@ -238,6 +238,27 @@ def _as_time_array(time_data: Any) -> np.ndarray:
     return array
 
 
+def _numeric_to_timedelta(value, unit: str):
+    """Convert numeric times (a number or an array) in ``unit`` to timedeltas,
+    rounded to the nearest nanosecond.
+
+    ``pd.to_timedelta`` truncates, so times stored as floating point numbers
+    (e.g. by :meth:`.Channel.to_dict`) would come back up to 1 ns too early.
+    """
+    if isinstance(value, numbers.Integral) or (
+        not isinstance(value, numbers.Number)
+        and np.issubdtype(np.asarray(value).dtype, np.integer)
+    ):
+        return pd.to_timedelta(value, unit=unit)  # exact, also beyond 2**53
+    nanoseconds_per_unit = pd.Timedelta(1, unit=unit).value
+    if isinstance(value, numbers.Number):
+        if pd.isna(value):
+            return pd.NaT
+        return pd.Timedelta(round(value * nanoseconds_per_unit), unit="ns")
+    values = np.asarray(value, dtype=float) * nanoseconds_per_unit
+    return pd.to_timedelta(np.round(values), unit="ns")
+
+
 def _parse_time_index(
     time_index: npt.ArrayLike,
     time_start: Timestamp | None,
@@ -356,7 +377,7 @@ def _parse_time_index(
             time_index = pd.to_timedelta(time_index)
 
         elif issubclass(time_type, numbers.Number):
-            time_index = pd.to_timedelta(time_index, unit=time_unit)
+            time_index = _numeric_to_timedelta(time_index, time_unit)
 
         else:
             raise ValueError(f"The time data type {time_type} is not supported")
@@ -435,7 +456,7 @@ class TimeSeriesBase:
         if offset is None:
             offset = pd.Timedelta(0)
         elif isinstance(offset, numbers.Number):
-            offset = pd.to_timedelta(offset, unit=self.time_unit)
+            offset = _numeric_to_timedelta(offset, self.time_unit)
         self._offset = offset
 
         self.time_index, self.time_start = _parse_time_index(
@@ -482,7 +503,7 @@ class TimeSeriesBase:
             (which is taken with respect to the time unit of the base class).
         """
         if isinstance(value, numbers.Number):
-            value = pd.to_timedelta(value, unit=self.time_unit)
+            value = _numeric_to_timedelta(value, self.time_unit)
         delta_t = value - self._offset
         self.shift_time_index(delta_t, time_unit=self.time_unit)
 
@@ -529,7 +550,7 @@ class TimeSeriesBase:
         """
         time_unit = time_unit or self.time_unit
         if isinstance(delta_t, numbers.Number):
-            delta_t = pd.to_timedelta(delta_t, unit=time_unit)
+            delta_t = _numeric_to_timedelta(delta_t, time_unit)
         self.time_index += delta_t
         self._offset += delta_t
 

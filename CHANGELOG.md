@@ -29,6 +29,11 @@ Notable changes to `vitabel`, newest first.
 - `scale_time_index` failed for regularly sampled channels with most scale
   factors (e.g. `1 / 3`)
   ([#310](https://github.com/UniGrazMath/vitabel/pull/310)).
+- Numeric times (and offsets) are rounded to the nearest nanosecond instead of
+  truncated. Times from saved files or from VitalDB recordings could be up to
+  1 ns too early, and loading a file could warn that the data had been modified
+  outside of `vitabel` (e.g. after `correct_clock_drift`)
+  ([#311](https://github.com/UniGrazMath/vitabel/pull/311)).
 
 ### Documentation
 
