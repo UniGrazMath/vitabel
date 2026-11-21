@@ -498,7 +498,7 @@ def test_channel_scale_time_index_absolute():
     )
     assert isinstance(new_channel, Channel)
     assert new_channel.time_start == channel.time_start
-    assert new_channel.offset == pd.Timedelta(0)
+    assert new_channel.offset == pd.Timedelta("-2h")  # offset preserved, not absorbed
     assert list(new_channel.get_data().time_index) == [
         pd.Timestamp("2020-02-02 12:00:00") + pd.Timedelta(hours=i * 0.5)
         for i in range(-2, 4)
@@ -515,6 +515,296 @@ def test_channel_scale_time_index_regular_sampling(scale_factor):
     new_channel = channel.scale_time_index(scale_factor, reference_time=time[0])
     np.testing.assert_allclose(
         new_channel.numeric_time(), np.arange(100) * scale_factor
+    )
+
+
+def test_scale_time_index_preserves_offset():
+    times = [
+        pd.Timestamp("2020-02-02 12:00:00") + pd.Timedelta(hours=i) for i in range(4)
+    ]
+    channel = Channel(name="test", time_index=times)
+    channel.offset = pd.Timedelta("-1h")
+    effective_before = list(channel.get_data().time_index)
+
+    new_channel = channel.scale_time_index(
+        0.5, reference_time=pd.Timestamp("2020-02-02 12:00:00")
+    )
+
+    assert new_channel.offset == pd.Timedelta("-1h")
+    # Effective times should scale about the reference — offset is not scaled
+    expected = [
+        pd.Timestamp("2020-02-02 12:00:00")
+        + (t - pd.Timestamp("2020-02-02 12:00:00")) * 0.5
+        for t in effective_before
+    ]
+    assert list(new_channel.get_data().time_index) == expected
+    # Original is unchanged
+    assert channel.offset == pd.Timedelta("-1h")
+    assert list(channel.get_data().time_index) == effective_before
+
+
+def test_correct_clock_drift_records_metadata():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    drift = pd.Timedelta("5s")
+    channel = Channel(name="test", time_index=[anchor, drift_point])
+
+    corrected = channel.correct_clock_drift(anchor, drift_point, drift=drift)
+
+    assert "transformations" in corrected.metadata
+    entry = corrected.metadata["transformations"][0]
+    assert entry["operation"] == "correct_clock_drift"
+    assert entry["anchor_time"] == anchor
+    assert entry["drift_point"] == drift_point
+    assert entry["drift"] == drift
+    # Original channel metadata is untouched
+    assert "transformations" not in channel.metadata
+
+
+def test_correct_clock_drift_metadata_true_time_form():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    true_time = pd.Timestamp("2020-02-02 13:00:00")
+    channel = Channel(name="test", time_index=[anchor, drift_point])
+
+    corrected = channel.correct_clock_drift(anchor, drift_point, true_time=true_time)
+
+    assert corrected.metadata["transformations"][0]["drift"] == pd.Timedelta("5s")
+
+
+def test_correct_clock_drift_metadata_accumulates():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    channel = Channel(name="test", time_index=[anchor, drift_point])
+
+    once = channel.correct_clock_drift(anchor, drift_point, drift=pd.Timedelta("5s"))
+    twice = once.correct_clock_drift(anchor, drift_point, drift=pd.Timedelta("1s"))
+
+    assert len(twice.metadata["transformations"]) == 2
+    assert len(once.metadata["transformations"]) == 1  # first result unaffected
+
+
+def test_correct_clock_drift_records_metadata_inplace():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    channel = Channel(name="test", time_index=[anchor, drift_point])
+
+    channel.correct_clock_drift(
+        anchor, drift_point, drift=pd.Timedelta("5s"), inplace=True
+    )
+
+    assert len(channel.metadata["transformations"]) == 1
+
+
+def test_channel_correct_clock_drift_with_drift():
+    # Device clock recorded 3605s between anchor and drift_point,
+    # but only 3600s of wall-clock time actually elapsed → device ran 5s fast.
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    times = [anchor, anchor + pd.Timedelta(seconds=1802.5), drift_point]
+    channel = Channel(name="test", time_index=times)
+
+    corrected = channel.correct_clock_drift(
+        anchor, drift_point, drift=pd.Timedelta("5s")
+    )
+    corrected_times = list(corrected.get_data().time_index)
+
+    assert corrected_times[0] == anchor
+    assert corrected_times[-1] == anchor + pd.Timedelta(seconds=3600)
+    np.testing.assert_allclose(
+        (corrected_times[1] - anchor).total_seconds(),
+        1802.5 * 3600 / 3605,
+    )
+
+
+def test_channel_correct_clock_drift_with_true_time():
+    # Same scenario expressed via the wall-clock time at drift_point.
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    true_time = pd.Timestamp("2020-02-02 13:00:00")
+    times = [anchor, drift_point]
+    channel = Channel(name="test", time_index=times)
+
+    corrected = channel.correct_clock_drift(anchor, drift_point, true_time=true_time)
+    corrected_times = list(corrected.get_data().time_index)
+
+    assert corrected_times[0] == anchor
+    assert corrected_times[-1] == true_time
+
+
+def test_channel_correct_clock_drift_requires_one_of():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:00")
+    channel = Channel(name="test", time_index=[anchor, drift_point])
+
+    with pytest.raises(ValueError, match="exactly one of `drift` or `true_time`"):
+        channel.correct_clock_drift(anchor, drift_point)
+    with pytest.raises(ValueError, match="exactly one of `drift` or `true_time`"):
+        channel.correct_clock_drift(
+            anchor,
+            drift_point,
+            drift=pd.Timedelta("5s"),
+            true_time=pd.Timestamp("2020-02-02 12:59:55"),
+        )
+
+
+def test_channel_correct_clock_drift_zero_interval_raises():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    channel = Channel(name="test", time_index=[anchor, anchor + pd.Timedelta("1h")])
+    with pytest.raises(ValueError, match="drift_point must differ from anchor_time"):
+        channel.correct_clock_drift(anchor, anchor, drift=pd.Timedelta("1s"))
+
+
+def test_channel_scale_time_index_inplace():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    times = [anchor, anchor + pd.Timedelta(seconds=1802.5), drift_point]
+    channel = Channel(name="test", time_index=times)
+    original_id = id(channel)
+
+    result = channel.correct_clock_drift(
+        anchor, drift_point, drift=pd.Timedelta("5s"), inplace=True
+    )
+
+    assert result is channel, "inplace=True must return self"
+    assert id(channel) == original_id
+    corrected_times = list(channel.get_data().time_index)
+    assert corrected_times[0] == anchor
+    assert corrected_times[-1] == anchor + pd.Timedelta(seconds=3600)
+    assert channel.offset == pd.Timedelta(0)
+
+
+def test_channel_scale_time_index_copy_does_not_mutate_original():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    times = [anchor, drift_point]
+    channel = Channel(name="test", time_index=times)
+    original_times = list(channel.get_data().time_index)
+
+    _ = channel.correct_clock_drift(anchor, drift_point, drift=pd.Timedelta("5s"))
+
+    assert list(channel.get_data().time_index) == original_times, (
+        "inplace=False (default) must not mutate the original channel"
+    )
+
+
+def test_channel_scale_time_index_moves_attached_labels_by_default():
+    channel = Channel(name="test", time_index=[0, 10], data=[1, 2])
+    label = Label(name="attached", time_index=[5])
+    channel.attach_label(label)
+
+    scaled = channel.scale_time_index(2.0)
+
+    assert list(scaled.numeric_time()) == [0, 20]
+    assert list(scaled.labels[0].numeric_time()) == [10]
+    assert scaled.labels[0] is not label
+    assert scaled.labels[0].anchored_channel is scaled
+    assert list(channel.labels[0].numeric_time()) == [5]
+
+
+def test_channel_scale_time_index_can_leave_attached_labels_unchanged():
+    channel = Channel(name="test", time_index=[0, 10], data=[1, 2])
+    label = Label(name="attached", time_index=[5])
+    channel.attach_label(label)
+
+    scaled = channel.scale_time_index(2.0, move_attached_labels=False)
+
+    assert list(scaled.numeric_time()) == [0, 20]
+    assert scaled.labels[0] is label
+    assert list(scaled.labels[0].numeric_time()) == [5]
+
+
+def test_channel_correct_clock_drift_moves_attached_labels_by_default():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    channel = Channel(name="test", time_index=[anchor, drift_point], data=[1, 2])
+    label = Label(name="attached", time_index=[anchor + pd.Timedelta(seconds=1802.5)])
+    channel.attach_label(label)
+
+    corrected = channel.correct_clock_drift(
+        anchor, drift_point, drift=pd.Timedelta("5s")
+    )
+
+    assert corrected.labels[0].get_data().time_index[0] == anchor + pd.Timedelta(
+        seconds=1800
+    )
+    assert corrected.labels[0].anchored_channel is corrected
+    assert label.get_data().time_index[0] == anchor + pd.Timedelta(seconds=1802.5)
+
+
+def test_channel_correct_clock_drift_inplace_moves_attached_labels():
+    anchor = pd.Timestamp("2020-02-02 12:00:00")
+    drift_point = pd.Timestamp("2020-02-02 13:00:05")
+    channel = Channel(name="test", time_index=[anchor, drift_point], data=[1, 2])
+    label = Label(name="attached", time_index=[anchor + pd.Timedelta(seconds=1802.5)])
+    channel.attach_label(label)
+
+    channel.correct_clock_drift(
+        anchor, drift_point, drift=pd.Timedelta("5s"), inplace=True
+    )
+
+    assert label.get_data().time_index[0] == anchor + pd.Timedelta(seconds=1800)
+    assert label.anchored_channel is channel
+
+
+def test_channel_correct_clock_drift_regular_sampling():
+    """A regularly sampled recording (1 Hz over an hour, device 3 s fast):
+    the drift gives a scale factor that is not a "nice" number."""
+    anchor = pd.Timestamp("2024-01-01 10:00:00")
+    times = pd.date_range(anchor, periods=3601, freq="1s")
+    channel = Channel(name="hr", time_index=times, data=np.arange(3601.0))
+
+    corrected = channel.correct_clock_drift(
+        anchor, anchor + pd.Timedelta("1h"), drift=pd.Timedelta("3s")
+    )
+
+    corrected_times = corrected.get_data().time_index
+    assert corrected_times[0] == anchor
+    assert corrected_times[-1] == anchor + pd.Timedelta("1h") - pd.Timedelta("3s")
+    np.testing.assert_allclose(
+        corrected.numeric_time(), np.arange(3601) * (3597 / 3600), atol=1e-9
+    )
+    np.testing.assert_array_equal(corrected.get_data().data, np.arange(3601.0))
+
+
+def test_channel_correct_clock_drift_moves_attached_interval_labels():
+    anchor = pd.Timestamp("2024-01-01 10:00:00")
+    channel = Channel(
+        name="hr",
+        time_index=pd.date_range(anchor, periods=3601, freq="1s"),
+        data=np.arange(3601.0),
+    )
+    interval = IntervalLabel(
+        name="cpr",
+        time_index=[anchor + pd.Timedelta("10min"), anchor + pd.Timedelta("20min")],
+    )
+    channel.attach_label(interval)
+
+    corrected = channel.correct_clock_drift(
+        anchor, anchor + pd.Timedelta("1h"), drift=pd.Timedelta("3s")
+    )
+
+    (corrected_interval,) = corrected.labels
+    start, stop = corrected_interval.get_data().time_index[0]
+    assert pd.Timestamp(start) == anchor + pd.Timedelta("10min") - pd.Timedelta("0.5s")
+    assert pd.Timestamp(stop) == anchor + pd.Timedelta("20min") - pd.Timedelta("1s")
+    # the original label is unchanged
+    assert pd.Timestamp(interval.get_data().time_index[0][0]) == anchor + pd.Timedelta(
+        "10min"
+    )
+
+
+def test_channel_correct_clock_drift_relative_time():
+    channel = Channel(
+        name="relative", time_index=np.arange(0, 100, 0.5), data=np.arange(200.0)
+    )
+
+    corrected = channel.correct_clock_drift(
+        pd.Timedelta(0), pd.Timedelta("50s"), drift=pd.Timedelta("1s")
+    )
+
+    np.testing.assert_allclose(
+        corrected.numeric_time(), np.arange(0, 100, 0.5) * 49 / 50, atol=1e-9
     )
 
 

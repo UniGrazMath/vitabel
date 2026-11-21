@@ -622,10 +622,11 @@ def test_channel_mutations(time_start):
     channel.offset = 10
     assert _seconds(channel) == [10.0, 10.5, 11.0, 11.5, 12.0, 14.0]
 
-    # scaling and truncating return new channels (without offset)
+    # scaling and truncating return new channels; scaling keeps the offset
+    # (an alignment shift, not part of the clock rate)
     scaled = channel.scale_time_index(2.0, reference_time=t(10))
     assert _seconds(scaled) == [10.0, 11.0, 12.0, 13.0, 14.0, 18.0]
-    assert scaled.offset == pd.Timedelta(0)
+    assert scaled.offset == pd.Timedelta(seconds=10)
     scaled = channel.scale_time_index(0.5, reference_time=t(11))
     assert _seconds(scaled) == [10.5, 10.75, 11.0, 11.25, 11.5, 12.5]
     truncated = channel.truncate(t(11), t(12))

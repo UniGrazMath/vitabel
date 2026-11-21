@@ -4,6 +4,21 @@ Notable changes to `vitabel`, newest first.
 
 ## [Unreleased]
 
+### Changed results
+
+- `scale_time_index` keeps the offset of a channel or label as its offset
+  (previously it was included in the scaled time index and reset to 0; the
+  scaled times are the same). Channels also scale the labels attached to them,
+  so that they stay aligned (`move_attached_labels=False` to turn this off)
+  ([#290](https://github.com/UniGrazMath/vitabel/pull/290)).
+
+### Added
+
+- `correct_clock_drift` for channels and labels corrects a linear clock drift
+  from a sync point and the drift observed at a second time point; the
+  correction is recorded in the metadata. `scale_time_index` has a new
+  `inplace` parameter ([#290](https://github.com/UniGrazMath/vitabel/pull/290)).
+
 ### Fixed
 
 - LIFEPAK 15: exports from CODE-STAT 12 can be loaded. Waveform values are
