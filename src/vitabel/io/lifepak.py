@@ -17,7 +17,19 @@ from vitabel.utils.constants import (
 logger = logging.getLogger("vitabel")
 
 
-def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
+def _find(element, tag):
+    """Find ``tag`` among the children of ``element``, else anywhere below it.
+
+    ``{*}`` matches the tag in any XML namespace or in none, so files with
+    and without the CODE-STAT namespace are handled the same way.
+    """
+    found = element.find("{*}" + tag)
+    if found is None:
+        found = element.find(".//{*}" + tag)
+    return found
+
+
+def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[], f_trend=None):
     pure_filename = f_cont.stem[: f_cont.stem.rindex("_")]
 
     tree = ET.parse(f_cont)  # LOAD XML FILES
@@ -37,34 +49,13 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
         Compr_Flag = False
     # tree3 = ET.parse(f_cpr)
     # root3 = tree3.getroot()
-    elem = root[1][0]
-    tag = elem.tag
-    pcstr = tag[tag.find("{") : tag.find("}") + 1]
-    try:  # LOAD MAIN DATA
-        for event in root[1].find(pcstr + "Events"):
-            if event.attrib["Type"] == "PowerOn":
-                starttime = pd.Timestamp(event.find(pcstr + "AdjustedTime").text)
-        serial = (
-            root1[1]
-            .find(pcstr + "Record")
-            .find(pcstr + "RecordingDevice")
-            .find(pcstr + "SerialNumber")
-            .text
-        )
-    except TypeError:
-        event_container = root.find("Events")
-        events = event_container.findall("Event")
-        for event in events:
-            if event.attrib["Type"] == "PowerOn":
-                starttime = pd.Timestamp(event.find("AdjustedTime").text)
-        device_container = root.find("Device")
-        serial = device_container.find("SerialNumber").text
-
-        # TODO: investigate unused variable
-        # device_description = device_container.find(
-        #     "DeviceDescription"
-        # ).text  # should be LP15XXXX
-        model = device_container.find("Model").text  # should be LP15
+    pcstr = "{*}"  # any namespace or none (CODE-STAT 12 uses a namespace)
+    for event in _find(root, "Events"):  # LOAD MAIN DATA
+        if event.attrib["Type"] == "PowerOn":
+            starttime = pd.Timestamp(event.find(pcstr + "AdjustedTime").text)
+    device_container = _find(root, "Device")
+    serial = device_container.find(pcstr + "SerialNumber").text
+    model = device_container.find(pcstr + "Model").text  # should be LP15
 
     # Make one reading function which loads for fielnames and pcstr, try different pctry via try except
     rec_start = ""
@@ -72,11 +63,7 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
 
     channel_info = {}  # LOAD WAVEFORM DATA From Channels
     channel_data = {}
-    try:
-        datas = root1[1].find(pcstr + "Record").findall(pcstr + "RecordData")
-    except AttributeError:
-        Record_container = root1.find("Record")
-        datas = Record_container.findall("RecordData")
+    datas = _find(root1, "Record").findall(pcstr + "RecordData")
     for record in datas:
         cha_name = lifepak2zoll_name(record.find(pcstr + "Channel").text)
         cha_unit = (
@@ -146,10 +133,9 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
             ).total_seconds()
             if np.abs(startdif) > 0.1 or np.abs(enddif) > 0.1:
                 logger.info(f"Startdif: {startdif}, Enddif: {enddif}")
-            if ydat.find(pcstr + "Scale").text != "1":
-                logger.warning(
-                    f"Unknown scale found: {ydat.find(pcstr + 'Scale').text}"
-                )
+            # values are stored as device units, the scale converts them
+            # to the unit given in YValues (CODE-STAT 11 exports use 1)
+            scale = float(ydat.find(pcstr + "Scale").text)
             if ydat.find(pcstr + "Data").text is not None:
                 ydata = np.array(ydat.find(pcstr + "Data").text.split(","))
                 del_ind = np.where(ydata == "")
@@ -167,6 +153,7 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
                             del_ind = np.append(del_ind, i)
                     ydata = np.delete(ydata, del_ind)
                     times = np.delete(times, del_ind)
+                ydata = ydata.astype(np.float64) * scale
 
                 channel_data[cha_name]["timestamp"] = np.append(
                     channel_data[cha_name]["timestamp"], times
@@ -200,10 +187,7 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
         # local copy: the list of known trend types must not be modified globally
         known_trend_data = list(LP15_all_trend_data)
 
-        events = root2[1].find(pcstr + "Events")
-        if events is None:
-            event_container = root2.find("Events")
-            events = event_container.findall("Event")
+        events = _find(root2, "Events")
 
         for event in events:
             if event.attrib["Type"] == "ChestCompression":
@@ -251,6 +235,29 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
                                 trend_data[channel]["timestamp"].append(time)
                                 trend_data[channel][channel].append(value.text)
 
+        if f_trend is not None:
+            # _TrendData.xml has the same event structure, but many more
+            # trend values. Use it instead of the trend values from the
+            # CprEventLog, so values are not counted twice.
+            trend_data = {}
+            seen = {}  # channel -> times already read
+            for event in _find(ET.parse(f_trend).getroot(), "Events"):
+                time = pd.Timestamp(event.find(pcstr + "AdjustedTime").text)
+                values = event.find(pcstr + "Values")
+                for value in (
+                    values.findall(pcstr + "Value") if values is not None else []
+                ):
+                    channel = value.attrib["Type"]
+                    if channel in LP15_collected_trend_data and value.text:
+                        if channel not in trend_data:
+                            trend_data[channel] = {"timestamp": [], channel: []}
+                            seen[channel] = set()
+                        if time in seen[channel]:
+                            continue  # same value is listed in several events
+                        seen[channel].add(time)
+                        trend_data[channel]["timestamp"].append(time)
+                        trend_data[channel][channel].append(value.text)
+
         del_keys = []
 
         for channel in trend_data:  ### Further CHECK
@@ -269,14 +276,15 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[]):
                 trend_data[channel]["timestamp"] = times
                 trend_data[channel][channel] = values
                 del_keys.append(channel + "Status")
+        # a status without values of its own channel is not a measurement
+        del_keys += [
+            k for k in trend_data if k.endswith("Status") and k not in del_keys
+        ]
 
     for key in del_keys:
         trend_data.pop(key)
 
-    try:  # Compute number of defibrillations
-        n_defib = int(root[1].find(pcstr + "TotalShocks").text)
-    except AttributeError:
-        n_defib = int(root.find(pcstr + "TotalShocks").text)
+    n_defib = int(_find(root, "TotalShocks").text)  # number of defibrillations
 
     if Compr_Flag:  # Summarize compressions etc in dict
         compr_info = {

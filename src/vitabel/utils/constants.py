@@ -70,6 +70,7 @@ LP2channelnames_dict = {
     "II": "ecg_ii",
     "Impedance": "impedance",
     "Paddles (Generic)": "ecg_pads",
+    "Paddles": "ecg_pads",  # CODE-STAT 12
     "Compressions": "cc",
     "StartCPR": "start_cpr",
     "StopCPR": "stop_cpr",
