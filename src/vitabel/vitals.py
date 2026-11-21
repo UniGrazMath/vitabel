@@ -149,8 +149,12 @@ class Vitals:
           CodeStat 11 and 12 are supported. If ``filename_TrendData.xml`` is
           present as well, trend values (e.g., heart rate) are read from it,
           as it contains more of them than ``filename_CprEventLog.xml``.
+          See :doc:`/loaders/stryker` for the channels that are created.
+        * **Stryker CPR feedback devices (e.g., TrueCPR):** Exports from *CodeStat*
+          without waveform data consist of ``filename_CprEventLog.xml`` only. Pass
+          its path to import the compressions with their depth and rate.
         * **Stryker LUCAS:** Data needs to be exported to XML in *Stryker's CodeStat
-          Software*. We require at leas the files ``filename_Lucas.xml`` and
+          Software*. We require at least the files ``filename_Lucas.xml`` and
           ``filename_CprEventLog.xml``, where ``filename`` is an arbitrary prefix.
           Both files are assumed to be in the same directory. Pass the path to
           ``filename_Lucas.xml`` to import the data.

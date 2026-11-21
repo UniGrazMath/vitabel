@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 import xml.etree.ElementTree as ET
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
@@ -27,6 +29,22 @@ def _find(element, tag):
     if found is None:
         found = element.find(".//{*}" + tag)
     return found
+
+
+def _defib_values(event, pcstr="{*}") -> tuple[float, float]:
+    """Delivered energy and impedance of a ``Defib`` event, NaN if missing.
+
+    One value per shock, so that the values stay aligned with the shock
+    times also if a value is missing for some shocks.
+    """
+    energy, impedance = np.nan, np.nan
+    values = event.find(pcstr + "Values")
+    for value in values.findall(pcstr + "Value") if values is not None else []:
+        if value.attrib["Type"] == "DefibEnergy" and value.text:
+            energy = float(value.text)
+        elif value.attrib["Type"] == "DefibVoltageCompImpedance" and value.text:
+            impedance = float(value.text)
+    return energy, impedance
 
 
 def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[], f_trend=None):
@@ -210,11 +228,9 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[], f_trend=None):
                 defibtime = np.append(
                     defibtime, pd.Timestamp(event.find(pcstr + "AdjustedTime").text)
                 )
-                for defib in event.find(pcstr + "Values").findall(pcstr + "Value"):
-                    if defib.attrib["Type"] == "DefibEnergy":
-                        defib_en = np.append(defib_en, int(defib.text))
-                    if defib.attrib["Type"] == "DefibVoltageCompImpedance":
-                        defib_imp = np.append(defib_imp, int(defib.text))
+                energy, impedance = _defib_values(event, pcstr)
+                defib_en = np.append(defib_en, energy)
+                defib_imp = np.append(defib_imp, impedance)
             elif event.attrib["Type"] == "12Lead":
                 twelve_lead_ecg_time = np.append(
                     twelve_lead_ecg_time,
@@ -389,6 +405,89 @@ def read_lifepak(f_cont, f_cont_wv, f_cpre, further_files=[], f_trend=None):
         **defib_data,
     }
     return pat_dat, data
+
+
+def read_cpr_event_log(f_cpre: Path):
+    """Load a standalone ``*_CprEventLog.xml`` (CodeStat export of a CPR
+    feedback device such as TrueCPR, without waveform data).
+
+    The ``DeviceCompression`` events give the compressions (``Compressions``,
+    renamed to ``cc``) and their depth and rate (``cc_depth`` in cm,
+    ``cc_rate`` in 1/min, as for ZOLL recordings). Compressions marked as
+    deleted by the user are skipped.
+
+    Returns
+    -------
+    A tuple ``(pat_dat, data)`` as for :func:`read_lifepak`, or ``({}, {})``
+    if the file contains no compressions.
+    """
+    f_cpre = Path(f_cpre)
+    pcstr = "{*}"
+    root = ET.parse(f_cpre).getroot()
+
+    compressions, depths, rates = [], [], []
+    for event in _find(root, "Events"):
+        if event.attrib.get("Type") != "DeviceCompression":
+            continue
+        values = event.find(pcstr + "Values")
+        values = {
+            value.attrib["Type"]: value.text
+            for value in (values.findall(pcstr + "Value") if values is not None else [])
+        }
+        if values.get("DeletedByUser") == "Yes":
+            continue
+        compressions.append(pd.Timestamp(event.find(pcstr + "AdjustedTime").text))
+        depths.append(float(values["Depth"]) if values.get("Depth") else np.nan)
+        rates.append(float(values["Rate"]) if values.get("Rate") else np.nan)
+
+    if not compressions:
+        logger.warning(f"No compressions found in {f_cpre.name}.")
+        return {}, {}
+
+    compressions = pd.DatetimeIndex(compressions)
+    device = _find(root, "RecordingDevice")
+    power_on = _find(root, "AdjustedPowerOn")
+    case_info = {
+        "File ID": f_cpre.name.removesuffix("_CprEventLog.xml"),
+        "Serial No": _text(device, "SerialNumber"),
+        "Model": _text(device, "Model"),
+        "Start time": pd.Timestamp(power_on.text) if power_on is not None else pd.NaT,
+        "Recording start": compressions[0],
+        "Recording end": compressions[-1],
+        "Recording Length": compressions[-1] - compressions[0],
+    }
+    channel_info = pd.DataFrame(
+        {
+            "Key": ["Compressions", "cc_depth", "cc_rate"],
+            "Type": ["Event data", "Compression data", "Compression data"],
+            "Unit": ["Timestamp", "cm", "1/min"],
+            "Start": compressions[0],
+            "Stop": compressions[-1],
+            "Length": len(compressions),
+        }
+    )
+    pat_dat = {
+        "Main data": pd.DataFrame(case_info, index=[0]).T,
+        "Keys": channel_info,
+        "Load Log": "",
+    }
+    data = {
+        "Compressions": pd.Series(compressions),
+        # depth is exported in mm
+        "cc_depth": pd.DataFrame(
+            {"cc_depth": np.array(depths) / 10}, index=compressions
+        ),
+        "cc_rate": pd.DataFrame({"cc_rate": rates}, index=compressions),
+    }
+    return pat_dat, data
+
+
+def _text(element, tag):
+    """Text of the child ``tag`` of ``element`` (any namespace), or ``None``."""
+    if element is None:
+        return None
+    child = element.find("{*}" + tag)
+    return child.text if child is not None else None
 
 
 def lifepak2zoll_name(lp):

@@ -11,7 +11,7 @@ from pathlib import Path
 
 from vitabel.io._common import rename_channels
 from vitabel.io.corpuls import read_corpuls
-from vitabel.io.lifepak import read_lifepak
+from vitabel.io.lifepak import read_cpr_event_log, read_lifepak
 from vitabel.io.lucas import read_lucas
 from vitabel.io.zoll import read_zollcsv, read_zolljson, read_zollxml
 from vitabel.utils import constants
@@ -120,6 +120,15 @@ def read_defibrillator_file(filepath: Path | str) -> tuple[dict, dict] | None:
             else:
                 logger.warning(f"LUCAS-File: {str(filename)} is empty!")
                 return None
+        elif filename.endswith("_CprEventLog"):
+            # standalone export of a CPR feedback device (e.g. TrueCPR); with a
+            # _Continuous.xml or _Lucas.xml next to it, that file is the one
+            # to pass
+            pat_dat, dats = read_cpr_event_log(filepath)
+            dats = rename_channels(dats, constants.LP2channelnames_dict)
+            if not dats:
+                return None
+            logger.info(f"CprEventLog-File: {filename} successfully read!")
 
         else:
             pat_dat, dats = read_zollxml(dirpath.joinpath(Path(filename + ".xml")))
