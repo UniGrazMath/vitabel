@@ -1165,6 +1165,59 @@ def test_load_data_hash_check_round_trip(vitabel_test_data_dir, tmp_path, case, 
     assert "does not match the hash" not in caplog.text
 
 
+@pytest.mark.parametrize("absolute", [True, False])
+def test_save_load_round_trip_keeps_nanoseconds(tmp_path, caplog, absolute):
+    """Times are saved as floats in the time unit; loading must give the same
+    nanoseconds (not truncate them), also after a clock drift correction."""
+    start = pd.Timestamp("2024-01-01 10:00:00")
+    rng = np.random.default_rng(0)
+    jitter = pd.to_timedelta(rng.integers(0, 1000, 3601), unit="ns")
+    times = pd.timedelta_range(0, periods=3601, freq="1s") + jitter
+    channel = Channel(
+        "hr", start + times if absolute else times, data=np.arange(3601.0)
+    )
+    channel.attach_label(
+        Label(
+            "events", time_index=(start if absolute else pd.Timedelta(0)) + times[::100]
+        )
+    )
+    anchor = start if absolute else pd.Timedelta(0)
+    drifted = channel.correct_clock_drift(
+        anchor, anchor + pd.Timedelta("1h"), drift=pd.Timedelta("3s")
+    )
+    recording = Vitals()
+    recording.add_channel(channel)
+    drifted.name = "hr_drift_corrected"
+    recording.add_channel(drifted)
+    path = tmp_path / "recording.json"
+    recording.save_data(path)
+
+    loaded = Vitals()
+    with caplog.at_level(logging.WARNING, logger="vitabel"):
+        loaded.load_data(path)
+    assert "does not match the hash" not in caplog.text
+    for original in recording.channels:
+        restored = loaded.get_channel(original.name)
+        np.testing.assert_array_equal(restored.time_index, original.time_index)
+        for label, restored_label in zip(original.labels, restored.labels):
+            np.testing.assert_array_equal(restored_label.time_index, label.time_index)
+
+
+@pytest.mark.parametrize("time_unit", ["s", "ms", "min"])
+def test_numeric_time_index_is_rounded_to_nanoseconds(time_unit):
+    """Numeric times are rounded to the nearest nanosecond, so that
+    ``numeric_time`` and the constructor are inverse to each other."""
+    rng = np.random.default_rng(1)
+    nanoseconds = rng.integers(0, 10 * 86400 * 10**9, 10000)
+    time_index = pd.to_timedelta(nanoseconds, unit="ns")
+    numeric = np.asarray(time_index / pd.Timedelta(1, unit=time_unit))
+
+    channel = Channel("x", numeric, time_unit=time_unit)
+    np.testing.assert_array_equal(channel.time_index.asi8, nanoseconds)
+    channel = Channel("x", [0.0, 1.0], time_unit=time_unit, offset=numeric[1])
+    assert channel.offset.value == nanoseconds[1]
+
+
 def test_load_data_hash_check_round_trip_with_array_metadata(tmp_path, caplog):
     # array-like metadata is saved as plain JSON and hashed in the same way
     metadata = {
