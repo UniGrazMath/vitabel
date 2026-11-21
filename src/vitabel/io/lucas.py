@@ -10,6 +10,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from vitabel.io.lifepak import _defib_values
+
 logger = logging.getLogger("vitabel")
 
 
@@ -56,11 +58,9 @@ def read_lucas(f_luc: Path, f_cpre: Path):
             defibtime = np.append(
                 defibtime, pd.Timestamp(event.find(pcstr + "AdjustedTime").text)
             )
-            for defib in event.find(pcstr + "Values").findall(pcstr + "Value"):
-                if defib.attrib["Type"] == "DefibEnergy":
-                    defib_en = np.append(defib_en, int(defib.text))
-                if defib.attrib["Type"] == "DefibVoltageCompImpedance":
-                    defib_imp = np.append(defib_imp, int(defib.text))
+            energy, impedance = _defib_values(event)
+            defib_en = np.append(defib_en, energy)
+            defib_imp = np.append(defib_imp, impedance)
 
     channel_info = {}
     proc_dat = {}

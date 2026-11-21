@@ -49,6 +49,7 @@ case.plot_interactive(
 :maxdepth: 3
 quickstart
 interactive
+loaders
 examples
 development
 changelog

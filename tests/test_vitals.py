@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -211,6 +212,126 @@ def test_add_defibrillator_lifepak15_trend_data_file(lifepak_dir, tmp_path):
             ["2023-01-11T11:00:00", "2023-01-11T11:00:01", "2023-01-11T11:00:02"]
         )
     )
+
+
+def test_add_defibrillator_lifepak15_shock_with_missing_value(
+    lifepak_dir, lifepak_vitals, tmp_path
+):
+    """A shock without impedance keeps the values of the other shocks aligned
+    (the arrays had different lengths before, and loading failed)."""
+    for path in lifepak_dir.iterdir():
+        shutil.copy(path, tmp_path)
+    event_log = tmp_path / "LP15_CprEventLog.xml"
+    content = event_log.read_text(encoding="utf-8")
+    first_impedance = re.search(
+        r'<Value[^>]*Type="DefibVoltageCompImpedance">[^<]*</Value>', content
+    )
+    event_log.write_text(
+        content[: first_impedance.start()] + content[first_impedance.end() :],
+        encoding="utf-8",
+    )
+
+    recording = Vitals()
+    recording.add_defibrillator_recording(tmp_path / "LP15_Continuous.xml")
+
+    shocks, expected = recording.shocks(), lifepak_vitals.shocks()
+    assert list(shocks.index) == list(expected.index)
+    np.testing.assert_array_equal(
+        shocks["DeliveredEnergy"], expected["DeliveredEnergy"]
+    )
+    assert np.isnan(shocks["Impedance"].iloc[0])
+    np.testing.assert_array_equal(
+        shocks["Impedance"].iloc[1:], expected["Impedance"].iloc[1:]
+    )
+
+
+def _cpr_event_log(compressions, namespace=CODESTAT_NAMESPACE):
+    """A standalone CprEventLog (e.g. TrueCPR) with the given compressions
+    ``(time, depth in mm, rate, deleted)``."""
+    events = "".join(
+        '<Event Type="DeviceCompression">'
+        f"<AdjustedTime>{time}</AdjustedTime><Values>"
+        f'<Value DataType="Decimal" Type="Depth">{depth}</Value>'
+        f'<Value DataType="Decimal" Type="Rate">{rate}</Value>'
+        f'<Value DataType="String" Type="DeletedByUser">'
+        f"{'Yes' if deleted else 'No'}</Value>"
+        "</Values></Event>"
+        for time, depth, rate, deleted in compressions
+    )
+    xmlns = f' xmlns="{namespace}"' if namespace else ""
+    return (
+        f'<?xml version="1.0" encoding="UTF-8"?><CprEventLog{xmlns}>'
+        "<RecordingDevice><SerialNumber>TRUECPR001</SerialNumber>"
+        "<Model>TrueCPR</Model></RecordingDevice>"
+        "<AdjustedPowerOn>2024-01-01T10:00:00</AdjustedPowerOn>"
+        f"<Events>{events}</Events></CprEventLog>"
+    )
+
+
+@pytest.mark.parametrize("namespace", [CODESTAT_NAMESPACE, None])
+def test_add_defibrillator_cpr_event_log_only(tmp_path, namespace):
+    """Standalone CprEventLog exports (CPR feedback devices such as TrueCPR)
+    give the compressions with depth (cm) and rate; deleted ones are skipped."""
+    path = tmp_path / "truecpr_CprEventLog.xml"
+    path.write_text(
+        _cpr_event_log(
+            [
+                ("2024-01-01T10:01:00.500", 50.0, 100, False),
+                ("2024-01-01T10:01:01.000", 30.0, 120, True),
+                ("2024-01-01T10:01:01.100", 48.5, 98, False),
+            ],
+            namespace=namespace,
+        ),
+        encoding="utf-8",
+    )
+
+    recording = Vitals()
+    recording.add_defibrillator_recording(path)
+
+    assert recording.get_channel_names() == ["cc_depth", "cc_rate", "cc"]
+    times = pd.to_datetime(["2024-01-01T10:01:00.500", "2024-01-01T10:01:01.100"])
+    for name, values in [("cc_depth", [5.0, 4.85]), ("cc_rate", [100.0, 98.0])]:
+        data = recording.get_channel(name).get_data()
+        assert list(data.time_index) == list(times)
+        np.testing.assert_allclose(data.data, values)
+    assert list(recording.get_channel("cc").get_data().time_index) == list(times)
+    assert recording.channels[0].metadata == {
+        "Serial No": "TRUECPR001",
+        "source": "TrueCPR",
+    }
+
+
+def test_add_defibrillator_cpr_event_log_without_compressions(tmp_path, caplog):
+    path = tmp_path / "empty_CprEventLog.xml"
+    path.write_text(_cpr_event_log([]), encoding="utf-8")
+    recording = Vitals()
+    recording.add_defibrillator_recording(path)
+    assert recording.channels == []
+    assert "No compressions found" in caplog.text
+
+
+def test_cprdat_analysis_of_cpr_event_log(tmp_path):
+    """The registry analysis works with compressions from a CPR feedback device:
+    4 blocks of 30 compressions, separated by pauses of 20 s."""
+    start = pd.Timestamp("2024-01-01T10:00:00")
+    compressions = [
+        (
+            (start + pd.Timedelta(seconds=36.4 * block + i * 60 / 110)).isoformat(),
+            52,
+            110,
+            False,
+        )
+        for block in range(4)
+        for i in range(30)
+    ]
+    path = tmp_path / "truecpr_CprEventLog.xml"
+    path.write_text(_cpr_event_log(compressions), encoding="utf-8")
+    recording = Vitals()
+    recording.add_defibrillator_recording(path)
+
+    result = recording.make_cprdat_analysis()
+    assert result["recording_info"]["serial_number"] == "TRUECPR001"
+    assert len(result["chest_compression_analysis"]) == 4
 
 
 def test_add_incomplete_defibrillator_lifepak15(lifepak_dir, tmp_path):

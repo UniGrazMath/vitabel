@@ -18,6 +18,10 @@ Notable changes to `vitabel`, newest first.
   from a sync point and the drift observed at a second time point; the
   correction is recorded in the metadata. `scale_time_index` has a new
   `inplace` parameter ([#290](https://github.com/UniGrazMath/vitabel/pull/290)).
+- `add_defibrillator_recording` loads standalone `_CprEventLog.xml` exports of
+  Stryker CPR feedback devices (e.g. TrueCPR): compressions with depth and rate
+  (`cc`, `cc_depth`, `cc_rate`)
+  ([#312](https://github.com/UniGrazMath/vitabel/pull/312)).
 
 ### Fixed
 
@@ -34,11 +38,16 @@ Notable changes to `vitabel`, newest first.
   1 ns too early, and loading a file could warn that the data had been modified
   outside of `vitabel` (e.g. after `correct_clock_drift`)
   ([#311](https://github.com/UniGrazMath/vitabel/pull/311)).
+- LIFEPAK 15 and LUCAS: loading failed if a shock had no energy or impedance
+  value; the missing value is now `NaN`
+  ([#312](https://github.com/UniGrazMath/vitabel/pull/312)).
 
 ### Documentation
 
 - `add_defibrillator_recording` lists the ZOLL R Series as supported
   ([#275](https://github.com/UniGrazMath/vitabel/issues/275)).
+- A page on the Stryker loaders (devices, files, and the channels they give)
+  ([#312](https://github.com/UniGrazMath/vitabel/pull/312)).
 
 ## [0.2.0a1] - 2026-10-22
 
