@@ -11,6 +11,9 @@ Notable changes to `vitabel`, newest first.
   pads ECG of CODE-STAT 12 exports (`Paddles`) is renamed to `ecg_pads`, and
   trend values are read from `_TrendData.xml` if it is present
   ([#308](https://github.com/UniGrazMath/vitabel/issues/308)).
+- `scale_time_index` failed for regularly sampled channels with most scale
+  factors (e.g. `1 / 3`)
+  ([#310](https://github.com/UniGrazMath/vitabel/pull/310)).
 
 ### Documentation
 
