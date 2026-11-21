@@ -1382,6 +1382,11 @@ class Vitals:
         etco2_threshold
             Threshold above which a maximum is identified as an etCO₂ value of an expiration
             (default: 3 mmHg). Used by the ``'filter'`` method.
+
+        Raises
+        ------
+        ValueError
+            If ``mode`` is not one of the supported methods.
         """
         # Support legacy parameter name
         if "breaththresh" in kwargs:
@@ -1415,9 +1420,8 @@ class Vitals:
             breath_threshold=breath_threshold,
             etco2_threshold=etco2_threshold,
         )
-        if labels is not None:
-            for label in labels:
-                source.attach_label(label)
+        for label in labels:
+            source.attach_label(label)
 
     def cycle_duration_analysis(
         self, cc_events_channel: Channel | str | None = None

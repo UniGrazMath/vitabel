@@ -1585,6 +1585,118 @@ def test_etco2_keyword_arguments():
         recording.compute_etco2_and_ventilations(breath_threshold=2, breaththresh=4)
 
 
+def _square_capnogram(baseline=0.0, plateau=35.0):
+    """60 s at 100 Hz: 10 breaths (3 s expiration with a 0.4 s upstroke,
+    3 s inspiration with a 0.2 s downstroke)."""
+    time = np.arange(0, 60, 0.01)
+    phase = time % 6
+    shape = np.clip(phase / 0.4, 0, 1) * (1 - np.clip((phase - 3) / 0.2, 0, 1))
+    return Channel(
+        "capnography",
+        pd.to_timedelta(time, unit="s"),
+        baseline + (plateau - baseline) * shape,
+    )
+
+
+_NO_BREATHS = {
+    "flat at 0": Channel(
+        "capnography", pd.to_timedelta(np.arange(6000) / 100, unit="s"), np.zeros(6000)
+    ),
+    "flat at 40": Channel(
+        "capnography",
+        pd.to_timedelta(np.arange(6000) / 100, unit="s"),
+        np.full(6000, 40.0),
+    ),
+    "dips without peaks": _square_capnogram(baseline=1, plateau=2),
+}
+
+
+@pytest.mark.parametrize("mode", ["filter", "threshold"])
+@pytest.mark.parametrize("case", list(_NO_BREATHS))
+def test_etco2_detection_without_breaths(mode, case, caplog):
+    """Signals without detectable breaths give empty labels (and a warning)
+    instead of an IndexError."""
+    from vitabel.analysis.ventilation.capnography import (
+        detect_etco2_and_ventilations,
+    )
+
+    etco2, ventilations = detect_etco2_and_ventilations(_NO_BREATHS[case], mode=mode)
+    assert etco2.name == "etco2_from_capnography"
+    assert ventilations.name == "ventilations_from_capnography"
+    assert len(etco2) == 0 or len(ventilations) == 0
+
+
+def test_etco2_detection_threshold_mode_single_inspiration():
+    """A single inspiration flank (no complete breath) in the ``threshold``
+    mode."""
+    from vitabel.analysis.ventilation.capnography import (
+        detect_etco2_and_ventilations,
+    )
+
+    capnogram = Channel(
+        "capnography",
+        pd.to_timedelta(np.arange(6000) / 100, unit="s"),
+        np.r_[np.full(2000, 35.0), np.zeros(4000)],
+    )
+    etco2, ventilations = detect_etco2_and_ventilations(capnogram, mode="threshold")
+    assert len(etco2) == len(ventilations) == 0
+
+
+def test_etco2_detection_baseline_above_breath_threshold(caplog):
+    """With a baseline above ``breath_threshold`` (e.g. rebreathing), the
+    ``filter`` mode finds no ventilations; the ``threshold`` mode detects
+    the flanks and is not affected."""
+    from vitabel.analysis.ventilation.capnography import (
+        detect_etco2_and_ventilations,
+    )
+
+    capnogram = _square_capnogram(baseline=6)
+    etco2, ventilations = detect_etco2_and_ventilations(capnogram, mode="filter")
+    assert len(ventilations) == 0
+    assert "No ventilations detected" in caplog.text
+    etco2, ventilations = detect_etco2_and_ventilations(capnogram, mode="threshold")
+    assert 8 <= len(ventilations) <= 11
+
+
+def test_etco2_detection_without_breaths_in_recording(caplog):
+    recording = Vitals()
+    recording.add_channel(_square_capnogram(baseline=6))
+    recording.compute_etco2_and_ventilations()
+    assert set(recording.get_label_names()) == {
+        "etco2_from_capnography",
+        "ventilations_from_capnography",
+    }
+    assert "No ventilations detected" in caplog.text
+
+
+@pytest.mark.parametrize("mode", ["filter", "threshold"])
+def test_etco2_detection_regular_breaths(mode):
+    """Both modes find the 10 breaths of a clean capnogram."""
+    from vitabel.analysis.ventilation.capnography import (
+        detect_etco2_and_ventilations,
+    )
+
+    etco2, ventilations = detect_etco2_and_ventilations(_square_capnogram(), mode=mode)
+    assert 8 <= len(ventilations) <= 11
+    assert len(etco2) == len(ventilations)
+    np.testing.assert_allclose(etco2.get_data().data, 35.0, atol=0.5)
+
+
+@pytest.mark.parametrize("mode", ["fliter", "Filter", ""])
+def test_etco2_detection_unknown_mode(mode):
+    from vitabel.analysis.ventilation.capnography import (
+        detect_etco2_and_ventilations,
+    )
+
+    with pytest.raises(ValueError, match="Unknown mode"):
+        detect_etco2_and_ventilations(_square_capnogram(), mode=mode)
+    recording = Vitals()
+    recording.add_channel(_square_capnogram())
+    with pytest.raises(ValueError, match="Unknown mode"):
+        recording.compute_etco2_and_ventilations(mode=mode)
+    assert recording.get_label_names() == []
+
+
 @pytest.mark.golden
 def test_cycle_duration_analysis_relative():
     len_pause_range = [0, 10, 10, 5, 1]

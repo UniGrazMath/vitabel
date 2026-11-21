@@ -4,6 +4,12 @@ Notable changes to `vitabel`, newest first.
 
 ## [Unreleased]
 
+### Breaking changes
+
+- `compute_etco2_and_ventilations` / `detect_etco2_and_ventilations` raise a
+  `ValueError` for an unknown `mode` (previously an error was logged and
+  nothing was computed) ([#313](https://github.com/UniGrazMath/vitabel/pull/313)).
+
 ### Changed results
 
 - `scale_time_index` keeps the offset of a channel or label as its offset
@@ -25,6 +31,10 @@ Notable changes to `vitabel`, newest first.
 
 ### Fixed
 
+- `compute_etco2_and_ventilations` / `detect_etco2_and_ventilations`: signals
+  without detectable breaths (e.g. a flat signal, or, for the `filter` method,
+  a baseline above `breath_threshold`) gave an `IndexError`; they now give empty
+  labels and a warning ([#313](https://github.com/UniGrazMath/vitabel/pull/313)).
 - LIFEPAK 15: exports from CODE-STAT 12 can be loaded. Waveform values are
   multiplied by their scale factor (previously only a warning was logged), the
   pads ECG of CODE-STAT 12 exports (`Paddles`) is renamed to `ecg_pads`, and
