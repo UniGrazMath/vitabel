@@ -2,6 +2,21 @@
 
 Notable changes to `vitabel`, newest first.
 
+## [Unreleased]
+
+### Fixed
+
+- LIFEPAK 15: exports from CODE-STAT 12 can be loaded. Waveform values are
+  multiplied by their scale factor (previously only a warning was logged), the
+  pads ECG of CODE-STAT 12 exports (`Paddles`) is renamed to `ecg_pads`, and
+  trend values are read from `_TrendData.xml` if it is present
+  ([#308](https://github.com/UniGrazMath/vitabel/issues/308)).
+
+### Documentation
+
+- `add_defibrillator_recording` lists the ZOLL R Series as supported
+  ([#275](https://github.com/UniGrazMath/vitabel/issues/275)).
+
 ## [0.2.0a1] - 2026-10-22
 
 First pre-release of 0.2: the package has been restructured, the time series

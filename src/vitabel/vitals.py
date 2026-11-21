@@ -134,7 +134,8 @@ class Vitals:
 
         Imports from the following defibrillator device families are supported:
 
-        * **ZOLL X-Series:** data needs to be exported from device as JSON or XML.
+        * **ZOLL X Series and ZOLL R Series:** data needs to be exported from
+          the device as JSON or XML.
         * **ZOLL E-Series and ZOLL AED-Pro:** Data needs to be exported
           from the device in two files, ``filename_ecg.txt`` and ``filename.xml``,
           where ``filename`` can be arbitrary. Both files are assumed to be in the
@@ -144,7 +145,10 @@ class Vitals:
           ``filename_Continuous.xml``, ``filename_Continuous_Waveform.xml``, and
           ``filename_CprEventLog.xml``, where ``filename`` is an arbitrary prefix.
           All files are assumed to be in the same directory. Pass the path
-          to ``filename_Continuous.xml`` to import the data.
+          to ``filename_Continuous.xml`` to import the data. Exports from
+          CodeStat 11 and 12 are supported. If ``filename_TrendData.xml`` is
+          present as well, trend values (e.g., heart rate) are read from it,
+          as it contains more of them than ``filename_CprEventLog.xml``.
         * **Stryker LUCAS:** Data needs to be exported to XML in *Stryker's CodeStat
           Software*. We require at leas the files ``filename_Lucas.xml`` and
           ``filename_CprEventLog.xml``, where ``filename`` is an arbitrary prefix.
