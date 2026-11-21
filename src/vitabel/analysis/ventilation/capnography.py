@@ -236,6 +236,106 @@ def detect_etco2_and_ventilations(
     return _labels(etco2time, etco2, resptime, mode)
 
 
+def detect_exhalation_onsets(
+    source: Channel,
+    ventilations: Label,
+    etco2: Label,
+    rise_fraction: float = 0.1,
+) -> Label:
+    """Detect the onset of exhalation (the start of the CO₂ rise) in a
+    capnography waveform.
+
+    For every ventilation, the following etCO₂ value marks the end of the
+    exhalation; the exhalation starts after the previous etCO₂ value. In
+    between, the baseline is the lowest CO₂ value, and the onset is the last
+    sample before the etCO₂ value at which the CO₂ signal is at or below
+    ``baseline + rise_fraction * (etco2 - baseline)``.
+
+    The ventilations select the breaths: one onset per ventilation that is
+    followed by an etCO₂ value before the next ventilation. Their exact times
+    do not matter (the ``'filter'`` method places them at the minimum of the
+    CO₂ signal before the rise, the ``'threshold'`` method at the steepest
+    rise), so the onsets of both methods agree. If the CO₂ signal rises
+    several times before an etCO₂ value (e.g., because of chest compression
+    artifacts), the onset belongs to the last rise, the one that leads to the
+    etCO₂ value.
+
+    This works with the ventilations and etCO₂ values of either method of
+    :func:`detect_etco2_and_ventilations` and does not assume that the CO₂
+    signal returns to (close to) zero between breaths.
+
+    Parameters
+    ----------
+    source
+        The capnography channel (CO₂ in mmHg).
+    ventilations
+        The detected ventilations (e.g., ``ventilations_from_capnography``).
+    etco2
+        The detected etCO₂ values (e.g., ``etco2_from_capnography``); only
+        their times are used.
+    rise_fraction
+        The fraction of the CO₂ rise (from the baseline to the etCO₂ value)
+        that defines the onset, between 0 and 1 (default: 0.1).
+
+    Returns
+    -------
+    The (unattached) label ``exhalation_onsets_from_capnography``. Breaths
+    without an etCO₂ value before the next ventilation, or without a rise,
+    have no onset.
+    """
+    if not 0 <= rise_fraction < 1:
+        raise ValueError(f"rise_fraction must be in [0, 1), but got {rise_fraction}")
+    co2_data = source.get_data()
+    time = np.asarray(co2_data.time_index)
+    co2 = np.asarray(co2_data.data, dtype=float)
+    vent_times = np.asarray(ventilations.get_data().time_index)
+    etco2_times = np.asarray(etco2.get_data().time_index)
+
+    onsets = []
+    # the next etCO₂ value after each ventilation ...
+    next_etco2 = np.searchsorted(etco2_times, vent_times, side="right")
+    for k in range(len(vent_times)):
+        if next_etco2[k] == len(etco2_times):
+            continue
+        peak_time = etco2_times[next_etco2[k]]
+        # ... must come before the next ventilation
+        if k + 1 < len(vent_times) and peak_time >= vent_times[k + 1]:
+            continue
+        # the exhalation starts after the previous etCO₂ value
+        start = (
+            np.searchsorted(time, etco2_times[next_etco2[k] - 1], side="right")
+            if next_etco2[k] > 0
+            else 0
+        )
+        peak = np.searchsorted(time, peak_time)
+        if peak >= len(time) or peak <= start:
+            continue
+        segment = co2[start : peak + 1]
+        baseline, top = np.nanmin(segment), segment[-1]
+        if not top > baseline:
+            continue
+        level = baseline + rise_fraction * (top - baseline)
+        below = np.flatnonzero(segment[:-1] <= level)
+        if len(below):
+            onsets.append(time[start + below[-1]])
+
+    n_missing = len(vent_times) - len(onsets)
+    if n_missing:
+        logger.info(f"No exhalation onset found for {n_missing} ventilation(s).")
+
+    return Label(
+        "exhalation_onsets_from_capnography",
+        time_index=onsets if onsets else time[:0],
+        data=None,
+        metadata={
+            "creator": "automatic",
+            "creation_date": pd.Timestamp.now(),
+            "rise_fraction": rise_fraction,
+        },
+        plotstyle=DEFAULT_PLOT_STYLE.get("exhalation_onsets_from_capnography", None),
+    )
+
+
 def _labels(etco2time, etco2, resptime, mode) -> tuple[Label, Label]:
     """The labels ``etco2_from_capnography`` and
     ``ventilations_from_capnography``."""

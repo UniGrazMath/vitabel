@@ -13,7 +13,10 @@ from typing import Any, Literal
 from IPython.display import display
 from pathlib import Path
 
-from vitabel.analysis.ventilation.capnography import detect_etco2_and_ventilations
+from vitabel.analysis.ventilation.capnography import (
+    detect_etco2_and_ventilations,
+    detect_exhalation_onsets,
+)
 from vitabel.analysis.ventilation.phases import detect_respiratory_phases
 from vitabel.analysis.ventilation.volumes import (
     compute_breath_duration_and_rate_labels,
@@ -1422,6 +1425,51 @@ class Vitals:
         )
         for label in labels:
             source.attach_label(label)
+
+    def compute_exhalation_onsets(
+        self,
+        source: Channel | str = "capnography",
+        rise_fraction: float = 0.1,
+    ):
+        """Computes the onsets of exhalation (the start of the CO₂ rise after each
+        ventilation) from the capnography waveform, and adds them as the label
+        ``exhalation_onsets_from_capnography`` (attached to the capnography
+        channel). See
+        :func:`.analysis.ventilation.capnography.detect_exhalation_onsets`.
+
+        Requires the labels ``ventilations_from_capnography`` and
+        ``etco2_from_capnography`` of the capnography channel, see
+        :meth:`compute_etco2_and_ventilations` (with either method).
+
+        Parameters
+        ----------
+        source
+            The capnography channel, or its name.
+        rise_fraction
+            The fraction of the CO₂ rise (from the baseline to the etCO₂ value)
+            that defines the onset (default: 0.1).
+        """
+        if isinstance(source, str):
+            source = self.get_channel(name=source)
+        labels = {label.name: label for label in source.labels}
+        missing = [
+            name
+            for name in ("ventilations_from_capnography", "etco2_from_capnography")
+            if name not in labels
+        ]
+        if missing:
+            raise ValueError(
+                f"The channel '{source.name}' has no label(s) {', '.join(missing)}; "
+                "run compute_etco2_and_ventilations first"
+            )
+        source.attach_label(
+            detect_exhalation_onsets(
+                source,
+                labels["ventilations_from_capnography"],
+                labels["etco2_from_capnography"],
+                rise_fraction=rise_fraction,
+            )
+        )
 
     def cycle_duration_analysis(
         self, cc_events_channel: Channel | str | None = None
