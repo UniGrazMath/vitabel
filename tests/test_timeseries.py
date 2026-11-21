@@ -505,6 +505,19 @@ def test_channel_scale_time_index_absolute():
     ]
 
 
+@pytest.mark.parametrize("scale_factor", [1 / 3, 98 / 99])
+def test_channel_scale_time_index_regular_sampling(scale_factor):
+    """Regularly sampled time indices can be scaled by any factor (pandas
+    would otherwise try to scale their frequency as well)."""
+    time = pd.date_range("2024-01-01", periods=100, freq="1s")
+    channel = Channel(name="test", time_index=time, data=np.arange(100.0))
+
+    new_channel = channel.scale_time_index(scale_factor, reference_time=time[0])
+    np.testing.assert_allclose(
+        new_channel.numeric_time(), np.arange(100) * scale_factor
+    )
+
+
 def test_label_creation():
     label = Label(name="test", time_index=[0, 5, 12])
 

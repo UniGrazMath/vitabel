@@ -892,9 +892,10 @@ class TimeSeriesBase:
         if isinstance(reference_time, Timestamp):
             reference_time = pd.Timestamp(reference_time) - series.time_start
 
-        scaled_index = (
-            series.time_index - reference_time
-        ) * scale_factor + reference_time
+        # drop the frequency of regularly sampled indices: pandas would scale
+        # it as well, which fails for most factors (e.g. 1 / 3)
+        time_index = pd.TimedeltaIndex(series.time_index, freq=None)
+        scaled_index = (time_index - reference_time) * scale_factor + reference_time
         series.time_index = scaled_index
 
         return series
