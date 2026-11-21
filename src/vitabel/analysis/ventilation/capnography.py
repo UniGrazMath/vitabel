@@ -48,8 +48,17 @@ def detect_etco2_and_ventilations(
     Returns
     -------
     The (unattached) labels ``etco2_from_capnography`` and
-    ``ventilations_from_capnography``, or ``None`` if the mode is unknown.
+    ``ventilations_from_capnography``. They are empty if no breaths are
+    detected (e.g., for the ``'filter'`` method if the CO₂ signal does not
+    drop below ``breath_threshold``).
+
+    Raises
+    ------
+    ValueError
+        If ``mode`` is not one of the supported methods.
     """
+    if mode not in ("filter", "threshold"):
+        raise ValueError(f"Unknown mode {mode!r}, use either 'filter' or 'threshold'")
     co2_data = source.get_data()  # get data
     cotime, co = co2_data.time_index, co2_data.data
 
@@ -72,6 +81,13 @@ def detect_etco2_and_ventilations(
         etco2 = co[et_index]
         resptime = cotime[resp_index]
         resp_height = co[resp_index]
+
+        if len(resptime) == 0:
+            logger.warning(
+                "No ventilations detected: the CO₂ signal does not drop below "
+                f"breath_threshold ({breath_threshold} mmHg)."
+            )
+            return _labels(etco2time[:0], etco2[:0], resptime, mode)
 
         # initialize search for other markers
         k = 0
@@ -155,6 +171,12 @@ def detect_etco2_and_ventilations(
         exp_index2 = sgn.find_peaks(d, height=0.35 * freq)[0]
         ins_index2 = sgn.find_peaks(-d, height=0.45 * freq)[0]
 
+        if len(exp_index2) < 2 or len(ins_index2) < 2:
+            # a breath needs an inspiration, an expiration, and the next
+            # inspiration; the search below assumes several of each
+            logger.warning("No ventilations detected in the CO₂ signal.")
+            return _labels([], [], [], mode)
+
         final_flag = False
         ins_index3 = []
         exp_index3 = []
@@ -211,30 +233,29 @@ def detect_etco2_and_ventilations(
                         etco2.append(np.max(co2[i_exp:i_next_ins]))
                         k += 1
                         k = k % 5
-    if mode == "threshold" or mode == "filter":
-        metadata = {
-            "creator": "automatic",
-            "creation_date": pd.Timestamp.now(),
-            "creation_mode": mode,
-        }
-        etco2_lab = Label(
-            "etco2_from_capnography",
-            time_index=etco2time,
-            data=etco2,
-            metadata=metadata,
-            plotstyle=DEFAULT_PLOT_STYLE.get("etco2_from_capnography", None),
-        )
+    return _labels(etco2time, etco2, resptime, mode)
 
-        vent_lab = Label(
-            "ventilations_from_capnography",
-            time_index=resptime,
-            data=None,
-            metadata=metadata,
-            plotstyle=DEFAULT_PLOT_STYLE.get("ventilations_from_capnography", None),
-        )
-        return etco2_lab, vent_lab
-    else:
-        logger.error(
-            f"mode {mode} not known. Please use either 'filter' or 'threshold' as argument"
-        )
-        return None
+
+def _labels(etco2time, etco2, resptime, mode) -> tuple[Label, Label]:
+    """The labels ``etco2_from_capnography`` and
+    ``ventilations_from_capnography``."""
+    metadata = {
+        "creator": "automatic",
+        "creation_date": pd.Timestamp.now(),
+        "creation_mode": mode,
+    }
+    etco2_lab = Label(
+        "etco2_from_capnography",
+        time_index=etco2time,
+        data=etco2,
+        metadata=metadata,
+        plotstyle=DEFAULT_PLOT_STYLE.get("etco2_from_capnography", None),
+    )
+    vent_lab = Label(
+        "ventilations_from_capnography",
+        time_index=resptime,
+        data=None,
+        metadata=metadata,
+        plotstyle=DEFAULT_PLOT_STYLE.get("ventilations_from_capnography", None),
+    )
+    return etco2_lab, vent_lab

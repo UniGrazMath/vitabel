@@ -301,8 +301,7 @@ def make_cprdat_analysis(vitals, model="") -> dict:
             vitals,
             detect_etco2_and_ventilations(
                 capnography, mode="threshold", breath_threshold=2, etco2_threshold=3
-            )
-            or [],
+            ),
             attach=capnography.attach_label,
         )
 
