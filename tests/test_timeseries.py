@@ -517,8 +517,11 @@ def test_channel_scale_time_index_regular_sampling(scale_factor):
         new_channel.numeric_time(), np.arange(100) * scale_factor
     )
 
+
 def test_scale_time_index_preserves_offset():
-    times = [pd.Timestamp("2020-02-02 12:00:00") + pd.Timedelta(hours=i) for i in range(4)]
+    times = [
+        pd.Timestamp("2020-02-02 12:00:00") + pd.Timedelta(hours=i) for i in range(4)
+    ]
     channel = Channel(name="test", time_index=times)
     channel.offset = pd.Timedelta("-1h")
     effective_before = list(channel.get_data().time_index)
@@ -529,8 +532,11 @@ def test_scale_time_index_preserves_offset():
 
     assert new_channel.offset == pd.Timedelta("-1h")
     # Effective times should scale about the reference — offset is not scaled
-    expected = [pd.Timestamp("2020-02-02 12:00:00") + (t - pd.Timestamp("2020-02-02 12:00:00")) * 0.5
-                for t in effective_before]
+    expected = [
+        pd.Timestamp("2020-02-02 12:00:00")
+        + (t - pd.Timestamp("2020-02-02 12:00:00")) * 0.5
+        for t in effective_before
+    ]
     assert list(new_channel.get_data().time_index) == expected
     # Original is unchanged
     assert channel.offset == pd.Timedelta("-1h")
@@ -583,7 +589,9 @@ def test_correct_clock_drift_records_metadata_inplace():
     drift_point = pd.Timestamp("2020-02-02 13:00:05")
     channel = Channel(name="test", time_index=[anchor, drift_point])
 
-    channel.correct_clock_drift(anchor, drift_point, drift=pd.Timedelta("5s"), inplace=True)
+    channel.correct_clock_drift(
+        anchor, drift_point, drift=pd.Timedelta("5s"), inplace=True
+    )
 
     assert len(channel.metadata["transformations"]) == 1
 
@@ -617,9 +625,7 @@ def test_channel_correct_clock_drift_with_true_time():
     times = [anchor, drift_point]
     channel = Channel(name="test", time_index=times)
 
-    corrected = channel.correct_clock_drift(
-        anchor, drift_point, true_time=true_time
-    )
+    corrected = channel.correct_clock_drift(anchor, drift_point, true_time=true_time)
     corrected_times = list(corrected.get_data().time_index)
 
     assert corrected_times[0] == anchor
@@ -656,7 +662,9 @@ def test_channel_scale_time_index_inplace():
     channel = Channel(name="test", time_index=times)
     original_id = id(channel)
 
-    result = channel.correct_clock_drift(anchor, drift_point, drift=pd.Timedelta("5s"), inplace=True)
+    result = channel.correct_clock_drift(
+        anchor, drift_point, drift=pd.Timedelta("5s"), inplace=True
+    )
 
     assert result is channel, "inplace=True must return self"
     assert id(channel) == original_id
@@ -675,8 +683,9 @@ def test_channel_scale_time_index_copy_does_not_mutate_original():
 
     _ = channel.correct_clock_drift(anchor, drift_point, drift=pd.Timedelta("5s"))
 
-    assert list(channel.get_data().time_index) == original_times, \
+    assert list(channel.get_data().time_index) == original_times, (
         "inplace=False (default) must not mutate the original channel"
+    )
 
 
 def test_channel_scale_time_index_moves_attached_labels_by_default():
@@ -716,7 +725,9 @@ def test_channel_correct_clock_drift_moves_attached_labels_by_default():
         anchor, drift_point, drift=pd.Timedelta("5s")
     )
 
-    assert corrected.labels[0].get_data().time_index[0] == anchor + pd.Timedelta(seconds=1800)
+    assert corrected.labels[0].get_data().time_index[0] == anchor + pd.Timedelta(
+        seconds=1800
+    )
     assert corrected.labels[0].anchored_channel is corrected
     assert label.get_data().time_index[0] == anchor + pd.Timedelta(seconds=1802.5)
 
@@ -734,6 +745,67 @@ def test_channel_correct_clock_drift_inplace_moves_attached_labels():
 
     assert label.get_data().time_index[0] == anchor + pd.Timedelta(seconds=1800)
     assert label.anchored_channel is channel
+
+
+def test_channel_correct_clock_drift_regular_sampling():
+    """A regularly sampled recording (1 Hz over an hour, device 3 s fast):
+    the drift gives a scale factor that is not a "nice" number."""
+    anchor = pd.Timestamp("2024-01-01 10:00:00")
+    times = pd.date_range(anchor, periods=3601, freq="1s")
+    channel = Channel(name="hr", time_index=times, data=np.arange(3601.0))
+
+    corrected = channel.correct_clock_drift(
+        anchor, anchor + pd.Timedelta("1h"), drift=pd.Timedelta("3s")
+    )
+
+    corrected_times = corrected.get_data().time_index
+    assert corrected_times[0] == anchor
+    assert corrected_times[-1] == anchor + pd.Timedelta("1h") - pd.Timedelta("3s")
+    np.testing.assert_allclose(
+        corrected.numeric_time(), np.arange(3601) * (3597 / 3600), atol=1e-9
+    )
+    np.testing.assert_array_equal(corrected.get_data().data, np.arange(3601.0))
+
+
+def test_channel_correct_clock_drift_moves_attached_interval_labels():
+    anchor = pd.Timestamp("2024-01-01 10:00:00")
+    channel = Channel(
+        name="hr",
+        time_index=pd.date_range(anchor, periods=3601, freq="1s"),
+        data=np.arange(3601.0),
+    )
+    interval = IntervalLabel(
+        name="cpr",
+        time_index=[anchor + pd.Timedelta("10min"), anchor + pd.Timedelta("20min")],
+    )
+    channel.attach_label(interval)
+
+    corrected = channel.correct_clock_drift(
+        anchor, anchor + pd.Timedelta("1h"), drift=pd.Timedelta("3s")
+    )
+
+    (corrected_interval,) = corrected.labels
+    start, stop = corrected_interval.get_data().time_index[0]
+    assert pd.Timestamp(start) == anchor + pd.Timedelta("10min") - pd.Timedelta("0.5s")
+    assert pd.Timestamp(stop) == anchor + pd.Timedelta("20min") - pd.Timedelta("1s")
+    # the original label is unchanged
+    assert pd.Timestamp(interval.get_data().time_index[0][0]) == anchor + pd.Timedelta(
+        "10min"
+    )
+
+
+def test_channel_correct_clock_drift_relative_time():
+    channel = Channel(
+        name="relative", time_index=np.arange(0, 100, 0.5), data=np.arange(200.0)
+    )
+
+    corrected = channel.correct_clock_drift(
+        pd.Timedelta(0), pd.Timedelta("50s"), drift=pd.Timedelta("1s")
+    )
+
+    np.testing.assert_allclose(
+        corrected.numeric_time(), np.arange(0, 100, 0.5) * 49 / 50, atol=1e-9
+    )
 
 
 def test_label_creation():

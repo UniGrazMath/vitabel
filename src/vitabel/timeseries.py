@@ -915,7 +915,9 @@ class TimeSeriesBase:
             else:
                 reference_time = series.time_index[0]
         elif isinstance(reference_time, Timestamp):
-            reference_time = pd.Timestamp(reference_time) - series.time_start - original_offset
+            reference_time = (
+                pd.Timestamp(reference_time) - series.time_start - original_offset
+            )
         else:
             # Timedelta — user gave it in effective (offset-inclusive) coords.
             reference_time = reference_time - original_offset
@@ -1004,7 +1006,9 @@ class TimeSeriesBase:
                 "drift_point must differ from anchor_time to determine the drift rate"
             )
         scale_factor = (measured_interval - drift) / measured_interval
-        result = self.scale_time_index(scale_factor, reference_time=anchor_time, inplace=inplace)
+        result = self.scale_time_index(
+            scale_factor, reference_time=anchor_time, inplace=inplace
+        )
 
         # Record the correction parameters so the transformation is reproducible
         # when reloading raw data (Channel / Label both carry a metadata dict).
@@ -1244,7 +1248,9 @@ class Channel(TimeSeriesBase):
 
         label_reference_time = reference_time
         if label_reference_time is None and not self.is_empty():
-            label_reference_time = self.time_start if self.is_time_absolute() else self.time_index[0]
+            label_reference_time = (
+                self.time_start if self.is_time_absolute() else self.time_index[0]
+            )
 
         if inplace:
             labels = self.labels
