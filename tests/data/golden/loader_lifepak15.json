@@ -1,8 +1,8 @@
 {
  "mode": "exact",
  "generated_with": {
-  "git_commit": "d06a36a107341709c093093f8e052cd2d0be763a",
-  "vitabel": "0.1.1",
+  "git_commit": "ff1ccb7abdf9f759ba97f99e6a501f671a94811f",
+  "vitabel": "0.2.0a2",
   "numpy": "2.5.1",
   "pandas": "3.0.3",
   "python": "3.13.2",
@@ -160,7 +160,13 @@
      "Serial No": "LP1544688890",
      "source": "LP15"
     },
-    "plotstyle": {},
+    "plotstyle": {
+     "color": "orangered",
+     "label": "Defibrillation Impedance",
+     "alpha": 0.8,
+     "linestyle": "",
+     "marker": "D"
+    },
     "labels": [],
     "attached_labels": []
    },
@@ -1459,7 +1465,13 @@
      "Serial No": "LP1544688890",
      "source": "LP15"
     },
-    "plotstyle": {},
+    "plotstyle": {
+     "color": "red",
+     "label": "Impedance (Trend)",
+     "alpha": 0.6,
+     "linestyle": "",
+     "marker": "."
+    },
     "labels": [],
     "attached_labels": []
    },
@@ -3318,7 +3330,14 @@
      "Serial No": "LP1544688890",
      "source": "LP15"
     },
-    "plotstyle": {},
+    "plotstyle": {
+     "color": "purple",
+     "label": "Chest Compression",
+     "alpha": 0.6,
+     "linestyle": "",
+     "marker": "|",
+     "ms": 10
+    },
     "labels": [],
     "attached_labels": []
    },
@@ -3371,7 +3390,14 @@
      "Serial No": "LP1544688890",
      "source": "LP15"
     },
-    "plotstyle": {},
+    "plotstyle": {
+     "color": "darkgreen",
+     "label": "Start CPR",
+     "alpha": 0.8,
+     "linestyle": "",
+     "marker": ">",
+     "ms": 8
+    },
     "labels": [],
     "attached_labels": []
    },
@@ -3424,7 +3450,14 @@
      "Serial No": "LP1544688890",
      "source": "LP15"
     },
-    "plotstyle": {},
+    "plotstyle": {
+     "color": "darkred",
+     "label": "Stop CPR",
+     "alpha": 0.8,
+     "linestyle": "",
+     "marker": "<",
+     "ms": 8
+    },
     "labels": [],
     "attached_labels": []
    }

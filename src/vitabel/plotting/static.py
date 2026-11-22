@@ -232,14 +232,15 @@ def plot_label(
                 base_plotstyle.pop("label", None)
             if text:
                 line_color = vline_artist.get_color()
+                text_settings = {
+                    "rotation": 90,
+                    "clip_on": True,
+                    "color": line_color,
+                    "bbox": label.plot_vline_bbox_settings,
+                    **label.plot_vline_text_settings,
+                }
                 vline_text_artist = plot_axes.text(
-                    t,
-                    0.9 * ymin + 0.1 * ymax,
-                    text,
-                    rotation=90,
-                    clip_on=True,
-                    color=line_color,
-                    bbox=label.plot_vline_bbox_settings,
+                    t, 0.9 * ymin + 0.1 * ymax, text, **text_settings
                 )
                 vline_text_artist._from_vitals_label = True
 

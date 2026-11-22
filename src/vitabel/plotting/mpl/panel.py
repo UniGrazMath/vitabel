@@ -47,6 +47,11 @@ clear a set reference time.</p>
 """
 
 
+def _index_of(channel, channels) -> int:
+    """Index of ``channel`` in ``channels`` (by identity)."""
+    return next(index for index, other in enumerate(channels) if other is channel)
+
+
 def _aligned_label(text: str) -> widgets.Label:
     return widgets.Label(
         text,
@@ -134,12 +139,17 @@ class ControlPanel:
         self.add_stack.selected_index = 1
 
         # -- shifting --------------------------------------------------------------
-        channels = core.spec.collection.channels
+        # only the plotted channels can be aligned visually; the index is the
+        # one in the collection (as in Vitals.info)
+        collection_channels = core.spec.collection.channels
         self.shift_selection = widgets.SelectMultiple(
-            value=channels[:1],
+            value=list(core.shift_channels),
             options=[
-                (f"[{index}] {channel.name}", channel)
-                for index, channel in enumerate(channels)
+                (
+                    f"[{_index_of(channel, collection_channels)}] {channel.name}",
+                    channel,
+                )
+                for channel in core.spec.plotted_channels
             ],
             description="Channels",
             disabled=False,
