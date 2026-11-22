@@ -21,8 +21,6 @@ dependencies = [
     "ipywidgets>=8.1.5",
     "ipympl>=0.9.5",
     "ipykernel>=6.9",
-    "joblib>=1.4.0",
-    "scikit-learn>=1.5.2",
 ]
 
 [project.urls]

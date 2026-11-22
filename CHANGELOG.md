@@ -2,6 +2,18 @@
 
 Notable changes to `vitabel`, newest first.
 
+## [Unreleased]
+
+### Changed
+
+- The pre-trained circulation (ROSC) model is stored as plain arrays and
+  evaluated with NumPy, so `predict_circulation` (and `make_cprdat_analysis`)
+  no longer warn about the scikit-learn version the model was saved with;
+  results are the same up to floating point rounding (< 1e-9).
+  `scikit-learn` and `joblib` are no longer dependencies
+  ([#62](https://github.com/UniGrazMath/vitabel/issues/62),
+  [#317](https://github.com/UniGrazMath/vitabel/pull/317)).
+
 ## [0.2.0a2] - 2026-11-22
 
 Second pre-release of 0.2, intended as the release candidate: fixes from
