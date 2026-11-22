@@ -24,8 +24,8 @@ def track_to_timeseries(
 ) -> Channel | Label | None:
     """Extracts a track from a vitaldb dataset and returns it as channel or label.
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     vit
         The vitaldb dataset to extract the track from.
     track_name
