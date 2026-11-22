@@ -546,7 +546,11 @@ class TimeSeriesBase:
         Parameters
         ----------
         delta_t
-            The time delta to shift the time index by.
+            The time delta to shift the time index by. Numbers are taken
+            in ``time_unit``.
+        time_unit
+            The time unit of a numeric ``delta_t``. If not specified, the
+            time unit of the series is used.
         """
         time_unit = time_unit or self.time_unit
         if isinstance(delta_t, numbers.Number):
@@ -1606,6 +1610,11 @@ class Channel(TimeSeriesBase):
         time_unit
             The time unit values used along the x-axis. If ``None``
             (the default), the time unit of the channel is used.
+        reference_time
+            The time that is plotted as 0: a timestamp for absolute time data,
+            a timedelta for relative time data. If not specified, absolute time
+            data is plotted relative to :attr:`time_start`, and relative time
+            data as it is.
         """
         from vitabel.plotting.static import plot_channel
 
@@ -2050,7 +2059,7 @@ class Label(TimeSeriesBase):
 
         Parameters
         ----------
-        time
+        time_data
             The time of the data point.
         value
             The value of the data point. If not specified,
@@ -2378,11 +2387,16 @@ class Label(TimeSeriesBase):
             The start time for the data. If not specified, the data
             starts from the first time point.
         stop
-            The start time for the data. If not specified, the data
+            The stop time for the data. If not specified, the data
             stops at the last time point.
         time_unit
             The time unit values used along the x-axis. If ``None``
             (the default), the time unit of the channel is used.
+        reference_time
+            The time that is plotted as 0: a timestamp for absolute time data,
+            a timedelta for relative time data. If not specified, absolute time
+            data is plotted relative to :attr:`time_start`, and relative time
+            data as it is.
         plot_type
             Override for :attr:`.plot_type`, see :class:`.Label` for details.
             If ``None`` (the default) is passed, the value from the attribute
@@ -2990,14 +3004,20 @@ class IntervalLabel(Label):
             The start time for the data. If not specified, the data
             starts from the first time point.
         stop
-            The start time for the data. If not specified, the data
+            The stop time for the data. If not specified, the data
             stops at the last time point.
         time_unit
             The time unit values used along the x-axis. If ``None``
             (the default), the time unit of the channel is used.
         reference_time
-            For labels with absolute time, a reference time to subtract from
-            the time data. If not specified, the :attr:`time_start` attribute is used.
+            The time that is plotted as 0: a timestamp for absolute time data,
+            a timedelta for relative time data. If not specified, absolute time
+            data is plotted relative to :attr:`time_start`, and relative time
+            data as it is.
+        plot_type
+            Override for :attr:`.plot_type`, see :class:`.IntervalLabel` for
+            details. If ``None`` (the default) is passed, the value from the
+            attribute is used.
         """
         from vitabel.plotting.static import plot_interval_label
 
@@ -3335,6 +3355,9 @@ class TimeDataCollection:
             The label object to delete, optional. Alternatively,
             the label can also be specified by keyword arguments
             as in :meth:`.get_label`.
+        kwargs
+            Keyword arguments specifying the label (if ``label`` is not
+            passed), see :meth:`.get_label`.
         """
         if label is not None:
             if label not in self.labels:

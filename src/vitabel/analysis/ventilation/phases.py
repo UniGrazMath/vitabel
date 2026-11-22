@@ -139,17 +139,6 @@ def _filter_alternating_phases(
     alternate by keeping only the first candidate in each interval defined by the
     anchor phases.
 
-    Algorithm
-    ---------
-    1. Divide the timeline into intervals using anchor phases as boundaries:
-       ``(-inf, anchor_0], (anchor_0, anchor_1], (anchor_1, anchor_2], ...``
-    2. Assign each candidate to the interval it falls into.
-    3. Keep only the first (earliest) candidate per interval.
-
-    This guarantees that between any two consecutive anchor phases, at most one
-    candidate phase is selected, enforcing the alternating pattern required for
-    valid respiratory cycles.
-
     Parameters
     ----------
     candidate_phase_idxs : np.ndarray
@@ -166,6 +155,17 @@ def _filter_alternating_phases(
         alternation with anchor phases. If ``candidate_phase_idxs`` is empty or
         ``anchor_phase_idxs`` is empty, returns ``candidate_phase_idxs`` unchanged.
         The dtype of the returned array matches the input ``candidate_phase_idxs``.
+
+    Notes
+    -----
+    1. Divide the timeline into intervals using anchor phases as boundaries:
+       ``(-inf, anchor_0], (anchor_0, anchor_1], (anchor_1, anchor_2], ...``
+    2. Assign each candidate to the interval it falls into.
+    3. Keep only the first (earliest) candidate per interval.
+
+    This guarantees that between any two consecutive anchor phases, at most one
+    candidate phase is selected, enforcing the alternating pattern required for
+    valid respiratory cycles.
 
     Examples
     --------
@@ -319,22 +319,22 @@ def get_inspiration_starts(
 
     Parameters
     ----------
-    product:class:`.DataSlice`
+    product : :class:`.DataSlice`
         A DataSlice object containing the time index and data of the product of flow and pressure.
 
-    interpolated_flow:class:`.DataSlice`
+    interpolated_flow : :class:`.DataSlice`
         A DataSlice object containing the time index and data of the interpolated flow signal.
         Must have the same time index as the product.
 
-    interpolated_pressure:class:`.DataSlice`
+    interpolated_pressure : :class:`.DataSlice`
         A DataSlice object containing the time index and data of the interpolated pressure signal.
         Must have the same time index as the product.
 
-    slope_pressure:class:`.DataSlice`
+    slope_pressure : :class:`.DataSlice`
         A DataSlice object containing the time index and data of the slope of the pressure signal.
         Must have the same time index as the product.
 
-    threshold: float
+    threshold : float
         The threshold value above which the inspiration segments are detected.
 
     Returns
@@ -494,10 +494,10 @@ def get_expiration_starts(
 
     Parameters
     ----------
-    product:class:`.DataSlice`
+    product : :class:`.DataSlice`
         A DataSlice object containing the time index and data of the product of flow and slope of pressure.
 
-    threshold: float
+    threshold : float
         The threshold value above which the expiration segments are detected.
 
     Returns

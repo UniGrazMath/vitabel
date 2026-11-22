@@ -268,6 +268,9 @@ class Vitals:
     ) -> None:
         """Loading channels and labels from a vitalDB recording.
 
+        String tracks are imported as labels and attached to the channels
+        they belong to, see :func:`.io.vitaldb.assign_vitaldb_labels`.
+
         Parameters
         ----------
         filepath
@@ -275,9 +278,6 @@ class Vitals:
         metadata
             Metadata of the imported channels and labels. Defaults to
             ``{"source": "VitalDB-Recording"}``.
-
-        String tracks are imported as labels and attached to the channels
-        they belong to, see :func:`.io.vitaldb.assign_vitaldb_labels`.
         """
         channels, labels = read_vitaldb_tracks(filepath, metadata=metadata)
         for channel in channels:
@@ -1368,8 +1368,7 @@ class Vitals:
         capnography waveform, and adds them as labels (attached to the capnography
         channel). See :func:`.analysis.ventilation.capnography.detect_etco2_and_ventilations`.
 
-        The capnography signal must be present as a channel named 'capnography'. Two
-        detection methods are supported:
+        Two detection methods are supported:
 
         - ``'filter'``: An unpublished method by Wolfgang Kern (default).
         - ``'threshold'``: The method described by Aramendi et al. in
@@ -1377,6 +1376,8 @@ class Vitals:
 
         Parameters
         ----------
+        source
+            The capnography channel, or its name (default: ``'capnography'``).
         mode
             Method to use for detecting ventilations from the CO₂ signal.
         breath_threshold
@@ -1385,11 +1386,15 @@ class Vitals:
         etco2_threshold
             Threshold above which a maximum is identified as an etCO₂ value of an expiration
             (default: 3 mmHg). Used by the ``'filter'`` method.
+        kwargs
+            Only the deprecated ``breaththresh`` (use ``breath_threshold``).
 
         Raises
         ------
         ValueError
             If ``mode`` is not one of the supported methods.
+        TypeError
+            For unknown keyword arguments.
         """
         # Support legacy parameter name
         if "breaththresh" in kwargs:
@@ -1759,40 +1764,35 @@ class Vitals:
 
         Parameters
         ----------
-        self: :class:`.Vitals`
-            The Vitals object to which the respiratory phases will be added.
-
-        flow: :class:`.Channel`
+        flow
             The air flow channel.
-
-        pressure: :class:`.Channel`
+        pressure
             The airway pressure channel.
-
-        inspiratory_threshold: float
+        inspiratory_threshold
             The threshold for detecting the start of inspiration.
-
-        expiratory_threshold: float
+        expiratory_threshold
             The threshold for detecting the start of expiration.
-
-        add_labels: bool
+        add_labels
             Whether to add the derived respiratory phases as labels to the Vitals object.
             If True, the following labels are added:
+
             - Inspiration Begin as :class:`.Label`
             - Expiration Begin as :class:`.Label`
             - Inspiration as :class:`.IntervalLabel`
             - Expiration as :class:`.IntervalLabel`
 
-        add_intermediate_channels: bool
-            Whether to add intermediate channels to the Vitals object. If True, the following channels are added:
+        add_intermediate_channels
+            Whether to add intermediate channels to the Vitals object. If True, the
+            following channels are added:
+
             - interpolated flow and pressure
             - product of flow and pressure (power of ventilation) in J/min
             - slope of pressure in cmH₂O/s
             - product of negative flow and slope of pressure in W/s
 
-        return_landmarks: bool
+        return_landmarks
             Whether to return the computed landmarks.
-
-        overwrite_existing_output: bool
+        overwrite_existing_output
             Whether to overwrite existing respiratory phase labels and intermediate channels if they already exist in the Vitals object. If False and such labels exist, the function will raise an exception to avoid unintentional overwriting.
 
         Returns
@@ -1803,8 +1803,9 @@ class Vitals:
         Notes
         -----
         This function and its thresholds are developed and tested on data from the following sensors:
-            - Flow: Sensirion SFM3000, recording at ~200Hz in slm
-            - Pressure: All Sensors DLVR-L60D, recording at ~500Hz in cmH₂O
+
+        - Flow: Sensirion SFM3000, recording at ~200Hz in slm
+        - Pressure: All Sensors DLVR-L60D, recording at ~500Hz in cmH₂O
         """
 
         self._prepare_named_outputs(
