@@ -1698,8 +1698,8 @@ def test_etco2_detection_unknown_mode(mode):
 
 
 def _capnogram_with_onsets(baseline=0.0, noise=0.0, absolute=False, seed=0):
-    """Synthetic capnogram (125 Hz, 30 breaths of 6 s) with known exhalation
-    onsets: the CO₂ rises linearly from ``baseline`` within 0.4 s, starting
+    """Synthetic capnogram (125 Hz, 30 breaths of 6 s) with known onsets of
+    the CO₂ rise: the CO₂ rises linearly from ``baseline`` within 0.4 s, starting
     1 s into each breath, and drops at 4.5 s (inspiration)."""
     rng = np.random.default_rng(seed)
     seconds = np.arange(0, 180, 1 / 125)
@@ -1737,19 +1737,19 @@ def _onset_errors(found, expected):
         ("threshold", 6, 0.2, 2),
     ],
 )
-def test_exhalation_onsets_synthetic(mode, baseline, noise, breath_threshold):
+def test_co2_rise_onsets_synthetic(mode, baseline, noise, breath_threshold):
     from vitabel.analysis.ventilation.capnography import (
         detect_etco2_and_ventilations,
-        detect_exhalation_onsets,
+        detect_co2_rise_onsets,
     )
 
     capnogram, expected = _capnogram_with_onsets(baseline=baseline, noise=noise)
     etco2, ventilations = detect_etco2_and_ventilations(
         capnogram, mode=mode, breath_threshold=breath_threshold
     )
-    onsets = detect_exhalation_onsets(capnogram, ventilations, etco2)
+    onsets = detect_co2_rise_onsets(capnogram, ventilations, etco2)
 
-    assert onsets.name == "exhalation_onsets_from_capnography"
+    assert onsets.name == "co2_rise_onsets_from_capnography"
     assert len(onsets) <= len(ventilations)
     # each onset within 50 ms (the upstroke takes 0.4 s, 10 % of it are 40 ms)
     errors = _onset_errors(onsets.get_data().time_index, expected)
@@ -1757,16 +1757,16 @@ def test_exhalation_onsets_synthetic(mode, baseline, noise, breath_threshold):
 
 
 @pytest.mark.parametrize("rise_fraction", [0.0, 0.1, 0.5])
-def test_exhalation_onsets_rise_fraction(rise_fraction):
+def test_co2_rise_onsets_rise_fraction(rise_fraction):
     """The onset is where the CO₂ reaches the given fraction of the rise."""
     from vitabel.analysis.ventilation.capnography import (
         detect_etco2_and_ventilations,
-        detect_exhalation_onsets,
+        detect_co2_rise_onsets,
     )
 
     capnogram, expected = _capnogram_with_onsets()
     etco2, ventilations = detect_etco2_and_ventilations(capnogram)
-    onsets = detect_exhalation_onsets(
+    onsets = detect_co2_rise_onsets(
         capnogram, ventilations, etco2, rise_fraction=rise_fraction
     ).get_data()
     # the rise to the etCO₂ value (~37.4 mmHg) is linear within the first 0.4 s
@@ -1775,37 +1775,37 @@ def test_exhalation_onsets_rise_fraction(rise_fraction):
     np.testing.assert_allclose(delay, 0.4 * 37.4 / 35 * rise_fraction, atol=0.02)
 
 
-def test_exhalation_onsets_absolute_time():
+def test_co2_rise_onsets_absolute_time():
     from vitabel.analysis.ventilation.capnography import (
         detect_etco2_and_ventilations,
-        detect_exhalation_onsets,
+        detect_co2_rise_onsets,
     )
 
     capnogram, expected = _capnogram_with_onsets(absolute=True)
     etco2, ventilations = detect_etco2_and_ventilations(capnogram)
-    onsets = detect_exhalation_onsets(capnogram, ventilations, etco2)
+    onsets = detect_co2_rise_onsets(capnogram, ventilations, etco2)
     assert onsets.is_time_absolute()
     assert np.all(_onset_errors(onsets.get_data().time_index, expected) < 0.1)
 
 
-def test_exhalation_onsets_without_breaths():
+def test_co2_rise_onsets_without_breaths():
     from vitabel.analysis.ventilation.capnography import (
         detect_etco2_and_ventilations,
-        detect_exhalation_onsets,
+        detect_co2_rise_onsets,
     )
 
     capnogram = _NO_BREATHS["flat at 0"]
     etco2, ventilations = detect_etco2_and_ventilations(capnogram)
-    onsets = detect_exhalation_onsets(capnogram, ventilations, etco2)
+    onsets = detect_co2_rise_onsets(capnogram, ventilations, etco2)
     assert len(onsets) == 0
 
 
-def test_exhalation_onsets_need_a_following_etco2_value():
+def test_co2_rise_onsets_need_a_following_etco2_value():
     """A ventilation without an etCO₂ value before the next ventilation has
     no onset (instead of the onset of a later breath)."""
     from vitabel.analysis.ventilation.capnography import (
         detect_etco2_and_ventilations,
-        detect_exhalation_onsets,
+        detect_co2_rise_onsets,
     )
 
     capnogram, expected = _capnogram_with_onsets()
@@ -1819,33 +1819,33 @@ def test_exhalation_onsets_need_a_following_etco2_value():
         data=etco2.get_data().data[keep],
     )
 
-    onsets = detect_exhalation_onsets(capnogram, ventilations, etco2)
+    onsets = detect_co2_rise_onsets(capnogram, ventilations, etco2)
     found = onsets.get_data().time_index
     assert len(onsets) == len(ventilations) - 2  # the last one, and breath 10
     assert np.min(np.abs((found - expected[10]) / pd.Timedelta(1, "s"))) > 1
 
 
-def test_exhalation_onsets_invalid_rise_fraction():
-    from vitabel.analysis.ventilation.capnography import detect_exhalation_onsets
+def test_co2_rise_onsets_invalid_rise_fraction():
+    from vitabel.analysis.ventilation.capnography import detect_co2_rise_onsets
 
     capnogram, _ = _capnogram_with_onsets()
     empty = Label("empty")
     for rise_fraction in (-0.1, 1.0):
         with pytest.raises(ValueError, match="rise_fraction"):
-            detect_exhalation_onsets(capnogram, empty, empty, rise_fraction)
+            detect_co2_rise_onsets(capnogram, empty, empty, rise_fraction)
 
 
-def test_compute_exhalation_onsets():
+def test_compute_co2_rise_onsets():
     recording = Vitals()
     capnogram, expected = _capnogram_with_onsets()
     recording.add_channel(capnogram)
     with pytest.raises(ValueError, match="run compute_etco2_and_ventilations"):
-        recording.compute_exhalation_onsets()
+        recording.compute_co2_rise_onsets()
 
     recording.compute_etco2_and_ventilations(mode="threshold")
-    recording.compute_exhalation_onsets()
+    recording.compute_co2_rise_onsets()
 
-    onsets = recording.get_label("exhalation_onsets_from_capnography")
+    onsets = recording.get_label("co2_rise_onsets_from_capnography")
     assert onsets.anchored_channel is capnogram
     assert onsets.plotstyle["marker"] == "^"
     assert onsets.metadata["rise_fraction"] == 0.1

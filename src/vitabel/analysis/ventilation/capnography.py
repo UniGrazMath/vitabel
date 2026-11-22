@@ -236,20 +236,28 @@ def detect_etco2_and_ventilations(
     return _labels(etco2time, etco2, resptime, mode)
 
 
-def detect_exhalation_onsets(
+def detect_co2_rise_onsets(
     source: Channel,
     ventilations: Label,
     etco2: Label,
     rise_fraction: float = 0.1,
 ) -> Label:
-    """Detect the onset of exhalation (the start of the CO₂ rise) in a
+    """Detect the onsets of the CO₂ rise (the expiratory upstroke) in a
     capnography waveform.
 
-    For every ventilation, the following etCO₂ value marks the end of the
-    exhalation; the exhalation starts after the previous etCO₂ value. In
-    between, the baseline is the lowest CO₂ value, and the onset is the last
-    sample before the etCO₂ value at which the CO₂ signal is at or below
+    For every ventilation, the CO₂ rise ends at the following etCO₂ value and
+    is searched for after the previous etCO₂ value. In between, the baseline
+    is the lowest CO₂ value, and the onset is the last sample before the
+    etCO₂ value at which the CO₂ signal is at or below
     ``baseline + rise_fraction * (etco2 - baseline)``.
+
+    .. note::
+        The onset of the CO₂ rise marks the end of phase I of the capnogram,
+        not the start of expiration: the gas exhaled first comes from the
+        anatomical dead space and contains no CO₂, and sidestream
+        capnographs add a sampling delay. The onsets are therefore later
+        than the start of expiration, e.g., as detected from airflow by
+        :meth:`.Vitals.compute_respiratory_phases`.
 
     The ventilations select the breaths: one onset per ventilation that is
     followed by an etCO₂ value before the next ventilation. Their exact times
@@ -279,7 +287,7 @@ def detect_exhalation_onsets(
 
     Returns
     -------
-    The (unattached) label ``exhalation_onsets_from_capnography``. Breaths
+    The (unattached) label ``co2_rise_onsets_from_capnography``. Breaths
     without an etCO₂ value before the next ventilation, or without a rise,
     have no onset.
     """
@@ -301,7 +309,7 @@ def detect_exhalation_onsets(
         # ... must come before the next ventilation
         if k + 1 < len(vent_times) and peak_time >= vent_times[k + 1]:
             continue
-        # the exhalation starts after the previous etCO₂ value
+        # the rise is searched for after the previous etCO₂ value
         start = (
             np.searchsorted(time, etco2_times[next_etco2[k] - 1], side="right")
             if next_etco2[k] > 0
@@ -321,10 +329,10 @@ def detect_exhalation_onsets(
 
     n_missing = len(vent_times) - len(onsets)
     if n_missing:
-        logger.info(f"No exhalation onset found for {n_missing} ventilation(s).")
+        logger.info(f"No CO₂ rise onset found for {n_missing} ventilation(s).")
 
     return Label(
-        "exhalation_onsets_from_capnography",
+        "co2_rise_onsets_from_capnography",
         time_index=onsets if onsets else time[:0],
         data=None,
         metadata={
@@ -332,7 +340,7 @@ def detect_exhalation_onsets(
             "creation_date": pd.Timestamp.now(),
             "rise_fraction": rise_fraction,
         },
-        plotstyle=DEFAULT_PLOT_STYLE.get("exhalation_onsets_from_capnography", None),
+        plotstyle=DEFAULT_PLOT_STYLE.get("co2_rise_onsets_from_capnography", None),
     )
 
 

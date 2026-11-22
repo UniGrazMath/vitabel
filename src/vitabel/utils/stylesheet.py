@@ -202,8 +202,8 @@ DEFAULT_PLOT_STYLE = {
         "ms": 12,
         "markerfacecolor": "steelblue",
     },
-    "exhalation_onsets_from_capnography": {
-        "label": "Exhalation onset (Capnography)",
+    "co2_rise_onsets_from_capnography": {
+        "label": "CO₂ rise onset (Capnography)",
         "alpha": 0.6,
         "linestyle": "",
         "marker": "^",

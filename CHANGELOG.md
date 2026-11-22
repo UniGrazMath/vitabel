@@ -20,13 +20,14 @@ Notable changes to `vitabel`, newest first.
 
 ### Added
 
-- `Vitals.compute_exhalation_onsets` and
-  `analysis.ventilation.capnography.detect_exhalation_onsets` detect the onset
-  of exhalation (the start of the CO₂ rise) for the breaths found by
-  `compute_etco2_and_ventilations` (either method), as the label
-  `exhalation_onsets_from_capnography`. The onset is where the CO₂ signal
-  reaches a fraction (`rise_fraction`, default 10 %) of the rise from the
-  baseline to the etCO₂ value, so it also works with an elevated baseline
+- `Vitals.compute_co2_rise_onsets` and
+  `analysis.ventilation.capnography.detect_co2_rise_onsets` detect the onset
+  of the CO₂ rise (the expiratory upstroke, end of phase I of the capnogram)
+  for the breaths found by `compute_etco2_and_ventilations` (either method), as
+  the label `co2_rise_onsets_from_capnography`. The onset is where the CO₂
+  signal reaches a fraction (`rise_fraction`, default 10 %) of the rise from
+  the baseline to the etCO₂ value, so it also works with an elevated baseline.
+  It is later than the start of expiration (dead space, sampling delay)
   ([#314](https://github.com/UniGrazMath/vitabel/pull/314), based on
   [#256](https://github.com/UniGrazMath/vitabel/pull/256) by @mfurtmueller).
 - `correct_clock_drift` for channels and labels corrects a linear clock drift

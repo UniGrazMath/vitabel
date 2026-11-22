@@ -15,7 +15,7 @@ from pathlib import Path
 
 from vitabel.analysis.ventilation.capnography import (
     detect_etco2_and_ventilations,
-    detect_exhalation_onsets,
+    detect_co2_rise_onsets,
 )
 from vitabel.analysis.ventilation.phases import detect_respiratory_phases
 from vitabel.analysis.ventilation.volumes import (
@@ -1426,16 +1426,20 @@ class Vitals:
         for label in labels:
             source.attach_label(label)
 
-    def compute_exhalation_onsets(
+    def compute_co2_rise_onsets(
         self,
         source: Channel | str = "capnography",
         rise_fraction: float = 0.1,
     ):
-        """Computes the onsets of exhalation (the start of the CO₂ rise after each
-        ventilation) from the capnography waveform, and adds them as the label
-        ``exhalation_onsets_from_capnography`` (attached to the capnography
+        """Computes the onsets of the CO₂ rise (the expiratory upstroke) after
+        each ventilation from the capnography waveform, and adds them as the
+        label ``co2_rise_onsets_from_capnography`` (attached to the capnography
         channel). See
-        :func:`.analysis.ventilation.capnography.detect_exhalation_onsets`.
+        :func:`.analysis.ventilation.capnography.detect_co2_rise_onsets`.
+
+        The onsets mark the end of phase I of the capnogram and are later than
+        the start of expiration (dead space, sampling delay), see the note
+        there.
 
         Requires the labels ``ventilations_from_capnography`` and
         ``etco2_from_capnography`` of the capnography channel, see
@@ -1463,7 +1467,7 @@ class Vitals:
                 "run compute_etco2_and_ventilations first"
             )
         source.attach_label(
-            detect_exhalation_onsets(
+            detect_co2_rise_onsets(
                 source,
                 labels["ventilations_from_capnography"],
                 labels["etco2_from_capnography"],
