@@ -202,6 +202,14 @@ DEFAULT_PLOT_STYLE = {
         "ms": 12,
         "markerfacecolor": "steelblue",
     },
+    "co2_rise_onsets_from_capnography": {
+        "label": "CO₂ rise onset (Capnography)",
+        "alpha": 0.6,
+        "linestyle": "",
+        "marker": "^",
+        "ms": 6,
+        "color": "darkorange",
+    },
     "EKG": {
         "label": "ECG",
         "color": "green",
