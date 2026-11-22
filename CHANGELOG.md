@@ -2,7 +2,11 @@
 
 Notable changes to `vitabel`, newest first.
 
-## [Unreleased]
+## [0.2.0a2] - 2026-11-22
+
+Second pre-release of 0.2, intended as the release candidate: fixes from
+testing 0.2.0a1, in particular for the LIFEPAK 15 loader, and a few additions.
+Install it with `pip install --pre vitabel`.
 
 ### Breaking changes
 
@@ -68,6 +72,8 @@ Notable changes to `vitabel`, newest first.
   ([#275](https://github.com/UniGrazMath/vitabel/issues/275)).
 - A page on the Stryker loaders (devices, files, and the channels they give)
   ([#312](https://github.com/UniGrazMath/vitabel/pull/312)).
+
+Contributors: @behackl, @mfurtmueller, @sorlob.
 
 ## [0.2.0a1] - 2026-10-22
 
