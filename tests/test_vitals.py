@@ -342,6 +342,33 @@ def test_add_incomplete_defibrillator_lifepak15(lifepak_dir, tmp_path):
         Vitals().add_defibrillator_recording(tmp_path / "LP15_Continuous.xml")
 
 
+def test_add_defibrillator_recording_bz2(vitabel_example_data_dir, zoll_vitals):
+    """Single-file exports can be passed compressed with bzip2 (#233)."""
+    compressed = vitabel_example_data_dir / "ZOLL_test_case.json.bz2"
+    recording = Vitals()
+    recording.add_defibrillator_recording(compressed)
+
+    assert recording.get_channel_names() == zoll_vitals.get_channel_names()
+    for channel in recording.channels:
+        expected = zoll_vitals.get_channel(channel.name)
+        assert channel.metadata == expected.metadata
+        assert channel.get_data().time_index.equals(expected.get_data().time_index)
+    assert recording.metadata["Recording_files_added"] == [str(compressed)]
+
+
+@pytest.mark.parametrize(
+    "name", ["case_Continuous.xml.bz2", "case_Lucas.xml.bz2", "case_ecg.txt.bz2"]
+)
+def test_add_defibrillator_recording_bz2_multi_file_export(tmp_path, name):
+    """Exports of several files can't be read compressed: clear error."""
+    import bz2
+
+    path = tmp_path / name
+    path.write_bytes(bz2.compress(b"<Report/>"))
+    with pytest.raises(ValueError, match="only exports consisting of a single file"):
+        Vitals().add_defibrillator_recording(path)
+
+
 def test_add_zoll_json(zoll_vitals):
     cardio_recording = zoll_vitals
     assert sorted(cardio_recording.get_channel_names()) == [
@@ -1337,6 +1364,29 @@ def test_numeric_time_index_is_rounded_to_nanoseconds(time_unit):
     np.testing.assert_array_equal(channel.time_index.asi8, nanoseconds)
     channel = Channel("x", [0.0, 1.0], time_unit=time_unit, offset=numeric[1])
     assert channel.offset.value == nanoseconds[1]
+
+
+def test_load_data_warns_about_replacing_data(tmp_path, caplog):
+    """load_data replaces the data of the Vitals object; if there is any, a
+    warning says so (#114)."""
+    saved = Vitals()
+    saved.add_channel(Channel("saved", [0.0, 1.0], data=[1.0, 2.0]))
+    path = tmp_path / "recording.json"
+    saved.save_data(path)
+
+    empty = Vitals()
+    with caplog.at_level(logging.WARNING, logger="vitabel"):
+        empty.load_data(path)
+    assert "replaces" not in caplog.text
+
+    recording = Vitals()
+    recording.add_channel(Channel("existing", [0.0, 1.0], data=[3.0, 4.0]))
+    recording.add_global_label(Label("note", time_index=[0.5]))
+    with caplog.at_level(logging.WARNING, logger="vitabel"):
+        recording.load_data(path)
+    assert "replaces the 1 channel(s) and 1 label(s)" in caplog.text
+    assert recording.get_channel_names() == ["saved"]
+    assert recording.labels == []
 
 
 def test_load_data_hash_check_round_trip_with_array_metadata(tmp_path, caplog):
