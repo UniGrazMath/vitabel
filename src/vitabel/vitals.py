@@ -135,7 +135,8 @@ class Vitals:
     ) -> None:
         """Add the (defibrillator) recording to the cardio object.
 
-        Imports from the following defibrillator device families are supported:
+        Imports from the following defibrillator device families are supported
+        (see also the overview of supported devices in :doc:`/loaders`):
 
         * **ZOLL X Series and ZOLL R Series:** data needs to be exported from
           the device as JSON or XML.
