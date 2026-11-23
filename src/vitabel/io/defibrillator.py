@@ -4,8 +4,11 @@ corresponding loading routine."""
 
 from __future__ import annotations
 
+import bz2
 import logging
 import os
+import shutil
+import tempfile
 
 from pathlib import Path
 
@@ -19,6 +22,12 @@ from vitabel.utils import constants
 logger = logging.getLogger("vitabel")
 
 
+# exports that consist of a single file, and can thus be read from a
+# compressed copy (the other formats look for further files next to it)
+_SINGLE_FILE_SUFFIXES = (".json", ".xml")
+_MULTI_FILE_MARKERS = ("_Continuous", "_Lucas", "_CprEventLog")
+
+
 def read_defibrillator_file(filepath: Path | str) -> tuple[dict, dict] | None:
     """Read a recording exported from a defibrillator (or mechanical CPR
     device), see :meth:`.Vitals.add_defibrillator_recording` for the
@@ -27,7 +36,9 @@ def read_defibrillator_file(filepath: Path | str) -> tuple[dict, dict] | None:
     Parameters
     ----------
     filepath
-        The path to the exported file.
+        The path to the exported file. Exports consisting of a single file
+        (ZOLL JSON or XML) can also be passed compressed with bzip2
+        (e.g., ``filename.json.bz2``).
 
     Returns
     -------
@@ -39,6 +50,8 @@ def read_defibrillator_file(filepath: Path | str) -> tuple[dict, dict] | None:
     filepath = Path(filepath)
     if not filepath.exists():
         raise FileNotFoundError("File not found in directory. Check path!")
+    if filepath.suffix == ".bz2":
+        return _read_compressed_defibrillator_file(filepath)
     file_extension = filepath.suffix
     filename = filepath.stem
     dirpath = filepath.parent
@@ -156,3 +169,23 @@ def read_defibrillator_file(filepath: Path | str) -> tuple[dict, dict] | None:
         return None
 
     return pat_dat, dats
+
+
+def _read_compressed_defibrillator_file(filepath: Path) -> tuple[dict, dict] | None:
+    """Read a bzip2-compressed single-file export (ZOLL JSON or XML) from a
+    decompressed copy in a temporary directory, keeping its file name."""
+    decompressed_name = filepath.stem  # e.g. "case.json" for "case.json.bz2"
+    suffix = Path(decompressed_name).suffix
+    if suffix not in _SINGLE_FILE_SUFFIXES or any(
+        marker in decompressed_name for marker in _MULTI_FILE_MARKERS
+    ):
+        raise ValueError(
+            f"Cannot read the compressed file {filepath.name}: only exports "
+            "consisting of a single file (ZOLL JSON or XML) can be read "
+            "compressed. Please decompress the files of this export first."
+        )
+    with tempfile.TemporaryDirectory() as directory:
+        decompressed = Path(directory) / decompressed_name
+        with bz2.open(filepath, "rb") as source, decompressed.open("wb") as target:
+            shutil.copyfileobj(source, target)
+        return read_defibrillator_file(decompressed)

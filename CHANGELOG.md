@@ -4,6 +4,13 @@ Notable changes to `vitabel`, newest first.
 
 ## [Unreleased]
 
+### Added
+
+- `add_defibrillator_recording` reads exports consisting of a single file
+  (ZOLL JSON or XML) also compressed with bzip2, e.g. `case.json.bz2`
+  ([#233](https://github.com/UniGrazMath/vitabel/issues/233),
+  [#318](https://github.com/UniGrazMath/vitabel/pull/318)).
+
 ### Changed
 
 - The pre-trained circulation (ROSC) model is stored as plain arrays and
@@ -13,6 +20,16 @@ Notable changes to `vitabel`, newest first.
   `scikit-learn` and `joblib` are no longer dependencies
   ([#62](https://github.com/UniGrazMath/vitabel/issues/62),
   [#317](https://github.com/UniGrazMath/vitabel/pull/317)).
+- `load_data` logs a warning if it replaces channels or labels of the
+  `Vitals` object ([#114](https://github.com/UniGrazMath/vitabel/issues/114),
+  [#318](https://github.com/UniGrazMath/vitabel/pull/318)).
+
+### Fixed
+
+- ZOLL XML: loading failed with a `TypeError` if a waveform had a single record;
+  such waveforms are skipped, as for ZOLL JSON
+  ([#64](https://github.com/UniGrazMath/vitabel/issues/64),
+  [#318](https://github.com/UniGrazMath/vitabel/pull/318)).
 
 ## [0.2.0a2] - 2026-11-22
 

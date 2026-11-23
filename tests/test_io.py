@@ -115,3 +115,40 @@ def test_read_csv_table_missing_file(tmp_path):
 
     with pytest.raises(FileNotFoundError):
         read_csv_table(tmp_path / "missing.csv")
+
+
+def _zoll_xml_wave_record(wave_type, msec_time, n_samples=4, value=1):
+    """A ``ContinWaveRec`` element of a ZOLL XML export."""
+    import xml.etree.ElementTree as ET
+
+    samples = " ".join([str(value)] * n_samples)
+    return ET.fromstring(
+        "<ContinWaveRec>"
+        f"<StdHdr><MsecTime>{msec_time}</MsecTime></StdHdr>"
+        "<WaveSetting><UnitsVal>mV</UnitsVal></WaveSetting>"
+        f"<WaveRec><WaveType>{wave_type}</WaveType>"
+        f"<FrameSize>{n_samples}</FrameSize><SampleTime>4000</SampleTime>"
+        f"<UnpackedSamples>{samples}</UnpackedSamples>"
+        "<SampleStatus>0</SampleStatus></WaveRec>"
+        "</ContinWaveRec>"
+    )
+
+
+def test_read_zollxml_wave_type_with_single_record():
+    """A wave type with a single record has no recording interval and is
+    skipped, like in ZOLL JSON exports (it raised a TypeError, #64); the other
+    wave types are read as without it."""
+    import pandas as pd
+
+    from vitabel.io.zoll import read_zollxml_contin
+
+    start = pd.Timestamp("2024-01-01")
+    pads = [_zoll_xml_wave_record("1", msec) for msec in (0, 16, 32, 48)]
+    single = _zoll_xml_wave_record("2", 0, value=7)
+
+    data = read_zollxml_contin(pads + [single], start)[0]
+    expected = read_zollxml_contin(pads, start)[0]
+
+    pd.testing.assert_frame_equal(data["Pads"], expected["Pads"])
+    assert len(data["Pads"]) == 4
+    assert data["12-Lead I"].empty

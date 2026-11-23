@@ -1160,6 +1160,9 @@ def read_zollxml_contin(wave_recording_elements, starttime):
             for rec_info in elem.find("WaveRec"):
                 type_dict[item_type][rec_info.tag] = rec_info.text
             type_dict[item_type]["SampleTime"] = int(type_dict[item_type]["SampleTime"])
+            # numeric like in the JSON export (the text stays if the wave type
+            # has a single record, as the mode below needs at least two)
+            type_dict[item_type]["FrameSize"] = item_framesize
             type_dict[item_type].pop("UnpackedSamples", None)
             type_dict[item_type].pop("SampleStatus", None)
             t_previous[item_type] = float(elem.find("StdHdr").find("MsecTime").text)
@@ -1297,9 +1300,16 @@ def read_zollxml_contin(wave_recording_elements, starttime):
             item_start = starttime + pd.Timedelta(
                 milliseconds=float(elem.find("StdHdr").find("MsecTime").text)
             )
-            item_stop = item_start + pd.Timedelta(
-                microseconds=item_properties["RecordingIntervals"]
-            )
+            try:
+                item_time_duration = pd.Timedelta(
+                    microseconds=item_properties["RecordingIntervals"]
+                )
+            except ValueError:
+                # NaN: a wave type with a single record has no recording
+                # interval and is skipped, as in read_zolljson_contin
+                invalid_ch["Invalid Msecs"] += 1
+                continue
+            item_stop = item_start + item_time_duration
 
             try:
                 item_samples = list(

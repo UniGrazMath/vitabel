@@ -168,6 +168,9 @@ class Vitals:
           is placed in the same directory as the ``.bdf`` file. Pass the path to
           ``filename.bdf`` to import the data.
 
+        Exports consisting of a single file (ZOLL JSON or XML) can also be
+        passed compressed with bzip2 (e.g., ``filename.json.bz2``).
+
         The actual loading routines are implemented in the :mod:`.io` subpackage.
 
         Parameters
@@ -780,6 +783,11 @@ class Vitals:
         """
         Loads all Channels and Labels from a previously saved JSON file.
 
+        The channels, labels, and metadata of this object are replaced by
+        those from the file (a warning is logged if it already contains
+        channels or labels); to combine recordings, load the file into a new
+        :class:`Vitals` object.
+
         Parameters
         ----------
         path
@@ -798,6 +806,11 @@ class Vitals:
         path = Path(path)
         with open(path, "r") as fd:
             json_dict = json.load(fd)
+        if self.channels or self.labels:
+            logger.warning(
+                f"Loading {path} replaces the {len(self.channels)} channel(s) and "
+                f"{len(self.labels)} label(s) of this Vitals object."
+            )
         self.metadata = json_dict["metadata"]
         self.data = TimeDataCollection.from_dict(json_dict["data"])
         vitabel_version = json_dict["metadata"].get("vitabel version", "unknown")
