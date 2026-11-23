@@ -345,6 +345,41 @@ def test_adjust_mode_shifts_selected_channels(ipython):
     assert recording.get_channel("other").first_entry == START
 
 
+def test_align_menu_lists_plotted_channels(ipython):
+    """The Align Timelines menu offers only the plotted channels (subplots,
+    then overviews; #194), with their index in the collection, and preselects
+    the first plotted one."""
+    recording = _recording()
+    t = np.arange(0, 600, 0.5)
+    recording.add_channel(
+        Channel("unplotted", START + pd.to_timedelta(t, "s"), np.ones_like(t))
+    )
+    recording.add_channel(
+        Channel("overview", START + pd.to_timedelta(t, "s"), np.zeros_like(t))
+    )
+    # collection order: signal, other, unplotted, overview
+    plot = Interactive(
+        recording,
+        channels=[["other"], ["other", "signal"]],
+        channel_overviews=[["overview"]],
+    )
+    selection = plot.widget.header.children[1].children[1]
+    assert [label for label, _ in selection.options] == [
+        "[1] other",
+        "[0] signal",
+        "[3] overview",
+    ]
+    assert selection.value == (recording.get_channel("other"),)
+
+    plot.widget.header.selected_index = 1  # "Align Timelines"
+    plot.click(plot.axes[0], 300, 0)  # reference time
+    plot.click(plot.axes[0], 310, 0)  # target time
+    assert recording.get_channel("other").first_entry == START + pd.Timedelta(
+        seconds=10
+    )
+    assert recording.get_channel("signal").first_entry == START
+
+
 # -- static plots ---------------------------------------------------------------------
 
 
@@ -403,6 +438,39 @@ def test_label_plot_types(axes):
         reference_time=START,
     )
     assert _texts(axes) == []
+
+
+def test_label_vline_text_settings(axes, ipython):
+    """plot_vline_text_settings are passed to the vertical line texts (e.g.
+    the font size, #33), in static and interactive plots."""
+    times = START + pd.to_timedelta([1, 2], "s")
+    label = Label("events", time_index=times, text_data=["a", "b"], plot_type="vline")
+    assert label.plot_vline_text_settings == {}
+
+    def vline_texts(ax):
+        return [t for t in ax.findobj(Text) if getattr(t, "_from_vitals_label", False)]
+
+    label.plot(plot_axes=axes, reference_time=START)
+    assert {t.get_rotation() for t in vline_texts(axes)} == {90}
+    assert {t.get_fontsize() for t in vline_texts(axes)} != {5}
+
+    label.plot_vline_text_settings = {"fontsize": 5, "rotation": 0}
+    axes.clear()
+    label.plot(plot_axes=axes, reference_time=START)
+    texts = vline_texts(axes)
+    assert [t.get_text() for t in texts] == ["a", "b"]
+    assert {t.get_fontsize() for t in texts} == {5}
+    assert {t.get_rotation() for t in texts} == {0}
+    # the defaults that are not overridden stay
+    assert all(t.get_bbox_patch() is not None for t in texts)
+
+    recording = _recording()
+    recording.get_label("notes").add_data(START + pd.Timedelta(seconds=10), text="x")
+    recording.get_label("notes").plot_vline_text_settings = {"fontsize": 5}
+    plot = Interactive(recording, start=START, stop=START + pd.Timedelta(seconds=60))
+    interactive_texts = [t for ax in plot.axes for t in vline_texts(ax)]
+    assert [t.get_text() for t in interactive_texts] == ["x"]
+    assert interactive_texts[0].get_fontsize() == 5
 
 
 def test_label_scatter_with_zero_values(axes):

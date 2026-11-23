@@ -183,8 +183,8 @@ class InteractionCore:
         )
         self.pending_interval: PendingInterval | None = None
         self.shift_reference: ShiftReference | None = None
-        self.shift_channels: list[Channel] = list(spec.collection.channels[:1])
-        """Channels moved by a time shift."""
+        self.shift_channels: list[Channel] = spec.plotted_channels[:1]
+        """Channels moved by a time shift (default: the first plotted one)."""
         self.ylims: dict[int, tuple[float, float]] = {}
         """y limits per subplot, once set (otherwise: automatic)."""
         self._listeners: dict[str, list[Callable]] = defaultdict(list)

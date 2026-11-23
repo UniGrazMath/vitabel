@@ -187,6 +187,16 @@ class PlotSpec:
         return self.start
 
     @property
+    def plotted_channels(self) -> list[Channel]:
+        """The channels shown in the plot (subplots, then overviews), each
+        once, in order of appearance."""
+        unique = []  # compared by identity, as in the collection
+        for channel in it.chain.from_iterable(self.channels + self.overviews):
+            if not any(channel is seen for seen in unique):
+                unique.append(channel)
+        return unique
+
+    @property
     def annotation_labels(self) -> list[Label]:
         """The plotted labels in the order offered for annotation: point
         labels by name, then interval labels by name."""

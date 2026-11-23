@@ -89,6 +89,41 @@ def test_add_defibrillator_lifepak15(lifepak_vitals):
     assert len(lifepak_vitals.metadata["Recording_files_added"]) == 1
 
 
+def test_stryker_channels_have_plot_styles(lifepak_vitals, tmp_path):
+    """The channels of the Stryker loaders (and the names the LIFEPAK loader
+    renames to, except for metadata-like trend values) have a default plot
+    style (#292)."""
+    from vitabel.utils.constants import LP2channelnames_dict
+    from vitabel.utils.stylesheet import DEFAULT_PLOT_STYLE
+
+    for channel in lifepak_vitals.channels:
+        assert channel.name in DEFAULT_PLOT_STYLE, channel.name
+        assert channel.plotstyle == DEFAULT_PLOT_STYLE[channel.name]
+
+    path = tmp_path / "truecpr_CprEventLog.xml"
+    path.write_text(
+        _cpr_event_log([("2024-01-01T10:01:00.500", 50.0, 100, False)]),
+        encoding="utf-8",
+    )
+    recording = Vitals()
+    recording.add_defibrillator_recording(path)
+    assert all(channel.name in DEFAULT_PLOT_STYLE for channel in recording.channels)
+
+    metadata_like = {
+        "age",
+        "airway",
+        "vitals_ip1_lead",
+        "vitals_ip2_lead",
+        "compressions_per_cpr_interval",
+        "ventillations_per_cpr_interval",
+        "vent_pause_duration",
+    }
+    missing = (
+        set(LP2channelnames_dict.values()) - metadata_like - set(DEFAULT_PLOT_STYLE)
+    )
+    assert missing == set()
+
+
 def test_add_defibrillator_lifepak15_keeps_constants_unchanged(
     lifepak_dir, tmp_path, caplog
 ):

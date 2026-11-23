@@ -1714,9 +1714,10 @@ class Label(TimeSeriesBase):
           fills the rest with entries from :attr:`.data`.
         - ``'disabled'``: No text is shown next to the vertical lines.
 
-        Defaults to ``'text_data'``. The text labels can be customized by
-        modifying the dictionary stored in the :attr:`plot_vline_bbox_settings`
-        attribute of the label.
+        Defaults to ``'text_data'``. The text labels can be customized with
+        the dictionaries stored in the :attr:`plot_vline_text_settings`
+        (e.g., ``{"fontsize": 8}``) and :attr:`plot_vline_bbox_settings`
+        attributes of the label.
 
     annotation_preset_type
         Specifies the initial preselection of the annotation menu checkboxes
@@ -1831,6 +1832,11 @@ class Label(TimeSeriesBase):
             "edgecolor": "black",
         }
         """Settings for the bounding box around the vertical line text."""
+
+        self.plot_vline_text_settings: dict[str, Any] = {}
+        """Keyword arguments for the vertical line text (passed to
+        ``matplotlib.axes.Axes.text``, e.g. ``{"fontsize": 8}``); they override
+        the defaults (rotation, position, color of the line)."""
 
         self.metadata = copy(metadata) or {}
         """Additional label metadata."""

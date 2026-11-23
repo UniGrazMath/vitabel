@@ -10,6 +10,15 @@ Notable changes to `vitabel`, newest first.
   (ZOLL JSON or XML) also compressed with bzip2, e.g. `case.json.bz2`
   ([#233](https://github.com/UniGrazMath/vitabel/issues/233),
   [#318](https://github.com/UniGrazMath/vitabel/pull/318)).
+- `Label.plot_vline_text_settings`: keyword arguments for the texts next to
+  vertical lines in plots (e.g. `{"fontsize": 8}`), in static and interactive
+  plots ([#33](https://github.com/UniGrazMath/vitabel/issues/33),
+  [#319](https://github.com/UniGrazMath/vitabel/pull/319)).
+- Default plot styles for the channels of the Stryker loaders that had none
+  (e.g. `cc`, `start_cpr`, `stop_cpr`, `defibrillations_Impedance`, `spo2`,
+  invasive blood pressure); also used for ZOLL recordings
+  ([#292](https://github.com/UniGrazMath/vitabel/issues/292),
+  [#319](https://github.com/UniGrazMath/vitabel/pull/319)).
 
 ### Changed
 
@@ -23,6 +32,10 @@ Notable changes to `vitabel`, newest first.
 - `load_data` logs a warning if it replaces channels or labels of the
   `Vitals` object ([#114](https://github.com/UniGrazMath/vitabel/issues/114),
   [#318](https://github.com/UniGrazMath/vitabel/pull/318)).
+- Interactive plot: the "Align Timelines" tab lists only the plotted channels
+  (with their index in the recording) and preselects the first of them
+  ([#194](https://github.com/UniGrazMath/vitabel/issues/194),
+  [#319](https://github.com/UniGrazMath/vitabel/pull/319)).
 
 ### Fixed
 
